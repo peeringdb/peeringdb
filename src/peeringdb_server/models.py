@@ -344,6 +344,22 @@ class ParentStatusCheckMixin:
                     getattr(self, field_name), self.HandleRef.tag
                 )
 
+    def validate_status_change(self):
+        """
+        Validate status changes:
+        - Prevent changing from 'ok' to 'pending'
+        """
+        if self._state.adding:
+            return
+
+        original = self.__class__.objects.get(pk=self.pk)
+        if original.status == "ok" and self.status == "pending":
+            raise ValidationError("Cannot change status from 'ok' to 'pending'")
+
+    def clean(self):
+        self.validate_status_change()
+        super().clean()
+
 
 class ProtectedMixin:
     """
@@ -501,6 +517,20 @@ class GeocodeBaseMixin(models.Model):
             self.save()
 
         return sanitized
+
+    def clean(self):
+        """
+        As per #1482 the floor field is being deprecated
+        and only empty values are allowed.
+        """
+        super().clean()
+        if self.floor:
+            err_msg = (
+                _("Field is being deprecated.")
+                + " "
+                + _("Please move this data to the suite field and remove it from here.")
+            )
+            raise ValidationError({"floor": err_msg})
 
 
 class GeoCoordinateCache(StripFieldMixin):
@@ -970,6 +1000,7 @@ class Organization(
     GeocodeBaseMixin,
     SocialMediaMixin,
     StripFieldMixin,
+    ParentStatusCheckMixin,
 ):
     """
     Describes a peeringdb organization.
@@ -2845,6 +2876,7 @@ class InternetExchange(
 
     def clean(self):
         self.validate_phonenumbers()
+        super().clean()
 
     def request_ixf_import(self, user=None):
         self.ixf_import_request = timezone.now()
@@ -5675,6 +5707,7 @@ class NetworkIXLan(
         # network (#168)
 
         self.asn = self.network.asn
+        super().clean()
 
     def ipaddr(self, version):
         """

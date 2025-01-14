@@ -344,3 +344,46 @@ def test_convert_to_spatial_search_caching(google_maps_mock):
 
     # Verify that Google Maps API was not called again
     google_maps_mock.return_value.client.geocode.assert_not_called()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "country, result_types, typ, expected_found",
+    [
+        # Test sovereign microstate (Singapore) city detection
+        ("SG", ["country"], "city", True),
+        ("SG", ["locality"], "city", True),
+        ("SG", ["administrative_area_level_1"], "city", False),
+        # Test non-microstate normal country (FR) city detection
+        ("FR", ["locality"], "city", True),
+        ("FR", ["administrative_area_level_1"], "city", True),
+        ("FR", ["country"], "city", False),
+        # Test country with states (US) city detection
+        ("US", ["locality"], "city", True),
+        ("US", ["administrative_area_level_1"], "city", False),
+        ("US", ["country"], "city", False),
+        # Test state detection for country with states
+        ("US", ["administrative_area_level_1"], "state", True),
+        ("CA", ["administrative_area_level_1"], "state", True),
+        ("FR", ["administrative_area_level_1"], "state", False),
+    ],
+)
+def test_geocode_address_location_types(country, result_types, typ, expected_found):
+    """
+    Test location type detection for different geographic hierarchies
+    """
+
+    client = geo.GoogleMaps("AIza_test")
+
+    # Mock the geocoding result
+    mock_result = [
+        {"types": result_types, "geometry": {"location": {"lat": 1.0, "lng": 1.0}}}
+    ]
+
+    with patch.object(client.client, "geocode", return_value=mock_result):
+        if expected_found:
+            location = client.geocode_address("Test Address", country, typ)
+            assert location == {"lat": 1.0, "lng": 1.0}
+        else:
+            with pytest.raises(geo.NotFound):
+                client.geocode_address("Test Address", country, typ)

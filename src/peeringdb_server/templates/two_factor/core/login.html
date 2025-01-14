@@ -58,7 +58,7 @@
       <p>{% trans "As a last resort, you can use a backup token:" %}</p>
       <p>
         <button name="wizard_goto_step" type="submit" value="backup"
-        style="background: none; border: none; text-decoration: underline; cursor: pointer; padding: 0;">{% trans "Use Backup Token" %}</button>
+        style="background: none; border: none; text-decoration: underline; cursor: pointer; padding: 0; {% if prefers_dark_mode %}color: #ffffff;{% endif %}">{% trans "Use Backup Token" %}</button>
       </p>
     {% endif %}
 

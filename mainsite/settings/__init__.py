@@ -792,6 +792,7 @@ _TEMPLATE_CONTEXT_PROCESSORS = (
     "django.template.context_processors.static",
     "django.template.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
+    "peeringdb_server.context_processors.theme_mode",
 )
 
 _TEMPLATE_DIRS = (os.path.join(BASE_DIR, "peeringdb_server", "templates"),)
@@ -1030,6 +1031,14 @@ else:
 
     ELASTICSEARCH_DSL_AUTOSYNC = False
     ELASTICSEARCH_DSL_AUTO_REFRESH = False
+
+# Elasticsearch score boost configuration
+set_option("ES_MATCH_PHRASE_BOOST", 10.0)
+set_option("ES_MATCH_PHRASE_PREFIX_BOOST", 5.0)
+set_option("ES_QUERY_STRING_BOOST", 2.0)
+
+# Set Elasticsearch request timeout
+set_option("ES_REQUEST_TIMEOUT", 30.0)
 
 ## Django Rest Framework
 
@@ -1500,5 +1509,26 @@ set_option("PEERINGDB_SYNC_API_KEY", "")
 # peeringdb sync cache
 set_option("PEERINGDB_SYNC_CACHE_URL", "https://public.peeringdb.com")
 set_option("PEERINGDB_SYNC_CACHE_DIR", os.path.join(BASE_DIR, "sync-cache"))
+
+# The default protocol used by django-allauth when generating URLs in email message to be https.
+# https://docs.allauth.org/en/dev/account/configuration.html
+set_option("ACCOUNT_DEFAULT_HTTP_PROTOCOL", "https")
+
+# Geo normalization settings
+set_option("GEO_COUNTRIES_WITH_STATES", ["US", "CA"])
+set_option(
+    "GEO_SOVEREIGN_MICROSTATES",
+    [
+        "AD",  # Andorra
+        "LI",  # Liechtenstein
+        "MC",  # Monaco
+        "MT",  # Malta
+        "MV",  # Maldives
+        "SC",  # Seychelles
+        "SG",  # Singapore
+        "SM",  # San Marino
+        "VA",  # Vatican City
+    ],
+)
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

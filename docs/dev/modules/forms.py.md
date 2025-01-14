@@ -1,4 +1,4 @@
-Generated from forms.py on 2024-11-12 18:19:35.039193
+Generated from forms.py on 2025-01-14 18:57:08.992842
 
 # peeringdb_server.forms
 
@@ -16,6 +16,21 @@ Look in rest.py and serializers.py for those.
 
 ```
 AffiliateToOrgForm(django.forms.forms.Form)
+```
+
+A collection of Fields, plus their associated data.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## NameChangeForm
+
+```
+NameChangeForm(django.forms.forms.Form)
 ```
 
 A collection of Fields, plus their associated data.

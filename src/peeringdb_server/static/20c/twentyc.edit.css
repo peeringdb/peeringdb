@@ -1,3 +1,5 @@
+@import url(../variables.css);
+
 div.editable,
 div[data-edit-type],
 div[data-edit-target] {
@@ -68,7 +70,7 @@ div[data-edit-target] {
 
 .editable.popin {
   padding: 10px;
-  border: 1px #000 solid;
+  border: 1px var(--border-color-2) solid;
 }
 
 .editable.popin.error {

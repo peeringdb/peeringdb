@@ -291,6 +291,23 @@ class UserTests(TestCase):
                     response_json = json.loads(response_content)
                     self.assertEqual(response_json, {"status": "ok"})
 
+    def test_login_failed(self):
+        data = {
+            "next": f"/org/{self.org_a.id}",
+            "auth-username": "wrong_user",
+            "auth-password": "wrong_password",
+            "login_view-current_step": "auth",
+        }
+
+        C = Client()
+        resp = C.post("/account/login/", data, follow=True)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp,
+            "Please enter a correct username and password. Note that password is case-sensitive.",
+        )
+
     def test_login_redirect(self):
         data = {
             "next": f"/org/{self.org_a.id}",

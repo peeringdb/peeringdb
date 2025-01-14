@@ -28,7 +28,9 @@ from peeringdb_server.models import (
     Network,
     NetworkIXLan,
     Organization,
+    OrganizationAPIKey,
     User,
+    UserAPIKey,
 )
 
 from .util import ClientCase
@@ -80,6 +82,14 @@ class TestImportPreview(ClientCase):
         )
 
         cls.org.admin_usergroup.user_set.add(cls.admin_user)
+
+        cls.api_key, cls.key = UserAPIKey.objects.create_key(
+            name="Test API Key", user=cls.admin_user
+        )
+
+        cls.org_api_key, cls.org_key = OrganizationAPIKey.objects.create_key(
+            name="Test Org API Key", org=cls.org, email="test@example.com"
+        )
 
     def test_import_preview_net(self):
         data_ixf_preview_net = pytest_filedata.get_data("data_ixf_preview_net")[
@@ -191,3 +201,41 @@ class TestImportPreview(ClientCase):
 
         response = view_import_net_ixf_preview(request, self.net.id)
         assert response.status_code == 403
+
+    def test_import_preview_api_key_auth(self):
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.META["HTTP_AUTHORIZATION"] = f"Api-Key {self.key}"
+
+        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+
+        print(response.content)
+
+        assert response.status_code == 200
+        assert json.loads(response.content)["errors"] == [
+            "IX-F import url not specified"
+        ]
+
+    def test_import_preview_invalid_api_key(self):
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.META["HTTP_AUTHORIZATION"] = "Api-Key invalid_key"
+
+        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+
+        print(response.content)
+
+        assert response.status_code == 403
+        assert json.loads(response.content)["non_field_errors"] == ["Invalid API key"]
+
+    def test_import_preview_valid_org_api_key(self):
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.META["HTTP_AUTHORIZATION"] = f"Api-Key {self.org_api_key}"
+
+        request.org = self.org
+        response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+
+        print(response.content)
+
+        assert response.status_code == 200
+        assert json.loads(response.content)["errors"] == [
+            "IX-F import url not specified"
+        ]

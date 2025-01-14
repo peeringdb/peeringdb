@@ -1,4 +1,4 @@
-Generated from serializers.py on 2024-11-12 18:19:35.039193
+Generated from serializers.py on 2025-01-14 18:57:08.992842
 
 # peeringdb_server.serializers
 
@@ -304,6 +304,13 @@ a address suggestion should be provided to the user.
 When updating a geo-enabled object,
 update the model first
 and then normalize the geofields.
+
+---
+#### validate_floor
+`def validate_floor(self, floor)`
+
+As per #1482 the floor field is being deprecated
+and only empty values are allowed.
 
 ---
 

@@ -5,6 +5,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth import get_user
 from django.contrib.auth.models import AnonymousUser, Group
+from django.core.exceptions import ValidationError
 from django.test import Client, RequestFactory, TestCase
 from django_grainy.models import GroupPermission, UserPermission
 
@@ -112,6 +113,41 @@ class TestFacilityView(ViewTestCase):
     def test_view(self):
         self.run_view_test("fac")
 
+    def test_deprecated_floor_field(self):
+        """
+        Test that the deprecated floor field is not shown if
+        empty and shown if set
+        """
+
+        c = Client()
+        c.login(username="user_a", password="user_a")
+        resp = c.get("/fac/%d" % self.fac.id)
+        content = resp.content.decode("utf-8")
+
+        fac = self.fac
+
+        assert not fac.floor
+        assert "Floor" not in content
+
+        fac.floor = "1st"
+        fac.save()
+
+        resp = c.get("/fac/%d" % self.fac.id)
+        content = resp.content.decode("utf-8")
+
+        assert "Floor" in content
+
+        # test that calling clean raises a validation error if the field is set
+
+        with pytest.raises(ValidationError):
+            fac.clean()
+
+        # set field to empty string and test that no validation error is raised
+
+        fac.floor = ""
+        fac.clean()
+        fac.save()
+
 
 class TestCarrieriew(ViewTestCase):
     def test_view(self):
@@ -126,6 +162,41 @@ class TestCampusView(ViewTestCase):
 class TestOrgView(ViewTestCase):
     def test_view(self):
         self.run_view_test("org")
+
+    def test_deprecated_floor_field(self):
+        """
+        Test that the deprecated floor field is not shown if
+        empty and shown if set
+        """
+
+        c = Client()
+        c.login(username="user_a", password="user_a")
+        resp = c.get("/org/%d" % self.org.id)
+        content = resp.content.decode("utf-8")
+
+        org = self.org
+
+        assert not org.floor
+        assert "Floor" not in content
+
+        org.floor = "1st"
+        org.save()
+
+        resp = c.get("/org/%d" % self.org.id)
+        content = resp.content.decode("utf-8")
+
+        assert "Floor" in content
+
+        # test that calling clean raises a validation error if the field is set
+
+        with pytest.raises(ValidationError):
+            org.clean()
+
+        # set field to empty string and test that no validation error is raised
+
+        org.floor = ""
+        org.clean()
+        org.save()
 
 
 class TestNetworkView(ViewTestCase):

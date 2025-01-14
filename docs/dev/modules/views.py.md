@@ -1,4 +1,4 @@
-Generated from views.py on 2024-11-12 18:19:35.039193
+Generated from views.py on 2025-01-14 18:57:08.992842
 
 # peeringdb_server.views
 
@@ -27,10 +27,37 @@ This is currently hard coded to return 00:00Z for the
 next Sunday.
 
 ---
+## build_template_environment
+`def build_template_environment(result, geo, version, request, q)`
+
+Constructs the environment dictionary for rendering the template.
+
+Args:
+    result: The search results.
+    geo: The geographical search parameters.
+    version: The version of the search functionality.
+    q: Search query string
+
+Returns:
+    dict: The environment variables for the template.
+
+---
 ## cancel_affiliation_request
 `def cancel_affiliation_request(request, uoar_id)`
 
 Cancel a user's affiliation request.
+
+---
+## combine_search_results
+`def combine_search_results(result)`
+
+Combines all search results into a single list.
+
+Args:
+    result: Dictionary containing search results by category
+
+Returns:
+    list: Combined search results
 
 ---
 ## export_permissions
@@ -47,11 +74,48 @@ Return dict of permission bools for the specified user and entity
 to be used in template context.
 
 ---
+## extract_query
+`def extract_query(request, version)`
+
+Extracts the query and geographical parameters from the request.
+
+Args:
+    request: The HTTP request object.
+    version: The version of the search functionality.
+
+Returns:
+    tuple: (query list, geo dictionary, original query string)
+
+---
 ## field_help
 `def field_help(model, field)`
 
 Helper function return help_text of a model
 field.
+
+---
+## get_page_range
+`def get_page_range(paginator, current_page, show_pages=5)`
+
+Calculate which page numbers to show in pagination.
+Args:
+paginator: The paginator instance
+current_page: Current page number
+show_pages: Number of pages to show on each side of current page
+Returns:
+list: Page numbers to display
+
+---
+## handle_asn_query
+`def handle_asn_query(q, version)`
+
+Checks if the query is for a direct ASN or AS and handles redirection.
+
+Args:
+    q: The list of query terms.
+
+Returns:
+    HttpResponseRedirect or None
 
 ---
 ## handle_city_country_search
@@ -62,11 +126,31 @@ Handles city and country search and updates the geo dictionary.
 This will send of a request to google maps to geocode the city and set the
 lat and long to `geo`. The distance is set to 50km.
 
+Args:
+    list_of_words: The list of words from the search query.
+    idx: The index of the "near" or "in" keyword.
+    q: The original list of queries.
+    query_idx: The index of the current query in the list.
+    geo: A dictionary to hold geographical search parameters.
+
+Returns:
+    dict[str, Union[str, float]]: Updated geo dictionary.
+
 ---
 ## handle_coordinate_search
 `def handle_coordinate_search(list_of_words, idx, q, query_idx, geo)`
 
 Handles coordinate search and updates the geo dictionary.
+
+Args:
+    list_of_words: The list of words from the search query.
+    idx: The index of the "near" keyword.
+    q: The original list of queries.
+    query_idx: The index of the current query in the list.
+    geo: A dictionary to hold geographical search parameters.
+
+Returns:
+    dict[str, Union[str, float]]: Updated geo dictionary.
 
 ---
 ## handle_proximity_entity_search
@@ -77,6 +161,31 @@ Handles proximity entity search and updates the geo dictionary.
 Will search for an entity (fac, org etc.) by name and return its lat/lng
 to `geo` if found. The distance is set to 20km.
 
+Args:
+    list_of_words: The list of words from the search query.
+    idx: The index of the "near" keyword.
+    q: The original list of queries.
+    query_idx: The index of the current query in the list.
+    geo: A dictionary to hold geographical search parameters.
+
+Returns:
+    dict[str, Union[str, float]]: Updated geo dictionary.
+
+---
+## perform_search
+`def perform_search(q, geo, version, original_query)`
+
+Executes the search based on the query and version.
+
+Args:
+    q: The list of query terms.
+    geo: The geographical search parameters.
+    version: The version of the search functionality.
+    original_query: The original search query string.
+
+Returns:
+    dict: Search results.
+
 ---
 ## process_in_search
 `def process_in_search(q, geo)`
@@ -85,6 +194,13 @@ Handles "IN" search patterns.
 Extracts and processes the "IN" search patterns from the query string
 and updates the geo dictionary which includes the geographical search parameters.
 
+Args:
+    q: The list of query terms.
+    geo: A dictionary to hold geographical search parameters.
+
+Returns:
+    dict[str, Union[str, float]]: Updated geo dictionary.
+
 ---
 ## process_near_search
 `def process_near_search(q, geo)`
@@ -92,6 +208,13 @@ and updates the geo dictionary which includes the geographical search parameters
 Handles "NEAR" search patterns.
 Extracts and processes the "NEAR" search patterns from the query string
 and updates the geo dictionary which includes the geographical search parameters.
+
+Args:
+    q: The list of query terms.
+    geo: A dictionary to hold geographical search parameters.
+
+Returns:
+    dict[str, Union[str, float]]: Updated geo dictionary.
 
 ---
 ## profile_add_email
@@ -117,7 +240,14 @@ contact point for peeringdb
 `def render_search_result(request, version=2)`
 
 Triggered by hitting enter on the main search bar.
-Renders a search result page.
+Renders a search result page based on the query provided.
+
+Args:
+    request: The HTTP request object containing the search query.
+    version: The version of the search functionality to use (default is 2).
+
+Returns:
+    HttpResponse: The rendered search result page.
 
 ---
 ## request_api_search
@@ -206,6 +336,12 @@ Performs a simple database version query
 Landing page view.
 
 ---
+## view_name_change
+`def view_name_change(request)`
+
+Allows a user to change their first name and last name
+
+---
 ## view_network
 `def view_network(request, id)`
 
@@ -228,6 +364,12 @@ View current partners.
 `def view_password_reset(request)`
 
 Password reset initiation view.
+
+---
+## view_profile_name_change
+`def view_profile_name_change(request)`
+
+Renders the name change form on the profile page.
 
 ---
 ## view_registration
@@ -505,6 +647,12 @@ challenge device for one time passwords.
 
 Return an EmailDevice instance for the requesting user
 which can be used for one time passwords.
+
+---
+#### get_form
+`def get_form(self, *args, **kwargs)`
+
+Returns the form for the step
 
 ---
 #### get_form_kwargs

@@ -9,6 +9,7 @@ import googlemaps
 import requests
 import structlog
 import unidecode
+from django.conf import settings
 from django.core.cache import caches
 from django.utils.translation import gettext_lazy as _
 from geopy.distance import geodesic
@@ -72,9 +73,24 @@ class GoogleMaps:
             or "subpremise" in result[0]["types"]
         )
 
-        is_city = "locality" in result[0]["types"]
-
-        is_state = "administrative_area_level_1" in result[0]["types"]
+        if country in settings.GEO_COUNTRIES_WITH_STATES:
+            # countries with states (US, CA, etc.)
+            is_city = "locality" in result[0]["types"]
+            is_state = "administrative_area_level_1" in result[0]["types"]
+        elif country in settings.GEO_SOVEREIGN_MICROSTATES:
+            # country-states where city and country are the same
+            is_city = (
+                "locality" in result[0]["types"] or "country" in result[0]["types"]
+            )
+            is_state = False
+        else:
+            # everything else checks for either locality or admin area level 1
+            # to find a city match
+            is_city = (
+                "locality" in result[0]["types"]
+                or "administrative_area_level_1" in result[0]["types"]
+            )
+            is_state = False
 
         is_country = "country" in result[0]["types"]
 

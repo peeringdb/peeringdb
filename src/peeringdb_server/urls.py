@@ -83,6 +83,7 @@ from peeringdb_server.views import (
     view_healthcheck,
     view_index,
     view_maintenance,
+    view_name_change,
     view_network,
     view_network_by_asn,
     view_network_by_query,
@@ -130,6 +131,7 @@ urlpatterns = [
     re_path(r"^reset-password$", view_password_reset, name="reset-password"),
     re_path(r"^change-password$", view_password_change),
     re_path(r"^change-username$", view_username_change),
+    re_path(r"^change-name", view_name_change, name="change-name"),
     re_path(r"^set-user-locale$", view_set_user_locale),
     re_path(
         r"^username-retrieve/initiate$",

@@ -122,6 +122,19 @@ class UsernameChangeForm(forms.Form):
         return username
 
 
+class NameChangeForm(forms.Form):
+    first_name = forms.CharField(label=_("First Name"), required=True)
+    last_name = forms.CharField(label=_("Last Name"), required=True)
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get("first_name")
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data.get("last_name")
+        return last_name
+
+
 class PasswordResetForm(forms.Form):
     email = forms.EmailField()
 

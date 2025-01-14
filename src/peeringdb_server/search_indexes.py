@@ -8,6 +8,7 @@ from haystack import indexes
 
 from peeringdb_server.models import (
     Campus,
+    Carrier,
     Facility,
     InternetExchange,
     IXLanPrefix,
@@ -127,6 +128,11 @@ class OrganizationIndex(MainEntity, indexes.Indexable):
 class CampusIndex(MainEntity, indexes.Indexable):
     def get_model(self):
         return Campus
+
+
+class CarrierIndex(MainEntity, indexes.Indexable):
+    def get_model(self):
+        return Carrier
 
 
 class InternetExchangeIndex(MainEntity, indexes.Indexable):

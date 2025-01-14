@@ -610,6 +610,8 @@ class ModelViewSet(viewsets.ModelViewSet):
                     filters["%s_id" % k] = v
                 elif intyp == "DateTimeField" or intyp == "DateField":
                     filters["%s__startswith" % k] = v
+                elif intyp == "BooleanField":
+                    filters[k] = v.lower() == "true" or v == "1"
                 else:
                     filters["%s__iexact" % k] = v
 

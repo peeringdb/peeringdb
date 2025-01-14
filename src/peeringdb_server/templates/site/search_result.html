@@ -53,11 +53,94 @@
     {% endwith %}
     </p>
 {% endif %}
+{% if as_suggestion %}
+    <br>
+    {% with net=as_suggestion %}
+    {% trans "Are you searching for" %} <a href="/net/{{ net.id }}">AS{{ net.extra.asn }}</a>?
+    {% endwith %}
+{% endif %}
 </div>
 
 {% endif %}
 
-<div class="search-result">
+<div class="text-right">
+  <button id="search-change-view" class="btn btn-secondary">
+    <span id="search-toggle-text"
+      data-list-view="{% trans 'Switch to List View' %}"
+      data-category-view="{% trans 'Switch to Category View' %}">
+      {% trans "Switch to Category View" %}
+    </span>
+  </button>
+</div>
+
+<div id="search-list-view" class="search-result mt-3" style="display: none;">
+  <div class="mb-3">
+    {% trans "About" %} {{ total_results }} {% trans "results" %}
+  </div>
+
+  {% for result in combined_results %}
+  <div class="mb-4">
+    <h4>
+      <a href="/{{ result.ref_tag }}/{{ result.id }}">{{ result.name }}{% if search_version == 2 %}{% if result.extra.asn %} ({{ result.extra.asn }}){% endif %}{% endif %}</a>
+      {% if result.sponsorship %}
+      <a href="/sponsors" class="sponsor {{ result.sponsorship.css }}">{{ result.sponsorship.label }} {% trans "sponsor" %}</a>
+      {% endif %}
+    </h4>
+    {% if result.sub_name %}<div class="highlight">{{ result.sub_name }}</div>{% endif %}
+    <div class="text-success">
+      {{ result.ref_tag|obj_type }}
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if combined_results.paginator.num_pages > 1 %}
+  <nav aria-label="Search results pages">
+      <ul class="pagination justify-content-center">
+          {% if combined_results.has_previous %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.previous_page_number }}">Previous</a>
+          </li>
+          {% endif %}
+
+          {% if visible_page_range.0 > 1 %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">1</a>
+          </li>
+          {% if visible_page_range.0 > 2 %}
+          <li class="page-item disabled">
+              <span class="page-link">...</span>
+          </li>
+          {% endif %}
+          {% endif %}
+
+          {% for num in visible_page_range %}
+          <li class="page-item {% if combined_results.number == num %}active{% endif %}">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+          </li>
+          {% endfor %}
+
+          {% if visible_page_range|last < combined_results.paginator.num_pages %}
+          {% if visible_page_range|last < combined_results.paginator.num_pages|add:"-1" %}
+          <li class="page-item disabled">
+              <span class="page-link">...</span>
+          </li>
+          {% endif %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.paginator.num_pages }}">{{ combined_results.paginator.num_pages }}</a>
+          </li>
+          {% endif %}
+
+          {% if combined_results.has_next %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.next_page_number }}">Next</a>
+          </li>
+          {% endif %}
+      </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<div id="search-category-view" class="search-result">
   <div class="row">
     <div class="col-md-3 col-sm-12 col-12">
       <div class="view_title">{% trans "Exchanges" %} ({{ count_ixp }})</div>
