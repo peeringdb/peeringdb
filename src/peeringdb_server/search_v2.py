@@ -7,6 +7,8 @@ IPv6 matching. It includes functionality to prioritize exact and "OR"
 term matches and organizes results alphabetically.
 """
 
+import copy
+import math
 import re
 from typing import Union
 
@@ -392,29 +394,17 @@ def construct_query_body(
 
     if geo:
         filters = []
-        is_network_search = False
-        try:
-            if clean_term == "net":
-                is_network_search = True
-        except Exception:
-            pass
-
         geo_filter = build_geo_filter(geo)
         if geo_filter:
             filters.append(geo_filter)
 
-        if not is_network_search or (is_network_search and not geo.get("location")):
-            if geo.get("country"):
-                country_filter = {"term": {"country.raw": geo["country"]}}
-                filters.append(country_filter)
+        if geo.get("country"):
+            country_filter = {"term": {"country.raw": geo["country"]}}
+            filters.append(country_filter)
 
-            if geo.get("state"):
-                state_filter = {"term": {"state.raw": geo["state"]}}
-                filters.append(state_filter)
-
-            if geo.get("location"):
-                city_filter = {"match": {"city": geo["location"]}}
-                filters.append(city_filter)
+        if geo.get("state"):
+            state_filter = {"term": {"state.raw": geo["state"]}}
+            filters.append(state_filter)
 
         if filters:
             body["query"]["bool"]["filter"] = (
@@ -447,6 +437,8 @@ def construct_query_body(
                     if not base_query.strip():
                         # if body["query"]["bool"]["must"]["query_string"]["query"] is empty, to avoid empty search result
                         del body["query"]["bool"]["must"]["query_string"]
+                elif not base_query.strip():
+                    body["query"]["bool"]["must"] = {"terms": {"_index": indexes}}
         except Exception:
             pass
 
@@ -639,13 +631,58 @@ def search_v2(
 
     body = construct_query_body(term, geo, indexes, ipv6_construct)
 
-    # Perform the search query
-    search_query = es.search(
-        index=indexes,
-        body=body,
-        size=settings.SEARCH_RESULTS_LIMIT,
-        request_timeout=settings.ES_REQUEST_TIMEOUT,
-    )
+    total_limit = settings.SEARCH_RESULTS_LIMIT
+    if geo and not term.strip():
+        # get counts for each index
+        index_counts = {}
+        for index in indexes:
+            index_body = copy.deepcopy(body)
+            if "query" in index_body and "bool" in index_body["query"]:
+                count_search = es.search(
+                    index=index,
+                    body=index_body,
+                    size=0,
+                    request_timeout=settings.ES_REQUEST_TIMEOUT,
+                )
+                count = count_search["hits"]["total"]["value"]
+                if count > 0:
+                    index_counts[index] = count
+
+        # Sort indexes by count
+        sorted_indexes = sorted(index_counts.items(), key=lambda x: x[1])
+
+        results = []
+        remaining_slots = total_limit
+
+        # Process indexes from smallest to largest
+        for index, count in sorted_indexes:
+            index_body = copy.deepcopy(body)
+
+            # If this index's count is less than remaining_slots/remaining_indexes,
+            # take all its results. Otherwise, take a fair share.
+            remaining_indexes = len([i for i, c in sorted_indexes if c >= count])
+            fair_share = math.ceil(remaining_slots / remaining_indexes)
+
+            size_to_take = min(count, fair_share)
+            if size_to_take > 0:
+                index_search = es.search(
+                    index=index,
+                    body=index_body,
+                    size=size_to_take,
+                    request_timeout=settings.ES_REQUEST_TIMEOUT,
+                )
+                results.extend(index_search["hits"]["hits"])
+                remaining_slots -= size_to_take
+
+        search_query = {"hits": {"hits": results, "total": {"value": len(results)}}}
+    else:
+        # Perform the search query
+        search_query = es.search(
+            index=indexes,
+            body=body,
+            size=total_limit,
+            request_timeout=settings.ES_REQUEST_TIMEOUT,
+        )
 
     # Process and filter the search results
     search_results = process_search_results(

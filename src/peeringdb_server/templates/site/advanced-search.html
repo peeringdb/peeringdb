@@ -278,6 +278,11 @@
             }
           }
 
+          // handle fac, org and ix presence filters
+          if (name === "ix" || name === "not_ix" || name === "fac" || name === "not_fac" || name === "org" || name === "not_org") {
+            value = nameElement.data('edit-value');
+          }
+
           // Handle empty values and the default value for traffic capacity
           if (value !== "" && value !== "Gbps") {
             // Handle array values (for multi-selects)
@@ -288,6 +293,26 @@
             } else {
               params += `${encodeURIComponent(name)}=${encodeURIComponent(value)}&`;
             }
+          }
+        });
+
+        // pass through existing url params
+        // these elements don't have standard input fields and
+        // can be passed through as is
+        const passThrough = [
+          // network presence (any)
+          "net__in",
+          // network presence (all)
+          "all_net",
+          // network presence (none)
+          "not_net"
+        ];
+
+        let currentUrlParams = new URLSearchParams(window.location.search);
+
+        passThrough.forEach(param => {
+          if (currentUrlParams.has(param)) {
+            params += `${param}=${currentUrlParams.get(param)}&`;
           }
         });
 
