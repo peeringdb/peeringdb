@@ -444,7 +444,6 @@ class SearchV2TestCase(TestCase):
                             }
                         },
                         {"term": {"country.raw": "US"}},
-                        {"match": {"city": "Los Angeles"}},
                     ],
                 }
             },
@@ -455,7 +454,9 @@ class SearchV2TestCase(TestCase):
         self.assertEqual(result, expected)
 
         # test exception handling
-        result = construct_query_body("", valid_geo, self.indexes, ipv6_construct=False)
+        result = construct_query_body(
+            "not indexes", valid_geo, self.indexes, ipv6_construct=False
+        )
         expected = {
             "query": {
                 "bool": {
@@ -466,7 +467,7 @@ class SearchV2TestCase(TestCase):
                                     {
                                         "match_phrase": {
                                             "name": {
-                                                "query": "",
+                                                "query": "not indexes",
                                                 "boost": 10.0,
                                             }
                                         }
@@ -474,14 +475,14 @@ class SearchV2TestCase(TestCase):
                                     {
                                         "match_phrase_prefix": {
                                             "name": {
-                                                "query": "",
+                                                "query": "not indexes",
                                                 "boost": 5.0,
                                             }
                                         }
                                     },
                                     {
                                         "query_string": {
-                                            "query": "",
+                                            "query": "not indexes",
                                             "fields": ["name"],
                                             "boost": 2.0,
                                         }
@@ -502,7 +503,36 @@ class SearchV2TestCase(TestCase):
                             }
                         },
                         {"term": {"country.raw": "US"}},
-                        {"match": {"city": "Los Angeles"}},
+                    ],
+                }
+            },
+            "explain": True,
+            "_source": True,
+            "sort": ["_score"],
+        }
+        self.assertEqual(result, expected)
+
+        # test location only
+        result = construct_query_body("", valid_geo, self.indexes, ipv6_construct=False)
+        expected = {
+            "query": {
+                "bool": {
+                    "must": {
+                        "terms": {
+                            "_index": ["fac", "ix", "net", "org", "campus", "carrier"]
+                        }
+                    },
+                    "filter": [
+                        {
+                            "geo_distance": {
+                                "distance": "84km",
+                                "geocode_coordinates": {
+                                    "lat": 34.0549076,
+                                    "lon": -118.242643,
+                                },
+                            }
+                        },
+                        {"term": {"country.raw": "US"}},
                     ],
                 }
             },

@@ -3349,6 +3349,7 @@ def process_near_search(
         dict[str, Union[str, float]]: Updated geo dictionary.
     """
     for idx, query in enumerate(q):
+        query = re.sub(r",\s*", ",", query)
         list_of_words = query.split()
 
         near_idxs = [i for i, w in enumerate(list_of_words) if w.lower() == "near"]
@@ -3379,6 +3380,7 @@ def process_in_search(
         dict[str, Union[str, float]]: Updated geo dictionary.
     """
     for idx, query in enumerate(q):
+        query = re.sub(r",\s*", ",", query)
         list_of_words = query.split()
 
         in_idxs = [i for i, w in enumerate(list_of_words) if w.lower() == "in"]
