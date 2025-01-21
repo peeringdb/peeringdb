@@ -666,6 +666,10 @@ wheels = [
 name = "django-hashers-passlib"
 version = "1.0.0"
 source = { git = "https://github.com/mathiasertl/django-hashers-passlib.git#be7900109778600927380e01d4ec59d04d0734a8" }
+dependencies = [
+    { name = "django" },
+    { name = "passlib" },
+]
 
 [[package]]
 name = "django-haystack"
@@ -1563,7 +1567,7 @@ wheels = [
 
 [[package]]
 name = "peeringdb-server"
-version = "2.63.0"
+version = "2.64.0b1"
 source = { virtual = "." }
 dependencies = [
     { name = "bleach" },
