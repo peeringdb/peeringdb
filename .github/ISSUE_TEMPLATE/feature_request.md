@@ -30,6 +30,9 @@ A clear and concise description of any alternative solutions or features you've 
 **Could this feature request need support from the Admin Committee?**
 Consider if an administrator might need to provide assistance at any point.
 
+**Deployment approach**
+Does this feature require iteration over multiple releases? If so, why?
+
 **What is the proposed priority?**
 simply urgent/not
 
