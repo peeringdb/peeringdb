@@ -1,3 +1,10 @@
 {% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="{{STATIC_URL}}peeringdb.admin.css" type="text/css" />
+{% endblock %}
+
 {% block js_remove_url %}
 {% endblock %}
