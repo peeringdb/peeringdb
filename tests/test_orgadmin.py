@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 import pytest
 from django.conf import settings
@@ -667,17 +668,31 @@ class OrgAdminTests(TestCase):
         totpdevice = TOTPDevice.objects.create(user=self.user_c, name="default")
         totpdevice.save()
 
-        # test approval
-        resp = json.loads(org_admin.uoar_approve(request).content)
-        self.assertEqual(
-            {
-                "status": "ok",
-                "full_name": self.user_c.full_name,
-                "id": self.user_c.id,
-                "email": self.user_c.email,
-            },
-            resp,
+        admin = models.User.objects.create(
+            username="admintest",
+            first_name="test",
+            last_name="admin",
         )
+        self.org.admin_usergroup.user_set.add(admin)
+
+        with patch.object(models.User, "email_user") as mock_email_user:
+            # test approval
+            request.user = admin
+            resp = json.loads(org_admin.uoar_approve(request).content)
+            self.assertEqual(
+                {
+                    "status": "ok",
+                    "full_name": self.user_c.full_name,
+                    "id": self.user_c.id,
+                    "email": self.user_c.email,
+                },
+                resp,
+            )
+
+            mock_email_user.assert_called_once()
+            # get the email content
+            email_subject, email_body = mock_email_user.call_args[0][0:2]
+            self.assertIn(admin.full_name, email_body)
 
         # check that user is now a member of the org
         self.assertEqual(

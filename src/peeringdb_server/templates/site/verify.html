@@ -124,7 +124,7 @@ $('#form-delete-account').each(function(idx) {
 $('#form-delete-affiliate').each(function(idx) {
     $(this).find('.btn-danger').click(function(e) {
         e.preventDefault(); // Prevent the default click behavior
-        var OrgID = $(`select[data-edit-data="my_organizations"]`).val()
+        var OrgID = $(this).parent().find('select[data-edit-data="my_organizations"]').val();
         window.location.href = "/remove-affiliation?org="+OrgID;
     });
 });

@@ -83,3 +83,30 @@ div.commandlinetool fieldset.disabled input,
 div.commandlinetool fieldset.disabled select {
   background-color: transparent;
 }
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+    background-image: none !important;
+    background-position: initial;
+    background-repeat: initial;
+}
+
+.ui-datepicker .ui-datepicker-prev:before {
+    font-family: 'Material Icons';
+    content: "chevron_left";
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+}
+
+.ui-datepicker .ui-datepicker-next:before {
+    font-family: 'Material Icons';
+    content: "chevron_right";
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+}

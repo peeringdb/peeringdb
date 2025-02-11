@@ -852,7 +852,7 @@ class NetworkIXLanForm(StatusForm):
 class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     model = NetworkIXLan
     extra = 0
-    raw_id_fields = ("ixlan", "network")
+    raw_id_fields = ("ixlan", "network", "net_side", "ix_side")
     form = NetworkIXLanForm
 
 

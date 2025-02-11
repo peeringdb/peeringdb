@@ -1,6 +1,6 @@
 {% load i18n %}
 
-{% blocktrans with u_full_name=uoar.user.full_name o_name=uoar.org.name admin_full_name=user.full_name trimmed %}
+{% blocktrans with u_full_name=uoar.user.full_name o_name=uoar.org.name admin_full_name=user trimmed %}
 {{ u_full_name }}'s affiliation request to {{ o_name }} has been APPROVED by {{ admin_full_name }}.
 {% endblocktrans %}
 
