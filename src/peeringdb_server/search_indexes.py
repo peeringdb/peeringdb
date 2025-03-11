@@ -137,6 +137,7 @@ class CarrierIndex(MainEntity, indexes.Indexable):
 
 class InternetExchangeIndex(MainEntity, indexes.Indexable):
     org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+    fac_count = indexes.IntegerField(indexed=True, model_attr="fac_count")
 
     class Meta:
         relations = ["org"]

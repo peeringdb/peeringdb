@@ -524,7 +524,7 @@ class Importer:
 
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
-            self.notify_error(data.get("pdb_error"))
+            self.notify_error(data.get("pdb_error"), data.get("schema_email", False))
             self.log_error(data.get("pdb_error"), save=save)
             return False
 
@@ -547,7 +547,7 @@ class Importer:
             # other queued notifications
             #
             # transactions are atomic and will be rolled back
-            self.notify_error(f"{exc}")
+            self.notify_error(f"{exc}", data.get("schema_email", False))
             self.log_error(f"{exc}", save=save)
             self.notifications = []
             return False
@@ -590,7 +590,9 @@ class Importer:
         self.archive()
 
         if self.invalid_ip_errors:
-            self.notify_error("\n".join(self.invalid_ip_errors))
+            self.notify_error(
+                "\n".join(self.invalid_ip_errors), data.get("schema_email", False)
+            )
 
         if save:
             # update exchange's ixf fields
@@ -2108,7 +2110,7 @@ class Importer:
 
     @reversion.create_revision()
     @transaction.atomic()
-    def notify_error(self, error):
+    def notify_error(self, error, schema_email=False):
         """
         Notifie the exchange and AC of any errors that
         were encountered when the IX-F data was
@@ -2122,12 +2124,16 @@ class Importer:
 
         now = datetime.datetime.now(datetime.timezone.utc)
         notified = self.ixlan.ixf_ixp_import_error_notified
-        self.ixlan.ixf_ixp_import_error
+        previous_error = self.ixlan.ixf_ixp_import_error
 
-        if notified:
-            diff = (now - notified).total_seconds() / 3600
-            if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
-                return
+        if previous_error and error:
+            clean_prev = set(previous_error.strip().split("\n"))
+            clean_error = set(error.strip().split("\n"))
+            if clean_prev == clean_error:
+                if notified:
+                    diff = (now - notified).total_seconds() / 3600
+                    if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
+                        return
 
         self.ixlan.ixf_ixp_import_error_notified = now
         self.ixlan.ixf_ixp_import_error = error
@@ -2146,7 +2152,10 @@ class Importer:
         # AC does not want ticket here as per #794
         # self._ticket(ixf_member_data, subject, message)
 
-        if ixf_member_data.ix_contacts:
+        if schema_email:
+            schema_recipients = [schema_email]
+            self._email(subject, message, schema_recipients, ix=ixf_member_data.ix)
+        elif ixf_member_data.ix_contacts:
             self._email(
                 subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
             )

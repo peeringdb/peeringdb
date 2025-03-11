@@ -16,6 +16,7 @@ The peeringdb REST API is implemented through django-rest-framework.
 
 import datetime
 import importlib
+import logging
 import re
 import time
 import traceback
@@ -28,26 +29,32 @@ from django.conf import settings as dj_settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
 from django.db import connection, transaction
-from django.db.models import DateTimeField
-from django.shortcuts import redirect
+from django.db.models import DateTimeField, Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import re_path
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
 from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
 from django_security_keys.models import SecurityKeyDevice
-from rest_framework import permissions, routers, status, viewsets
+from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
+from rest_framework import permissions, routers, serializers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
+from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
+from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
     UTC,
@@ -59,8 +66,10 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     OrganizationAPIKey,
+    OrganizationAPIPermission,
     ParentStatusException,
     ProtectedAction,
+    User,
     UserAPIKey,
 )
 from peeringdb_server.permissions import (
@@ -69,18 +78,23 @@ from peeringdb_server.permissions import (
     check_permissions_from_request,
     get_org_key_from_request,
     get_permission_holder_from_request,
+    get_user_from_request,
     get_user_key_from_request,
 )
-from peeringdb_server.rest_throttles import IXFImportThrottle
+from peeringdb_server.rest_throttles import IXFImportThrottle, OrganizationUsersThrottle
 from peeringdb_server.search import make_name_search_query
 from peeringdb_server.serializers import (
     ASSetSerializer,
     FacilitySerializer,
     NetworkIXLanSerializer,
+    UserSerializer,
 )
 from peeringdb_server.util import coerce_ipaddr
+from peeringdb_server.views import extract_query, perform_search
 
 RATELIMITS = dj_settings.RATELIMITS
+
+logger = logging.getLogger(__name__)
 
 
 class DataException(ValueError):
@@ -680,6 +694,9 @@ class ModelViewSet(viewsets.ModelViewSet):
         else:
             qset = qset.filter(status__in=["ok", "pending"])
 
+        if hasattr(self, "apply_pre_slice_filters"):
+            qset = self.apply_pre_slice_filters(qset)
+
         is_specific_object_request = "pk" in self.kwargs
 
         if limit > 0:
@@ -1193,6 +1210,42 @@ class NetworkIXLanMixin:
         return check_permissions_from_request(request, source_obj, "c")
 
 
+class IXFilterMixin:
+    """Filter for hide ixs without facility"""
+
+    def apply_pre_slice_filters(self, qset):
+        auth_user = get_user_from_request(self.request)
+
+        if "hide_ix_no_fac" in self.request.GET:
+            hide_ix_no_fac = self.request.GET.get("hide_ix_no_fac")
+            should_hide = hide_ix_no_fac.lower() in ["true", "1"]
+        elif auth_user and not isinstance(auth_user, AnonymousUser):
+            should_hide = (
+                hasattr(auth_user, "hide_ixs_without_fac")
+                and auth_user.hide_ixs_without_fac
+            )
+        else:
+            should_hide = False
+
+        if not should_hide:
+            return qset
+
+        model_tag = self.model.handleref.tag
+        if model_tag == "ix":
+            qset = qset.filter(fac_count__gt=0)
+        elif model_tag == "ixlan":
+            qset = qset.filter(ix__fac_count__gt=0)
+        elif model_tag == "net":
+            qset = qset.filter(ix_count__gt=0)
+        elif model_tag == "netixlan":
+            qset = qset.filter(ixlan__ix__fac_count__gt=0)
+
+        return qset
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+
 # TODO: why are we doing the import like this??!
 pdb_serializers = importlib.import_module("peeringdb_server.serializers")
 router = RestRouter(trailing_slash=False)
@@ -1245,15 +1298,17 @@ CarrierFacilityViewSet = model_view_set(
     "CarrierFacility", mixins=(CarrierFacilityMixin,)
 )
 InternetExchangeViewSet = model_view_set(
-    "InternetExchange", mixins=(InternetExchangeMixin,)
+    "InternetExchange", mixins=(InternetExchangeMixin, IXFilterMixin)
 )
 InternetExchangeFacilityViewSet = model_view_set("InternetExchangeFacility")
-IXLanViewSet = model_view_set("IXLan", methods=["get", "put"])
+IXLanViewSet = model_view_set("IXLan", methods=["get", "put"], mixins=(IXFilterMixin,))
 IXLanPrefixViewSet = model_view_set("IXLanPrefix")
-NetworkViewSet = model_view_set("Network")
+NetworkViewSet = model_view_set("Network", mixins=(IXFilterMixin,))
 NetworkContactViewSet = model_view_set("NetworkContact")
 NetworkFacilityViewSet = model_view_set("NetworkFacility")
-NetworkIXLanViewSet = model_view_set("NetworkIXLan", mixins=(NetworkIXLanMixin,))
+NetworkIXLanViewSet = model_view_set(
+    "NetworkIXLan", mixins=(NetworkIXLanMixin, IXFilterMixin)
+)
 OrganizationViewSet = model_view_set("Organization")
 CampusViewSet = model_view_set("Campus", mixins=(CampusFacilityMixin,))
 
@@ -1365,9 +1420,403 @@ def view_self_entity(request, data_type):
         )
 
 
+class OrganizationUsersViewSet(GenericViewSet):
+    """
+    ViewSet for managing users within an organization.
+
+    This ViewSet provides endpoints for:
+    - Listing all users in an organization
+    - Adding new users to an organization
+    - Updating user roles within an organization
+    - Removing users from an organization
+
+    All operations require:
+    1. Valid user OR organization API keys
+    2. User must be an admin of the organization OR organization key that has specific permission
+    3. API key must be active (InactiveKeyBlock)
+
+    Rate Limits:
+    - All endpoints are rate-limited to 1 request per 1 second (OrganizationUsersThrottle)
+
+    Error Handling:
+    - Returns appropriate DRF's Response status codes (400, 403, 404, 429)
+    - Provides detailed error messages in response
+    """
+
+    serializer_class = UserSerializer
+    permission_classes = [InactiveKeyBlock]
+    throttle_classes = [OrganizationUsersThrottle]
+
+    def get_queryset(self):
+        """
+        Get the base queryset for organization users.
+        Returns all users that belong to the organization either as members or admins.
+        """
+        try:
+            org_id = self.kwargs.get("org_id")
+            organization = get_object_or_404(Organization, id=org_id, status="ok")
+
+            return User.objects.filter(
+                Q(groups=organization.usergroup)
+                | Q(groups=organization.admin_usergroup)
+            ).distinct()
+        except Organization.DoesNotExist:
+            logger.info(f"Organization not found: {org_id}")
+            raise
+        except Exception as e:
+            logger.error(f"Error getting organization users: {str(e)}", exc_info=True)
+            raise
+
+    def check_permissions_for_action(self, permission_type):
+        """
+        Check if the authenticated entity has permission to perform the requested action.
+
+        This function handles permission checking for both user API key authentication and
+        organization API key authentication:
+
+        1. For user API key authentication:
+            - Uses User.is_org_admin() to verify if the user is an admin of the organization
+            - Raises PermissionDenied if the user is not an admin
+
+        2. For organization API key authentication:
+            - Checks if the API key has the specific permission (read/write/update/delete)
+                on the 'peeringdb.organization.{org_id}.users' namespace
+            - Raises PermissionDenied if the API key lacks sufficient permissions
+
+        Parameters:
+        permission_type (int): The permission type constant to check against
+                            (PERM_READ, PERM_CREATE, PERM_UPDATE, PERM_DELETE)
+
+        Returns:
+        None
+
+        Raises:
+        PermissionDenied: If the authenticated entity lacks sufficient permissions
+        NotFound: If the organization does not exist
+        """
+        org_id = self.kwargs.get("org_id")
+        organization = get_object_or_404(Organization, id=org_id, status="ok")
+
+        permission_holder = get_permission_holder_from_request(self.request)
+
+        if isinstance(permission_holder, UserAPIKey):
+            user = permission_holder.user
+            if not user.is_org_admin(organization):
+                raise PermissionDenied("User is not an admin of this organization")
+            return
+
+        if isinstance(permission_holder, OrganizationAPIKey):
+            namespace = f"peeringdb.organization.{org_id}.users"
+            has_permission = False
+            try:
+                permission = OrganizationAPIPermission.objects.get(
+                    org_api_key=permission_holder, namespace=namespace
+                )
+                has_permission = (
+                    permission.permission & permission_type == permission_type
+                )
+            except OrganizationAPIPermission.DoesNotExist:
+                has_permission = False
+
+            if not has_permission:
+                raise PermissionDenied("Insufficient permissions for this operation")
+
+        else:
+            raise PermissionDenied("Invalid authentication")
+
+    def handle_exception(self, exc):
+        """Override to handle rate limit and other exceptions"""
+        if isinstance(exc, Ratelimited):
+            return Response(
+                {"detail": "Rate limit exceeded. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        return super().handle_exception(exc)
+
+    @action(detail=True, methods=["GET"])
+    def list_organization_users(self, request, org_id=None):
+        """
+        List all users associated with an organization
+        Requires 'read' permission on org.{id}.users namespace
+        """
+        try:
+            self.check_permissions_for_action(PERM_READ)
+
+            organization = get_object_or_404(Organization, id=org_id, status="ok")
+            users = self.get_queryset()
+
+            serializer = UserSerializer(
+                users, many=True, context={"organization": organization}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except PermissionDenied as e:
+            logger.error(
+                f"Permission denied list organization users: {str(e)}", exc_info=True
+            )
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            logger.error(
+                f"Error getting lists organization users: {str(e)}", exc_info=True
+            )
+            raise
+
+    @action(detail=True, methods=["POST"])
+    def add_organization_user(self, request, org_id=None):
+        """
+        Add a user to the organization
+        Requires 'create' permission on org.{id}.users namespace
+        """
+        try:
+            self.check_permissions_for_action(PERM_CREATE)
+
+            organization = get_object_or_404(Organization, id=org_id, status="ok")
+            user_email = request.data.get("user_email")
+
+            if not user_email:
+                return Response(
+                    {"detail": "user_email is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            existing_users = self.get_queryset()
+            if existing_users.filter(email=user_email).exists():
+                return Response(
+                    {"detail": "User is already in the organization"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user = get_object_or_404(User, email=user_email)
+
+            if not user.emailaddress_set.filter(
+                verified=True, email=user_email
+            ).exists():
+                return Response(
+                    {"detail": "User email is not verified"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer = UserSerializer(
+                data={"role": request.data.get("role", "member")}
+            )
+            if not serializer.is_valid():
+                return Response(
+                    {"detail": serializer.errors.get("role", ["Invalid role"])[0]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            role = serializer.validated_data["role"]
+
+            if role == "admin":
+                organization.admin_usergroup.user_set.add(user)
+            else:
+                organization.usergroup.user_set.add(user)
+
+            return Response(
+                UserSerializer(user, context={"organization": organization}).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        except PermissionDenied as e:
+            logger.error(
+                f"Permission denied add organization user: {str(e)}", exc_info=True
+            )
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            logger.error(f"Error adding organization user: {str(e)}", exc_info=True)
+            raise
+
+    @action(detail=True, methods=["PUT"])
+    def update_role_organization_user(self, request, org_id=None, user_id=None):
+        """
+        Update a user's role in the organization
+        Requires 'update' permission on org.{id}.users namespace
+        """
+        try:
+            self.check_permissions_for_action(PERM_UPDATE)
+
+            organization = get_object_or_404(Organization, id=org_id, status="ok")
+            role = request.data.get("role")
+
+            if not role:
+                return Response(
+                    {"detail": "role is required"}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer = UserSerializer(data={"role": role})
+            if not serializer.is_valid():
+                return Response(
+                    {"detail": serializer.errors.get("role", ["Invalid role"])[0]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            role = serializer.validated_data["role"]
+
+            existing_users = self.get_queryset()
+            user = existing_users.filter(id=user_id).first()
+
+            if not user:
+                return Response(
+                    {"detail": "User is not in the organization"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            organization.admin_usergroup.user_set.remove(user)
+            organization.usergroup.user_set.remove(user)
+
+            if role == "admin":
+                organization.admin_usergroup.user_set.add(user)
+            else:
+                organization.usergroup.user_set.add(user)
+
+            return Response(
+                UserSerializer(user, context={"organization": organization}).data,
+                status=status.HTTP_200_OK,
+            )
+
+        except PermissionDenied as e:
+            logger.error(
+                f"Permission denied update role organization user: {str(e)}",
+                exc_info=True,
+            )
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            logger.error(f"Error update organization user: {str(e)}", exc_info=True)
+            raise
+
+    @action(detail=True, methods=["DELETE"])
+    def remove_organization_user(self, request, org_id=None):
+        """
+        Remove a user from the organization
+        Requires 'delete' permission on org.{id}.users namespace
+        """
+        try:
+            self.check_permissions_for_action(PERM_DELETE)
+
+            organization = get_object_or_404(Organization, id=org_id, status="ok")
+            user_email = request.data.get("user_email")
+
+            if not user_email:
+                return Response(
+                    {"detail": "user_email is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            existing_users = self.get_queryset()
+            user = existing_users.filter(email=user_email).first()
+
+            if not user:
+                return Response(
+                    {"detail": "User is not in the organization"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            organization.admin_usergroup.user_set.remove(user)
+            organization.usergroup.user_set.remove(user)
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except PermissionDenied as e:
+            logger.error(
+                f"Permission denied remove organization user: {str(e)}", exc_info=True
+            )
+            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            logger.error(f"Error remove organization user: {str(e)}", exc_info=True)
+            raise
+
+
+def serialize_search_results(result: dict) -> dict:
+    """
+    Serialize search results into a consistent API response format.
+    Removes internal fields while preserving the structure.
+
+    Args:
+        result: Raw search results dictionary
+
+    Returns:
+        dict: Cleaned API response
+    """
+
+    def clean_entity(entity: dict) -> dict:
+        """Remove internal fields and format entity data"""
+        cleaned = {
+            "id": entity["id"],
+            "name": entity["name"],
+            "org_id": entity["org_id"],
+        }
+
+        if "asn" in entity.get("extra", {}):
+            cleaned["asn"] = entity["extra"]["asn"]
+
+        if entity.get("sub_name"):
+            cleaned["sub_name"] = entity["sub_name"]
+
+        return cleaned
+
+    return {
+        entity_type: [clean_entity(item) for item in items]
+        for entity_type, items in result.items()
+    }
+
+
+@enable_api_key_auth
+def search_api_view(request):
+    """
+    API endpoint for search functionality.
+    Supports the same query parameters as web search v2.
+    Requires API key authentication.
+    """
+    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+    if not auth_header:
+        return JsonResponse(
+            {
+                "error": "No API key provided. Please include an Authorization header with your API key."
+            },
+            status=401,
+        )
+
+    auth = auth_header.split()
+    if len(auth) != 2 or not auth[1].strip():
+        return JsonResponse({"error": "API key cannot be empty"}, status=401)
+
+    q, geo, original_query = extract_query(request, version=2)
+
+    if not q and not geo:
+        return JsonResponse({})
+
+    result = perform_search(
+        q, geo, version=2, original_query=original_query, user=request.user
+    )
+
+    response_data = serialize_search_results(result)
+
+    return JsonResponse(
+        response_data, json_dumps_params={"indent": 2, "ensure_ascii": False}
+    )
+
+
 # set here in case we want to add more urls later
 urlpatterns = [
     re_path("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
+    re_path(
+        r"^org/(?P<org_id>\d+)/users/?$",
+        OrganizationUsersViewSet.as_view({"get": "list_organization_users"}),
+        name="organization-users-list",
+    ),
+    re_path(
+        r"^org/(?P<org_id>\d+)/users/add/?$",
+        OrganizationUsersViewSet.as_view({"post": "add_organization_user"}),
+        name="organization-users-add",
+    ),
+    re_path(
+        r"^org/(?P<org_id>\d+)/users/(?P<user_id>\d+)/?$",
+        OrganizationUsersViewSet.as_view({"put": "update_role_organization_user"}),
+        name="organization-users-update-role",
+    ),
+    re_path(
+        r"^org/(?P<org_id>\d+)/users/remove/?$",
+        OrganizationUsersViewSet.as_view({"delete": "remove_organization_user"}),
+        name="organization-users-remove",
+    ),
+    re_path("search", search_api_view),
 ]
 rout_urls = router.urls
 urls = urlpatterns + rout_urls

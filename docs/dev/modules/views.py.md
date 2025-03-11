@@ -1,4 +1,4 @@
-Generated from views.py on 2025-02-11 10:26:48.481231
+Generated from views.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.views
 
@@ -173,7 +173,7 @@ Returns:
 
 ---
 ## perform_search
-`def perform_search(q, geo, version, original_query)`
+`def perform_search(q, geo, version, original_query, user)`
 
 Executes the search based on the query and version.
 

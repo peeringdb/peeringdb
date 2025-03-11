@@ -164,8 +164,8 @@ def validate_address_space(prefix):
 
 
 def validate_info_prefixes4(value):
-    if not value:
-        value = 0
+    if value is None or value == "":
+        return None
 
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))
@@ -185,8 +185,8 @@ def validate_info_prefixes4(value):
 
 
 def validate_info_prefixes6(value):
-    if not value:
-        value = 0
+    if value is None or value == "":
+        return None
 
     if value < 0:
         raise ValidationError(_("Negative value not allowed"))

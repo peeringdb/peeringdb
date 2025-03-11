@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2025-02-11 10:26:48.481231
+Generated from rest_throttles.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.rest_throttles
 
@@ -105,6 +105,34 @@ MelissaThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
 
 Rate limits requests that do a melissa lookup (#1124)
 
+
+## OrganizationUsersThrottle
+
+```
+OrganizationUsersThrottle(rest_framework.throttling.UserRateThrottle)
+```
+
+Limits the rate of API calls that may be made by a given user.
+
+The user id will be used as a unique cache key if the user is
+authenticated.  For anonymous requests, the IP address of the request will
+be used.
+
+
+### Methods
+
+#### \__init__
+`def __init__(self)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+#### get_rate
+`def get_rate(self)`
+
+Determine the string representation of the allowed request rate.
+
+---
 
 ## ResponseSizeThrottle
 

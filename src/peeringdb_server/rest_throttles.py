@@ -583,3 +583,19 @@ class WriteRateThrottle(throttling.UserRateThrottle):
             return f"throttle_{self.scope}_{request.user.pk}"
         else:
             return self.get_ident(request)
+
+
+class OrganizationUsersThrottle(throttling.UserRateThrottle):
+    scope = "organization_users_ops"
+    default_rate = "1/second"
+
+    def __init__(self):
+        super().__init__()
+        self.rate = self.get_rate()
+
+    def get_rate(self):
+        rate = EnvironmentSetting.get_setting_value("API_THROTTLE_ORGANIZATION_USERS")
+        if rate:
+            return rate
+        else:
+            return self.default_rate

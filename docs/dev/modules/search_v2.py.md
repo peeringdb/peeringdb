@@ -1,4 +1,4 @@
-Generated from search_v2.py on 2025-02-11 10:26:48.481231
+Generated from search_v2.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.search_v2
 
@@ -84,7 +84,7 @@ Returns:
 
 ---
 ## construct_query_body
-`def construct_query_body(term, geo, indexes, ipv6_construct)`
+`def construct_query_body(term, geo, indexes, ipv6_construct, user)`
 
 Constructs the Elasticsearch query body based on the search term and geo filter.
 
@@ -187,7 +187,7 @@ Returns:
 
 ---
 ## search_v2
-`def search_v2(term, geo={})`
+`def search_v2(term, geo={}, user=None)`
 
 Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
 

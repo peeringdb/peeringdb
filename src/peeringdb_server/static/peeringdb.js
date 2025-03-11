@@ -278,14 +278,6 @@ PeeringDB = {
     // Overwrite returned instance with the suggested data
     Object.assign(payload, response.meta.suggested_address);
 
-    // No need to have latitude or longitude
-    // in the payload since it will get
-    // geocoded again
-
-    delete payload.latitude;
-    delete payload.longitude;
-
-
     // Set up PUT request on click
     button.click(function(event){
       $("#view").editable("loading-shim", "show");
@@ -1928,11 +1920,36 @@ twentyc.editable.module.register(
       return row
     },
 
-    execute_update : function(trigger, container) {
+    execute_update: function(trigger, container) {
       var row = this.row(trigger);
-      row.editable("export", this.target.data);
-      this.target.execute("update", trigger, function(response) {
-      }.bind(this));
+
+      var currentKeyMode = row.find('[data-edit-name="passkey_login"]');
+      var currentStatus = currentKeyMode.text().trim();
+      var isAllowedLogin = currentStatus === "Allow login";
+
+      this.target.data = {
+          id: row.data("edit-id"),
+          passkey_login: !isAllowedLogin
+      };
+
+      this.target.execute("update-security-key", this.components.add, (response) => {
+          if (response.status === "ok") {
+              if (response.passkey_login) {
+                currentKeyMode.text("Allow login");
+                trigger.text("Disallow login");
+              } else {
+                currentKeyMode.text("Disallow login");
+                trigger.text("Allow login");
+              }
+          } else {
+              $("#errors-alert").html(`<div class="alert alert-danger">Update failed</div>`);
+          }
+          container.editable("loading-shim", "hide");
+      }, (error) => {
+          $("#errors-alert").html(`<div class="alert alert-danger">Update failed: ${error}</div>`);
+          container.editable("loading-shim", "hide");
+          console.error(error);
+      });
     },
 
     execute_remove : function(trigger, container) {
@@ -4581,3 +4598,232 @@ $(function() {
   // Clean up the early injection
   $("#view-state").remove();
 });
+
+/**
+ * Generates API query code snippets for different programming languages.
+ *
+ * - Retrieves the current search query from the URL.
+ * - Constructs an API URL for the search query.
+ * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
+ * - Populates the corresponding HTML elements with generated snippets.
+ */
+function generateCodeSnippets() {
+  const currentUrl = new URL(window.location.href);
+  const searchQuery = currentUrl.searchParams.get('q');
+  const apiBaseUrl = `${window.location.origin}/api/search`;
+  const apiUrl = `${apiBaseUrl}?q=${encodeURIComponent(searchQuery)}`;
+
+  const snippets = {
+    curl: `curl -H "Authorization: api-key $YOUR_API_KEY" "${apiUrl}"`,
+
+    python:
+`import requests
+headers = {
+  "Authorization": f"api-key {YOUR_API_KEY}"
+}
+response = requests.get("${apiUrl}", headers=headers)
+response.raise_for_status()
+data = response.json()`,
+
+    js:
+`fetch("${apiUrl}", {
+headers: {
+    "Authorization": \`api-key \${YOUR_API_KEY}\`
+  }
+})
+.then(response => {
+if (!response.ok) {
+    throw new Error('Network response was not ok: ' + response.status);
+}
+return response.json();
+})
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`,
+
+    go:
+`package main
+import (
+  "encoding/json"
+  "fmt"
+  "io"
+  "net/http"
+)
+func main() {
+  client := &http.Client{}
+  req, err := http.NewRequest("GET", "${apiUrl}", nil)
+  if err != nil {
+      panic(err)
+  }
+  req.Header.Add("Authorization", "api-key " + YOUR_API_KEY)
+  resp, err := client.Do(req)
+  if err != nil {
+      panic(err)
+  }
+  defer resp.Body.Close()
+
+  if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+      fmt.Printf("Request failed with status code: %d\\n", resp.StatusCode)
+      return
+  }
+
+  body, err := io.ReadAll(resp.Body)
+  if err != nil {
+      panic(err)
+  }
+
+  var data interface{}
+  if err := json.Unmarshal(body, &data); err != nil {
+      panic(err)
+  }
+  fmt.Println(data)
+}`,
+
+    ruby:
+`require 'net/http'
+require 'json'
+require 'uri'
+uri = URI('${apiUrl}')
+req = Net::HTTP::Get.new(uri)
+req['Authorization'] = "api-key #{YOUR_API_KEY}"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
+    http.request(req)
+end
+
+if response.is_a?(Net::HTTPSuccess)
+    data = JSON.parse(response.body)
+    puts data
+else
+    puts "Request failed with status: #{response.code}"
+    puts response.body
+end`,
+
+    php:
+`<?php
+$apiUrl = "${apiUrl}";
+$headers = array(
+    'Authorization: api-key ' . $YOUR_API_KEY
+);
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $apiUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+if ($httpCode >= 400) {
+    echo 'HTTP Error: ' . $httpCode . ' - ' . $response;
+} else {
+    $data = json_decode($response, true);
+    print_r($data);
+}
+curl_close($ch);
+?>`
+  };
+
+  document.getElementById('curl-output').textContent = snippets.curl;
+  document.getElementById('python-output').textContent = snippets.python;
+  document.getElementById('js-output').textContent = snippets.js;
+  document.getElementById('go-output').textContent = snippets.go;
+  document.getElementById('ruby-output').textContent = snippets.ruby;
+  document.getElementById('php-output').textContent = snippets.php;
+
+  initializeCopyButtons();
+}
+
+/**
+ * Initializes copy buttons for each code snippet.
+ *
+ * - Attaches event listeners to all elements with the `.copy-btn` class.
+ * - Retrieves the corresponding code snippet based on `data-code-id`.
+ * - Calls `copyToClipboard` when a button is clicked.
+ */
+function initializeCopyButtons() {
+  const copyButtons = document.querySelectorAll('.copy-btn');
+
+  copyButtons.forEach(button => {
+    const codeId = button.getAttribute('data-code-id');
+    let codeElement;
+
+    if (codeId === 'curl') {
+      codeElement = document.getElementById('curl-output');
+    } else if (codeId === 'python') {
+      codeElement = document.getElementById('python-output');
+    } else if (codeId === 'js') {
+      codeElement = document.getElementById('js-output');
+    } else if (codeId === 'go') {
+      codeElement = document.getElementById('go-output');
+    } else if (codeId === 'ruby') {
+      codeElement = document.getElementById('ruby-output');
+    } else if (codeId === 'php') {
+      codeElement = document.getElementById('php-output');
+    }
+
+    button.addEventListener('click', () => {
+      if (codeElement) {
+        copyToClipboard(codeElement.textContent, button);
+      }
+    });
+  });
+}
+
+/**
+ * Copies the provided text to the clipboard and provides visual feedback.
+ *
+ * - Uses `navigator.clipboard.writeText()` to copy the text.
+ * - Updates tooltip or button icon to indicate a successful copy.
+ * - Restores the original tooltip text or icon after a short delay.
+ *
+ * @param {string} text - The text to copy to the clipboard.
+ * @param {HTMLElement} button - The button that triggered the copy action.
+ */
+function copyToClipboard(text, button) {
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      const tooltip = bootstrap.Tooltip.getInstance(button);
+
+      if (tooltip) {
+        const originalTitle = button.getAttribute('data-bs-original-title') || 'Copy to clipboard';
+
+        button.setAttribute('data-bs-original-title', 'Copied!');
+        tooltip.show();
+
+        setTimeout(() => {
+          button.setAttribute('data-bs-original-title', originalTitle);
+          tooltip.hide();
+        }, 1500);
+      } else {
+        const icon = button.querySelector('i');
+        const originalHtml = icon.innerHTML;
+        icon.innerHTML = 'check';
+
+        setTimeout(() => {
+          icon.innerHTML = originalHtml;
+        }, 1500);
+      }
+    })
+    .catch(err => {
+      console.error('Could not copy text: ', err);
+    });
+}
+
+/**
+ * Initializes event listeners for code snippet generation and tooltips.
+ *
+ * - Binds `generateCodeSnippets` to the "Copy API Query" button.
+ * - Initializes Bootstrap tooltips for elements with `data-bs-toggle="tooltip"`.
+ */
+function initializeCodeTabs() {
+  const queryBtn = document.getElementById('copy-api-query-btn');
+  if (queryBtn) {
+    queryBtn.addEventListener('click', generateCodeSnippets);
+  }
+
+  const codeSnippet = document.getElementById('codeTabsContent');
+  if (codeSnippet){
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initializeCodeTabs);

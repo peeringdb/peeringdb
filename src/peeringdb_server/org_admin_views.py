@@ -131,6 +131,8 @@ def load_entity_permissions(org, entity):
     perms = {}
 
     extract_permission_id(entity_perms, perms, org, org)
+    # extract user management permissions
+    extract_permission_id(entity_perms, perms, "org.users", org)
     # extract session for any network
     extract_permission_id(entity_perms, perms, "sessions", org)
 
@@ -166,6 +168,7 @@ def permission_ids(org):
 
     perms = {
         "org.%d" % org.id: _("Organization and all Entities it owns"),
+        "org.%d" % org.id + ".users": _("User Management Privileges"),
         "net": _("Any Network"),
         "fac": _("Any Facility"),
         "ix": _("Any Exchange"),
@@ -235,22 +238,25 @@ def extract_permission_id(source, dest, entity, org, is_session=False):
     if isinstance(entity, HandleRefModel):
         if not is_session:
             # instance
-            k = entity.grainy_namespace
-            j = "%s.%d" % (entity.ref_tag, entity.id)
+            entity_namespace = entity.grainy_namespace
+            permission_key = "%s.%d" % (entity.ref_tag, entity.id)
         else:
-            j = "sessions.%d" % (entity.id)
-            k = f"{entity.grainy_namespace}.sessions"
+            permission_key = "sessions.%d" % (entity.id)
+            entity_namespace = f"{entity.grainy_namespace}.sessions"
     elif entity == "sessions":
-        j = "sessions"
-        k = f"{org.grainy_namespace}.network.*.sessions"
+        permission_key = "sessions"
+        entity_namespace = f"{org.grainy_namespace}.network.*.sessions"
+    elif entity == "org.users":
+        permission_key = "org.%d.users" % org.id
+        entity_namespace = f"{org.grainy_namespace}.users"
     else:
         # class
-        j = entity.handleref.tag
+        permission_key = entity.handleref.tag
         namespace = entity.Grainy.namespace()
-        k = f"{org.grainy_namespace}.{namespace}"
+        entity_namespace = f"{org.grainy_namespace}.{namespace}"
 
-    if k in source:
-        dest[j] = source[k]
+    if entity_namespace in source:
+        dest[permission_key] = source[entity_namespace]
 
 
 def org_admin_required(fnc):

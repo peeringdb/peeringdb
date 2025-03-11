@@ -42,6 +42,8 @@ def save_key_permissions(org, key, perms):
             grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
                 permissions
             )
+        elif id == "org.%d" % org.id + ".users":
+            grainy_perms[f"{org.grainy_namespace}.users"] = permissions
         elif id == "net":
             grainy_perms[f"{org.grainy_namespace}.network"] = permissions
             grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (

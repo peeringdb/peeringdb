@@ -3,6 +3,305 @@ info:
   title: ''
   version: ''
 paths:
+  /api/org/{org_id}/users/:
+    get:
+      operationId: list user
+      description: "Retrieves a list of `user` type objects\n\n## List objects\n\n\
+        ### Querying\n\nYou may query the resultset by passing field names as url\
+        \ parameters\n\n### Numeric Queries\n\nOn numeric fields you can suffix the\
+        \ field names with the following filters:\n\n- \\_\\_lt : less-than\n- \\\
+        _\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n\
+        - \\_\\_in : value inside set of values (comma separated)\n\n**examples**\n\
+        \n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\n### String Queries\n\
+        \nOn string fields you can suffix the field names with the following filters:\n\
+        \n- \\_\\_contains : field value contains specified value\n- \\_\\_startswith\
+        \ : field value starts with specified value\n- \\_\\_in : value contained\
+        \ inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
+        \ responses by checking for the \"generated\" property inside the \"meta\"\
+        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
+        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
+        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
+        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
+        \ that does lookup queries and has it's **depth** parameter specified will\
+        \ have a result limit of 250 entries, any entries past this limit will be\
+        \ truncated, at which point you either should be more specific with your query\
+        \ or use the skip and limit parameters to page through the result set\n\n\
+        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
+        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
+        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
+        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
+        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+      parameters:
+      - name: created
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: date_joined
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: depth
+        in: query
+        required: false
+        description: Expand nested sets according to depth.
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+          maximum: 2
+      - name: email
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: first_name
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: flagged_for_deletion
+        in: query
+        description: 'Account is orphaned and has been flagged for deletion at this
+          date
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: id
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: is_active
+        in: query
+        description: 'Designates whether this user should be treated as active. Unselect
+          this instead of deleting accounts.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: boolean
+      - name: is_staff
+        in: query
+        description: 'Designates whether the user can log into admin site.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: boolean
+      - name: is_superuser
+        in: query
+        description: 'Designates that this user has all permissions without explicitly
+          assigning them.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: boolean
+      - name: last_login
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: last_name
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: Limit the number of rows returned in the result set (use for
+          pagination in combination with `skip`)
+        schema:
+          type: integer
+      - name: locale
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `oc`,
+          `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: never_flag_for_deletion
+        in: query
+        description: 'This user will never be flagged for deletion through the orphaned
+          user cleanup process.
+
+
+          Filter results by matching a value against this field.'
+        required: false
+        schema:
+          type: boolean
+      - name: notified_for_deletion
+        in: query
+        description: 'User has been notified about pending account deletion at this
+          date
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: opt_flags
+        in: query
+        description: 'Bitmask to store user preference toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: org_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      - name: password
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: primary_org
+        in: query
+        description: 'The user''s primary organization
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
+      - name: since
+        in: query
+        required: false
+        description: Unix epoch time stamp (seconds). Only return objects that have
+          been updated since then
+        schema:
+          type: integer
+      - name: skip
+        in: query
+        required: false
+        description: Skip n results in the result set (use for pagination in combination
+          with `limit`)
+        schema:
+          type: integer
+      - name: status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: updated
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: date-time
+      - name: username
+        in: query
+        description: 'Required. Letters, digits and [@.+-/_=|] only.
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+      tags:
+      - api
   /api/fac:
     get:
       operationId: list fac
@@ -13328,6 +13627,18 @@ paths:
         required: false
         schema:
           type: date-time
+      - name: ixf_import_request_user__opt_flags
+        in: query
+        description: 'Bitmask to store user preference toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: ixf_import_request_user__password
         in: query
         description: 'Filter results by matching a value against this field.
@@ -30763,8 +31074,10 @@ paths:
                   nullable: true
                 info_prefixes4:
                   type: integer
+                  nullable: true
                 info_prefixes6:
                   type: integer
+                  nullable: true
                 info_traffic:
                   enum:
                   - ''
@@ -31503,8 +31816,10 @@ paths:
                   nullable: true
                 info_prefixes4:
                   type: integer
+                  nullable: true
                 info_prefixes6:
                   type: integer
+                  nullable: true
                 info_traffic:
                   enum:
                   - ''
@@ -32191,8 +32506,10 @@ paths:
                   nullable: true
                 info_prefixes4:
                   type: integer
+                  nullable: true
                 info_prefixes6:
                   type: integer
+                  nullable: true
                 info_traffic:
                   enum:
                   - ''
@@ -33596,8 +33913,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -34394,8 +34713,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -35144,8 +35465,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -37011,8 +37334,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -39036,8 +39361,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -41013,8 +41340,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -44670,8 +44999,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -46363,8 +46694,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -48007,8 +48340,10 @@ paths:
                       nullable: true
                     info_prefixes4:
                       type: integer
+                      nullable: true
                     info_prefixes6:
                       type: integer
+                      nullable: true
                     info_traffic:
                       enum:
                       - ''
@@ -54811,6 +55146,112 @@ paths:
           description: ''
       tags:
       - api
+  /api/org/{org_id}/users/add/:
+    post:
+      operationId: create user
+      description: 'Creates a new `user` type object.
+
+
+        ## Creating objects
+
+
+        ### Status `pending`
+
+
+        Some object types will be flagged as `pending` until they have been reviewed
+        and approved by peeringdb staff.
+
+
+        Currently this is the case for:
+
+
+
+        - `org` organizations (only administrative staff users are currently allowed
+        to create organizations)
+
+        - `fac` facilities
+
+        - `net` networks
+
+        - `ix` exchanges
+
+        - `ixpfx` prefixes (if part of a new exchange)
+
+        - `ixlan` exchange networks (if part of a new exchange)
+
+
+        ### Permissions
+
+
+        To be able to create an object, the requesting user requires `create` permissions
+        to one of the
+
+        object''s parents in the relationship hierarchy.
+
+
+        For example to create a `net` type object, the user needs to be permissioned
+        to create in the organization
+
+        that is to be the network''s holder entity.
+
+        '
+      parameters:
+      - name: org_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                first_name:
+                  type: string
+                  maxLength: 254
+                last_name:
+                  type: string
+                  maxLength: 254
+                full_name:
+                  type: string
+                  readOnly: true
+                is_active:
+                  type: boolean
+                  description: Designates whether this user should be treated as active.
+                    Unselect this instead of deleting accounts.
+                date_joined:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                status:
+                  type: string
+                  maxLength: 254
+                role:
+                  enum:
+                  - admin
+                  - member
+                  type: string
+                  default: member
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+      tags:
+      - api
   /api/carrierfac/{id}/approve:
     post:
       operationId: approve facility presence at carrier
@@ -55925,8 +56366,140 @@ paths:
           description: ''
       tags:
       - api
+  /api/org/{org_id}/users/{user_id}/:
+    put:
+      operationId: update user
+      description: 'Updates an existing `user` type object.
+
+
+        ## Update existing objects
+
+
+        ### Permissions
+
+
+        In order to update an object the requesting user requires `update` permissions
+        to the object itself or one of the parent relationships in the object hierarchy
+
+        '
+      parameters:
+      - name: org_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      - name: user_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  readOnly: true
+                first_name:
+                  type: string
+                  maxLength: 254
+                last_name:
+                  type: string
+                  maxLength: 254
+                full_name:
+                  type: string
+                  readOnly: true
+                is_active:
+                  type: boolean
+                  description: Designates whether this user should be treated as active.
+                    Unselect this instead of deleting accounts.
+                date_joined:
+                  type: string
+                  format: date-time
+                  readOnly: true
+                status:
+                  type: string
+                  maxLength: 254
+                role:
+                  enum:
+                  - admin
+                  - member
+                  type: string
+                  default: member
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+      tags:
+      - api
+  /api/org/{org_id}/users/remove/:
+    delete:
+      operationId: delete user
+      description: 'Marks an `user` type object as `deleted`.
+
+
+        ## Deleting objects
+
+        '
+      parameters:
+      - name: org_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
 components:
   schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 254
+        last_name:
+          type: string
+          maxLength: 254
+        full_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          description: Designates whether this user should be treated as active. Unselect
+            this instead of deleting accounts.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          type: string
+          maxLength: 254
+        role:
+          enum:
+          - admin
+          - member
+          type: string
+          default: member
     Facility:
       type: object
       properties:
@@ -64500,8 +65073,10 @@ components:
           nullable: true
         info_prefixes4:
           type: integer
+          nullable: true
         info_prefixes6:
           type: integer
+          nullable: true
         info_traffic:
           enum:
           - ''
@@ -65144,8 +65719,10 @@ components:
               nullable: true
             info_prefixes4:
               type: integer
+              nullable: true
             info_prefixes6:
               type: integer
+              nullable: true
             info_traffic:
               enum:
               - ''
@@ -65852,8 +66429,10 @@ components:
               nullable: true
             info_prefixes4:
               type: integer
+              nullable: true
             info_prefixes6:
               type: integer
+              nullable: true
             info_traffic:
               enum:
               - ''
@@ -67768,8 +68347,10 @@ components:
               nullable: true
             info_prefixes4:
               type: integer
+              nullable: true
             info_prefixes6:
               type: integer
+              nullable: true
             info_traffic:
               enum:
               - ''

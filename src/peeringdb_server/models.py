@@ -5966,6 +5966,12 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         ),
     )
 
+    opt_flags = models.IntegerField(
+        _("option flags"),
+        default=0,
+        help_text=_("Bitmask to store user preference toggles"),
+    )
+
     objects = UserManager()
 
     USERNAME_FIELD = "username"
@@ -5975,6 +5981,9 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         db_table = "peeringdb_user"
         verbose_name = _("user")
         verbose_name_plural = _("users")
+
+    class HandleRef:
+        tag = "user"
 
     @property
     def pending_affiliation_requests(self):
@@ -6089,6 +6098,11 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     def get_passkey_security_keys(self):
         return self.webauthn_security_keys.filter(passkey_login=True).all()
 
+    @property
+    def hide_ixs_without_fac(self):
+        """Returns whether user has enabled hiding IXs without facilities"""
+        return bool(self.opt_flags & settings.OPTFLAG_HIDE_IX_WITHOUT_FAC)
+
     @staticmethod
     def autocomplete_search_fields():
         """
@@ -6136,6 +6150,13 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             UserOrgAffiliationRequest.objects.create(
                 user=self, org=req.org, asn=req.asn, status="pending"
             )
+
+    def set_opt_flag(self, flag, value=True):
+        "Set user option flags."
+        if value:
+            self.opt_flags |= flag
+        else:
+            self.opt_flags &= ~flag
 
     def get_locale(self):
         "Returns user preferred language."
@@ -6638,6 +6659,10 @@ class EnvironmentSetting(StripFieldMixin):
                 "API_THROTTLE_RATE_WRITE",
                 _("API: Request Write API Limiting"),
             ),
+            (
+                "API_THROTTLE_ORGANIZATION_USERS",
+                _("API: Request Organization Users API Limiting"),
+            ),
             # show database last sync
             (
                 "DATABASE_LAST_SYNC",
@@ -6706,6 +6731,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_RATE_ANON_MSG": "value_str",
         "API_THROTTLE_RATE_USER_MSG": "value_str",
         "API_THROTTLE_RATE_WRITE": "value_str",
+        "API_THROTTLE_ORGANIZATION_USERS": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
         "TUTORIAL_MODE_MESSAGE": "value_str",
     }
@@ -6730,6 +6756,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_MELISSA_ENABLED_ORG": [validate_bool],
         "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
         "API_THROTTLE_RATE_WRITE": [validate_api_rate],
+        "API_THROTTLE_ORGANIZATION_USERS": [validate_api_rate],
     }
 
     @classmethod

@@ -1,4 +1,4 @@
-Generated from models.py on 2025-02-11 10:26:48.481231
+Generated from models.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.models
 
@@ -2287,6 +2287,7 @@ been confirmed, False if not.
 - get_passkey_security_keys (`@property`): None
 - has_2fa (`@property`): Returns true if the user has set up any TOTP or webauth security keys.
 - has_oauth (`@property`): None
+- hide_ixs_without_fac (`@property`): Returns whether user has enabled hiding IXs without facilities
 - is_verified_user (`@property`): Returns whether the user is verified (e.g., has been validated
 by PDB staff).
 
@@ -2394,6 +2395,12 @@ confirm that the email they provided is theirs.
 `def set_locale(self, locale)`
 
 Returns user preferred language.
+
+---
+#### set_opt_flag
+`def set_opt_flag(self, flag, value=True)`
+
+Set user option flags.
 
 ---
 #### set_unverified

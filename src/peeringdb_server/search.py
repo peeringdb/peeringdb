@@ -124,15 +124,22 @@ def make_name_search_query(term):
     return SearchQuerySet().filter(term_filters, status=Exact("ok"))
 
 
-def make_autocomplete_query(term):
+def make_autocomplete_query(term, user):
     if not term:
         return SearchQuerySet().none()
 
     term = prepare_term(term)
-    return SearchQuerySet().autocomplete(auto=term).filter(status=Exact("ok"))
+    base_query = SearchQuerySet().autocomplete(auto=term).filter(status=Exact("ok"))
+
+    if user and user.hide_ixs_without_fac:
+        non_ix_results = list(base_query.models(Organization, Network, Facility))
+        ix_results = list(base_query.models(InternetExchange).exclude(fac_count=0))
+        return ix_results + non_ix_results
+
+    return base_query.models(*autocomplete_models)
 
 
-def search(term, autocomplete=False):
+def search(term, autocomplete=False, user=None):
     """
     Search searchable objects (ixp, network, facility ...) by term.
 
@@ -142,7 +149,7 @@ def search(term, autocomplete=False):
     # t0 = time.time()
 
     if autocomplete:
-        search_query = make_autocomplete_query(term).models(*autocomplete_models)
+        search_query = make_autocomplete_query(term, user)
         limit = settings.SEARCH_RESULTS_AUTOCOMPLETE_LIMIT
     else:
         search_query = make_search_query(term)

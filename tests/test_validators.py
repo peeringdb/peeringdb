@@ -118,8 +118,8 @@ def test_validate_info_prefixes4():
     with pytest.raises(ValidationError):
         validate_info_prefixes4(-1)
     validate_info_prefixes4(500000)
-    assert validate_info_prefixes4(None) == 0
-    assert validate_info_prefixes4("") == 0
+    assert validate_info_prefixes4(None) == None
+    assert validate_info_prefixes4("") == None
 
 
 @override_settings(DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000)
@@ -132,8 +132,8 @@ def test_validate_info_prefixes6():
     with pytest.raises(ValidationError):
         validate_info_prefixes6(-1)
     validate_info_prefixes6(500000)
-    assert validate_info_prefixes6(None) == 0
-    assert validate_info_prefixes6("") == 0
+    assert validate_info_prefixes6(None) == None
+    assert validate_info_prefixes6("") == None
 
 
 @override_settings(

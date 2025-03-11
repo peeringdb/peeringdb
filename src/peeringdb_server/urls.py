@@ -70,6 +70,7 @@ from peeringdb_server.views import (
     resend_confirmation_mail,
     search_elasticsearch,
     unwatch_network,
+    update_user_options,
     validator_result_cache,
     view_about,
     view_advanced_search,
@@ -153,6 +154,7 @@ urlpatterns = [
         profile_set_primary_email,
         name="profile-set-primary-email",
     ),
+    re_path(r"^profile/options$", update_user_options, name="user-update-options"),
     re_path(r"^resend_email_confirmation$", resend_confirmation_mail),
     re_path(r"^sponsors$", view_sponsorships, name="sponsors"),
     # re_path(r'^partners$', view_partnerships),
@@ -237,6 +239,10 @@ urlpatterns = [
     re_path(
         r"^security_keys/verify_authentication$",
         security_keys_views.verify_authentication,
+    ),
+    re_path(
+        r"^security_keys/update-security-key$",
+        security_keys_views.update_security_key,
     ),
     re_path(r"^security_keys/add$", security_keys_views.register_security_key),
     re_path(r"^security_keys/remove$", security_keys_views.remove_security_key),

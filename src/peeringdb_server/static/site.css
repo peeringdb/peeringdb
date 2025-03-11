@@ -1896,3 +1896,56 @@ input.input-block-level {
 .show-on-edit{
   display: none !important;
 }
+
+.code-container {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.code-container pre {
+  margin: 0;
+  background-color: var(--secondary-bg-color);
+}
+
+.code-content {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.code-container code {
+  flex: 1;
+  display: block;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.code-actions {
+  display: flex;
+  margin: -5px -5px 0 0;
+}
+
+.copy-btn {
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.8;
+  transition: all 0.2s;
+  padding: 0;
+  background-color: var(--secondary-bg-color);
+}
+
+.copy-btn:hover {
+  opacity: 1;
+  background-color: var(--button-hover-color);
+}
+
+.copy-btn .material-icons {
+  font-size: 18px;
+  color: var(--heading-color);
+}
