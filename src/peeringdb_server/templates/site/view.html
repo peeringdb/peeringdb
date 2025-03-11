@@ -225,6 +225,11 @@
       <div class="col-4 text-right">
         <a class="btn btn-success suggestion-dismiss">{% trans "Dismiss" %}</a>
         <a class="btn btn-success suggestion-accept">{% trans "Accept" %}</a>
+        <a class="btn btn-danger suggestion-report"
+            href="mailto:{{ email }}?subject=Address Normalization Issue"
+            target="_blank">
+            {% trans "Report Issue" %}
+        </a>
       </div>
     </div>
   </div>

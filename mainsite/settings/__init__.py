@@ -396,6 +396,8 @@ set_option("API_THROTTLE_RATE_ANON", "100/second")
 set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
+set_option("API_THROTTLE_ORGANIZATION_USERS", "1/second")
+
 
 # Configuration for melissa request rate limiting in the api (#1124)
 
@@ -1088,6 +1090,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_ip": API_THROTTLE_MELISSA_RATE_IP,
                 "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
                 "write_api": API_THROTTLE_RATE_WRITE,
+                "organization_users_ops": API_THROTTLE_ORGANIZATION_USERS,
             },
         }
     )
@@ -1498,6 +1501,9 @@ set_option("PERIODIC_REAUTH_ENABLED", True)
 
 # Maximum amount of email addresses allowed per user
 set_option("USER_MAX_EMAIL_ADDRESSES", 5)
+
+# User option flag to hide IXs without a linked facility
+set_option("OPTFLAG_HIDE_IX_WITHOUT_FAC", 1)
 
 # Authentication settings to use when syncing via pdb_load
 set_option("PEERINGDB_SYNC_USERNAME", "")

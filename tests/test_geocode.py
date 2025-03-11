@@ -2,10 +2,8 @@ import json
 import os
 from unittest.mock import MagicMock, patch
 
-import googlemaps
 import pytest
 from django.core.cache import caches
-from django.core.exceptions import ValidationError
 
 import peeringdb_server.geo as geo
 import peeringdb_server.models as models
@@ -120,6 +118,46 @@ def test_does_not_need_address_suggestion(fac):
 
 
 @pytest.mark.django_db
+def test_geosync_information_present(fac):
+    geocodeserializer = GeocodeSerializerMixin()
+    validated_data = {
+        "address1": "Some street",
+        "city": "Chicago",
+        "country": "US",
+        "state": "IL",
+        "zipcode": "1234",
+    }
+    assert geocodeserializer._geosync_information_present(fac, validated_data) is True
+
+
+@pytest.mark.django_db
+def test_need_geosync(fac):
+    geocodeserializer = GeocodeSerializerMixin()
+    validated_data = {
+        "address1": "New street",
+        "city": "Chicagos",
+        "country": "US",
+        "state": "IL",
+        "zipcode": "1234",
+    }
+    assert geocodeserializer._need_geosync(fac, validated_data) is True
+
+
+@pytest.mark.django_db
+def test_add_meta_information():
+    class MockRequest:
+        def __init__(self):
+            self.meta_response = {}
+
+    request = MockRequest()
+    serializer = GeocodeSerializerMixin()
+    serializer.context = {"request": request}
+
+    assert serializer._add_meta_information({"key": "value"}) is True
+    assert request.meta_response == {"key": "value"}
+
+
+@pytest.mark.django_db
 def test_melissa_global_address_params():
     client = geo.Melissa("")
 
@@ -152,12 +190,12 @@ def test_melissa_global_address_best_result():
     result = {"Records": [expected, {"Results": "AV25", "Address1": "value2"}]}
 
     assert client.global_address_best_result(result) == expected
-    assert client.global_address_best_result({}) == None
-    assert client.global_address_best_result(None) == None
+    assert client.global_address_best_result({}) is None
+    assert client.global_address_best_result(None) is None
 
     result = {"Records": [{"Results": "AV12", "Address1": "value2"}]}
 
-    assert client.global_address_best_result(result) == None
+    assert client.global_address_best_result(result) is None
 
 
 @pytest.mark.django_db

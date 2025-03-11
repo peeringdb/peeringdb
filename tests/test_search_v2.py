@@ -1,11 +1,13 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 
 import peeringdb_server.models as models
 import peeringdb_server.search as search
 import peeringdb_server.views as views
+from peeringdb_server.rest import search_api_view
 from peeringdb_server.search_v2 import (
     add_and_between_keywords,
     build_geo_filter,
@@ -66,6 +68,14 @@ class SearchV2TestCase(TestCase):
     def setUp(self):
         search.ELASTICSEARCH_URL = "https://test:9200"
         self.indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
+        self.factory = RequestFactory()
+        self.user = models.User.objects.create_user(
+            username="testuser", password="testpass"
+        )
+        api_key, user_key = models.UserAPIKey.objects.create_key(
+            user=self.user, name="User api key"
+        )
+        self.user_key = user_key
 
     def tearDown(self):
         search.ELASTICSEARCH_URL = ""
@@ -427,7 +437,7 @@ class SearchV2TestCase(TestCase):
         }
 
         result = construct_query_body(
-            "*fac*", valid_geo, self.indexes, ipv6_construct=False
+            "*fac*", valid_geo, self.indexes, ipv6_construct=False, user=None
         )
         expected = {
             "query": {
@@ -455,7 +465,7 @@ class SearchV2TestCase(TestCase):
 
         # test exception handling
         result = construct_query_body(
-            "not indexes", valid_geo, self.indexes, ipv6_construct=False
+            "not indexes", valid_geo, self.indexes, ipv6_construct=False, user=None
         )
         expected = {
             "query": {
@@ -465,25 +475,25 @@ class SearchV2TestCase(TestCase):
                             "bool": {
                                 "should": [
                                     {
-                                        "match_phrase": {
-                                            "name": {
-                                                "query": "not indexes",
-                                                "boost": 10.0,
-                                            }
+                                        "multi_match": {
+                                            "query": "not indexes",
+                                            "type": "phrase",
+                                            "fields": ["name", "aka"],
+                                            "boost": 10.0,
                                         }
                                     },
                                     {
-                                        "match_phrase_prefix": {
-                                            "name": {
-                                                "query": "not indexes",
-                                                "boost": 5.0,
-                                            }
+                                        "multi_match": {
+                                            "query": "not indexes",
+                                            "type": "phrase_prefix",
+                                            "fields": ["name", "aka"],
+                                            "boost": 5.0,
                                         }
                                     },
                                     {
                                         "query_string": {
                                             "query": "not indexes",
-                                            "fields": ["name"],
+                                            "fields": ["name", "aka"],
                                             "boost": 2.0,
                                         }
                                     },
@@ -513,7 +523,9 @@ class SearchV2TestCase(TestCase):
         self.assertEqual(result, expected)
 
         # test location only
-        result = construct_query_body("", valid_geo, self.indexes, ipv6_construct=False)
+        result = construct_query_body(
+            "", valid_geo, self.indexes, ipv6_construct=False, user=None
+        )
         expected = {
             "query": {
                 "bool": {
@@ -749,3 +761,117 @@ class SearchV2TestCase(TestCase):
 
         result = search_v2(["2001:db8:85a3::8a2e:370:7334"])
         self.assertEqual(result, expected_result)
+
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_search_api_view(self, mock_elasticsearch):
+        expected_result = {
+            "fac": [
+                {"id": "6742", "name": "SILA Data Center", "org_id": 18878},
+                {
+                    "id": "802",
+                    "name": "Digita Helsinki Pasila Broadcasting Tower",
+                    "org_id": 1289,
+                },
+            ],
+            "ix": [],
+            "net": [
+                {
+                    "id": "27041",
+                    "name": "Badan Pembinaan Ideologi Pancasila",
+                    "org_id": 29615,
+                    "asn": 141944,
+                },
+            ],
+            "org": [
+                {
+                    "id": "29615",
+                    "name": "Badan Pembinaan Ideologi Pancasila",
+                    "org_id": 29615,
+                },
+            ],
+            "campus": [],
+            "carrier": [],
+        }
+
+        mock_es = mock_elasticsearch.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 4, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "fac",
+                        "_id": "6742",
+                        "_score": 10,
+                        "_source": {
+                            "name": "SILA Data Center",
+                            "org": {
+                                "id": 18878,
+                                "name": "CS Loxinfo Public Company Limited",
+                            },
+                            "status": "ok",
+                        },
+                    },
+                    {
+                        "_index": "fac",
+                        "_id": "802",
+                        "_score": 5,
+                        "_source": {
+                            "name": "Digita Helsinki Pasila Broadcasting Tower",
+                            "org": {"id": 1289, "name": "Digital Oy"},
+                            "status": "ok",
+                        },
+                    },
+                    {
+                        "_index": "net",
+                        "_id": "27041",
+                        "_score": 5,
+                        "_source": {
+                            "asn": 141944,
+                            "name": "Badan Pembinaan Ideologi Pancasila",
+                            "org": {
+                                "id": 29615,
+                                "name": "Badan Pembinaan Ideologi Pancasila",
+                            },
+                            "status": "ok",
+                        },
+                    },
+                    {
+                        "_index": "org",
+                        "_id": "29615",
+                        "_score": 5,
+                        "_source": {
+                            "id": 29615,
+                            "name": "Badan Pembinaan Ideologi Pancasila",
+                            "status": "ok",
+                        },
+                    },
+                ],
+            }
+        }
+        request = self.factory.get("/api/search?q=sila")
+        request.META["HTTP_AUTHORIZATION"] = f"api-key {self.user_key}"
+
+        response = search_api_view(request)
+
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+        self.assertEqual(content, expected_result)
+
+    def test_search_api_view_invalid_key(self):
+        request = self.factory.get("/api/search?q=sila")
+        request.META["HTTP_AUTHORIZATION"] = f"api-key invalid-key"
+
+        response = search_api_view(request)
+
+        self.assertEqual(response.status_code, 403)
+        content = json.loads(response.content)
+        self.assertEqual(content["non_field_errors"][0], "Invalid API key")
+
+    def test_search_api_view_no_auth(self):
+        request = self.factory.get("/api/search?q=sila")
+
+        response = search_api_view(request)
+
+        self.assertEqual(response.status_code, 401)
+        content = json.loads(response.content)
+        self.assertIn("No API key provided", content["error"])

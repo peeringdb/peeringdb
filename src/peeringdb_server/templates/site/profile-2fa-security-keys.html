@@ -3,14 +3,15 @@
 
   <h1>{% trans "Security keys" %}</h1>
   <div class="editable popin help marg-top-15">
-    {% blocktrans trimmed %}
-    Register your security key and use it as a 2FA method.
-    {% endblocktrans %}
-
     <div class="marg-top-15 alert alert-info">
+      <p>{% trans "Security keys can be configured in two modes:" %}</p>
+      <ul>
+        <li>{% trans "Disallow login: Requires username/password login, followed by key verification" %}</li>
+        <li>{% trans "Allow login: Allows direct login without username/password" %}</li>
+      </ul>
     <p>
     {% blocktrans trimmed %}
-    When using a U2F security key such as <b>yubikeys</b> the initial prompt may show other
+    When using a U2F security key or passkey such as <b>yubikeys</b> the initial prompt may show other
     device-internal keys first (such as fingerprint scanners and security pins).
     {% endblocktrans %}
     </p>
@@ -33,19 +34,32 @@
     data-edit-id="{{ instance.id }}">
 
     <div class="row header">
-      <div class="col-8 col-sm-10 col-md-10">
+      <div class="col-4 col-sm-4 col-md-4">
         <div>{% trans "Name" %}</div>
       </div>
-      <div class="col-4 col-sm-2 col-md-2"></div>
+      <div class="col-4 col-sm-4 col-md-4">
+        <div>{% trans "Status" %}</div>
+      </div>
+      <div class="col-4 col-sm-4 col-md-4"></div>
     </div>
 
     <div data-edit-component="list" data-edit-template="security-key-item">
-    {%   for key in user.get_2fa_security_keys %}
+    {%   for key in user.webauthn_security_keys.all %}
       <div class="row marg-top" data-edit-id="{{ key.id }}" data-edit-label="{{ key.name }}">
-        <div class="col-8">
+        <div class="col-4">
           <span data-edit-name="name">{{ key.name }}</span>
         </div>
-        <div class="col-4 right">
+        <div class="col-3">
+          <span data-edit-name="passkey_login">{% if key.passkey_login %}Allow login{% else %}Disallow login{% endif %}</span>
+        </div>
+        <div class="col-5 right">
+          <a class="btn btn-default" data-edit-action="update">
+            {% if key.passkey_login %}
+                {% trans "Disallow login" %}
+            {% else %}
+                {% trans "Allow login" %}
+            {% endif %}
+          </a>
           <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
         </div>
       </div>
@@ -59,6 +73,7 @@
       </div>
       <div class="col-6 col-sm-4 col-md-5">
         <div data-edit-type="string" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+        <div data-edit-type="bool" data-edit-name="passkey_login" style="display:inline"></div> <span>{% trans "Allow to use for login" %}</span>
       </div>
 
       <div class="col-2 col-sm-4 col-md-3 right">
@@ -76,4 +91,5 @@
     </div>
 
   </div>
+
 </div>

@@ -1,16 +1,66 @@
-{% extends "two_factor/profile/profile.html" %}
-{% load i18n pdb_two_factor_ext %}
+{% extends "two_factor/_base.html" %}
+{% load i18n two_factor_tags pdb_two_factor_ext %}
 
 {% block content %}
 <div style="text-align:left !important;">
   {% if not user|user_has_topt_device and user|user_has_u2f_device %}
-  <h1>{% trans "Account Security" %}</h1>
-  <p>
-  {% blocktrans trimmed %}Add a TOPT method to your two-factor authentication{% endblocktrans %}
-  </p>
-  <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">{% trans "Add TOTP Authentication" %}</a>
+    <h1>{% trans "Account Security" %}</h1>
+    <p>
+      {% blocktrans trimmed %}Add a TOPT method to your two-factor authentication{% endblocktrans %}
+    </p>
+    <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">{% trans "Add TOTP Authentication" %}</a>
   {% else %}
-  {{ block.super }}
+    <h1>{% block title %}{% trans "Account Security" %}{% endblock %}</h1>
+    {% if default_device %}
+      <p>{% blocktrans with primary=default_device|as_action %}Primary method: {{ primary }}{% endblocktrans %}</p>
+      {% if available_phone_methods %}
+        <h2>{% trans "Backup Phone Numbers" %}</h2>
+        <p>{% blocktrans trimmed %}If your primary method is not available, we are able to
+         send backup tokens to the phone numbers listed below.{% endblocktrans %}</p>
+        {% if backup_phones %}
+          <ul>
+            {% for phone in backup_phones %}
+              <li>
+                {{ phone|as_action }}
+                <form method="post" action="{% url 'two_factor:phone_delete' phone.id %}"
+                     onsubmit="return confirm({% trans 'Are you sure?' %})">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-warning"
+                         type="submit">{% trans "Unregister" %}</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        <p><a href="{% url 'two_factor:phone_create' %}"
+             class="btn btn-info">{% trans "Add Phone Number" %}</a></p>
+      {% endif %}
+      <h2>{% trans "Backup Tokens" %}</h2>
+      <p>
+        {% blocktrans trimmed %}If you don't have any device with you, you can access
+         your account using backup tokens.{% endblocktrans %}
+        {% blocktrans trimmed count counter=backup_tokens %}
+         You have only one backup token remaining.
+        {% plural %}
+         You have {{ counter }} backup tokens remaining.
+        {% endblocktrans %}
+      </p>
+      <p><a href="{% url 'two_factor:backup_tokens' %}"
+           class="btn btn-info">{% trans "Show Codes" %}</a></p>
+
+      <h3>{% trans "Disable TOTP Authentication" %}</h3>
+      <p>{% blocktrans trimmed %}However we strongly discourage you to do so, you can
+        also disable TOTP authentication for your account.{% endblocktrans %}</p>
+      <p><a class="btn btn-secondary" href="{% url 'two_factor:disable' %}">
+         {% trans "Disable TOTP Authentication" %}</a></p>
+    {% else %}
+      <p>{% blocktrans trimmed %}TOTP authentication is not enabled for your
+       account. Enable TOTP authentication for enhanced account
+       security.{% endblocktrans %}</p>
+      <p><a href="{% url 'two_factor:setup' %}" class="btn btn-primary">
+         {% trans "Add TOTP Authentication" %}</a>
+      </p>
+    {% endif %}
   {% endif %}
 </div>
 {% endblock %}

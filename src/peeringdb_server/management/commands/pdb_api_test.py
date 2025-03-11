@@ -2121,6 +2121,109 @@ class TestJSON(unittest.TestCase):
             == 5
         )
 
+    @override_settings(API_CACHE_ENABLED=False)
+    def test_api_filter_hide_ix_without_fac(self):
+        ix_filter_count = InternetExchange.objects.filter(
+            status="ok", fac_count__gt=0
+        ).count()
+        ix_count = InternetExchange.objects.filter(status="ok").count()
+
+        ixlan_filter_count = IXLan.objects.filter(
+            status="ok", ix__fac_count__gt=0
+        ).count()
+        ixlan_count = IXLan.objects.filter(status="ok").count()
+
+        net_filter_count = Network.objects.filter(status="ok", ix_count__gt=0).count()
+        net_count = Network.objects.filter(status="ok").count()
+
+        netixlan_filter_count = NetworkIXLan.objects.filter(
+            status="ok", ixlan__ix__fac_count__gt=0
+        ).count()
+        netixlan_count = NetworkIXLan.objects.filter(status="ok").count()
+
+        user = User.objects.get(username=self.db_user.user)
+
+        response = self.db_user._request("ix", method="GET")
+        assert len(response.json().get("data")) == ix_count
+
+        response = self.db_user._request("ixlan", method="GET")
+        assert len(response.json().get("data")) == ixlan_count
+
+        response = self.db_user._request("net", method="GET")
+        assert len(response.json().get("data")) == net_count
+
+        response = self.db_user._request("netixlan", method="GET")
+        assert len(response.json().get("data")) == netixlan_count
+
+        user.set_opt_flag(settings.OPTFLAG_HIDE_IX_WITHOUT_FAC, True)
+        user.save()
+
+        response = self.db_user._request("ix", method="GET")
+        assert len(response.json().get("data")) == ix_filter_count
+
+        response = self.db_user._request("ixlan", method="GET")
+        assert len(response.json().get("data")) == ixlan_filter_count
+
+        response = self.db_user._request(typ="net", method="GET")
+        assert len(response.json().get("data")) == net_filter_count
+
+        response = self.db_user._request(typ="netixlan", method="GET")
+        assert len(response.json().get("data")) == netixlan_filter_count
+
+        user.set_opt_flag(settings.OPTFLAG_HIDE_IX_WITHOUT_FAC, False)
+        user.save()
+
+        response = self.db_user._request("ix?hide_ix_no_fac=true", method="GET")
+        assert len(response.json().get("data")) == ix_filter_count
+
+        response = self.db_user._request("ix?hide_ix_no_fac=1", method="GET")
+        assert len(response.json().get("data")) == ix_filter_count
+
+        response = self.db_user._request("ixlan?hide_ix_no_fac=true", method="GET")
+        assert len(response.json().get("data")) == ixlan_filter_count
+
+        response = self.db_user._request("ixlan?hide_ix_no_fac=1", method="GET")
+        assert len(response.json().get("data")) == ixlan_filter_count
+
+        response = self.db_user._request("net?hide_ix_no_fac=true", method="GET")
+        assert len(response.json().get("data")) == net_filter_count
+
+        response = self.db_user._request("net?hide_ix_no_fac=1", method="GET")
+        assert len(response.json().get("data")) == net_filter_count
+
+        response = self.db_user._request("netixlan?hide_ix_no_fac=true", method="GET")
+        assert len(response.json().get("data")) == netixlan_filter_count
+
+        response = self.db_user._request("netixlan?hide_ix_no_fac=1", method="GET")
+        assert len(response.json().get("data")) == netixlan_filter_count
+
+        user.set_opt_flag(settings.OPTFLAG_HIDE_IX_WITHOUT_FAC, True)
+        user.save()
+
+        response = self.db_user._request("ix?hide_ix_no_fac=false", method="GET")
+        assert len(response.json().get("data")) == ix_count
+
+        response = self.db_user._request("ix?hide_ix_no_fac=0", method="GET")
+        assert len(response.json().get("data")) == ix_count
+
+        response = self.db_user._request("ixlan?hide_ix_no_fac=false", method="GET")
+        assert len(response.json().get("data")) == ixlan_count
+
+        response = self.db_user._request("ixlan?hide_ix_no_fac=0", method="GET")
+        assert len(response.json().get("data")) == ixlan_count
+
+        response = self.db_user._request("net?hide_ix_no_fac=false", method="GET")
+        assert len(response.json().get("data")) == net_count
+
+        response = self.db_user._request("net?hide_ix_no_fac=0", method="GET")
+        assert len(response.json().get("data")) == net_count
+
+        response = self.db_user._request("netixlan?hide_ix_no_fac=false", method="GET")
+        assert len(response.json().get("data")) == netixlan_count
+
+        response = self.db_user._request("netixlan?hide_ix_no_fac=0", method="GET")
+        assert len(response.json().get("data")) == netixlan_count
+
     def test_api_filter_netixlan_port(self):
         # Create a NetworkIXLan instance
         data = self.make_data_netixlan(

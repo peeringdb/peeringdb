@@ -2,17 +2,17 @@
 {% load i18n %}
 
 {% block content %}
-  <h1>{% block title %}{% trans "Enable Two-Factor Authentication" %}{% endblock %}</h1>
+  <h1>{% block title %}{% trans "Enable TOTP Authentication" %}{% endblock %}</h1>
 
   {# warning if email not confirmed #}
   {% if not request.user.email_confirmed %}
     <div class="alert alert-warning">
-      <p>{% blocktrans trimmed %}Your email must be confirmed before enabling Two-Factor Authentication.{% endblocktrans %}</p>
+      <p>{% blocktrans trimmed %}Your email must be confirmed before enabling TOTP Authentication.{% endblocktrans %}</p>
     </div>
   {% else %}
     {% if wizard.steps.current == 'welcome' %}
       <p>{% blocktrans trimmed %}You are about to take your account security to the
-          next level. Follow the steps in this wizard to enable two-factor
+          next level. Follow the steps in this wizard to enable TOTP
           authentication.{% endblocktrans %}</p>
     {% elif wizard.steps.current == 'method' %}
       <p>{% blocktrans trimmed %}Please select which authentication method you would

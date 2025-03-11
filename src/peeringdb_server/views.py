@@ -31,7 +31,7 @@ from django.conf import settings as dj_settings
 from django.contrib.admin.models import CHANGE, LogEntry
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import update_last_login
+from django.contrib.auth.models import AnonymousUser, update_last_login
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
@@ -630,6 +630,17 @@ def resend_confirmation_mail(request):
 @ensure_csrf_cookie
 def view_profile(request):
     return view_verify(request)
+
+
+@login_required
+@ensure_csrf_cookie
+def update_user_options(request):
+    if request.method == "POST":
+        user = request.user
+        hide_ix_no_fac = request.POST.get("hide_ix_no_fac") == "on"
+        user.set_opt_flag(dj_settings.OPTFLAG_HIDE_IX_WITHOUT_FAC, hide_ix_no_fac)
+        user.save()
+    return redirect("user-profile")
 
 
 @csrf_protect
@@ -1438,6 +1449,7 @@ def view_component(
     env.update(
         {
             "data": data,
+            "email": dj_settings.DEFAULT_FROM_EMAIL,
             "permissions": perms,
             "title": title,
             "component": component,
@@ -2602,6 +2614,10 @@ def view_network(request, id):
         .filter(network=network)
         .order_by("ixlan__ix__name")
     )
+    if not isinstance(request.user, AnonymousUser) and getattr(
+        request.user, "hide_ixs_without_fac", False
+    ):
+        exchanges = exchanges.filter(ixlan__ix__fac_count__gt=0)
 
     # This will be passed as default value for keys that don't exist - causing
     # them not to be rendered in the template - also it is fairly
@@ -2713,19 +2729,33 @@ def view_network(request, id):
                 "name": "info_prefixes4",
                 "label": _("IPv4 Prefixes"),
                 "type": "number",
-                "help_text": field_help(Network, "info_prefixes4"),
+                "help_text": _(
+                    "Recommended maximum number of IPv4 "
+                    "routes/prefixes to be configured on peering "
+                    "sessions for this ASN.\n"
+                    "Leave blank for not disclosed."
+                ),
                 "notify_incomplete": True,
                 "notify_incomplete_group": "prefixes",
-                "value": int(network_d.get("info_prefixes4") or 0),
+                "value": int(network_d.get("info_prefixes4"))
+                if network_d.get("info_prefixes4") is not None
+                else "",
             },
             {
                 "name": "info_prefixes6",
                 "label": _("IPv6 Prefixes"),
                 "type": "number",
-                "help_text": field_help(Network, "info_prefixes6"),
+                "help_text": _(
+                    "Recommended maximum number of IPv6 "
+                    "routes/prefixes to be configured on peering "
+                    "sessions for this ASN.\n"
+                    "Leave blank for not disclosed."
+                ),
                 "notify_incomplete": True,
                 "notify_incomplete_group": "prefixes",
-                "value": int(network_d.get("info_prefixes6") or 0),
+                "value": int(network_d.get("info_prefixes6"))
+                if network_d.get("info_prefixes6") is not None
+                else "",
             },
             {
                 "name": "info_traffic",
@@ -3075,7 +3105,7 @@ def request_api_search(request):
     if not q:
         return HttpResponseBadRequest()
 
-    result = search(q, autocomplete=True)
+    result = search(q, autocomplete=True, user=request.user)
 
     campus_facilites = {
         fac.id: fac for fac in Facility.objects.exclude(campus_id__isnull=True)
@@ -3113,7 +3143,9 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
         return asn_redirect
 
     # Perform the search based on the query and version
-    result = perform_search(q, geo, version, original_query)
+    result = perform_search(
+        q, geo, version, original_query, request.user if version == 2 else None
+    )
 
     # Build the environment for rendering the template
     env = build_template_environment(result, geo, version, request, q)
@@ -3172,7 +3204,11 @@ def handle_asn_query(q: list[str], version: int) -> HttpResponseRedirect | None:
 
 
 def perform_search(
-    q: list[str], geo: dict[str, Union[str, float]], version: int, original_query: str
+    q: list[str],
+    geo: dict[str, Union[str, float]],
+    version: int,
+    original_query: str,
+    user,
 ) -> dict:
     """
     Executes the search based on the query and version.
@@ -3188,7 +3224,7 @@ def perform_search(
     """
     if original_query:
         if version == 2:
-            return search_v2(q, geo)
+            return search_v2(q, geo, user)
         else:
             return search(q)
     return {}

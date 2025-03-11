@@ -21,10 +21,141 @@
 
 
 </div>
+<div class="modal fade" id="copyQueryModal" tabindex="-1" aria-labelledby="copyQueryModalLabel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="copyQueryModalLabel">Copy API Query</h5>
+        <button type="button" class="btn-close{% if prefers_dark_mode %}-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pb-0">
+        <ul class="nav nav-tabs" id="codeTabs" role="tablist">
+          <li class="active nav-item" role="presentation">
+            <a class="nav-link active" id="curl-tab" data-bs-toggle="tab" data-bs-target="#curl"
+              type="button" role="tab" aria-controls="curl" aria-selected="true">cURL</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="python-tab" data-bs-toggle="tab" data-bs-target="#python"
+              type="button" role="tab" aria-controls="python" aria-selected="false">Python</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="javascript-tab" data-bs-toggle="tab" data-bs-target="#javascript"
+              type="button" role="tab" aria-controls="javascript" aria-selected="false">JavaScript</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="go-tab" data-bs-toggle="tab" data-bs-target="#go"
+              type="button" role="tab" aria-controls="go" aria-selected="false">Go</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="ruby-tab" data-bs-toggle="tab" data-bs-target="#ruby"
+              type="button" role="tab" aria-controls="ruby" aria-selected="false">Ruby</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="php-tab" data-bs-toggle="tab" data-bs-target="#php"
+              type="button" role="tab" aria-controls="php" aria-selected="false">PHP</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="codeTabsContent">
+          <div class="tab-pane fade show active" id="curl" role="tabpanel" aria-labelledby="curl-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="curl-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="curl" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="python" role="tabpanel" aria-labelledby="python-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="python-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="python" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="javascript" role="tabpanel" aria-labelledby="javascript-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="js-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="js" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="go" role="tabpanel" aria-labelledby="go-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="go-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="go" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="ruby" role="tabpanel" aria-labelledby="ruby-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="ruby-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="ruby" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="php" role="tabpanel" aria-labelledby="php-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="php-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="php" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Add a new feedback div to display the message -->
   <div class="search-feedback d-flex justify-content-between align-items-center">
-    <div class="flex-grow-0" style="width: 100px"></div>
+    <div class="flex-grow-0" style="width: 100px">
+      <button id="copy-api-query-btn" class="btn btn-secondary btn-sm float-start" style="padding: 0.3rem 0.5rem; font-size: 0.80rem" data-bs-toggle="modal" data-bs-target="#copyQueryModal">
+        Copy Query
+      </button>
+    </div>
     <div class="text-center flex-grow-1">
       {% if "location" in geo and "country" in geo %}
         {% with qc=query_combined location=geo.location country=geo.country dist=geo.dist state=geo.state %}
@@ -76,6 +207,7 @@
     </div >
   </div>
 {% endif %}
+
 
 <div id="search-list-view" class="search-result mt-3" style="display: none;">
   <div class="mb-3">
@@ -252,6 +384,5 @@
 </div>
 
 </div>
-
 
 {% include 'site/footer.html' %}

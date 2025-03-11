@@ -1,4 +1,4 @@
-Generated from rest.py on 2025-02-11 10:26:48.481231
+Generated from rest.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.rest
 
@@ -23,6 +23,19 @@ The peeringdb REST API is implemented through django-rest-framework.
 `def model_view_set(model, methods=None, mixins=None)`
 
 Shortcut for peeringdb models to generate viewset and register in the API urls.
+
+---
+## serialize_search_results
+`def serialize_search_results(result)`
+
+Serialize search results into a consistent API response format.
+Removes internal fields while preserving the structure.
+
+Args:
+    result: Raw search results dictionary
+
+Returns:
+    dict: Cleaned API response
 
 ---
 ## view_self_entity
@@ -225,6 +238,15 @@ Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
 
 
+## IXFilterMixin
+
+```
+IXFilterMixin(builtins.object)
+```
+
+Filter for hide ixs without facility
+
+
 ## IXLanPrefixViewSet
 
 ```
@@ -238,11 +260,10 @@ This should probably be moved to a common lib ?
 ## IXLanViewSet
 
 ```
-IXLanViewSet(peeringdb_server.rest.ModelViewSet)
+IXLanViewSet(peeringdb_server.rest.IXFilterMixin, peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class.
-This should probably be moved to a common lib ?
+Filter for hide ixs without facility
 
 
 ## InactiveKeyBlock
@@ -306,7 +327,7 @@ Allows managers of an ix to request an IX-F import.
 ## InternetExchangeViewSet
 
 ```
-InternetExchangeViewSet(peeringdb_server.rest.InternetExchangeMixin, peeringdb_server.rest.ModelViewSet)
+InternetExchangeViewSet(peeringdb_server.rest.InternetExchangeMixin, peeringdb_server.rest.IXFilterMixin, peeringdb_server.rest.ModelViewSet)
 ```
 
 Custom API endpoints for the internet exchange
@@ -418,7 +439,7 @@ If fac_id is null, the net_side will be unset. Permissions are checked before sa
 ## NetworkIXLanViewSet
 
 ```
-NetworkIXLanViewSet(peeringdb_server.rest.NetworkIXLanMixin, peeringdb_server.rest.ModelViewSet)
+NetworkIXLanViewSet(peeringdb_server.rest.NetworkIXLanMixin, peeringdb_server.rest.IXFilterMixin, peeringdb_server.rest.ModelViewSet)
 ```
 
 Custom API endpoint for setting or unsetting the net_side and ix_side values on a NetworkIXLan object.
@@ -442,12 +463,111 @@ POST:
 ## NetworkViewSet
 
 ```
-NetworkViewSet(peeringdb_server.rest.ModelViewSet)
+NetworkViewSet(peeringdb_server.rest.IXFilterMixin, peeringdb_server.rest.ModelViewSet)
 ```
 
-Generic ModelViewSet Base Class.
-This should probably be moved to a common lib ?
+Filter for hide ixs without facility
 
+
+## OrganizationUsersViewSet
+
+```
+OrganizationUsersViewSet(rest_framework.viewsets.GenericViewSet)
+```
+
+ViewSet for managing users within an organization.
+
+This ViewSet provides endpoints for:
+- Listing all users in an organization
+- Adding new users to an organization
+- Updating user roles within an organization
+- Removing users from an organization
+
+All operations require:
+1. Valid user OR organization API keys
+2. User must be an admin of the organization OR organization key that has specific permission
+3. API key must be active (InactiveKeyBlock)
+
+Rate Limits:
+- All endpoints are rate-limited to 1 request per 1 second (OrganizationUsersThrottle)
+
+Error Handling:
+- Returns appropriate DRF's Response status codes (400, 403, 404, 429)
+- Provides detailed error messages in response
+
+
+### Methods
+
+#### add_organization_user
+`def add_organization_user(self, request, org_id=None)`
+
+Add a user to the organization
+Requires 'create' permission on org.{id}.users namespace
+
+---
+#### check_permissions_for_action
+`def check_permissions_for_action(self, permission_type)`
+
+Check if the authenticated entity has permission to perform the requested action.
+
+This function handles permission checking for both user API key authentication and
+organization API key authentication:
+
+1. For user API key authentication:
+    - Uses User.is_org_admin() to verify if the user is an admin of the organization
+    - Raises PermissionDenied if the user is not an admin
+
+2. For organization API key authentication:
+    - Checks if the API key has the specific permission (read/write/update/delete)
+        on the 'peeringdb.organization.{org_id}.users' namespace
+    - Raises PermissionDenied if the API key lacks sufficient permissions
+
+Parameters:
+permission_type (int): The permission type constant to check against
+                    (PERM_READ, PERM_CREATE, PERM_UPDATE, PERM_DELETE)
+
+Returns:
+None
+
+Raises:
+PermissionDenied: If the authenticated entity lacks sufficient permissions
+NotFound: If the organization does not exist
+
+---
+#### get_queryset
+`def get_queryset(self)`
+
+Get the base queryset for organization users.
+Returns all users that belong to the organization either as members or admins.
+
+---
+#### handle_exception
+`def handle_exception(self, exc)`
+
+Override to handle rate limit and other exceptions
+
+---
+#### list_organization_users
+`def list_organization_users(self, request, org_id=None)`
+
+List all users associated with an organization
+Requires 'read' permission on org.{id}.users namespace
+
+---
+#### remove_organization_user
+`def remove_organization_user(self, request, org_id=None)`
+
+Remove a user from the organization
+Requires 'delete' permission on org.{id}.users namespace
+
+---
+#### update_role_organization_user
+`def update_role_organization_user(self, request, org_id=None, user_id=None)`
+
+Update a user's role in the organization
+Requires 'update' permission on org.{id}.users namespace
+
+---
 
 ## OrganizationViewSet
 

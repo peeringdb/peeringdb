@@ -49,7 +49,18 @@
                --data-edit-data-all-entry=":-- All Regions --"></div>
         </div>
       </div>
-
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4 flex ">{% trans "Hide exchanges without facility presence" %}
+          <i class="material-icons hide-ix-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size:16px; padding-top:5px;"
+                title="When enabled, Internet Exchanges that don't have any linked facilities will be hidden">help_outline</i>
+        </div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="bool"
+               data-edit-name="hide_ix_no_fac"
+               data-edit-value="{% if request.GET.hide_ix_no_fac %}{{ request.GET.hide_ix_no_fac }}{% elif request.user.is_authenticated and request.user.hide_ixs_without_fac %}true{% else %}false{% endif %}"
+               data-edit-reset-value="false"></div>
+        </div>
+      </div>
     </div>
     <div class="col-12 col-sm-6 col-md-6">
       <!-- RIGHT COLUMN -->
@@ -181,3 +192,13 @@
 
 
 </div>
+
+<script>
+  $(document).ready(function(){
+    const hide_ix_tooltip = document.querySelector('.hide-ix-tooltip');
+    if (hide_ix_tooltip){
+      $('[data-bs-toggle="tooltip"]').tooltip();
+    }
+
+  });
+</script>

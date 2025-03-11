@@ -13,6 +13,7 @@ import re
 from typing import Union
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from elasticsearch import Elasticsearch
 
 from mainsite.settings import ELASTIC_PASSWORD, ELASTICSEARCH_URL
@@ -332,25 +333,25 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                         "bool": {
                             "should": [
                                 {
-                                    "match_phrase": {
-                                        "name": {
-                                            "query": clean_term,
-                                            "boost": settings.ES_MATCH_PHRASE_BOOST,
-                                        }
+                                    "multi_match": {
+                                        "query": clean_term,
+                                        "type": "phrase",
+                                        "fields": ["name", "aka"],
+                                        "boost": settings.ES_MATCH_PHRASE_BOOST,
                                     }
                                 },
                                 {
-                                    "match_phrase_prefix": {
-                                        "name": {
-                                            "query": clean_term,
-                                            "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
-                                        }
+                                    "multi_match": {
+                                        "query": clean_term,
+                                        "type": "phrase_prefix",
+                                        "fields": ["name", "aka"],
+                                        "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                     }
                                 },
                                 {
                                     "query_string": {
                                         "query": term,
-                                        "fields": ["name"],
+                                        "fields": ["name", "aka"],
                                         "boost": settings.ES_QUERY_STRING_BOOST,
                                     }
                                 },
@@ -372,6 +373,7 @@ def construct_query_body(
     geo: dict[str, Union[str, float]],
     indexes: list[str],
     ipv6_construct: bool,
+    user,
 ) -> dict:
     """
     Constructs the Elasticsearch query body based on the search term and geo filter.
@@ -441,6 +443,30 @@ def construct_query_body(
                     body["query"]["bool"]["must"] = {"terms": {"_index": indexes}}
         except Exception:
             pass
+
+    if user and not isinstance(user, AnonymousUser) and user.hide_ixs_without_fac:
+        filters = body.get("query", {}).get("bool", {}).get("filter", [])
+        if not isinstance(filters, list):
+            filters = [filters] if filters else []
+
+        ix_filter = {
+            "bool": {
+                "should": [
+                    {"bool": {"must_not": {"term": {"_index": "ix"}}}},
+                    {
+                        "bool": {
+                            "must": [
+                                {"term": {"_index": "ix"}},
+                                {"range": {"fac_count": {"gt": 0}}},
+                            ]
+                        }
+                    },
+                ]
+            }
+        }
+
+        filters.append(ix_filter)
+        body["query"]["bool"]["filter"] = filters if len(filters) > 1 else filters[0]
 
     return body
 
@@ -584,8 +610,7 @@ def append_result_to_category(sq: dict, result: dict, pk_map: dict):
 
 
 def search_v2(
-    term: list[Union[str, int]],
-    geo: dict[str, Union[str, float]] = {},
+    term: list[Union[str, int]], geo: dict[str, Union[str, float]] = {}, user=None
 ) -> dict[str, list[dict[str, Union[str, int]]]]:
     """
     Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
@@ -629,7 +654,7 @@ def search_v2(
 
     indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
 
-    body = construct_query_body(term, geo, indexes, ipv6_construct)
+    body = construct_query_body(term, geo, indexes, ipv6_construct, user)
 
     total_limit = settings.SEARCH_RESULTS_LIMIT
     if geo and not term.strip():

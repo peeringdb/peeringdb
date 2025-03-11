@@ -527,7 +527,7 @@ class OrgAdminTests(TestCase):
         self.assertEqual(resp["status"], "ok")
 
         ids = {r["id"]: r["name"] for r in resp["permissions"]}
-        self.assertEqual(len(ids), 11)
+        self.assertEqual(len(ids), 12)
         self.assertIn("org.%d" % self.org.id, ids)
         self.assertIn("ix.%d" % self.ix.id, ids)
         self.assertIn("net.%d" % self.net.id, ids)
@@ -550,7 +550,7 @@ class OrgAdminTests(TestCase):
 
         ids = org_admin.permission_ids(self.org)
         self.assertEqual(type(ids), dict)
-        self.assertEqual(len(ids), 11)
+        self.assertEqual(len(ids), 12)
         self.assertIn("org.%d" % self.org.id, ids)
         self.assertIn("ix.%d" % self.ix.id, ids)
         self.assertIn("net.%d" % self.net.id, ids)

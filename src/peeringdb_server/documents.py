@@ -507,6 +507,7 @@ class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
             # "service_level",
             # "terms"
             # 'org',
+            "fac_count",
         ]
 
 

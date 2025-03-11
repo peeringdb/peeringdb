@@ -1,4 +1,4 @@
-Generated from search.py on 2025-02-11 10:26:48.481231
+Generated from search.py on 2025-03-11 17:03:02.995675
 
 # peeringdb_server.search
 
@@ -14,7 +14,7 @@ Refer to search_indexes.py for search index definition.
 ---
 
 ## search
-`def search(term, autocomplete=False)`
+`def search(term, autocomplete=False, user=None)`
 
 Search searchable objects (ixp, network, facility ...) by term.
 
