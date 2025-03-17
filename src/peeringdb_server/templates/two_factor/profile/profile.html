@@ -4,13 +4,17 @@
 {% block content %}
 <div style="text-align:left !important;">
   {% if not user|user_has_topt_device and user|user_has_u2f_device %}
-    <h1>{% trans "Account Security" %}</h1>
+    <h1>{% trans "Time Based One Time Passwords (TOTP)" %}</h1>
     <p>
-      {% blocktrans trimmed %}Add a TOPT method to your two-factor authentication{% endblocktrans %}
+      {% blocktrans trimmed %}You can choose to save a TOTP secret to a device, often on a phone. Your
+      device generates one-time codes. You enter these codes after entering your
+      account password when logging in.
+      <br><br>
+      You can choose to have us mail you a code each time you login. {% endblocktrans %}
     </p>
     <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">{% trans "Add TOTP Authentication" %}</a>
   {% else %}
-    <h1>{% block title %}{% trans "Account Security" %}{% endblock %}</h1>
+    <h1>{% block title %}{% trans "Time Based One Time Passwords (TOTP)" %}{% endblock %}</h1>
     {% if default_device %}
       <p>{% blocktrans with primary=default_device|as_action %}Primary method: {{ primary }}{% endblocktrans %}</p>
       {% if available_phone_methods %}
@@ -49,14 +53,16 @@
            class="btn btn-info">{% trans "Show Codes" %}</a></p>
 
       <h3>{% trans "Disable TOTP Authentication" %}</h3>
-      <p>{% blocktrans trimmed %}However we strongly discourage you to do so, you can
-        also disable TOTP authentication for your account.{% endblocktrans %}</p>
+      <p>{% blocktrans trimmed %}You can disable TOTP authentication.
+          If you do this, we recommend you use Security Tokens or Passkeys instead{% endblocktrans %}</p>
       <p><a class="btn btn-secondary" href="{% url 'two_factor:disable' %}">
          {% trans "Disable TOTP Authentication" %}</a></p>
     {% else %}
-      <p>{% blocktrans trimmed %}TOTP authentication is not enabled for your
-       account. Enable TOTP authentication for enhanced account
-       security.{% endblocktrans %}</p>
+      <p>{% blocktrans trimmed %}You can choose to save a TOTP secret to a device, often on a phone. Your
+        device generates one-time codes. You enter these codes after entering your
+        account password when logging in.
+        <br><br>
+        You can choose to have us mail you a code each time you login. {% endblocktrans %}</p>
       <p><a href="{% url 'two_factor:setup' %}" class="btn btn-primary">
          {% trans "Add TOTP Authentication" %}</a>
       </p>
