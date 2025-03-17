@@ -8,9 +8,11 @@ import jsonschema
 import pytest
 import requests
 import reversion
+from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import override_settings
+from django.utils import timezone
 
 from peeringdb_server import ixf
 from peeringdb_server.models import (
@@ -443,6 +445,80 @@ def test_cmd_resend_emails_non_commit(unsent_emails):
     assert IXFImportEmail.objects.count() == unsent_email_count
     call_command("pdb_ixf_ixp_member_import", commit=False)
     assert IXFImportEmail.objects.filter(sent__isnull=False).count() == 0
+
+
+@pytest.mark.django_db
+def test_notify_error_different_error_types(entities, capsys, mocker):
+    """
+    Test that different types of errors are properly handled by notify_error
+    and that email notifications are sent appropriately.
+    """
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
+    ixlan.save()
+
+    importer = ixf.Importer()
+    importer.reset(ixlan=ixlan, save=True)
+
+    email_mock = mocker.patch.object(importer, "_email")
+
+    string_error = "Invalid JSON format"
+    importer.notify_error(string_error)
+
+    ixlan.refresh_from_db()
+    assert ixlan.ixf_ixp_import_error == f"Error: {string_error}"
+    assert ixlan.ixf_ixp_import_error_notified is not None
+
+    assert email_mock.call_count == 1
+    email_mock.reset_mock()
+
+    importer.notify_error(string_error)
+
+    assert email_mock.call_count == 0
+    email_mock.reset_mock()
+
+    throttle_hours = settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD + 1
+    with reversion.create_revision():
+        ixlan.ixf_ixp_import_error_notified = timezone.now() - timezone.timedelta(
+            hours=throttle_hours
+        )
+        ixlan.save()
+
+    read_timeout_error = requests.exceptions.ReadTimeout("Connection timed out")
+    importer.notify_error(read_timeout_error)
+    ixlan.refresh_from_db()
+
+    error_text = ixlan.ixf_ixp_import_error
+    assert "ReadTimeout" in error_text or "Connection timed out" in error_text
+
+    assert email_mock.call_count == 1
+    email_mock.reset_mock()
+
+    connect_timeout_error = requests.exceptions.ConnectTimeout(
+        "Failed to establish connection"
+    )
+    importer.notify_error(connect_timeout_error)
+    ixlan.refresh_from_db()
+
+    error_text = ixlan.ixf_ixp_import_error
+    assert (
+        "ConnectTimeout" in error_text or "Failed to establish connection" in error_text
+    )
+
+    assert email_mock.call_count == 1
+    email_mock.reset_mock()
+
+    ssl_error = requests.exceptions.SSLError("SSL Certificate verification failed")
+    importer.notify_error(ssl_error)
+    ixlan.refresh_from_db()
+
+    error_text = ixlan.ixf_ixp_import_error
+    assert (
+        "SSLError" in error_text or "SSL Certificate verification failed" in error_text
+    )
+
+    assert email_mock.call_count == 1
 
 
 @pytest.fixture

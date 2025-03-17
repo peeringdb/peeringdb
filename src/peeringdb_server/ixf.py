@@ -12,6 +12,7 @@ A substantial part of the import logic is handled through models.py::IXFMemberDa
 import datetime
 import ipaddress
 import json
+import re
 from smtplib import SMTPException
 
 import django
@@ -2126,17 +2127,35 @@ class Importer:
         notified = self.ixlan.ixf_ixp_import_error_notified
         previous_error = self.ixlan.ixf_ixp_import_error
 
-        if previous_error and error:
-            clean_prev = set(previous_error.strip().split("\n"))
-            clean_error = set(error.strip().split("\n"))
-            if clean_prev == clean_error:
-                if notified:
-                    diff = (now - notified).total_seconds() / 3600
-                    if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
-                        return
+        if error is None:
+            error_type = "Unknown"
+            error_message = "No error details available"
+        elif isinstance(error, str):
+            error_type = "Error"
+            error_message = error
+        else:
+            error_type = error.__class__.__name__
+            error_message = str(error)
+
+        standardized_error = f"{error_type}: {error_message}"
+
+        def are_errors_equivalent(error1, error2):
+            """Compare two error messages that has memory addresses, ignoring memory addresses."""
+            if not error1 or not error2:
+                return False
+
+            norm1 = re.sub(r"object at 0x[0-9a-f]+", "object at <ADDR>", error1)
+            norm2 = re.sub(r"object at 0x[0-9a-f]+", "object at <ADDR>", error2)
+            return norm1 == norm2
+
+        if previous_error and are_errors_equivalent(previous_error, standardized_error):
+            if notified:
+                diff = (now - notified).total_seconds() / 3600
+                if diff < settings.IXF_PARSE_ERROR_NOTIFICATION_PERIOD:
+                    return
 
         self.ixlan.ixf_ixp_import_error_notified = now
-        self.ixlan.ixf_ixp_import_error = error
+        self.ixlan.ixf_ixp_import_error = standardized_error
         self.ixlan.save()
 
         ixf_member_data = IXFMemberData(ixlan=self.ixlan, asn=0)
