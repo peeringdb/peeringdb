@@ -1,24 +1,30 @@
 {% load i18n %}
 <div class="panel">
 
-  <h1>{% trans "Security keys" %}</h1>
+  <h1>{% trans "Security Tokens and Passkeys" %}</h1>
   <div class="editable popin help marg-top-15">
     <div class="marg-top-15 alert alert-info">
-      <p>{% trans "Security keys can be configured in two modes:" %}</p>
+      <p>
+      {% blocktrans trimmed%}
+      You can configure a U2F hardware security token and/or a Passkey. They can
+      be configured in two ways:
+      {% endblocktrans %}
+      </p>
       <ul>
         <li>{% trans "Disallow login: Requires username/password login, followed by key verification" %}</li>
         <li>{% trans "Allow login: Allows direct login without username/password" %}</li>
       </ul>
     <p>
     {% blocktrans trimmed %}
-    When using a U2F security key or passkey such as <b>yubikeys</b> the initial prompt may show other
-    device-internal keys first (such as fingerprint scanners and security pins).
+    Device-internal keys, like fingerprint scanners, might be shown before your
+    preferred U2F hardware security token.
     {% endblocktrans %}
     </p>
 
     <p>
     {% blocktrans trimmed %}
-    If your yubikey is plugged in but does not show up in the list, <b>cancel</b> the initial prompt and a new prompt for your yubikey should appear afterwards.
+    If your token is plugged in but not listed, <b>cancel</b> the initial prompt. A new prompt
+    for your token should appear afterwards.
     {% endblocktrans %}
     </p>
     </div>
