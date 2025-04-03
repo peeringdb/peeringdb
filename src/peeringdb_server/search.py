@@ -130,8 +130,7 @@ def make_autocomplete_query(term, user):
 
     term = prepare_term(term)
     base_query = SearchQuerySet().autocomplete(auto=term).filter(status=Exact("ok"))
-
-    if user and user.hide_ixs_without_fac:
+    if user and getattr(user, "hide_ixs_without_fac", False):
         non_ix_results = list(base_query.models(Organization, Network, Facility))
         ix_results = list(base_query.models(InternetExchange).exclude(fac_count=0))
         return ix_results + non_ix_results
