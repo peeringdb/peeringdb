@@ -92,4 +92,3 @@ OAuthMetadataView(django.views.generic.base.View)
 
 Intentionally simple parent class for all views. Only implements
 dispatch-by-method and simple sanity checking.
-
