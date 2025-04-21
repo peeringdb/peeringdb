@@ -263,6 +263,8 @@ def merge_organizations(targets, target, request):
 
     # preare stats
 
+    campus_moved = 0
+    carrier_moved = 0
     ix_moved = 0
     fac_moved = 0
     net_moved = 0
@@ -304,6 +306,16 @@ def merge_organizations(targets, target, request):
             fac.save()
             merge.log_entity(fac)
             fac_moved += 1
+        for carrier in org.carrier_set.all():
+            carrier.org = target
+            carrier.save()
+            merge.log_entity(carrier)
+            carrier_moved += 1
+        for campus in org.campus_set.all():
+            campus.org = target
+            campus.save()
+            merge.log_entity(campus)
+            campus_moved += 1
 
         # move users
         for user in org.usergroup.user_set.all():
@@ -338,6 +350,8 @@ def merge_organizations(targets, target, request):
         mail_sponsorship_admin_merge(sponsorship_moved[0], target)
 
     return {
+        "campus": campus_moved,
+        "carier": carrier_moved,
         "ix": ix_moved,
         "fac": fac_moved,
         "net": net_moved,

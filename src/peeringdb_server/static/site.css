@@ -1617,28 +1617,28 @@ a.sponsor {
 a.sponsor.diamond {
   background-color: #00aca1;
   border-color: #00aca1;
-  color: var(--button-text-color-1);
+  color: #ffffff !important;
   content: 'Diamond Sponsor';
 }
 
 a.sponsor.platinum {
   background-color: #899a9d;
   border-color: #899a9d;
-  color: var(--button-text-color-1);
+  color:  #ffffff !important;
   content: 'Platinum Sponsor';
 }
 
 a.sponsor.gold {
   background-color: #e3a631;
   border-color: #e3a631;
-  color: var(--button-text-color-1);
+  color:  #ffffff !important;
   content: 'Gold Sponsor';
 }
 
 a.sponsor.silver {
   border-color: #626a75;
   background-color: #626a75;
-  color: var(--button-text-color-1);
+  color:  #ffffff !important;
   content: 'Silver Sponsor';
 }
 

@@ -1,4 +1,4 @@
-Generated from serializers.py on 2025-03-11 17:03:02.995675
+Generated from serializers.py on 2025-04-21 14:27:07.752913
 
 # peeringdb_server.serializers
 
@@ -338,6 +338,15 @@ Serializer for peeringdb_server.models.IXLan
 Possible relationship queries:
   - ix_id, handled by serializer
 
+
+### Methods
+
+#### to_representation
+`def to_representation(self, instance)`
+
+Object instance -> Dict of primitive datatypes.
+
+---
 
 ## InternetExchangeFacilitySerializer
 

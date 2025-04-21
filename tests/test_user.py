@@ -1,5 +1,6 @@
 import json
 import re
+from unittest import mock
 
 import pytest
 from captcha.models import CaptchaStore
@@ -92,6 +93,73 @@ class UserTests(TestCase):
         self.assertEqual(self.user_b.is_org_admin(self.org_b), True)
         self.assertEqual(self.user_b.is_org_admin(self.org_a), False)
         self.assertEqual(self.user_b.is_org_member(self.org_a), False)
+
+    def test_has_2fa(self):
+        """
+        Test User.has_2fa property returns correct value based on 2FA setup
+        """
+        # Initially no user should have 2FA set up
+        self.assertEqual(self.user_a.has_2fa, False)
+        self.assertEqual(self.user_b.has_2fa, False)
+        self.assertEqual(self.user_c.has_2fa, False)
+
+        # Helper function to create mock managers for 2FA
+        def create_mock_manager(exists_value):
+            manager = mock.MagicMock()
+            manager.exists.return_value = exists_value
+            return manager
+
+        # List of all 2FA method
+        device_types = [
+            "totpdevice_set",
+            "webauthn_security_keys",
+            "emaildevice_set",
+            "staticdevice_set",
+        ]
+
+        # Test 2FA method
+        for active_device in device_types:
+            patches = {}
+
+            for device in device_types:
+                exists_value = (
+                    device == active_device
+                )  # True only for the active device
+                patches[device] = mock.patch.object(
+                    models.User,
+                    device,
+                    new_callable=mock.PropertyMock,
+                    return_value=create_mock_manager(exists_value),
+                )
+
+            with (
+                patches["totpdevice_set"],
+                patches["webauthn_security_keys"],
+                patches["emaildevice_set"],
+                patches["staticdevice_set"],
+            ):
+                user = models.User.objects.get(pk=self.user_a.pk)
+                self.assertTrue(user.has_2fa)
+
+        # Test when all methods return False
+        all_false_patches = {
+            device: mock.patch.object(
+                models.User,
+                device,
+                new_callable=mock.PropertyMock,
+                return_value=create_mock_manager(False),
+            )
+            for device in device_types
+        }
+
+        with (
+            all_false_patches["totpdevice_set"],
+            all_false_patches["webauthn_security_keys"],
+            all_false_patches["emaildevice_set"],
+            all_false_patches["staticdevice_set"],
+        ):
+            user = models.User.objects.get(pk=self.user_a.pk)
+            self.assertFalse(user.has_2fa)
 
     def test_is_verified_user(self):
         """

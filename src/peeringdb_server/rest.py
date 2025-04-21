@@ -82,7 +82,7 @@ from peeringdb_server.permissions import (
     get_user_key_from_request,
 )
 from peeringdb_server.rest_throttles import IXFImportThrottle, OrganizationUsersThrottle
-from peeringdb_server.search import make_name_search_query
+from peeringdb_server.search_v2 import search_v2
 from peeringdb_server.serializers import (
     ASSetSerializer,
     FacilitySerializer,
@@ -504,12 +504,25 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         date_fields = ["DateTimeField", "DateField"]
 
-        # haystack search for the legacy `name_search` parameter
+        # get `name_search` parameter
         q = self.request.query_params.get("name_search")
         q_ids = []
         if q:
-            search_query = make_name_search_query(q).models(self.model)
-            q_ids = [sq.pk for sq in search_query]
+            model_to_index = {
+                "Facility": "fac",
+                "Network": "net",
+                "InternetExchange": "ix",
+                "Organization": "org",
+                "Campus": "campus",
+                "Carrier": "carrier",
+            }
+            index_name = model_to_index.get(self.model.__name__, None)
+            if index_name:
+                search_results = search_v2([q])
+                if index_name in search_results:
+                    q_ids = [
+                        item.get("id") for item in search_results.get(index_name, [])
+                    ]
             # no results found - return empty query
             if not q_ids:
                 return qset.none()

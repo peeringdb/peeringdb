@@ -54,7 +54,7 @@
 
       <h3>{% trans "Disable TOTP Authentication" %}</h3>
       <p>{% blocktrans trimmed %}You can disable TOTP authentication.
-          If you do this, we recommend you use Security Tokens or Passkeys instead{% endblocktrans %}</p>
+          If you do this, we recommend you use Security Tokens or Passkeys instead.{% endblocktrans %}</p>
       <p><a class="btn btn-secondary" href="{% url 'two_factor:disable' %}">
          {% trans "Disable TOTP Authentication" %}</a></p>
     {% else %}

@@ -29,7 +29,9 @@ dependencies = [
     "django-cors-headers>=3.14.0",
     "django-countries>=7.5.1",
     "django-crispy-forms>=2.0",
-    "django-csp>=3.7",
+    # v4 has breaking changes and needs to be migrated
+    # https://github.com/mozilla/django-csp/blob/main/CHANGES.md#40
+    "django-csp>=3.7,<4",
     "django-debug-toolbar>=4.0.0",
 
     # elasticsearch-dsl / django-elasticsearch-dsl version is

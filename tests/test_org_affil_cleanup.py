@@ -104,3 +104,26 @@ class TestDeleteOldRequests(TestCase):
             f"Successfully deleted {count} old pending requests."
             in output.getvalue().strip()
         )
+
+    def test_email_notification_content(self):
+        with patch.object(User, "email_user") as mock_email_user:
+            call_command(
+                "pdb_delete_outdated_pending_affil_request",
+                days_old=0,
+                commit=True,
+                stdout=StringIO(),
+            )
+            self.assertTrue(mock_email_user.called)
+
+            for call_args in mock_email_user.call_args_list:
+                args, kwargs = call_args
+                subject, message = args
+
+                if "Outdated Pending Requests Deleted" in subject and "'s" in subject:
+                    self.assertIn(
+                        "A pending affiliation request to Test Org from user", message
+                    )
+                    self.assertIn("was deleted because it was older than", message)
+
+                elif "Outdated Pending Requests Deleted" in subject:
+                    self.assertIn("Your pending affiliation request to", message)

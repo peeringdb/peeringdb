@@ -3346,6 +3346,26 @@ class IXLanSerializer(ModelSerializer):
             )
         return data
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if isinstance(data, dict):
+            if (
+                "ixf_ixp_member_list_url" in data
+                and "ixf_ixp_member_list_url_visible" not in data
+            ):
+                # only `ixf_ixp_member_list_url` is present in the data
+                # we need to add the `ixf_ixp_member_list_url_visible` field as
+                # that is used to determine if the URL is visible to users during
+                # the final, permission aware serialization
+                try:
+                    data["ixf_ixp_member_list_url_visible"] = getattr(
+                        instance, "ixf_ixp_member_list_url_visible"
+                    )
+                except AttributeError:
+                    pass
+        return data
+
 
 class InternetExchangeSerializer(ModelSerializer):
     """

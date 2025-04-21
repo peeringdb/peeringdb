@@ -6088,7 +6088,12 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         Returns true if the user has set up any TOTP or webauth security keys.
         """
 
-        return self.totpdevice_set.exists() or self.webauthn_security_keys.exists()
+        return (
+            self.totpdevice_set.exists()
+            or self.webauthn_security_keys.exists()
+            or self.emaildevice_set.exists()
+            or self.staticdevice_set.exists()
+        )
 
     @property
     def get_2fa_security_keys(self):
