@@ -1316,6 +1316,28 @@ class TestJSON(unittest.TestCase):
             self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
 
     ##########################################################################
+
+    def test_user_001_GET_only_ixf_ixp_member_list_url(self):
+        test_url = "http://test-ixp.example.com/member-list"
+        ixlan = SHARED["ixlan_r_ok"]
+        ixlan.ixf_ixp_member_list_url = test_url
+        ixlan.save()
+
+        response = self.db_user.all(
+            "ixlan", id=ixlan.id, fields="ixf_ixp_member_list_url", depth=0
+        )
+
+        self.assertEqual(len(response), 1)
+
+        data = response[0]
+
+        self.assertIn("ixf_ixp_member_list_url", data)
+        self.assertEqual(data["ixf_ixp_member_list_url"], test_url)
+
+        self.assertEqual(len(data), 1)
+        self.assertNotIn("ixf_ixp_member_list_url_visible", data)
+
+    ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
     ##########################################################################
 
@@ -4075,7 +4097,8 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_guest_005_list_filter_ix_name_search(self):
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_guest_005_list_filter_ix_name_search(self, mock_search_v2):
         ix = InternetExchange.objects.create(
             status="ok",
             **self.make_data_ix(
@@ -4083,8 +4106,27 @@ class TestJSON(unittest.TestCase):
             ),
         )
 
-        # rebuild search index (name_search requires it)
-        call_command("rebuild_index", "--noinput")
+        mock_es = mock_search_v2.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1},
+                "hits": [
+                    {
+                        "_index": "ix",
+                        "_id": ix.id,
+                        "_score": 1,
+                        "_source": {
+                            "name": ix.name,
+                            "org": {
+                                "id": ix.org.id,
+                                "name": ix.org.name,
+                            },
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
 
         data = self.db_guest.all("ix", name_search=ix.name)
         self.assertEqual(len(data), 1)
@@ -4163,7 +4205,8 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_guest_005_list_filter_fac_name_search(self):
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_guest_005_list_filter_fac_name_search(self, mock_search_v2):
         fac = Facility.objects.create(
             status="ok",
             **self.make_data_fac(
@@ -4171,8 +4214,27 @@ class TestJSON(unittest.TestCase):
             ),
         )
 
-        # rebuild search index (name_search requires it)
-        call_command("rebuild_index", "--noinput")
+        mock_es = mock_search_v2.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1},
+                "hits": [
+                    {
+                        "_index": "fac",
+                        "_id": fac.id,
+                        "_score": 1,
+                        "_source": {
+                            "name": fac.name,
+                            "org": {
+                                "id": fac.org.id,
+                                "name": fac.org.name,
+                            },
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
 
         data = self.db_guest.all("fac", name_search=fac.name)
         self.assertEqual(len(data), 1)
@@ -4818,7 +4880,8 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_guest_005_list_filter_carrier_name_search(self):
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_guest_005_list_filter_carrier_name_search(self, mock_search_v2):
         carrier = Carrier.objects.create(
             status="ok",
             **self.make_data_carrier(
@@ -4831,8 +4894,27 @@ class TestJSON(unittest.TestCase):
             carrier=carrier, facility=SHARED["fac_r_ok"], status="ok"
         )
 
-        # rebuild search index (name_search requires it)
-        call_command("rebuild_index", "--noinput")
+        mock_es = mock_search_v2.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1},
+                "hits": [
+                    {
+                        "_index": "carrier",
+                        "_id": carrier.id,
+                        "_score": 1,
+                        "_source": {
+                            "name": carrier.name,
+                            "org": {
+                                "id": carrier.org.id,
+                                "name": carrier.org.name,
+                            },
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
 
         data = self.db_guest.all("carrier", name_search=carrier.name)
         self.assertEqual(len(data), 1)
@@ -5178,7 +5260,8 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def test_readonly_users_004_list_filter_fac_name_search(self):
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_readonly_users_004_list_filter_fac_name_search(self, mock_search_v2):
         fac = Facility.objects.create(
             status="ok",
             **self.make_data_fac(
@@ -5186,8 +5269,27 @@ class TestJSON(unittest.TestCase):
             ),
         )
 
-        # rebuild search index (name_search requires it)
-        call_command("rebuild_index", "--noinput")
+        mock_es = mock_search_v2.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1},
+                "hits": [
+                    {
+                        "_index": "fac",
+                        "_id": fac.id,
+                        "_score": 1,
+                        "_source": {
+                            "name": fac.name,
+                            "org": {
+                                "id": fac.org.id,
+                                "name": fac.org.name,
+                            },
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
 
         data = self.db_guest.all("fac", name_search=fac.name)
         self.assertEqual(len(data), 1)

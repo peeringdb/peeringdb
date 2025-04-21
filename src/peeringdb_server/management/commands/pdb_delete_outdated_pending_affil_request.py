@@ -102,7 +102,11 @@ class Command(BaseCommand):
                     )
                     % {"user_name": request.user.full_name},
                     template_name="email/notify-org-admin-old-pending-uoar-deleted.txt",
-                    context={"user": request.user, "days_old": days_old},
+                    context={
+                        "user": request.user,
+                        "days_old": days_old,
+                        "org": org_name,
+                    },
                 )
 
         self.send_email(

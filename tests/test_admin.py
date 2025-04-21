@@ -181,13 +181,16 @@ class AdminTests(TestCase):
 
         # merge orgs 1 and 2 into org 0
         t_org = self.entities["org"][0]
-        admin.merge_organizations(self.entities["org"][1:3], t_org, request)
+        result = admin.merge_organizations(self.entities["org"][1:3], t_org, request)
 
         # check that all entities moved
-        for tag in ["ix", "net", "fac"]:
+        for tag in ["ix", "net", "fac", "campus", "carrier"]:
             for ent in self.entities[tag][0:3]:
                 ent.refresh_from_db()
                 self.assertEqual(ent.org, t_org)
+
+        self.assertEqual(result["campus"], 2)
+        self.assertEqual(result["carier"], 2)
 
         # check that all users moved
         i = 1

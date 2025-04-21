@@ -526,6 +526,10 @@ set_option("POC_DELETION_PERIOD", 30)
 # Otherwise we delete with the pdb_cleanup_vq tool
 set_option("VQUEUE_USER_MAX_AGE", 90)
 
+set_option("VQUEUE_IX_MAX_AGE", 90)
+
+set_option("VQUEUE_FAC_MAX_AGE", 90)
+
 # NEGATIVE CACHE
 
 # 401 - unauthorized - 1 minute

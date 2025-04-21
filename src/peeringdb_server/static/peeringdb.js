@@ -2809,6 +2809,9 @@ twentyc.editable.module.register(
       });
     },
     finalize_update_netixlan : async function(rowId, row, data) {
+      if (rowId !== data.id){
+        return;
+      }
       const ref_tag = $('[data-ref-tag]').data('ref-tag');
       if(ref_tag === "ix" || ref_tag === "net"){
         await this.waitForEdit();
