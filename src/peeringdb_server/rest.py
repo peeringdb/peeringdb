@@ -795,7 +795,11 @@ class ModelViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST, data={"detail": str(inst)}
             )
         except CacheRedirect as inst:
-            r = Response(status=200, data=inst.loader.load())
+            cache_data = inst.loader.load()
+            if isinstance(cache_data, Response):
+                return cache_data
+
+            r = Response(status=200, data=cache_data)
             r.context_data = {"apicache": True}
 
             applicator = APIPermissionsApplicator(request)

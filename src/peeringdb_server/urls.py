@@ -144,7 +144,7 @@ urlpatterns = [
     re_path(r"^verify$", view_verify),
     re_path(r"^profile$", view_profile, name="user-profile"),
     re_path(r"^profile/close$", view_close_account, name="close-account"),
-    re_path(r"^profile/v1$", view_profile_v1),
+    re_path(r"^profile/v1$", view_profile_v1, name="profile-v1"),
     re_path(r"^profile/email/add", profile_add_email, name="profile-add-email"),
     re_path(
         r"^profile/email/delete", profile_delete_email, name="profile-remove-email"

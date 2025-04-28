@@ -552,10 +552,10 @@ class Importer:
             self.log_error(f"{exc}", save=save)
             self.notifications = []
             return False
-        except KeyError as exc:
-            # any key erros mean that the data is invalid, log the error and
+        except (KeyError, AttributeError) as exc:
+            # any key or attribute errors mean that the data is invalid, log the error and
             # bail (transactions are atomic and will be rolled back)
-            self.log_error(f"Internal Error 'KeyError': {exc}", save=save)
+            self.log_error(f"Internal Error (key or attribute error): {exc}", save=save)
             return False
 
         # null IX-F error note on ixlan if it had error'd before
