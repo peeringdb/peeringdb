@@ -8,11 +8,13 @@ Specify custom fields to be added to the generated open-api schema.
 """
 
 import re
+from copy import deepcopy
 
 from django.conf import settings
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.schemas.utils import is_list_view
 
 from peeringdb_server.serializers import (
     CampusSerializer,
@@ -102,6 +104,31 @@ class BaseSchema(AutoSchema):
             }
             return mapping
         return super().map_field(field)
+
+    def get_components(self, path, method):
+        """
+        Override to add list-specific components to the schema
+        """
+        components = super().get_components(path, method)
+        serializer, model = self.get_classes(path, method)
+
+        # If we have a model and serializer with list_exclude, create a list-specific component
+        if (
+            model
+            and serializer
+            and hasattr(serializer.__class__.Meta, "list_exclude")
+            and model.__name__ in components
+        ):
+            # Create a list-specific component variant
+            list_component = deepcopy(components[model.__name__])
+            for field in serializer.__class__.Meta.list_exclude:
+                if field in list_component.get("properties", {}):
+                    list_component["properties"].pop(field)
+
+            # Add it to the components dict with a List suffix
+            components[f"{model.__name__}List"] = list_component
+
+        return components
 
     def get_operation_type(self, *args):
         """
@@ -241,6 +268,52 @@ class BaseSchema(AutoSchema):
                 op_dict["description"] += "\n\n" + fh.read()
 
         return op_dict
+
+    def get_responses(self, path, method):
+        if method == "DELETE":
+            return {"204": {"description": ""}}
+
+        self.response_media_types = self.map_renderers(path, method)
+        serializer = self.get_response_serializer(path, method)
+
+        if not isinstance(serializer, serializers.Serializer):
+            item_schema = {}
+        else:
+            item_schema = self.get_reference(serializer)
+
+            # Check if list view with list_exclude - use the List variant
+            if is_list_view(path, method, self.view) and hasattr(
+                serializer.__class__.Meta, "list_exclude"
+            ):
+                ref = item_schema.get("$ref", "")
+                if ref and ref.startswith("#/components/schemas/"):
+                    component_name = ref.split("/")[-1]
+                    item_schema = {"$ref": f"#/components/schemas/{component_name}List"}
+
+        if is_list_view(path, method, self.view):
+            response_schema = {
+                "type": "array",
+                "items": item_schema,
+            }
+
+            paginator = self.get_paginator()
+            if paginator:
+                response_schema = paginator.get_paginated_response_schema(
+                    response_schema
+                )
+        else:
+            response_schema = item_schema
+
+        status_code = "201" if method == "POST" else "200"
+
+        return {
+            status_code: {
+                "content": {
+                    ct: {"schema": response_schema} for ct in self.response_media_types
+                },
+                "description": "",
+            }
+        }
 
     def get_classes(self, *op_args):
         """

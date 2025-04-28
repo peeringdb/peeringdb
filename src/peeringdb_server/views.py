@@ -3739,7 +3739,8 @@ class LoginView(TwoFactorLoginView):
         credential = request.POST.get("credential", None)
 
         if credential and response:
-            request.used_passkey_auth = True
+            request.session["used_passkey_auth"] = True
+            request.session.save()
 
         return response
 
@@ -3891,16 +3892,18 @@ class LoginView(TwoFactorLoginView):
     def set_amr(self):
         amr = []
         done_forms = self.get_done_form_list()
-        passkey = getattr(self, "used_passkey_auth", False)
-
+        passkey = self.request.session.get("used_passkey_auth", False)
         if not passkey:
             amr.append("pwd")
         else:
             amr.append("swk")
 
+        # Check if token step was actually completed by the user by looking for the OTP token in the data
         if "token" in done_forms:
-            # user used OTP to login
-            amr.append("otp")
+            token_data = self.storage.get_step_data("token")
+            # Only add "otp" to amr if the user actually entered a token
+            if token_data and token_data.get("token-otp_token"):
+                amr.append("otp")
 
         if "security-key" in done_forms:
             # user used a security key to login

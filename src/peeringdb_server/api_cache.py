@@ -3,9 +3,14 @@ Handle loading of api-cache data.
 """
 
 import json
+import logging
 import os
 
 from django.conf import settings
+from rest_framework import status
+from rest_framework.response import Response
+
+logger = logging.getLogger(__name__)
 
 
 class CacheRedirect(Exception):
@@ -90,26 +95,37 @@ class APICacheLoader:
         """
         Load the cached response according to tag and depth.
         """
+        try:
+            # read cache file
+            with open(self.path) as f:
+                data = json.load(f)
+                data = data.get("data")
 
-        # read cache file
-        with open(self.path) as f:
-            data = json.load(f)
+            # apply pagination
+            if self.skip and self.limit:
+                data = data[self.skip : self.skip + self.limit]
+            elif self.skip:
+                data = data[self.skip :]
+            elif self.limit:
+                data = data[: self.limit]
 
-        data = data.get("data")
+            if self.fields:
+                for row in data:
+                    self.filter_fields(row)
 
-        # apply pagination
-        if self.skip and self.limit:
-            data = data[self.skip : self.skip + self.limit]
-        elif self.skip:
-            data = data[self.skip :]
-        elif self.limit:
-            data = data[: self.limit]
-
-        if self.fields:
-            for row in data:
-                self.filter_fields(row)
-
-        return {"results": data, "__meta": {"generated": os.path.getmtime(self.path)}}
+            return {
+                "results": data,
+                "__meta": {"generated": os.path.getmtime(self.path)},
+            }
+        except json.JSONDecodeError as e:
+            logger.error(f"Error cache data is corrupted: {str(e)}", exc_info=True)
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={
+                    "cache_corrupted": True,
+                    "detail": "Cache data is corrupted. The error has been logged, please try again later.",
+                },
+            )
 
     def filter_fields(self, row):
         """

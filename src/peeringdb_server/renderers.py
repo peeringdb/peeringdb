@@ -108,6 +108,12 @@ class MetaJSONRenderer(MungeRenderer):
 
             result.update(**data)
 
+        elif res.status_code == 500 and "cache_corrupted" in data:
+            data.pop("cache_corrupted")
+            meta["error"] = data.pop("detail", res.reason_phrase)
+
+            result.update(**data)
+
         result["meta"] = meta
 
         rendered_content = super(self.__class__, self).render(

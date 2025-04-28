@@ -717,3 +717,215 @@ def expand_id_token(id_token):
     payload = jwt.utils.base64url_decode(parts[1]).decode("utf-8")
     payload_json = json.loads(payload)
     return payload_json
+
+
+@pytest.mark.django_db
+class TestOAuthAuthorizationAMR:
+    def setup_oauth_app(self, user, client_id_suffix, amr_description):
+        """Helper method to create OAuth application for testing"""
+        client_id = f"client_id_{client_id_suffix}"
+        client_secret = f"client_secret_{client_id_suffix}"
+        redirect_uris = "https://example.com"
+
+        # Base Application object
+        app = Application.objects.create(
+            user=user,
+            name=f"User app {amr_description}",
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uris=redirect_uris,
+            skip_authorization=False,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+        )
+
+        # Extended OAuthApplication object
+        oauth_app = OAuthApplication.objects.create(
+            id=app.id,
+            user=user,
+            name=f"User app {amr_description}",
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uris=redirect_uris,
+            skip_authorization=False,
+            authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+            client_type=Application.CLIENT_CONFIDENTIAL,
+        )
+
+        return oauth_app, client_id, client_secret, redirect_uris
+
+    def perform_oauth_flow(
+        self, user, amr_values, client_id, client_secret, redirect_uris
+    ):
+        """
+        Helper method to perform the complete OAuth flow with specific AMR values
+
+        Args:
+            user: The user performing the authorization
+            amr_values: List of AMR values to set in the session
+            client_id: OAuth client ID
+            client_secret: OAuth client secret
+            redirect_uris: Redirect URIs
+
+        Returns:
+            tuple: (access_token, profile_data)
+        """
+        client = Client()
+        client.force_login(user)
+
+        # Set session data
+        session = client.session
+        session["amr"] = amr_values
+        session["oauth_session"] = True
+        session.save()
+
+        # Set up OAuth session cookie
+        cookie_signer = get_cookie_signer(salt="oauth_session")
+        signed_session_cookie = cookie_signer.sign(session.session_key)
+        client.cookies["oauth_session"] = signed_session_cookie
+
+        # Authorization request
+        auth_url = reverse("oauth2_provider:authorize")
+        scopes = "email profile networks amr"
+        auth_params = {
+            "client_id": client_id,
+            "response_type": "code",
+            "redirect_uri": redirect_uris,
+            "scope": scopes,
+            "state": "random_state",
+        }
+        resp = client.get(auth_url, auth_params)
+        assert resp.status_code == 200
+        assert "Application requires the following permissions" in resp.content.decode(
+            "utf-8"
+        )
+
+        # User authorization
+        auth_data = {
+            "client_id": client_id,
+            "response_type": "code",
+            "redirect_uri": redirect_uris,
+            "scope": scopes,
+            "allow": "Authorize",
+        }
+        resp = client.post(auth_url, auth_data)
+        assert resp.status_code == 302
+        assert resp.url.startswith(redirect_uris)
+        auth_code = resp.url.split("code=")[1].split("&")[0]
+
+        # Token exchange
+        token_url = reverse("oauth2_provider:token")
+        token_data = {
+            "grant_type": "authorization_code",
+            "code": auth_code,
+            "redirect_uri": redirect_uris,
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+        resp = client.post(token_url, token_data)
+        assert resp.status_code == 200
+        token_response = resp.json()
+        access_token = token_response["access_token"]
+
+        # Verify token info contains correct AMR
+        access_token_object = AccessToken.objects.get(token=access_token)
+        expected_amr_string = ",".join(amr_values)
+        assert access_token_object.access_token_info.amr == expected_amr_string
+
+        # Verify profile endpoint returns correct AMR
+        profile_url = reverse("profile-v1")
+        headers = {"Authorization": f"Bearer {access_token}"}
+        resp = client.get(profile_url, **headers)
+        assert resp.status_code == 200
+        profile_data = resp.json()
+
+        assert "amr" in profile_data
+        assert profile_data["amr"] == amr_values
+
+        return access_token, profile_data
+
+    def cleanup(self, oauth_app):
+        """Clean up test data"""
+        AccessToken.objects.all().delete()
+        RefreshToken.objects.all().delete()
+        oauth_app.delete()
+
+    def test_oauth_authorization_pwd_only(self, oauth2_org_admin_user):
+        """Test OAuth authorization with password authentication only"""
+        user, _, _ = oauth2_org_admin_user
+        amr_values = ["pwd"]
+
+        oauth_app, client_id, client_secret, redirect_uris = self.setup_oauth_app(
+            user, "pwd_only", "Password only test"
+        )
+
+        try:
+            self.perform_oauth_flow(
+                user, amr_values, client_id, client_secret, redirect_uris
+            )
+        finally:
+            self.cleanup(oauth_app)
+
+    def test_oauth_authorization_pwd_mfa_otp(self, oauth2_org_admin_user):
+        """Test OAuth authorization with Password + OTP authentication"""
+        user, _, _ = oauth2_org_admin_user
+        amr_values = ["pwd", "mfa", "otp"]
+
+        oauth_app, client_id, client_secret, redirect_uris = self.setup_oauth_app(
+            user, "pwd_mfa_otp", "Password + MFA + OTP test"
+        )
+
+        try:
+            self.perform_oauth_flow(
+                user, amr_values, client_id, client_secret, redirect_uris
+            )
+        finally:
+            self.cleanup(oauth_app)
+
+    def test_oauth_authorization_pwd_mfa_security_key(self, oauth2_org_admin_user):
+        """Test OAuth authorization with Password + Security Key authentication"""
+        user, _, _ = oauth2_org_admin_user
+        amr_values = ["pwd", "mfa", "swk"]
+
+        oauth_app, client_id, client_secret, redirect_uris = self.setup_oauth_app(
+            user, "pwd_mfa_swk", "Password + MFA + Security Key test"
+        )
+
+        try:
+            self.perform_oauth_flow(
+                user, amr_values, client_id, client_secret, redirect_uris
+            )
+        finally:
+            self.cleanup(oauth_app)
+
+    def test_oauth_authorization_passkey_otp(self, oauth2_org_admin_user):
+        """Test OAuth authorization with Passkey + OTP authentication"""
+        user, _, _ = oauth2_org_admin_user
+        amr_values = ["mfa", "swk", "otp"]
+
+        oauth_app, client_id, client_secret, redirect_uris = self.setup_oauth_app(
+            user, "passkey_otp", "Passkey + OTP test"
+        )
+
+        try:
+            self.perform_oauth_flow(
+                user, amr_values, client_id, client_secret, redirect_uris
+            )
+        finally:
+            self.cleanup(oauth_app)
+
+    def test_oauth_authorization_security_key_only(self, oauth2_org_admin_user):
+        """Test OAuth authorization with Security Key authentication only"""
+        user, _, _ = oauth2_org_admin_user
+        amr_values = ["swk"]
+
+        oauth_app, client_id, client_secret, redirect_uris = self.setup_oauth_app(
+            user, "security_key_only", "Security Key only test"
+        )
+
+        try:
+            self.perform_oauth_flow(
+                user, amr_values, client_id, client_secret, redirect_uris
+            )
+        finally:
+            self.cleanup(oauth_app)

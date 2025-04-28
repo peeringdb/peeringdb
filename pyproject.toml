@@ -81,8 +81,6 @@ dependencies = [
     "coreapi>=2.3.1",
 
 
-    # for pdbv1 import
-    "django_hashers_passlib",
 ]
 
 [project.urls]
@@ -116,8 +114,6 @@ dev-dependencies = [
 [tool.uv.sources]
 # until released
 django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202409" }
-# not pushed to pypi -- can be removed with #1678
-django-hashers-passlib = { git = "https://github.com/mathiasertl/django-hashers-passlib.git" }
 # from branch until passkey support is released
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
 

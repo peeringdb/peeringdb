@@ -880,9 +880,6 @@ PASSWORD_HASHERS = (
     "django.contrib.auth.hashers.SHA1PasswordHasher",
     "django.contrib.auth.hashers.MD5PasswordHasher",
     "django.contrib.auth.hashers.CryptPasswordHasher",
-    "hashers_passlib.md5_crypt",
-    "hashers_passlib.des_crypt",
-    "hashers_passlib.bsdi_crypt",
 )
 
 ROOT_URLCONF = "mainsite.urls"
