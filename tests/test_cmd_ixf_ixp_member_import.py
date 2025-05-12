@@ -210,27 +210,6 @@ def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
 
 
 @pytest.mark.django_db
-def test_reset_all(entities, deskprotickets, data_cmd_ixf_reset):
-    ixf_import_data = json.loads(data_cmd_ixf_reset.json)
-    importer = ixf.Importer()
-    ixlan = entities["ixlan"]
-    # Create IXFMemberData
-    importer.update(ixlan, data=ixf_import_data)
-    importer.notify_proposals()
-
-    assert DeskProTicket.objects.count() == 5
-    assert IXFMemberData.objects.count() == 4
-    assert IXFImportEmail.objects.count() == 1
-
-    call_command("pdb_ixf_ixp_member_import", reset=True, commit=True)
-
-    assert DeskProTicket.objects.count() == 2
-    assert DeskProTicket.objects.filter(body__contains="reset").count() == 1
-    assert IXFMemberData.objects.count() == 0
-    assert IXFImportEmail.objects.count() == 0
-
-
-@pytest.mark.django_db
 def test_runtime_errors(entities, capsys, mocker):
     """
     Test that runtime errors are captured, output
