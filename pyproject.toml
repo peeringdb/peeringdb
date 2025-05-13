@@ -1,6 +1,6 @@
 [project]
 name = "peeringdb_server"
-version = "2.67.0"
+version = "2.68.0-beta"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
