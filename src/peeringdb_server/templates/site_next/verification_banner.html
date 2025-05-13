@@ -1,0 +1,36 @@
+{% load i18n util %}
+{% if request.user.is_authenticated %}
+{% if not request.user.is_verified_user or request.user.orgs_require_reauth %}
+<div class="marg-bot-15">
+<div class="editable popin error">
+{% if request.user.orgs_require_reauth %}
+<p>
+{% blocktrans trimmed %}
+Some of your organizations request that you confirm your email address. Your access to them has been restricted until you do so.
+{% endblocktrans %}
+</p>
+  {% for org, email in request.user.orgs_require_reauth %}
+  <p>
+  {% blocktrans with org_name=org.name email=email trimmed %}
+  {{ org_name }} requests confirmation of {{ email }}
+  {% endblocktrans %}
+  </p>
+  {% endfor %}
+<p>{% trans "Please confirm your email addresses "%} <a href="/profile">{% trans "here" %}</a>.
+{% else %}
+<p>
+{% blocktrans trimmed %}
+Your user account has not been affiliated with any Organization yet, and will have limited access to some of the data (such as non-public network contact information).
+{% endblocktrans %}
+</p>
+{% if not request.user.email_confirmed %}
+<p>{% trans "Please take the time to confirm your email address and request affiliation"%} <a href="/profile">{% trans "here" %}</a>.
+</p>
+{% else %}
+<p>{% trans "You may request affiliation to an Organization or ASN" %} <a href="/profile">{% trans "here" %}</a>.</p>
+{% endif %}
+{% endif %}
+</div>
+</div>
+{% endif %}
+{% endif %}

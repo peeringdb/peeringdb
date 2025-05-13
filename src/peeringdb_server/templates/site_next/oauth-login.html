@@ -1,0 +1,14 @@
+{% load i18n %}
+  {% if OAUTH_ENABLED %}
+  <div class="row marg-top-15" id="container-oauth">
+     <div class="col-md-4 col-sm-3  col-12"></div>
+     <div class="col-md-4 col-sm-6 col-12 panel">
+       <h3>{% trans "Login with oAuth" %}</h3>
+       <div class="oauth">
+         <a href="/accounts/google/login/?process=login"><img src="{{ STATIC_URL }}/oauth-google.png" alt="{% trans "Login with your Google account" %}" /></a>,
+         <a href="/accounts/facebook/login/?process=login"><img src="{{ STATIC_URL }}/oauth-facebook.png" alt="{% trans "Login with your Facebook account" %}" /></a>
+       </div>
+     </div>
+     <div class="col-md-4 col-sm-3 col-12"></div>
+  </div>
+  {% endif %}

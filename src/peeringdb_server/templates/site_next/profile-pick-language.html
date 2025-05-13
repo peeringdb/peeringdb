@@ -1,0 +1,23 @@
+{% load i18n %}
+    <div class="editable always auto-toggled panel"
+         data-edit-target="/set-user-locale"
+         data-edit-always-submit="yes"
+         data-edit-enter-action="submit"
+         id="form-language-preference">
+
+        <h3>{% trans "Select language" %}</h3>
+        <div class="editable popin info" id="language-change-success" style="display:none;">{% trans "Language preference saved" %}!</div>
+
+        {% get_current_language as LANGUAGE_CODE %}
+        <!-- Current language: {{ LANGUAGE_CODE }} -->
+
+        <div class="col-12 col-sm-12 col-md-12"
+             data-edit-type="select"
+             data-edit-data="locales"
+             data-edit-sorted="yes"
+             data-edit-required="no"
+             data-edit-name="locale"
+             data-edit-value="{{ user.locale }}"
+             data-edit-reset-value=""></div>
+        <a class="btn btn-default" data-edit-action="submit">{% trans "Set language preference" %}</a>
+    </div>

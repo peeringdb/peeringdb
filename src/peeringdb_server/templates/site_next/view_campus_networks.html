@@ -1,0 +1,94 @@
+{% load util %}
+{% load i18n %}
+
+<div class="row">
+  {% for facility, networks in data.networks.items %}
+  {% if forloop.counter|divisibleby:2 %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pl-md-2 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0">
+  {% else %}
+  <div class="col-md-6 col-sm-12 col-12 offset-pr-md-2 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  {% endif %}
+
+    <!-- NETWORKS -->
+
+    {% if data.networks  or permissions.can_create_net %}
+    <div class="list"
+        id="api-listing-net"
+        data-sort-container=".scrollable"
+        data-sort-row=".row.item"
+
+        data-edit-module="api_listing"
+        data-edit-group="#view"
+        data-edit-target="api:net">
+
+      <div class="row">
+        <div class="col-6 col-sm-8 col-md-8">
+          <h5>{{ facility }}</h5>
+        </div>
+        <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+        </div>
+      </div>
+      <div class="row header align-items-center">
+        <div class="col-2 col-sm-2 col-md-2">
+          <div data-sort-target=".asn" class="numeric" data-sort-initial="asc">{% trans "ASN" %}</div>
+        </div>
+        <div class="col-5 col-sm-5 col-md-3">
+          <div data-sort-target=".name">{% trans "Name" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2">
+          <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+        </div>
+        <div class="col-3 col-sm-3 col-md-3">
+          <div data-sort-target=".ixs">{% trans "IX Connections" %}</div>
+        </div>
+        <div class="col-2 col-sm-2 col-md-2 filter" id="filter-web">
+          <input type="text" placeholder="{% trans "Filter" %}" oninput="syncValue(this)" data-filter-target="#list-networks{{ forloop.counter }}" class="form-control" />
+        </div>
+      </div>
+
+      <div class="scrollable"
+          id="list-networks{{ forloop.counter }}"
+          data-edit-component="list"
+          data-edit-template="network-item"
+          style="max-height: 220px">
+        <div class="empty-result">
+          <div class="message">{% trans "No filter matches." %}</div>
+          <div class="help">{% trans "You may filter by"%} <b>{% trans "Name" %}</b> {% trans "or" %} <b>{% trans "ASN" %}.</b></div>
+        </div>
+
+        {% for network in networks %}
+
+        <div class="row item status-{{ network.status }}" data-edit-id="{{ network.id }}" data-edit-label="{% trans "Network" %}: {{ network.name }}">
+          <div class="col-2 col-sm-2 col-md-2">
+            <div class="asn" data-sort-value="{{ network.asn }}" data-filter-value="{{ network.asn }}">{{ network.asn }}</div>
+          </div>
+          <div class="col-5 col-sm-5 col-md-3">
+            <div class="name" data-sort-value="{{ network.name|lower }}" data-filter-value="{{ network.name }}">
+              <a {% if network.status == "ok" %} href="/net/{{ network.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ network.name }}</a>
+            </div>
+            {% if permissions.can_edit and network.status != "ok" %}
+            <div>
+              {{ network.status }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-2 col-sm-2 col-md-2">
+            {% with related_fac=network|objfac_tupple_fac_length:data.networks.values %}
+            <div class="facility" data-sort-value="{{ related_fac }}">{% if related_fac == data.facilities|length %}{% trans "ALL" %}{% else %}{{related_fac}}{% endif %} </div>
+            {% endwith %}
+          </div>
+          <div class="col-3 col-sm-3 col-md-3">
+            <div class="ixs" data-sort-value="{{ network.ix_count }}" data-filter-value="{{ network.ix_count }}">{{ network.ix_count }}</div>
+          </div>
+
+        </div>
+
+        {% endfor %}
+
+      </div>
+    </div>
+  {% endif %}
+  </div>
+{% endfor %}
+</div>

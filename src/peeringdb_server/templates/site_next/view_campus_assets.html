@@ -1,0 +1,29 @@
+{% load i18n %}
+<!-- TEMPLATES -->
+<div id="editable-templates">
+  <div class="row item" id="campusfac-item" data-edit-label="Facility">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility">&times;</a>
+      {% endif %}
+      <div class="facility"
+           data-filter-name="facility"
+           data-sort-name="facility"
+           data-edit-name="name">
+      </div>
+      <div class="status"></div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div class="country"
+           data-filter-name="country"
+           data-sort-name="country"
+           data-edit-name="country"></div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div class="city"
+          data-filter-name="city"
+          data-sort-name="city"
+          data-edit-name="city"></div>
+    </div>
+  </div>
+</div>

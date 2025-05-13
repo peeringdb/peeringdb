@@ -1,0 +1,149 @@
+{% include "site_next/header.html" %}
+{% include "site_next/view_header.html" with errors=errors %}
+{% load i18n %}
+
+<div class="view_info">
+<div class="container container-ui-next">
+
+  <div class="row marg-top-15 marg-bot-15">
+    <div class="alert alert-info text-center mb-5" role="alert">
+      {% blocktrans with feedback="https://forms.gle/TYJgvrCGvyTCiaCY8"%}
+        <strong>You're using the new UI!</strong> You can switch back or provide feedback <a href="{{ feedback }}" class="alert-link">here</a>.
+      {% endblocktrans %}
+    </div>
+
+    <div class="col-12 col-sm-6 offset-pr-md-1 ">
+      <!-- CONFIRM EMAIL -->
+      {% include "site_next/profile-confirm-email.html" %}
+      {% if request.user.organizations|length > 1 %}
+        {% include "site_next/self-object-list.html" %}
+        {% include "site_next/self-object-affiliates.html" %}
+      {% elif request.user.organizations|length >= 1 %}
+        {% include "site_next/self-object-affiliates.html" %}
+      {% endif %}
+      {% if request.user.email_confirmed %}
+      <!-- AFFILIATE -->
+      {% include "site_next/profile-affiliate.html" %}
+
+      <!-- OAUTH APPS -->
+      <div class="marg-top marg-bot">
+      <a href="/oauth2/applications">{% trans "Manage OAuth Applications" %}</a>
+      </div>
+      {% endif %}
+
+      <!-- THEME MODE -->
+      {% include "site_next/profile-theme-mode.html" %}
+
+      <!-- UI VERSION OPTIONS -->
+      {% include "site_next/profile-ui-version.html" %}
+
+      <!-- DISPLAY OPTIONS -->
+      {% include "site_next/profile-options.html" %}
+
+    </div>
+    <div class="col-12 col-sm-6">
+
+      <!-- PICK LANGUAGE -->
+      {% include "site_next/profile-pick-language.html" %}
+
+      <!-- Authentication -->
+      {% include "site_next/profile-authentication.html" %}
+
+      {% if not request.user.has_oauth %}
+      <!-- CHANGE EMAIL -->
+      {% include "site_next/profile-change-email.html" %}
+      <!-- CHANGE PASSWORD -->
+      {% include "site_next/profile-change-password.html" %}
+      <!-- CHANGE USERNAME -->
+      {% include "site_next/profile-change-username.html" %}
+      <!-- CHANGE NAME -->
+      {% include "site_next/profile-change-name.html" %}
+      {% endif %}
+
+      <!-- API Keys -->
+      {% include "site_next/profile-api-keys.html" %}
+
+      <!-- CLOSE ACCOUNT -->
+      {% include "site_next/profile-close-account.html" %}
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+
+$('#form-update-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    window.document.location.href = "/verify";
+  })
+});
+$('#form-affiliate-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    window.document.location.href = "/verify";
+  })
+});
+$('#form-change-password').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#password-change-success').show()
+    $(this).editable("reset")
+  })
+});
+$('#form-change-username').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#username-change-success').show()
+    $(this).editable("reset")
+    $('div.user>a').text(data['username']);
+  })
+});
+$('#form-change-name').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#name-change-success').show()
+    // update #name-current-first-name and #name-current-last-name
+    // from #input-first-name and #input-last-name
+    $('#name-current-first-name').text($('#input-first-name').val());
+    $('#name-current-last-name').text($('#input-last-name').val());
+    $(this).editable("reset")
+  })
+});
+$('#form-language-preference').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#language-change-success').show()
+    setTimeout(function(){
+        window.location.href=window.location.href;
+        window.location.reload();
+        // Reload the current page, without using the cache
+        document.location.reload(true);
+    }, 500 );
+  })
+});
+$('#form-org-preference').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#org-change-success').show()
+    setTimeout(function(){
+        window.location.href=window.location.href;
+        window.location.reload();
+        document.location.reload(true);
+    }, 500 );
+  })
+});
+$('#form-delete-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    window.document.location.href = "/account/login";
+  })
+});
+$('#form-delete-affiliate').each(function(idx) {
+    $(this).find('.btn-danger').click(function(e) {
+        e.preventDefault(); // Prevent the default click behavior
+        var OrgID = $(this).parent().find('select[data-edit-data="my_organizations"]').val();
+        window.location.href = "/remove-affiliation?org="+OrgID;
+    });
+});
+
+
+
+
+</script>
+
+{% include "site_next/footer.html" %}

@@ -1,0 +1,83 @@
+{% extends "site_next/base.html" %}
+{% load util %}
+{% load i18n %}
+{% block header %}
+{% include "site_next/header-sponsorships.html" %}
+{% endblock %}
+{% block content %}
+
+<div class="sponsorspage">
+	<div class="sponsors-group diamond">
+		<h2 class="level">
+			{% trans "Diamond" %} <br>{% trans "Sponsors" %}
+		</h2>
+		<div class="sponsors">
+			{% for sponsorship in sponsorships.diamond|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="sponsors-group platinum">
+		<h2 class="level">
+			{% trans "Platinum" %} <br>{% trans "Sponsors" %}
+		</h2>
+		<div class="sponsors">
+			{% for sponsorship in sponsorships.platinum|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="sponsors-group gold">
+		<h2 class="level">
+			{% trans "Gold" %} <br>{% trans "Sponsors" %}
+		</h2>
+		<div class="sponsors">
+			{% for sponsorship in sponsorships.gold|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
+			{% endfor %}
+		</div>
+	</div>
+
+	<div class="sponsors-group silver">
+		<h2 class="level">
+			{% trans "Silver" %} <br>{% trans "Sponsors" %}
+		</h2>
+		<div class="sponsors">
+			{% for sponsorship in sponsorships.silver|shuffle %}
+			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
+				  {% if row.logo %}
+					  {% if row.url %}<a href="{{row.url}}">{% endif %}
+					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
+					  {% if row.url %}</a>{% endif %}
+				  {% endif %}
+			  {% endfor %}
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<div class="marg-top center">
+	<a href="http://docs.peeringdb.com/misc/PeeringDB_Sponsorship_Levels.pdf">{% trans "Become a Sponsor" %}</a><p>
+</div>
+
+{% endblock %}

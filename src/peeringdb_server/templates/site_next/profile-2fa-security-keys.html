@@ -1,0 +1,101 @@
+{% load i18n %}
+<div class="panel">
+
+  <h1>{% trans "Security Tokens and Passkeys" %}</h1>
+  <div class="editable popin help marg-top-15">
+    <div class="marg-top-15 alert alert-info">
+      <p>
+      {% blocktrans trimmed%}
+      You can configure a U2F hardware security token and/or a Passkey. They can
+      be configured in two ways:
+      {% endblocktrans %}
+      </p>
+      <ul>
+        <li>{% trans "Disallow login: Requires username/password login, followed by key verification" %}</li>
+        <li>{% trans "Allow login: Allows direct login without username/password" %}</li>
+      </ul>
+    <p>
+    {% blocktrans trimmed %}
+    Device-internal keys, like fingerprint scanners, might be shown before your
+    preferred U2F hardware security token.
+    {% endblocktrans %}
+    </p>
+
+    <p>
+    {% blocktrans trimmed %}
+    If your token is plugged in but not listed, <b>cancel</b> the initial prompt. A new prompt
+    for your token should appear afterwards.
+    {% endblocktrans %}
+    </p>
+    </div>
+    <div id="errors-alert">
+
+    </div>
+  </div>
+
+
+  <div class="list editable always"
+    data-edit-module="security_key_listing"
+    data-edit-target="/security_keys"
+    data-edit-id="{{ instance.id }}">
+
+    <div class="row header">
+      <div class="col-4 col-sm-4 col-md-4">
+        <div>{% trans "Name" %}</div>
+      </div>
+      <div class="col-4 col-sm-4 col-md-4">
+        <div>{% trans "Status" %}</div>
+      </div>
+      <div class="col-4 col-sm-4 col-md-4"></div>
+    </div>
+
+    <div data-edit-component="list" data-edit-template="security-key-item">
+    {%   for key in user.webauthn_security_keys.all %}
+      <div class="row marg-top" data-edit-id="{{ key.id }}" data-edit-label="{{ key.name }}">
+        <div class="col-4">
+          <span data-edit-name="name">{{ key.name }}</span>
+        </div>
+        <div class="col-3">
+          <span data-edit-name="passkey_login">{% if key.passkey_login %}Allow login{% else %}Disallow login{% endif %}</span>
+        </div>
+        <div class="col-5 right">
+          <a class="btn btn-default" data-edit-action="update">
+            {% if key.passkey_login %}
+                {% trans "Disallow login" %}
+            {% else %}
+                {% trans "Allow login" %}
+            {% endif %}
+          </a>
+          <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
+        </div>
+      </div>
+    {%   endfor %}
+    </div>
+
+
+    <div class="row marg-top editable" data-edit-component="add">
+      <div class="col-4 col-sm-4 col-md-4">
+        <div>{% trans "Register security key" %}</div>
+      </div>
+      <div class="col-6 col-sm-4 col-md-5">
+        <div data-edit-type="string" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+        <div data-edit-type="bool" data-edit-name="passkey_login" style="display:inline"></div> <span>{% trans "Allow to use for login" %}</span>
+      </div>
+
+      <div class="col-2 col-sm-4 col-md-3 right">
+        <a class="btn btn-default" data-edit-action="register">{% trans "Register" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="editable-templates">
+    <div id="security-key-item" class="row item">
+      <div class="col-8" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
+      <div class="col-4 right">
+        <a class="btn btn-default" data-edit-action="revoke">{% trans "Remove" %}</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>

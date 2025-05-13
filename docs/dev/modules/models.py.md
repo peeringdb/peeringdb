@@ -1,4 +1,4 @@
-Generated from models.py on 2025-04-21 14:27:07.752913
+Generated from models.py on 2025-05-12 16:19:34.467425
 
 # peeringdb_server.models
 
@@ -635,8 +635,14 @@ We do this by checking if the IX-F data was provided
 or not.
 - modify_is_rs_peer (`@property`): Returns whether or not the `is_rs_peer` property
 is enabled to receive modify updates or not (#793).
+
+Will return True if the related network has `allow_ixp_update` set to True.
+Otherwise returns False (#1614).
 - modify_speed (`@property`): Returns whether or not the `speed` property
 is enabled to receive modify updates or not (#793).
+
+Will return True if the related network has `allow_ixp_update` set to True.
+Otherwise returns False (#1614).
 - net (`@property`): Returns the Network instance related to
 this entry.
 - net_contacts (`@property`): Returns a list of email addresses that
@@ -1063,6 +1069,9 @@ Descries a Prefix at an Exchange LAN.
 
 These attributes / properties will be available on instances of the class
 
+- deletable (`@property`): Returns whether or not the prefix is currently
+in a state where it can be marked as deleted.
+This will be False if there are netixlans using IPs from this prefix.
 - descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes.
 - grainy_namespace (`@property`): None
 - ix_id (`@property`): None
@@ -1590,6 +1599,7 @@ These attributes / properties will be available on instances of the class
 
 - descriptive_name (`@property`): Returns a descriptive label of the netfac for logging purposes.
 - grainy_namespace (`@property`): None
+- local_asn (`@property`): Read-only property that returns the ASN of the parent network.
 
 ### Class Methods
 
@@ -1623,15 +1633,6 @@ Relationship through facility.
 
 ### Methods
 
-#### clean
-`def clean(self)`
-
-Hook for doing any extra model-wide validation after clean() has been
-called on every field by self.clean_fields. Any ValidationError raised
-by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by NON_FIELD_ERRORS.
-
----
 #### save
 `def save(self, *args, **kwargs)`
 
@@ -2298,6 +2299,8 @@ has been added to the 'user' user group.
 - pending_affiliation_requests (`@property`): Returns the currently pending user -> org affiliation
 requests for this user.
 - self_entity_org (`@property`): None
+- ui_next_enabled (`@property`): None
+- ui_next_rejected (`@property`): None
 
 ### Methods
 

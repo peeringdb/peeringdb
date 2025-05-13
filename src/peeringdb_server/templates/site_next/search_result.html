@@ -1,0 +1,388 @@
+{% load util i18n static %}
+{% with page_title=request|make_page_title_for_search_result %}
+{% include 'site_next/header.html' %}
+{% endwith %}
+{% include 'site_next/view_header.html' %}
+
+<div class="view_info left">
+<div class="container">
+
+{% if search_version == 2 %}
+<div class="alert alert-sm alert-info center">
+
+
+  <p>
+    {% blocktrans with feedback="https://forms.gle/TYJgvrCGvyTCiaCY8" q="/search?q="|add:request.GET.q %}
+    You are using our new beta search interface.
+    <a href="{{ q }}">Click here</a> to return to the old interface.
+    <a href="{{ feedback }}">Click here</a> to provide feedback.
+    {% endblocktrans %}
+  </p>
+
+
+</div>
+<div class="modal fade" id="copyQueryModal" tabindex="-1" aria-labelledby="copyQueryModalLabel">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="copyQueryModalLabel">Copy API Query</h5>
+        <button type="button" class="btn-close{% if prefers_dark_mode %}-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pb-0">
+        <ul class="nav nav-tabs" id="codeTabs" role="tablist">
+          <li class="active nav-item" role="presentation">
+            <a class="nav-link active" id="curl-tab" data-bs-toggle="tab" data-bs-target="#curl"
+              type="button" role="tab" aria-controls="curl" aria-selected="true">cURL</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="python-tab" data-bs-toggle="tab" data-bs-target="#python"
+              type="button" role="tab" aria-controls="python" aria-selected="false">Python</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="javascript-tab" data-bs-toggle="tab" data-bs-target="#javascript"
+              type="button" role="tab" aria-controls="javascript" aria-selected="false">JavaScript</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="go-tab" data-bs-toggle="tab" data-bs-target="#go"
+              type="button" role="tab" aria-controls="go" aria-selected="false">Go</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="ruby-tab" data-bs-toggle="tab" data-bs-target="#ruby"
+              type="button" role="tab" aria-controls="ruby" aria-selected="false">Ruby</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link" id="php-tab" data-bs-toggle="tab" data-bs-target="#php"
+              type="button" role="tab" aria-controls="php" aria-selected="false">PHP</a>
+          </li>
+        </ul>
+        <div class="tab-content" id="codeTabsContent">
+          <div class="tab-pane fade show active" id="curl" role="tabpanel" aria-labelledby="curl-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="curl-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="curl" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="python" role="tabpanel" aria-labelledby="python-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="python-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="python" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="javascript" role="tabpanel" aria-labelledby="javascript-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="js-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="js" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="go" role="tabpanel" aria-labelledby="go-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="go-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="go" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="ruby" role="tabpanel" aria-labelledby="ruby-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="ruby-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="ruby" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="php" role="tabpanel" aria-labelledby="php-tab">
+            <div class="code-container">
+              <pre class="px-3 border rounded">
+                <div class="code-content">
+                  <code id="php-output"></code>
+                  <div class="code-actions">
+                    <button class="copy-btn" data-code-id="php" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                      <i class="material-icons">content_copy</i>
+                    </button>
+                  </div>
+                </div>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Add a new feedback div to display the message -->
+  <div class="search-feedback d-flex justify-content-between align-items-center">
+    <div class="flex-grow-0" style="width: 100px">
+      <button id="copy-api-query-btn" class="btn btn-secondary btn-sm float-start" style="padding: 0.3rem 0.5rem; font-size: 0.80rem" data-bs-toggle="modal" data-bs-target="#copyQueryModal">
+        Copy Query
+      </button>
+    </div>
+    <div class="text-center flex-grow-1">
+      {% if "location" in geo and "country" in geo %}
+        {% with qc=query_combined location=geo.location country=geo.country dist=geo.dist state=geo.state %}
+          {% trans "Showing results for" %} {{ qc }} {% trans "in" %} {% if location %}{{ location }}, {% endif %}{% if state %}{{ state }}, {% endif %}{{ country }}
+          {% if location %}{% trans "within" %} {{ dist }}{% endif %}
+        {% endwith %}
+      {% elif "lat" in geo and "long" in geo %}
+        {% if proximity_entity %}
+          {% with qc=query_combined name=proximity_entity.name ref_tag=proximity_entity.ref_tag id=proximity_entity.id dist=geo.dist%}
+            {% trans "Showing results for" %} {{ qc }} {% trans "near" %} <a href="/{{ ref_tag }}/{{ id }}">{{ name }}</a> [{{ ref_tag }}] {% trans "within" %} {{ dist }}
+          {% endwith %}
+        {% else %}
+          {% with qc=query_combined lat=geo.lat long=geo.long dist=geo.dist %}
+            {% trans "Showing results for" %} {{ qc }} {% trans "near" %} {{ lat }},{{ long }} {% trans "within" %} {{ dist }}
+          {% endwith %}
+        {% endif %}
+      {% else %}
+        {% with qc=query_combined %}
+          {% if qc %}
+            {% trans "Showing results for" %} {{ qc }}
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+
+      {% if incomplete_in_search %}
+        <p class="small mb-0">
+          {% with qc=query_combined %}
+            {% trans "Could not resolve the location you provided: " %}{{ incomplete_in_search }}
+          {% endwith %}
+        </p>
+      {% endif %}
+
+      {% if as_suggestion %}
+        <br>
+        {% with net=as_suggestion %}
+          {% trans "Are you searching for" %} <a href="/net/{{ net.id }}">AS{{ net.extra.asn }}</a>?
+        {% endwith %}
+      {% endif %}
+    </div>
+
+    <div class="flex-grow-0">
+      <button id="search-change-view" class="btn btn-secondary btn-sm float-end" style="padding: 0.3rem 0.5rem; font-size: 0.80rem">
+        <span id="search-toggle-text"
+              data-list-view="{% trans 'Switch to List View' %}"
+              data-category-view="{% trans 'Switch to Category View' %}">
+          {% trans "Switch to Category View" %}
+        </span>
+      </button>
+    </div >
+  </div>
+{% endif %}
+
+
+<div id="search-list-view" class="search-result mt-3" style="display: none;">
+  <div class="mb-3">
+    {% trans "About" %} {{ total_results }} {% trans "results" %}
+  </div>
+
+  {% for result in combined_results %}
+  <div class="mb-4">
+    <h4>
+      <a href="/{{ result.ref_tag }}/{{ result.id }}">{{ result.name }}{% if search_version == 2 %}{% if result.extra.asn %} ({{ result.extra.asn }}){% endif %}{% endif %}</a>
+      {% if result.sponsorship %}
+      <a href="/sponsors" class="sponsor {{ result.sponsorship.css }}">{{ result.sponsorship.label }} {% trans "sponsor" %}</a>
+      {% endif %}
+    </h4>
+    {% if result.sub_name %}<div class="highlight">{{ result.sub_name }}</div>{% endif %}
+    <div class="text-success">
+      {{ result.ref_tag|obj_type }}
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if combined_results.paginator.num_pages > 1 %}
+  <nav aria-label="Search results pages">
+      <ul class="pagination justify-content-center">
+          {% if combined_results.has_previous %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.previous_page_number }}">Previous</a>
+          </li>
+          {% endif %}
+
+          {% if visible_page_range.0 > 1 %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">1</a>
+          </li>
+          {% if visible_page_range.0 > 2 %}
+          <li class="page-item disabled">
+              <span class="page-link">...</span>
+          </li>
+          {% endif %}
+          {% endif %}
+
+          {% for num in visible_page_range %}
+          <li class="page-item {% if combined_results.number == num %}active{% endif %}">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+          </li>
+          {% endfor %}
+
+          {% if visible_page_range|last < combined_results.paginator.num_pages %}
+          {% if visible_page_range|last < combined_results.paginator.num_pages|add:"-1" %}
+          <li class="page-item disabled">
+              <span class="page-link">...</span>
+          </li>
+          {% endif %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.paginator.num_pages }}">{{ combined_results.paginator.num_pages }}</a>
+          </li>
+          {% endif %}
+
+          {% if combined_results.has_next %}
+          <li class="page-item">
+              <a class="page-link" href="?{% for key,value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ combined_results.next_page_number }}">Next</a>
+          </li>
+          {% endif %}
+      </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<div id="search-category-view" class="search-result">
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Exchanges" %} ({{ count_ixp }})</div>
+      {% for row in search_ixp %}
+      <div class="result_row">
+        <a href="/{{'InternetExchange'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
+        {% endif %}
+        {% if row.sub_name %}<div class="highlight">{{ row.sub_name }}</div>{% endif %}
+      </div>
+      {% endfor %}
+
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Networks" %} ({{ count_net }})</div>
+      {% for row in search_net%}
+      <div class="result_row">
+        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}{% if search_version == 2 %} ({{ row.extra.asn }}){% endif %}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
+        {% endif %}
+        {% if row.sub_name %}<div class="highlight">{{ row.sub_name }}</div>{% endif %}
+      </div>
+      {% endfor %}
+
+
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Facilities" %} ({{ count_fac }})</div>
+      {% for row in search_fac %}
+      <div class="result_row">
+        <a href="/{{'Facility'|ref_tag}}/{{row.id}}">{{row.name}}</a>{% if row.campus %}<span class="icon muted"><a href="/campus/{{ row.campus }}"><img src="{% static "campus.svg" %}"></a></span>{% endif %}
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
+        {% endif %}
+        {% if row.sub_name %}<div class="highlight">{{ row.sub_name }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Organizations" %} ({{ count_org }})</div>
+      {% for row in search_org %}
+      <div class="result_row">
+        <a href="/{{'Organization'|ref_tag}}/{{row.id}}">{{row.name}}</a>
+        {% if row.sponsorship %}
+        <a href="/sponsors" class="sponsor {{ row.sponsorship.css }}">{{ row.sponsorship.label }} {% trans "sponsor" %}</a>
+        {% endif %}
+        {% if row.sub_name %}<div class="highlight">{{ row.sub_name }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% if search_version == 2 %}
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Campus" %} ({{ count_campus }})</div>
+      {% for row in search_campus %}
+      <div class="result_row">
+        <a href="/campus/{{row.id}}">{{row.name}}</a>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Carriers" %} ({{ count_carrier }})</div>
+      {% for row in search_carrier %}
+      <div class="result_row">
+        <a href="/carrier/{{row.id}}">{{row.name}}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if request.user.is_verified_user %}
+<div>
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <!-- <a class="btn btn-default" href="/suggest/ix">{% trans "Suggest Exchange" %}</a> -->
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <!-- <a class="btn btn-default" href="/suggest/net">{% trans "Suggest Network" %}</a> -->
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <a class="btn btn-default" href="/suggest/fac">{% trans "Suggest Facility" %}</a>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <!-- <a class="btn btn-default" href="/suggest/net">{% trans "Suggest Network" %}</a> -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div>
+
+</div>
+
+{% include 'site_next/footer.html' %}

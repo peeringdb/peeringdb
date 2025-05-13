@@ -1,0 +1,21 @@
+{% load i18n util %}
+<form method="post" action="{% url 'update-ui-versions' %}">
+  {% csrf_token %}
+  <div class="marg-top-15">
+    <h3 style="font-size:18px;">{% trans "Select UI Version" %}</h3>
+    <div class="btn-group" role="group" aria-label="UI Version Options">
+      <button type="submit" name="ui_version" value="legacy-ui"
+              id="ui-next-rejected" class="btn {% if user.ui_next_rejected %}btn-outline-dark active{% else %}btn-dark{% endif %}"
+              data-bs-toggle="tooltip" data-bs-placement="top"
+              title="{% if user.ui_next_rejected %} The previous UI version is currently active. {% else %} Switch to the previous UI version? {% endif %}">
+        Legacy
+      </button>
+      <button type="submit" name="ui_version" value="new-ui"
+              id="ui-next-enabled" class="btn {% if user.ui_next_enabled %}btn-outline-dark active{% else %}btn-dark{% endif %}"
+              data-bs-toggle="tooltip" data-bs-placement="top"
+              title="{% if user.ui_next_enabled %} The updated UI version is currently active. {% else %} Switch to the updated UI version? {% endif %}">
+        New
+      </button>
+    </div>
+  </div>
+</form>

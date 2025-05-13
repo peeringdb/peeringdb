@@ -1,0 +1,79 @@
+{% load i18n %}
+<div class="list editable always panel"
+     data-edit-module="email_listing"
+     data-edit-target="/profile/email"
+     id="form-update-account">
+
+      <h3>{% trans "Email addresses" %}</h3>
+
+      <div data-edit-component="list" data-edit-template="email-item">
+
+        {% for email in request.user.emailaddress_set.all %}
+        <div class="row" data-edit-id="{{ email }}" data-edit-label="{{ email }}">
+          <div class="col-sm-6">
+            <div>{{ email }}{% if email.primary %} <strong>({% trans "Primary" %})</strong>{% endif %}</div>
+            {% if not email.verified %}
+            <div>
+              <span class="small highlight-warning">
+                <form action="/resend_email_confirmation" method="POST">
+                  {% csrf_token %}
+                  <input type="hidden" name="email" value="{{ email.email }}">
+                  <span class="small highlight-warning">{% trans "Confirmation required" %}</span>
+                  <input type="submit" class="link" value="{% trans "Resend confirmation email" %}">
+                </form>
+              </span>
+            </div>
+            {% endif %}
+          </div>
+          <div class="col-sm-6 right">
+            {% if not email.primary %}
+            <a class="btn btn-secondary btn-sm" data-edit-action="primary">{% trans "Set as primary" %}</a>
+            {% endif %}
+            <a class="btn btn-danger btn-sm" data-edit-action="remove" {% if email.primary %}disabled{% endif %}>{% trans "Remove" %}</a>
+          </div>
+        </div>
+        {% endfor %}
+
+      </div>
+
+      <div class="editable popin marg-top-15">
+      {% blocktrans trimmed %}
+      For speedy validation, it is required that you use a work e-mail address. If you
+      plan to register your ASN with PeeringDB, it is recommended that you use an email-address
+      that exists in the ASN's public contact details.
+      {% endblocktrans %}
+      </div>
+
+      <div class="row marg-top editable" data-edit-component="add">
+
+        <div class="col-sm-12 col-md-6">
+          <div data-edit-name="email" data-edit-type="email"></div>
+        </div>
+        <div class="col-sm-12 col-md-6">
+          <div data-edit-name="password" data-edit-type="password" data-edit-placeholder="{% trans "Password" %}"></div>
+        </div>
+        <div class="col-sm-12">
+          <div class="checkbox-inline">
+            <div data-edit-name="primary" data-edit-type="bool"></div>
+            {% trans "Set as primary email address" %}
+          </div>
+        </div>
+        <div class="col-sm-12 center">
+          <a class="btn btn-default" data-edit-action="add">{% trans "Add email address" %}</a>
+        </div>
+      </div>
+</div>
+
+<div id="editable-templates">
+  <!-- KEY ROW -->
+
+  <div id="email-item" class="row item">
+    <div class="col-sm-6" data-edit-name="email"></div>
+    <div class="col-sm-6 right">
+      <a class="btn btn-secondary btn-sm" data-edit-action="primary">{% trans "Set as primary" %}</a>
+      <a class="btn btn-danger btn-sm" data-edit-action="remove">{% trans "Remove" %}</a>
+    </div>
+  </div>
+
+
+</div>

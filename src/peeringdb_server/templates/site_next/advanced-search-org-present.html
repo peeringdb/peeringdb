@@ -1,0 +1,29 @@
+{% load i18n %}
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "My organization presence" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div class="editable input-frame">
+            <select id="org_present_filter" class="editable select org_present_filter">
+            <option value="">{% trans "Does not matter" %}</option>
+            <option value="org_present" {% if request.GET.org_present %}selected{% endif %}>{% trans "Present" %}</option>
+            <option value="org_not_present" {% if request.GET.org_not_present %}selected{% endif %}>{% trans "Not present" %}</option>
+            </select>
+          </div>
+          <div class="org_present_input">
+          <div data-edit-type="select"
+               data-edit-data="my_organizations"
+               data-edit-multiple="yes"
+               {% if request.user.organizations %}
+               data-edit-value="{{ request.GET.org_present|default:request.user.organizations.0.id }}"
+               {% else %}
+               data-edit-value=""
+               {% endif %}
+               {% if request.GET.org_present %}
+               data-edit-name="org_present"
+               {% elif request.GET.org_not_present %}
+               data-edit-name="org_not_present"
+               {% endif %}
+               ></div>
+          </div>
+        </div>
+      </div>

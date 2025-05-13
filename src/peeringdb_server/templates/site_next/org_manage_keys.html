@@ -1,0 +1,119 @@
+{% load util %}
+{% load i18n %}
+<div class="editable note info">
+  {%blocktrans trimmed %}
+  Here you can create new API keys for your organization or revoke existing keys.
+  {%endblocktrans%}
+  <div class="marg-top">
+  </div>
+</div>
+
+<div class="list editable always"
+         data-edit-module="key_listing"
+         data-edit-target="/org_admin/manage_key"
+         data-edit-id="{{ instance.id }}"
+      >
+  <div class="row header">
+    <div class="col-11">
+      <div class="row">
+        <div class="col-2">
+        </div>
+        <div class="col-2">
+          <div>{% trans "Prefix" %}</div>
+        </div>
+        <div class="col-3">
+          <div>{% trans "Description" %}</div>
+        </div>
+        <div class="col-3">
+          <div>{% trans "Email" %}</div>
+        </div>
+        <div class="col-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div data-edit-component="list" data-edit-template="api-key-item">
+  {% for key in instance.api_keys.all %}
+  {% if not key.revoked %}
+  <div
+    class="row marg-top editable"
+    data-edit-id="{{ key.prefix }}"
+    data-edit-label="{{ key.prefix }} - {{ key.name }}">
+
+    <!-- sub form to allow editing of keys -->
+
+    <div class="editable update-key col-11"
+      data-edit-id="{{ key.prefix }}"
+      data-edit-target="/org_admin/manage_key/update">
+      <div class="row">
+        <div class="col-2">
+          <div class="editable payload">
+            <div data-edit-name="org_id">{{ instance.id }}</div>
+            <div data-edit-name="prefix">{{ key.prefix }}</div>
+          </div>
+          <span data-edit-toggled="view">
+            <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+          </span>
+          <span data-edit-toggled="edit">
+            <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+            <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+          </span>
+        </div>
+
+        <div class="col-2">
+          <div data-edit-name="prefix">
+            {{ key.prefix }}
+          </div>
+        </div>
+
+        <div class="col-3">
+          <div data-edit-type="string" data-edit-name="name">{{ key.name }}</div>
+        </div>
+
+        <div class="col-3">
+          <div data-edit-type="email" data-edit-name="email">{{ key.email }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-1 col-sm-1 col-md-1 right">
+
+      <!-- revoke key button -->
+
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  </div>
+
+  <div id="api-key-popin-frame"></div>
+
+
+  <div class="row marg-top editable" data-edit-component="add">
+    <div class="payload">
+      <div data-edit-name="org_id">{{ instance.id }}</div>
+    </div>
+    <div class="col-11">
+      <div class="row">
+        <div class="col-4">
+          <div>{% trans "Add Key" %}</div>
+        </div>
+        <div class="col-3">
+          <div data-edit-type="string"
+               data-edit-name="name">
+          </div>
+        </div>
+        <div class="col-4">
+          <div data-edit-type="string"
+               data-edit-name="email">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-1 col-sm-1 col-md-1 right">
+      <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
+    </div>
+  </div>
+
+</div>

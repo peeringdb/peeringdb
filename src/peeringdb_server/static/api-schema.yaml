@@ -36284,15 +36284,6 @@ paths:
           pagination in combination with `skip`)
         schema:
           type: integer
-      - name: local_asn
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
       - name: name
         in: query
         description: 'Facility name
@@ -38765,11 +38756,8 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: integer
-                  maximum: 4294967295
-                  format: int64
-                  nullable: true
-                  minimum: 0
+                  type: string
+                  readOnly: true
                 created:
                   type: string
                   format: date-time
@@ -40792,11 +40780,8 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: integer
-                  maximum: 4294967295
-                  format: int64
-                  nullable: true
-                  minimum: 0
+                  type: string
+                  readOnly: true
                 created:
                   type: string
                   format: date-time
@@ -42771,11 +42756,8 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: integer
-                  maximum: 4294967295
-                  format: int64
-                  nullable: true
-                  minimum: 0
+                  type: string
+                  readOnly: true
                 created:
                   type: string
                   format: date-time
@@ -69286,11 +69268,8 @@ components:
           - city
           readOnly: true
         local_asn:
-          type: integer
-          maximum: 4294967295
-          format: int64
-          nullable: true
-          minimum: 0
+          type: string
+          readOnly: true
         created:
           type: string
           format: date-time
@@ -69325,11 +69304,8 @@ components:
         fac_id:
           type: integer
         local_asn:
-          type: integer
-          maximum: 4294967295
-          format: int64
-          nullable: true
-          minimum: 0
+          type: string
+          readOnly: true
         created:
           type: string
           format: date-time

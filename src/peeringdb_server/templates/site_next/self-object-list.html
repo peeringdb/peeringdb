@@ -1,0 +1,20 @@
+{% load i18n %}
+    <div class="editable always auto-toggled panel"
+         data-edit-target="/set-organization/"
+         data-edit-always-submit="yes"
+         data-edit-enter-action="submit"
+         id="form-org-preference">
+
+        <h3>{% trans "Set primary organization" %}</h3>
+        <div class="editable popin info" id="org-change-success" style="display:none;">{% trans "Primary organization updated" %}!</div>
+
+        <div class="col-12 col-sm-12 col-md-12"
+             data-edit-type="select"
+             data-edit-data="my_organizations"
+             data-edit-sorted="yes"
+             data-edit-required="no"
+             data-edit-name="organization"
+             data-edit-value="{{ request.user.self_entity_org }}"
+             data-edit-reset-value=""></div>
+        <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+    </div>

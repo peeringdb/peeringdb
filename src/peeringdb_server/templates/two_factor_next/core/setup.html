@@ -1,0 +1,65 @@
+{% extends "two_factor_next/_base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>{% block title %}{% trans "Enable TOTP Authentication" %}{% endblock %}</h1>
+
+  {# warning if email not confirmed #}
+  {% if not request.user.email_confirmed %}
+    <div class="alert alert-warning">
+      <p>{% blocktrans trimmed %}Your email must be confirmed before enabling TOTP Authentication.{% endblocktrans %}</p>
+    </div>
+  {% else %}
+    {% if wizard.steps.current == 'welcome' %}
+      <p>{% blocktrans trimmed %}You are about to take your account security to the
+          next level. Follow the steps in this wizard to enable TOTP
+          authentication.{% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'method' %}
+      <p>{% blocktrans trimmed %}Please select which authentication method you would
+          like to use.{% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'generator' %}
+      <p>{% blocktrans trimmed %}Either scan the QR code below with your authenticator app or enter the text key.
+        Confirm your app is properly configured by entering the token generated in the
+        box at the bottom.
+          {% endblocktrans %}</p>
+      <b class="2f-secret-key">{{ secret_key }}</b><br><br>
+      <p><img src="{{ QR_URL }}" alt="QR Code" class="bg-white"/></p>
+    {% elif wizard.steps.current == 'sms' %}
+      <p>{% blocktrans trimmed %}Please enter the phone number you wish to receive the
+        text messages on. This number will be validated in the next step.
+        {% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'call' %}
+      <p>{% blocktrans trimmed %}Please enter the phone number you wish to be called on.
+        This number will be validated in the next step. {% endblocktrans %}</p>
+    {% elif wizard.steps.current == 'validation' %}
+      {% if challenge_succeeded %}
+        {% if device.method == 'call' %}
+          <p>{% blocktrans trimmed %}We are calling your phone right now, please enter the
+            digits you hear.{% endblocktrans %}</p>
+        {% elif device.method == 'sms' %}
+          <p>{% blocktrans trimmed %}We sent you a text message, please enter the tokens we
+            sent.{% endblocktrans %}</p>
+        {% endif %}
+      {% else %}
+        <p class="alert alert-warning" role="alert">{% blocktrans trimmed %}We've
+          encountered an issue with the selected authentication method. Please
+          go back and verify that you entered your information correctly, try
+          again, or use a different authentication method instead. If the issue
+          persists, contact the site administrator.{% endblocktrans %}</p>
+      {% endif %}
+    {% elif wizard.steps.current == 'yubikey' %}
+      <p>{% blocktrans trimmed %}To identify and verify your YubiKey, please insert a
+        token in the field below. Your YubiKey will be linked to your
+        account.{% endblocktrans %}</p>
+    {% endif %}
+
+    <form style="margin-top: 10px;" action="" method="post">{% csrf_token %}
+      {% include "two_factor_next/_wizard_forms.html" %}
+
+      {# hidden submit button to enable [enter] key #}
+      <input type="submit" value="" class="d-none" style="visibility:hidden"/>
+
+      {% include "two_factor_next/_wizard_actions.html" %}
+    </form>
+  {% endif %}
+{% endblock %}

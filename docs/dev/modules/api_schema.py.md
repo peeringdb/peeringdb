@@ -1,4 +1,4 @@
-Generated from api_schema.py on 2025-04-21 14:27:07.752913
+Generated from api_schema.py on 2025-05-12 16:19:34.467425
 
 # peeringdb_server.api_schema
 
@@ -94,6 +94,12 @@ Try to relate a serializer and model class to the openapi operation.
 Returns:
 
 - tuple(serializers.Serializer, models.Model)
+
+---
+#### get_components
+`def get_components(self, path, method)`
+
+Override to add list-specific components to the schema
 
 ---
 #### get_operation

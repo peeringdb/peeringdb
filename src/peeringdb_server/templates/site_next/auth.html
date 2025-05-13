@@ -1,0 +1,16 @@
+$request.include("header.html", namespace="peeringdb.base", variables={"headers":$headers})
+$request.include("view_header.html", namespace="peeringdb.base")
+
+<div class="view_info">
+<div class="container">
+  <div class="row">
+     <div class="col-md-4 col-sm-12 col-12"></div>
+     <div class="col-md-4 col-sm-12 col-12 panel">
+     Authenticating ...
+     </div>
+     <div class="col-md-4 col-sm-12 col-12"></div>
+  </div>
+</div>
+</div>
+
+$request.include("footer.html", namespace="peeringdb.base")

@@ -1,0 +1,217 @@
+{% extends "site_next/base.html" %}
+{% load util %}
+{% load i18n %}
+
+{% block content %}
+<div class="row panel">
+  <div class="col-12">
+{% if user.is_verified_user %}
+
+
+<div class="marg-bot-15" id="success" style="display:none;">
+<div class="editable popin info center">
+<p>
+{% blocktrans trimmed %}
+Thank you for your suggestion.
+{% endblocktrans %}
+</p>
+<p>
+<a href="/suggest/net">{% trans "Suggest another network" %}</a>
+</p>
+</div>
+</div>
+
+
+      <div class="editable always auto-toggled create-form"
+           id="create-net-form"
+           data-edit-target="api:net:create"
+           data-edit-enter-action="submit">
+
+        <div class="payload">
+          <div data-edit-name="suggest">yes</div>
+          <div data-edit-name="org_id">0</div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-sm-6 col-md-6">
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="name"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Website" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="website"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "ASN" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-required="yes"
+                     data-edit-name="asn"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IRR as-set/route-set" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="string"
+                     data-edit-name="irr_as_set"></div>
+              </div>
+            </div>
+
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Network Type" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_type"
+                     data-edit-data="enum/net_types_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div
+                class="col-4 col-sm-5 col-md-4 help-text"
+                data-bs-toggle="tooltip"
+                data-placement="top"
+                title="{{ env.info_traffic_help_text }}">
+                {% trans "Traffic Levels" %}
+              <svg xmlns="http://www.w3.org/2000/svg" fill="{% if prefers_dark_mode %}#FFFFFF{% else %}#000000{% endif %}" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+              </div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_traffic"
+                     data-edit-data="enum/traffic"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Traffic Ratios" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_ratio"
+                     data-edit-data="enum/ratios_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Geographic Scope" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="info_scope"
+                     data-edit-data="enum/scopes_trunc"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Unicast IPv4" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_unicast"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multicast" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_multicast"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="info_ipv6"></div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Policy URL" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="policy_url"></div>
+              </div>
+            </div>
+
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "General Policy" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_general"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_general"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Multiple Locations" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_locations"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_locations"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Ratio Requirement" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="bool"
+                     data-edit-name="policy_ratio"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "Contract Requirement" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="select"
+                     data-edit-name="policy_contracts"
+                     data-edit-required="yes"
+                     data-edit-data="enum/policy_contracts"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="col-12 col-sm-6 col-md-6">
+            {% include "site_next/entity_suggest.html" with entity_name="Network" %}
+
+          </div>
+        </div>
+      </div>
+
+
+
+{% else %}
+<div class="marg-bot-15">
+<div class="editable popin error">
+<p>
+{% blocktrans trimmed %}
+Only verified users may suggest entities.
+{% endblocktrans %}
+</p>
+</div>
+</div>
+{% endif %}
+</div>
+</div>
+
+<script language="javascript" type="text/javascript">
+$('#create-net-form').each(function(idx) {
+  form = $(this)
+  $(this).on("action-success:submit", function(ev, data) {
+    $("#success").show();
+    form.hide();
+  })
+});
+</script>
+{% endblock %}

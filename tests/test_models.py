@@ -64,7 +64,6 @@ def entities():
         netfac = NetworkFacility.objects.create(
             network=network,
             facility=facility,
-            local_asn=123,
         )
 
     return {
@@ -165,9 +164,14 @@ def test_netfac_save_will_sync_asn(entities):
     netfac = NetworkFacility.objects.first()
     assert netfac.local_asn == netfac.network.asn
 
-    netfac.local_asn = 2
+    original_asn = netfac.network.asn
+    new_asn = original_asn + 2
 
     with reversion.create_revision():
-        netfac.save()
+        netfac.network.asn = new_asn
+        netfac.network.save()
 
+    netfac.refresh_from_db()
+
+    assert netfac.local_asn == new_asn
     assert netfac.local_asn == netfac.network.asn

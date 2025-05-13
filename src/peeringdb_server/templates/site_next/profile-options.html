@@ -1,0 +1,29 @@
+{% load i18n util %}
+<div class="marg-top-15 marg-bot-15">
+  <h3 style="font-size:18px; margin-bottom: 0px;">{% trans "Options" %}</h3>
+  <form id="user-display-options" method="post" action="{% url 'user-update-options' %}">
+      {% csrf_token %}
+      <div class="form-group mb-2">
+        <div>
+          <input type="checkbox" id="hide_ix_no_fac" name="hide_ix_no_fac"
+          {% if request.user.hide_ixs_without_fac %}checked{% endif %}>
+          <label class="hide_ix_no_fac-label" for="hide_ix_no_fac">
+            {% trans "Hide Internet Exchanges without a linked facility" %}
+            <i class="material-icons hide-ix-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" style="font-size:16px; padding-top:5px;"
+                title="When enabled, Internet Exchanges that don't have any linked facilities will be hidden from search results.">help_outline</i>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">{% trans "Save Options" %}</button>
+  </form>
+</div>
+
+<script>
+  $(document).ready(function(){
+    const hide_ix_tooltip = document.querySelector('.hide-ix-tooltip');
+    if (hide_ix_tooltip){
+      $('[data-bs-toggle="tooltip"]').tooltip();
+    }
+
+  });
+</script>

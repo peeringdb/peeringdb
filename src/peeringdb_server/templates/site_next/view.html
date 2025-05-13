@@ -1,0 +1,948 @@
+{% extends "site_next/base.html" %}
+{% load util %}
+{% load i18n %}
+
+{% block header %}
+{% with page_title=instance|make_page_title %}{{ block.super }}{% endwith %}
+{% endblock %}
+
+{% block content %}
+
+<div id="view" data-ref-tag="{{ ref_tag }}" class="view {% if permissions.can_edit %}editable{% endif %}" {% if permissions.can_edit %}data-edit-target="api:{{ref_tag}}:update" data-edit-id="{{instance.id}}" data-check-incomplete="Yes"{% endif %}>
+
+{% if permissions.can_edit %}
+<div class="payload">
+  <div data-edit-name="org_id">{{ instance.org_id }}</div>
+  {% if ref_tag == "net" %}
+  <div data-edit-name="asn">{{ instance.asn }}</div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-12 col-sm-12 col-12">
+    <div class="view_title row">
+      <div class="col-md-8 col-sm-8 col-9"
+           {% if permissions.can_write %}
+           data-edit-type="string"
+           {% endif %}
+           data-edit-required="yes"
+           data-edit-value="{{ data.title }}"
+           data-edit-name="name">{{ data.title }}
+           {% if instance.sponsorship %}
+           <a data-edit-static="yes" href="/sponsors" class="sponsor {{ instance.sponsorship.css }}">{{ instance.sponsorship.label }} {% trans "sponsor" %}</a>
+           {% endif %}
+
+           {% if request.user.is_authenticated|flag_bad_data_needs_auth %}
+           <!-- <a href="#" id="showReportData" class="bad-data-flag">{% trans "report" %}</a> -->
+           {% endif %}
+           </div>
+
+      <div class="col-md-4 col-sm-4 col-3 right button-bar">
+        {% if instance.status == "pending" %}
+          <div class="status-pending">
+          {% if ref_tag == "campus" %}
+          {% trans "Add at least 2 facilities for your campus to be visible." %}
+          {% else %}
+          {% trans "Pending Review" %}
+          {% endif %}
+          </div>
+        {% endif %}
+        {% if permissions.can_edit %}
+        <!-- toggle edit mode -->
+        <div data-edit-toggled="view">
+          <a class="btn btn-primary" data-edit-action="toggle-edit" style="min-width: 45px;">{% trans "Edit" %}</a>
+        </div>
+        <div data-edit-toggled="edit" style="display:none;">
+          <a class="btn btn-primary" data-edit-action="toggle-edit" style="min-width: 64px;">{% trans "Cancel" %}</a>
+          <a class="btn btn-primary" data-edit-action="submit" style="min-width: 52px;">{% trans "Save" %}</a>
+        </div>
+        {% else %}
+        <div>
+
+        {% if instance.org and not instance.org.owned and request.user.is_authenticated %}
+          {% if request.user.is_verified_user or request.user.email_confirmed %}
+          <a class="btn btn-primary" href="/request-ownership?id={{ instance.org.id }}">Request Ownership</a>
+          {% endif %}
+        {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+{% if ref_tag != "org" %}
+<div class="mt-2">
+    <button class="btn btn-success position-relative my-3 hide-on-edit"
+        href="#"
+        type="button"
+        id="dropdownMenuLinked"
+        aria-expanded="false"
+        data-bs-toggle="modal"
+        data-bs-target="#modalExport"
+        style="left: -10px; border-radius: 10px;"
+    >
+        <i class="material-icons" style="font-size: 16px; position: relative; top: 3px;">file_download</i>
+        EXPORT
+    </button>
+
+    <div class="modal" id="modalExport">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <!-- Modal body -->
+          <div class="modal-body p-0" style="background-color: #EFF0F2;">
+              <div class="d-flex justify-content-center pt-2" id="title-modal-export">
+                <h4> Export Options </h4>
+              </div>
+                <div class="d-flex justify-content-center mt-3 mb-4">
+                  <div class="w-50 bg-white p-4 border border-2" id="export-field">
+                    <div class="d-flex justify-content-between">
+                        <span>All</span>
+                        <input id="export_all" type="checkbox" value="All">
+                    </div>
+                    {% if ref_tag == "campus" %}
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="campus" data-export-container-name="campus" data-export-method="object">
+                      <span>Campus</span>
+                      <input type="checkbox" value="Campus">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section"
+                    data-export-row-name="carriers" data-export-container-name="carrier" data-export-method="single-table">
+                      <span>Carrier</span>
+                      <input type="checkbox" value="Carrier">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="exchanges" data-export-container-name="ix" data-export-method="multiple-tables">
+                      <span>Exchanges</span>
+                      <input type="checkbox" value="Exchanges">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="facility" data-export-method="single-table">
+                      <span>Facilities</span>
+                      <input type="checkbox" value="Facilities">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="networks" data-export-container-name="net" data-export-method="multiple-tables">
+                      <span>Networks</span>
+                      <input type="checkbox" value="Networks">
+                    </div>
+                    {% elif ref_tag == "net" %}
+                    <!-- Netowrk, Public Peering Exchange Points, Interconnection Facilities and Contact Points -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="net" data-export-container-name="net" data-export-method="object">
+                      <span>Network</span>
+                      <input type="checkbox" value="Network">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="exchanges" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Public Peering Exchange Points</span>
+                      <input type="checkbox" value="Public Peering Exchange Points">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="netfac" data-export-method="single-table">
+                      <span>Interconnection Facilities</span>
+                      <input type="checkbox" value="Interconnection Facilities">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="poc" data-export-container-name="poc" data-export-method="single-table">
+                      <span>Contact Points</span>
+                      <input type="checkbox" value="Contact Points">
+                    </div>
+                    {% elif ref_tag == "ix" %}
+                    <!-- Exchange, Prefixes, Local Facilities and Peers at this Exchange Point -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="ix" data-export-container-name="ix" data-export-method="object">
+                      <span>Exchange</span>
+                      <input type="checkbox" value="Exchange">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="prefixes" data-export-container-name="ixpfx" data-export-method="single-table">
+                      <span>Prefixes</span>
+                      <input type="checkbox" value="Prefixes">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="ixfac" data-export-method="single-table">
+                      <span>Local Facilities</span>
+                      <input type="checkbox" value="Local Facilities">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="networks" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Peers at this Exchange Point</span>
+                      <input type="checkbox" value="Peers at this Exchange Point">
+                    </div>
+                    {% elif ref_tag == "fac" %}
+                    <!-- Facility, Campuses, Carriers, Exchanges and Networks -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="fac" data-export-container-name="fac" data-export-method="object">
+                      <span>Facility</span>
+                      <input type="checkbox" value="Facility">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="campuses" data-export-container-name="campus" data-export-method="single-table">
+                      <span>Campuses</span>
+                      <input type="checkbox" value="Campuses">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="carriers" data-export-container-name="carrier" data-export-method="single-table">
+                      <span>Carriers</span>
+                      <input type="checkbox" value="Carriers">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="exchanges" data-export-container-name="ixfac" data-export-method="single-table">
+                      <span>Exchanges</span>
+                      <input type="checkbox" value="Exchanges">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="peers" data-export-container-name="netixlan" data-export-method="single-table">
+                      <span>Networks</span>
+                      <input type="checkbox" value="Networks">
+                    </div>
+                    {% elif ref_tag == "carrier" %}
+                    <!-- Carrier and Facilities -->
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="carrier" data-export-container-name="carrier" data-export-method="object">
+                      <span>Carrier</span>
+                      <input type="checkbox" value="Carrier">
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="facilities" data-export-container-name="carrierfac" data-export-method="single-table">
+                      <span>Facilities</span>
+                      <input type="checkbox" value="Facilities">
+                    </div>
+                    {% endif %}
+                  </div>
+                  <!-- Add more checkboxes as needed -->
+                </div>
+              <div class="d-flex justify-content-center pt-2" id="title-modal-export">
+                <h4> Output Format </h4>
+              </div>
+              <div class="d-flex justify-content-center mt-4 mb-3">
+                <div class="w-50 bg-white p-4 border border-2" id="export-format">
+                  <div class="d-flex justify-content-between">
+                      <span>CSV</span>
+                      <input type="checkbox" value="CSV">
+                  </div>
+                  <div class="d-flex justify-content-between mt-3 export-section" data-export-row-name="" data-export-container-name="" data-export-method="">
+                    <span>JSON</span>
+                    <input type="checkbox" value="JSON">
+                  </div>
+                </div>
+                <!-- Add more checkboxes as needed -->
+              </div>
+              <div class="d-flex justify-content-center mt-4 py-3" >
+                <button type="button" class="btn btn-export-ui-next btn-lg w-50 m-4 fs-4" data-data-export="{{data_json}}" id="btn-export">Export</button>
+                <button type="button" class="btn btn-export-ui-next btn-lg w-50 m-4 fs-4" data-bs-dismiss="modal" id="btn-export">Cancel</button>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endif %}
+
+{% include "site_next/stats.html" %}
+
+
+{% if ref_tag == "campus" %}
+<div class="campus-nav-container col-md-12">
+  <div class="scroller-campus scroller-left float-left mt-2"><i class="material-icons">chevron_left</i></div>
+    <div class="wrapper campus-list flex-grow-1" style="width: 100%;">
+      <nav class="nav nav-tabs nav-list-campus mt-2 ps-0" id="myTab" role="tablist" style="border-bottom: none;">
+        <a class="nav-item nav-link active campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-main" role="tab" aria-controls="public" aria-expanded="true">{{ instance }} ({{ data.facilities|length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-carriers" data-toggle="tab">Carriers ({{ data.carriers|length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-exchanges" data-toggle="tab">Exchanges ({{ data.exchanges.values|objfac_value_length }})</a>
+        <a class="nav-item nav-link campus-tab flex-fill" data-bs-toggle="tab" data-bs-target="#nav-networks" data-toggle="tab">Networks ({{ data.networks.values|objfac_value_length }})</a>
+      </nav>
+    </div>
+  <div class="scroller-campus scroller-right float-right mt-2"><i class="material-icons">chevron_right</i></div>
+</div>
+
+<div class="tab-content" id="nav-tabContent">
+  <div class="tab-pane fade show active" id="nav-main" role="tabpanel" aria-labelledby="nav-main-tab">
+{% endif %}
+
+<div class="row">
+
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pr-md-1 offset-pr-sm-0 offset-pr-0 offset-pl-sm-0 offset-pl-0">
+  {% if permissions.can_edit %}
+  <div class="editable popin note info incomplete marg-top-15 marg-bot-15 hidden">
+  {% trans "Some of the data on this page is incomplete, please update the fields marked with" %}
+  <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  {% trans "to improve data quality" %}.
+  </div>
+
+  <div data-edit-geotag="{{ref_tag}}"
+    class="editable popin alert alert-warning geovalidation-warning marg-top-15 marg-bot-15 hidden">
+  </div>
+
+  <div data-edit-geotag="{{ref_tag}}"
+    class="editable popin alert alert-warning suggested-address marg-top-15 marg-bot-15 hidden">
+    <div class="row">
+      <div class="col-8">
+        <p>{% trans "Suggested Address:" %}</p>
+        <div data-edit-field="address1" class="address-field"></div>
+        <div data-edit-field="address2" class="address-field"></div>
+        <span data-edit-field="city" class="address-field"></span>
+        <span data-edit-field="state" class="address-field"></span>
+        <span data-edit-field="zipcode" class="address-field"></span>
+      </div>
+      <div class="col-4 text-right">
+        <a class="btn btn-primary suggestion-accept">{% trans "Accept" %}</a>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
+
+  <!-- fields -->
+  <div class="view_fields" id="{{ref_tag}}_section">
+  {% for row in data.fields %}
+  {% if row.last_soc_field %}
+  <div class="row view_value text-center" data-edit-toggled="edit">
+    <button onclick="addSocialMediaElement(this)"
+          style="
+            display: inline-block;
+            width: auto;
+          "
+        class="btn btn-primary btn-sm"
+      >+ {% trans "Social Media" %}</button>
+  </div>
+  {% else %}
+  {% if row.type == "group" %}
+      <div class="editable"
+           --data-edit-module="api_grouped_update"
+           data-edit-group="#view"
+           data-edit-target="{{ row.target }}"
+           data-edit-id="{{ row.id }}">
+           <div class="row view_row">
+             <div class="view_field view_sub col-12 col-sm-12 col-md-12">{{ row.label }}</div>
+          </div>
+
+          <div class="editable payload">
+            {% for payload_row in row.payload %}
+            <div data-edit-name="{{ payload_row.name }}">{{ payload_row.value }}</div>
+            {% endfor %}
+          </div>
+
+    {% elif row.type == "group_end" %}
+      </div>
+    {% endif %}
+
+    {% if not row.value|dont_render and row.type != "group" and row.type != "group_end" %}
+    {% if not row.admin or permissions.can_write %}
+    <div class="row view_row {% if row.type == "soc" %} social_media {% endif %} " {% if row.name == "social_media" %} data-edit-toggled="edit" {% endif %}>
+
+      {% if row.type == "sub"%}
+        <!-- sub header -->
+        <div class="view_field view_sub col-12 col-sm-12 col-md-12">{{ row.label }}</div>
+      {% else %}
+        <!-- row header -->
+        <div {% if row.edit_label or row.editable_label %}data-edit-toggled="view"{% endif %} class="view_field col-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+            {% if row.editable_label %}
+            id="{{ row.label_name }}"
+            {% endif %}
+            {% if row.help_text %}
+             data-bs-toggle="tooltip"
+             data-placement="top"
+             {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
+             title="{{ row.help_text }}"
+             {% endif %}>{% if row.notify_incomplete %}<svg class="incomplete hidden" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>{% endif %} {{ row.label }}
+             {% if row.help_text %}<svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>{% endif %}
+        </div>
+
+        {% if row.editable_label %}
+
+          <div data-edit-toggled="edit" style="color:black" class="view_field col-4 col-sm-5 col-md-4{% if row.help_text %} help-text{% endif %}"
+            {% if not row.readonly and permissions.can_write %}
+            data-edit-type="select"
+            {% endif %}
+            data-edit-name="{{ row.label_name }}"
+            data-edit-data="{{ row.label_data }}"
+            data-edit-value="{{ row.label_value }}">{{ row|editable_list_value }}</div>
+          {% if row.admin or permissions.can_write %}
+            <button onclick="deleteElement(this)" data-edit-toggled="edit" class="btn btn-primary btn-sm remove-inline-element"> -</button>
+          {% endif %}
+        {% elif row.edit_label %}
+
+        <!-- row header (edit mode), will only be set if `edit_label` is set on the field definition -->
+
+        <div data-edit-toggled="edit" class="view_field col-4 col-sm-5 col-md-4{% if row.help_text or row.edit_help_text %} help-text{% endif %}"
+             {% if row.help_text or row.edit_help_text %}
+             data-bs-toggle="tooltip"
+             data-placement="top"
+             {% if row.notify_incomplete_group %}data-notify-incomplete-group="{{ row.notify_incomplete_group }}"{% endif %}
+             title="{% if row.edit_help_text %}{{ row.edit_help_text }}{% else %}{{ row.help_text }}{% endif %}"
+             {% endif %}>{% if row.notify_incomplete %}<svg class="incomplete hidden" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>{% endif %} {{ row.edit_label }}
+             {% if row.help_text or row.edit_help_text %}<svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>{% endif %}
+        </div>
+
+        {% endif %}
+
+        <!-- row value -->
+        {% if row.type == "soc" %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+            {% if not row.readonly and permissions.can_write %}
+            data-edit-type="social_media"
+            {% endif %}
+            {% if row.required %}
+            data-edit-required="yes"
+            {% endif %}
+            data-edit-name="{{ row.name }}">{{ row.value|social_media_link:row.label_value }}</div>
+
+        {% elif row.type == "url" %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="url"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-template="link">{% if row.value %}<a href="{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
+
+        {% elif row.type == "email" %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="email"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-template="link">{% if row.value %}<a href="mailto:{{ row.value }}">{{ row.value }}</a>{% endif %}</div>
+
+        {% elif row.type == "list" %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="select"
+              {%   if row.multiple %}
+              data-edit-multiple="yes"
+              {%   endif %}
+              {% endif %}
+              data-edit-name="{{ row.name }}"
+              data-edit-data="{{ row.data }}"
+              {% if row.multiple and row.value %}
+              data-edit-value="{{ row.value|editable_list_join }}">{{ row|editable_list_value }}</div>
+              {% else %}
+              data-edit-value="{{ row.value }}">{{ row|editable_list_value }}</div>
+              {% endif %}
+
+        {% elif row.type == "flags" %}
+          <div class="view_value flags col-8 col-sm-7 col-md-8">
+          {% for flag in row.value %}
+            <span
+                {% if flag.help_text %}
+                data-bs-toggle="tooltip"
+                title="{{ flag.help_text }}"
+                data-placement="right"
+                {% endif %}
+            >
+              <span class="checkmark"
+                    {% if not row.readonly and permissions.can_write %}
+                    data-edit-type="bool"
+                    {% endif %}
+                    data-edit-name="{{ flag.name }}"
+                    data-edit-value="{{ flag.value }}"
+                    data-edit-template="check">
+                    <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not flag.value %}-off{% endif %}.png"
+                    />
+              </span>
+              <span class="enabled">
+                  {{ flag.label }}
+              </span>
+              {% if flag.help_text %}
+              <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+              {% endif %}
+            </span>
+          {% endfor %}
+          </div>
+        {% elif row.type == "action" %}
+          <div class="view_value col-8 col-sm-7 col-md-8 action {% if row.help_text or row.edit_help_text %} help-text {% endif %}" title="{% if row.help_text %}{{ row.help_text }}{% endif %}">
+            {% for action in row.actions %}
+            {% if action.action %}
+            <button class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}" {% if action.action == "ixf_request_import" and not instance.ixlan.ixf_ixp_member_list_url %} disabled {% endif %}>{{ action.label }}</button>
+            {% elif action.href %}
+            <a href="{{ action.href }}" class="btn btn-sm" data-placement="right" data-container="body" data-view-action="{{ref_tag}}_{{ action.action }}">{{ action.label }}</a>
+            {% else %}
+            <span class="action-label {{ action.css }} {{ action.label }}">{{ action.label }}</span>
+            {% endif %}
+            {% endfor %}
+          </div>
+        {% elif row.type == "fmt-text" %}
+          <div class="view_value col-8 col-sm-7 col-md-8 fmt_text"
+               data-render-markdown="yes"
+               {% if not row.readonly and permissions.can_write %}
+               data-edit-type="markdown"
+               {% endif %}
+               {% if row.required %}
+               data-edit-required="yes"
+               {% endif %}
+               data-edit-value="{{ row.value }}"
+               data-edit-name="{{ row.name }}">
+                    {{ row.value }}
+                    {% if row.name == "notes" and row.value and request.user.is_authenticated %}
+                        <div class="translate">
+                            {% comment %} <!-- select name="language-from">
+                              <option value="" selected="selected" selected>Detect</option>
+                              {% for lang in LANGUAGES %} <option value="{{ lang.0 }}">{{ lang.1 }}</option> {% endfor %}
+                            </select -->
+                            <!-- select name="language-to">
+                              {% for lang in LANGUAGES %}
+                                <option value="{{ lang.0 }}"{% ifequal LANGUAGE_CODE lang.0 %} selected="selected"{% endifequal %}>{{ lang.1 }}</option>
+                              {% endfor %}
+                            </select --> {% endcomment %}
+                          <a class="btn btn-primary translate-btn btn-sm" style="vertical-align: bottom;">Translate &#xbb;</a>
+                        </div>
+                    {% endif %}
+                </div>
+        {% elif row.type == "safe" %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+               {% if not row.readonly and permissions.can_write %}
+               data-edit-type="text"
+               {% endif %}
+               {% if row.required %}
+               data-edit-required="yes"
+               {% endif %}
+               data-edit-name="{{ row.name }}">{{ row.value|safe }}</div>
+
+        {% elif row.type == "bool" %}
+          <div class="view_value col-8 col-sm-7 col-md-8">
+            <span class="checkmark"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="bool"
+                {% endif %}
+                data-edit-name="{{ row.name }}"
+                data-edit-value="{{ row.value }}"
+                data-edit-template="check">
+                <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not row.value %}-off{% endif %}.png" />
+            </span>
+          </div>
+        {% elif row.type == "location"  %}
+          <div class="view_value inline col-8 col-sm-7 col-md-8">
+            <span class="inline delimited"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="City"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="city">{{ row.value.city }}</span>{% if row.value.state or row.value.zipcode %}<span data-edit-toggled="view">,</span>{% endif %}
+
+            <span class="inline delimited"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="State"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="state">{{ row.value.state }}</span>{% if row.value.zipcode %}<span data-edit-toggled="view">,</span>{% endif %}
+
+            <span class="inline"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="string"
+                data-edit-placeholder="Zip-Code"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="zipcode">
+                {{ row.value.zipcode }}
+            </span>
+          </div>
+        {% elif row.type == "geocode" %}
+          <div id="geocode" class="view_value col-8 col-sm-7 col-md-8">
+          {% if ref_tag == "fac" %}
+              <span class="inline delimited show-on-edit"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="latitude"
+                data-edit-placeholder="Latitude"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="latitude">
+                {{ row.value.latitude | default:"" }}
+            </span>
+            <span class="inline delimited show-on-edit"
+                {% if not row.readonly and permissions.can_write %}
+                data-edit-type="longitude"
+                data-edit-placeholder="Longitude"
+                {% endif %}
+                {% if row.required %}
+                data-edit-required="yes"
+                {% endif %}
+                data-edit-name="longitude">
+                {{ row.value.longitude | default:"" }}
+            </span>
+            <span class="show-on-edit" id="geocode_preview">
+              {% if row.value.latitude and row.value.longitude %}
+                <a target="_blank" rel="noopener noreferrer" href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">Preview in google maps</a>
+              {% endif %}            </span>
+            <div class="hide-on-edit">
+              {% if row.value.latitude and row.value.longitude  %}
+              <span id="geocode_active">
+                <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              </span>
+              {% else %}
+              <span id="geocode_active"></span>
+              <div id="geocode_inactive" class="note inactive">
+                  {% trans "Geocode data for this entity could not be obtained at this point. This is done automatically upon address field changes."%}
+              </div>
+              {% endif %}
+            </div>
+          {% else %}
+            {% if row.value.latitude and row.value.longitude %}
+              <span id="geocode_active">
+                <a href="https://maps.google.com/?q={{ row.value.latitude|stringformat:"f" }},{{ row.value.longitude|stringformat:"f" }}">{{ row.value.latitude }}, {{ row.value.longitude }}</a>
+              </span>
+              <div id="geocode_inactive" class="note inactive hidden">
+                {% trans "Geocode data for this entity could not be obtained at this point. This is done automatically upon address field changes."%}
+              </div>
+            {% else %}
+            <span id="geocode_active"></span>
+            <div id="geocode_inactive" class="note inactive">
+              {% trans "Geocode data for this entity could not be obtained at this point. This is done automatically upon address field changes."%}
+            </div>
+            {% endif %}
+          {% endif %}
+          </div>
+        {% elif row.type == "entity_link"  %}
+
+          <div class="view_value col-8 col-sm-7 col-md-8">
+            <a href="{{ row.link }}">{{ row.value }}</a>
+          </div>
+
+        {% elif row.type == "image" %}
+
+          <div class="view_value col-8 col-sm-7 col-md-8 img {{ row.name }}"
+              data-edit-upload-path="{{ row.upload_handler }}"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="image"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              {% if row.accept %}
+              data-edit-accept="{{ row.accept }}"
+              {% endif %}
+              {% if row.max_size %}
+              data-edit-max-size="{{ row.max_size }}"
+              {% endif %}
+              data-edit-value="{{ row.value }}"
+              data-edit-name="{{ row.name }}">
+                <img class="img-fluid" src="{{ row.value }}" alt="{{ row.label }}" style="{% if row.max_height %}max-height: {{ row.max_height }}px;{% endif %} {% if not row.value %}display:none;{% endif %}">
+              </div>
+
+        {% else %}
+          <div class="view_value col-8 col-sm-7 col-md-8"
+              {% if not row.readonly and permissions.can_write %}
+              data-edit-type="string"
+              {% endif %}
+              {% if row.required %}
+              data-edit-required="yes"
+              {% endif %}
+              data-edit-name="{{ row.name }}">{{ row.value }}</div>
+
+        {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if ref_tag != "campus" %}
+  {% include bottom_template_name with data=data instance=instance permissions=permissions %}
+  {% endif %}
+
+  </div>
+
+  {% if ref_tag != "campus" %}
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pl-md-0 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+    {% include side_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  {% else %}
+  <div class="col-lg-6 col-md-12 col-sm-12 col-12 offset-pl-md-0 offset-pl-sm-0 offset-pl-0 offset-pr-sm-0 offset-pr-0"
+    {% include facilities_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  </div>
+  <div class="tab-pane fade" id="nav-carriers" role="tabpanel" aria-labelledby="nav-carriers-tab">
+    {% include carriers_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  <div class="tab-pane fade" id="nav-exchanges" role="tabpanel" aria-labelledby="nav-exchanges-tab">
+    {% include exchanges_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+  <div class="tab-pane fade" id="nav-networks" role="tabpanel" aria-labelledby="nav-networks-tab">
+    {% include networks_template_name with data=data instance=instance permissions=permissions %}
+  </div>
+</div>
+{% endif %}
+
+</div>
+    <div class="view_title right" data-edit-toggled="edit"  style="display:none;">
+      <a class="btn btn-primary" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+      <a class="btn btn-primary" data-edit-action="submit">{% trans "Save" %}</a>
+    </div>
+</div>
+
+<!-- REPORT BAD DATA
+<div class="modal fade" id="report-bad-data" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">{% trans "I am seeing bad data with" %} {{data.title}} {% trans "at" %} <a href="{{instance.view_url}}">{{instance.view_url}}<a></h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <form id="reportDataForm">
+      <div class="modal-body">
+          {% csrf_token %}
+          <input name="server_email" value="{% server_email %}" hidden/>
+          <input name="obj_type" value="{{ref_tag|obj_type}}" hidden/>
+          <input name="view_url" value="{{instance.view_url}}" hidden/>
+          <label for="fields" class="col-form-label">The fields in question are:</label>
+          <div class="px-5">
+            <input placeholder="please fill in" name="fields" type="text" class="form-control" />
+          </div>
+          <label for="reason" class="col-form-label">I think this is bad data because:</label>
+          <div class="px-5">
+            <input placeholder="please fill in reason you're flagging this as bad data" name="reason" type="text" class="form-control" />
+          </div>
+          <label for="expected" class="col-form-label">The correct data is probably:</label>
+          <div class="px-5">
+            <input placeholder="please fill this in if you feel strongly you know what the correct data should be" name="expected" type="text" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-default" type="submit">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+-->
+
+{% if permissions.can_write %}
+{% if ref_tag == "fac" %}
+  <script>
+    $(document).on('input', 'input.latitude, input.longitude',() => {
+      let latitude = PeeringDB.escape_html($("input.latitude").val().trim())
+      let longitude = PeeringDB.escape_html($("input.longitude").val().trim())
+      const geo_preview = $("#geocode_preview");
+      validate_lat = latitude !== "" && isFinite(latitude) && Math.abs(latitude) <= 90
+      validate_lon = longitude !== "" && isFinite(longitude) && Math.abs(longitude) <= 180;
+      if (validate_lat && validate_lon){
+        let link = `https://maps.google.com/?q=${latitude},${longitude}`
+        let contents = `<a target="_blank" rel="noopener noreferrer" href="${link}">Preview in google maps</a>`
+        geo_preview.empty().append(contents);
+      }else{
+        let contents = `Please enter valid geocode`
+        geo_preview.empty().append(contents);
+      }
+  });
+  </script>
+{% endif %}
+{% endif %}
+
+<script language="javascript" type="text/javascript">
+  $('a.btn.btn-primary[data-edit-action="toggle-edit"]').click(()=>{
+    $("div[data-edit-name='irr_as_set']").tooltip('dispose');
+  })  {% if request.user.is_authenticated|flag_bad_data_needs_auth %}
+  var showReportDataElmnt = document.getElementById("showReportData")
+  if(showReportDataElmnt != null){
+    showReportDataElmnt.addEventListener("click", function() {
+      // Show the modal using Bootstrap's modal method
+      $('#report-bad-data').modal('show');
+    });
+  }
+
+  reportDataFormElmnt = document.getElementById("reportDataForm")
+  if(reportDataFormElmnt != null){
+    reportDataFormElmnt.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      // Retrieve form data
+      const formData = new FormData(event.target);
+      const formObject = {};
+      formData.forEach(function(value, key) {
+        formObject[key] = value;
+      });
+
+      var subject = "I am seeing bad data with " + formObject["obj_type"] + " at " + formObject["view_url"];
+      var fields = "The field(s) in question are:\n"+formObject["fields"]+"\n";
+      var reason = "I think this is bad data because:\n"+formObject["reason"]+"\n";
+      var expected = "The correct data is probably:\n"+formObject["expected"]+"\n";
+      var body = fields+reason+expected;
+
+      // Construct the mailto link
+      var mailtoLink = `mailto:${formObject["server_email"]}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+      // Open a pop-up window with the mailto link
+      var popup = window.open(mailtoLink, "EmailPopup", "width=600, height=400");
+
+      // Clear the form or perform other actions
+      event.target.reset();
+    });
+  }
+  {% endif %}
+
+  {% if permissions.can_write %}
+  function submitForm() {
+    let inputValue = document.getElementById('searchInput').value;
+    let form = document.getElementById('quick-search-view');
+    form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+    return true;
+  }
+
+function submitForm() {
+  let inputValue = document.getElementById('searchInput').value;
+  let form = document.getElementById('quick-search-view');
+  form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+  return true;
+}
+
+  const deleteElement = (e) => {
+
+    $(e).parent().remove();
+
+    // mark form as changed
+    $('.view.editable').data("edit-changed", "yes");
+  }
+  const addSocialMediaElement = (e) => {
+    $(e).parent().before(`{% include "site_next/social_media.html" with social_media_enum=data.social_media_enum %}`);
+    var idx = $(".new_service_identifier").length
+    var new_service_identifier = $(".new_service_identifier[data-edit-name=smi_value_]")
+    new_service_identifier.attr("data-edit-name", "smi_value_" + idx)
+    new_service_identifier.editable("toggle");
+  }
+
+  $(document).ready(function() {
+
+    addExpandTableButton()
+
+    PeeringDB.incomplete_data_notify();
+    PeeringDB.ViewActions.init();
+  checkAsSet();
+
+    var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
+    editForm.on('action-success:submit', function(e,data) {
+      if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+        document.location.href = document.location.href;
+      } else {
+        PeeringDB.ViewTools.after_submit(editForm, data);
+        setTimeout(PeeringDB.incomplete_data_notify, 500);
+      }
+    });
+
+    editForm.on('action-success:toggle', function(e, payload) {
+      if(payload.mode == "view") {
+        if(PeeringDB.ixf_proposals && PeeringDB.ixf_proposals.require_refresh) {
+          document.location.href = document.location.href;
+        }
+      }
+    })
+
+    $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
+
+  });
+
+  {% endif %}
+
+  const addExpandTableButton = () =>{
+    const tables = document.querySelectorAll("div.list > div.scrollable ")
+    tables.forEach(element => {
+      if (element.scrollHeight > element.clientHeight){
+        old_button = element.parentElement.querySelectorAll(".expanded-btn")
+        if (old_button.length > 0){
+          old_button[0].remove()
+        }
+        button = `<i class="material-icons expanded-btn" onclick="toggleHeight('${element.id}')" style="transform: rotate(90deg)">chevron_right</i>`
+        element.parentElement.insertAdjacentHTML("beforeend",button)
+      }
+    });
+  }
+  $(document).ready(function() {
+    addExpandTableButton()
+  })
+</script>
+
+{% if ref_tag != "org" %}
+<!-- EXPORT FORM LOGIC -->
+<script>
+    const checkAllExportTypes = () => {
+        let allChecked = true;
+        $("#export-field input[type='checkbox']:not(#export_all)").each(function() {
+            if (!$(this).prop("checked")) {
+                allChecked = false;
+            }
+        });
+
+        $("#export_all").prop("checked", allChecked);
+    }
+
+    $("#export_all").change((e) => {
+        const toggleChecked = e.target.checked;
+        $("#export-field input[type='checkbox']").prop("checked", toggleChecked);
+    });
+
+    $("#export-field input[type='checkbox']").change(function() {
+      if(!$('#export-format input[type="checkbox"][value="CSV"]').is(":checked")){
+        if (!$(this).prop("checked")) {
+          $("#export_all").prop("checked", false);
+        } else {
+          checkAllExportTypes();
+        }
+      }else{
+        $('#export-field input[type="checkbox"]').not(this).prop('checked', false); // Uncheck other checkboxes
+      }
+    });
+
+    $('#export-format input[type="checkbox"]').change(function() {
+      $('#export-format input[type="checkbox"]').not(this).prop('checked', false); // Uncheck other checkboxes
+
+      if($('#export-format input[type="checkbox"][value="CSV"]').is(":checked")){
+        $('#export_all').attr('disabled', true)
+        $('#export_all').prop("checked", false)
+
+        if($("#export-field input[type='checkbox']:checked").length > 1) {
+          $('#export-field input[type="checkbox"]:checked').not(':last').prop('checked', false);
+        }
+      }else{
+        $('#export_all').attr('disabled', false)
+      }
+    });
+
+
+// tab campus
+$('.wrapper').scroll(()=>{
+    reAdjust()
+  })
+const reAdjust = () =>{
+  if (($('.wrapper').scrollLeft() + $('.wrapper').innerWidth() >= $('.wrapper')[0].scrollWidth - 10)){
+    $('.scroller-right').hide();
+  }else{
+    $('.scroller-right').show().css('display', 'flex');
+  }
+
+  if ($('.wrapper').scrollLeft()){
+    $('.scroller-left').show().css('display', 'flex');
+  }else{
+    $('.scroller-left').hide();
+  }
+}
+$(document).ready(()=>{
+  $('a.campus-tab[data-toggle="tab"]').on('shown.bs.tab',()=>{
+    addExpandTableButton()
+  })
+  reAdjust();
+})
+$(window).on('resize',function(e){
+  	reAdjust();
+});
+
+$('.scroller-right').click(function() {
+  $('.wrapper').animate( { scrollLeft: '+=200' }, "fast");
+});
+
+$('.scroller-left').click(function() {
+  $('.wrapper').animate( { scrollLeft: '-=200' }, "fast");
+});
+
+
+</script>
+{% endif %}
+{% if ref_tag != "campus" %}
+{% if permissions.can_use_tools %}
+{% include tools_template_name with data=data instance=instance permissions=permissions %}
+{% endif %}
+
+{% include asset_template_name with data=data instance=instance permissions=permissions %}
+{% endif %}
+{% endblock %}

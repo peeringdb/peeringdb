@@ -2,6 +2,7 @@ import re
 
 import pytest
 from allauth.account.models import EmailAddress
+from django.conf import settings
 from django.test import Client
 from django.urls import reverse
 from django_grainy.models import Group
@@ -489,3 +490,38 @@ def test_view_tutorial_banner_text_override(client, settings):
         BASE_ENV["TUTORIAL_MODE"] = False
         settings.TUTORIAL_MODE = False
         pdb_settings.TUTORIAL_MODE = False
+
+
+@pytest.mark.django_db
+def test_post_select_ui_next():
+    client = Client()
+
+    user = User.objects.create_user(username="testuser", password="pass")
+    client.login(username="testuser", password="pass")
+
+    # never opt in
+    response = client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
+
+    user.refresh_from_db()
+
+    assert user.ui_next_enabled is False
+    assert user.ui_next_rejected is False
+
+    # ui opt in
+    response = client.post(reverse("update-ui-versions"), {"ui_version": "new-ui"})
+
+    user.refresh_from_db()
+
+    assert user.ui_next_enabled is True
+    assert user.ui_next_rejected is False
+
+    # ui rejected
+    user.set_opt_flag(settings.USER_OPT_FLAG_UI_NEXT, True)
+    user.save()
+
+    response = client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
+
+    user.refresh_from_db()
+
+    assert user.ui_next_enabled is False
+    assert user.ui_next_rejected is True

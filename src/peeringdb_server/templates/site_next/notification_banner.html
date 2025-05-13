@@ -1,0 +1,14 @@
+{% load i18n %}
+
+{% if not request.user.has_2fa and recent.organizations_require_2fa %}
+<div class="marg-bot-15">
+  <div class="editable popin error">
+    <p class="center">
+      {% blocktrans trimmed %}
+      Some of your organizations request that you need to enable 2FA. Your access to them has been restricted until you do so.
+      {% endblocktrans %}
+    </p>
+    <p>{% trans "Activate 2FA for your account" %} <a href="/account/two_factor/">{% trans "here" %}</a>.</p>
+  </div>
+</div>
+{% endif %}

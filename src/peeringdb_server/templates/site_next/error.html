@@ -1,0 +1,41 @@
+{% include "site_next/header.html" %}
+{% include "site_next/view_header.html" %}
+{% load i18n %}
+
+<div class="view_info left">
+<div class="container">
+
+<!-- title -->
+
+{% include "site_next/inline_search.html" %}
+
+<div id="inline-search-container" class="d-none">
+{% include "site_next/search_result_frame.html" %}
+</div>
+
+<div id="content">
+<div class="view">
+<div class="row">
+<div class="col-md-1 col-sm-12 col-12"></div>
+
+<div class="col-md-10 col-sm-12 col-12">
+{% block error %}
+{% if status == 404 %}
+<h1>{% trans "404 - Not Found" %}</h4>
+<p>{% trans "The page you requested does not exist." %}</p>
+{% elif status == 403 %}
+<h1>{% trans "403 - Forbidden" %}</h4>
+<p>{% trans "You don't have permissions to view this page." %}</p>
+{% endif %}
+{% endblock %}
+<p><a href="/">{% trans "Take me home" %}</a>.</p>
+</div>
+
+<div class="col-md-1 col-sm-12 col-12"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+{% include "site_next/footer.html" %}

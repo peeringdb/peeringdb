@@ -1,0 +1,35 @@
+{% load i18n %}
+<div class="editable always panel"
+     data-edit-target="/change-name"
+     id="form-change-name">
+
+  <h3>{% trans "Change name" %}</h3>
+  <div class="editable popin info" id="name-change-success" style="display:none;">{% trans "Name changed" %}!</div>
+  <div id="name-current" class="center">
+       {% trans "Name associated with this account" %}: <span id="name-current-first-name">{{ user.first_name }}</span> <span id="name-current-last-name">{{ user.last_name }}</span>
+  </div>
+  <div class="row">
+       <div class="col-md-6">
+
+              <input type="text"
+                     class="editable string form-control marg-bot-15"
+                     id="input-first-name"
+                     placeholder="{% trans "New First Name" %}"
+                     data-edit-name="first_name"
+                     data-edit-type="string"
+                     data-edit-required="yes" />
+       </div>
+       <div class="col-md-6">
+
+              <input type="text"
+                     class="editable string form-control marg-bot-15"
+                     id="input-last-name"
+                     placeholder="{% trans "New Last Name" %}"
+                     data-edit-name="last_name"
+                     data-edit-type="string"
+                     data-edit-required="yes" />
+       </div>
+</div>
+
+  <a class="btn btn-default" data-edit-action="submit">{% trans "Change Name" %}</a>
+</div>

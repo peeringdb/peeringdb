@@ -1,0 +1,76 @@
+{% extends "two_factor_next/_base.html" %}
+{% load i18n two_factor_tags pdb_two_factor_ext %}
+
+{% block content %}
+<div style="text-align:left !important;">
+  {% if not user|user_has_topt_device and user|user_has_u2f_device %}
+    <h1>{% trans "Time Based One Time Passwords (TOTP)" %}</h1>
+    <p>
+      {% blocktrans trimmed %}You can choose to save a TOTP secret to a device, often on a phone. Your
+      device generates one-time codes. You enter these codes after entering your
+      account password when logging in.
+      <br><br>
+      You can choose to have us mail you a code each time you login. {% endblocktrans %}
+    </p>
+    <a href="{% url 'two_factor:setup' %}" class="btn btn-primary">{% trans "Add TOTP Authentication" %}</a>
+  {% else %}
+    <h1>{% block title %}{% trans "Time Based One Time Passwords (TOTP)" %}{% endblock %}</h1>
+    {% if default_device %}
+      <p>{% blocktrans with primary=default_device|as_action %}Primary method: {{ primary }}{% endblocktrans %}</p>
+      {% if available_phone_methods %}
+        <h2>{% trans "Backup Phone Numbers" %}</h2>
+        <p>{% blocktrans trimmed %}If your primary method is not available, we are able to
+         send backup tokens to the phone numbers listed below.{% endblocktrans %}</p>
+        {% if backup_phones %}
+          <ul>
+            {% for phone in backup_phones %}
+              <li>
+                {{ phone|as_action }}
+                <form method="post" action="{% url 'two_factor:phone_delete' phone.id %}"
+                     onsubmit="return confirm({% trans 'Are you sure?' %})">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-warning"
+                         type="submit">{% trans "Unregister" %}</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        <p><a href="{% url 'two_factor:phone_create' %}"
+             class="btn btn-info">{% trans "Add Phone Number" %}</a></p>
+      {% endif %}
+      <h2>{% trans "Backup Tokens" %}</h2>
+      <p>
+        {% blocktrans trimmed %}If you don't have any device with you, you can access
+         your account using backup tokens.{% endblocktrans %}
+        {% blocktrans trimmed count counter=backup_tokens %}
+         You have only one backup token remaining.
+        {% plural %}
+         You have {{ counter }} backup tokens remaining.
+        {% endblocktrans %}
+      </p>
+      <p><a href="{% url 'two_factor:backup_tokens' %}"
+           class="btn btn-info">{% trans "Show Codes" %}</a></p>
+
+      <h3>{% trans "Disable TOTP Authentication" %}</h3>
+      <p>{% blocktrans trimmed %}You can disable TOTP authentication.
+          If you do this, we recommend you use Security Tokens or Passkeys instead.{% endblocktrans %}</p>
+      <p><a class="btn btn-secondary" href="{% url 'two_factor:disable' %}">
+         {% trans "Disable TOTP Authentication" %}</a></p>
+    {% else %}
+      <p>{% blocktrans trimmed %}You can choose to save a TOTP secret to a device, often on a phone. Your
+        device generates one-time codes. You enter these codes after entering your
+        account password when logging in.
+        <br><br>
+        You can choose to have us mail you a code each time you login. {% endblocktrans %}</p>
+      <p><a href="{% url 'two_factor:setup' %}" class="btn btn-primary">
+         {% trans "Add TOTP Authentication" %}</a>
+      </p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block content_right %}
+{% include "site_next/profile-2fa-security-keys.html" %}
+{% endblock %}

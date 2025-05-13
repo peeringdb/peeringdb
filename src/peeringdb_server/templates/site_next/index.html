@@ -1,0 +1,113 @@
+{% load util %}
+{% load i18n %}
+{% include "site_next/header.html" %}
+
+
+<div id="inline-search-container" style="display:none;">
+<div class="view_info">
+<div class="container">
+{% include "site_next/search_result_frame.html" %}
+</div>
+</div>
+</div>
+
+
+<div id="content">
+
+{% if errors %}
+<div class="row">
+<div class="col-md-4"></div>
+<div class="col-md-4">
+<div class="editable popin error">
+  {% for error in errors %}
+  <p>{{ error }}</p>
+  {% endfor %}
+</div>
+</div>
+<div class="col-md-4"></div>
+</div>
+{% endif %}
+
+<div class="landing_info">
+  <div class="container container-ui-next">
+    {% include "site_next/verification_banner.html" %}
+    {% include "site_next/tutorial_mode_banner.html" %}
+    {% include "site_next/beta_banner.html" %}
+    {% include "site_next/notification_banner.html" %}
+    <h2>{% trans "The Interconnection Database" %}</h2>
+    <div class="row">
+      <div class="recent col-lg-4 col-md-12 col-sm-12 col-12 left">
+        <h3>{% trans "Join. Search. Grow your network." %}</h3>
+      <p>
+      {% blocktrans trimmed %}
+      PeeringDB is a freely available, user-maintained, database of networks, and the go-to location for interconnection data. The database facilitates the global interconnection of networks at Internet Exchange Points (IXPs), data centers, and other interconnection facilities, and is the first stop in making interconnection decisions.
+      {% endblocktrans %}
+      </p>
+      <p>
+      {% blocktrans trimmed %}
+      The database is a non-profit, community-driven initiative run and promoted by volunteers. It is a public tool for the growth and good of the Internet. Join the community and support the continued development of the Internet.
+      {% endblocktrans %}
+      </p>
+      <p>
+      {% trans "Learn more" %} <a href="/about">{% trans "about" %}</a> PeeringDB or <a href="/register">{% trans "register" %}</a>.
+      </p>
+      </div>
+      <div class="recent col-lg-8 col-md-12 col-sm-12 col-12 left">
+        <h3>{% trans "Most Recent Updates" %}</h3>
+        <div class="recent row">
+          <div class="col-12 col-sm-3">
+          <h4>{% trans "Exchanges" %}</h4>
+          {% for row in recent.ix %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-12 col-sm-3">
+          <h4>{% trans "Networks" %}</h4>
+          {% for row in recent.net %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a> ({{ row.asn }})
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-12 col-sm-3">
+          <h4>{% trans "Facilities" %}</h4>
+          {% for row in recent.fac %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+          <div class="col-12 col-sm-3">
+          <h4
+          data-bs-toggle="tooltip"
+          data-placement="top"
+          title="{{ recent.carrier_help_text }}">{% trans "Carriers" %}</h4>
+          {% for row in recent.carrier %}
+            <div class="participant">
+              <a href="/{{ row|ref_tag }}/{{ row.id }}">{{ row.name }}</a>
+            </div>
+            <div class="age">
+              {{ row.updated|age }}
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+{% include "site_next/footer.html" %}

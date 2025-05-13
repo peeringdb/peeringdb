@@ -1,0 +1,115 @@
+{% load util %}
+{% load i18n %}
+
+<div class="editable note info">
+  {%blocktrans trimmed %}
+  Here you can grant permissions to your organization API keys. In case your recently added api key does not show up in this listing, please reload the page.
+  {%endblocktrans%}
+</div>
+
+
+<div class="editable always auto-toggled marg-top" id="manage_key_perms_editor" data-edit-target="org_admin/key_permissions">
+
+  {% for kperms in key_perms.values %}
+  <div class="list editable always marg-top"
+       data-edit-id="{{ instance.id }}"
+       data-edit-module="key_perm_listing"
+       data-edit-template="key-permission-item"
+       data-edit-target="/org_admin/key_permissions">
+
+    <div class="row header">
+      <div class="col-12 col-sm-5 col-md-5">
+        <div>{{ kperms.name}} - {{ kperms.prefix }} </div>
+      </div>
+      <div class="col-4 col-sm-2 col-md-2">
+        <div>{% trans "Create" %}</div>
+      </div>
+      <div class="col-4 col-sm-2 col-md-2">
+        <div>{% trans "Update" %}</div>
+      </div>
+      <div class="col-4 col-sm-2 col-md-2">
+        <div>{% trans "Delete" %}</div>
+      </div>
+      <div class="col-1 col-sm-1 col-md-1">
+      </div>
+    </div>
+
+    <div data-edit-component="list"
+         data-edit-template="key-permission-item">
+
+        {% for entity, perm in kperms.perms.items %}
+
+        <div class="row marg-top item"
+              data-edit-id="{{ entity }}"
+              data-edit-key-prefix="{{ kperms.prefix }}"
+              data-edit-label="{{ kperms.description }} - {{ instance|org_permission_id_xl:entity}}">
+          <div class="editable payload">
+            <div data-edit-name="key_prefix">{{ kperms.prefix }}</div>
+            <div data-edit-name="org_id">{{ instance.id }}</div>
+            <div data-edit-name="entity">{{ entity }}</div>
+          </div>
+          <div class="col-12 col-sm-5 col-md-5">
+            <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+            <div data-edit-name="entity">{{ instance|org_permission_id_xl:entity }}</div>
+          </div>
+          <div class="col-4 col-sm-2 col-md-2">
+            <div data-edit-name="perm_c" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'c' }}"></div>
+          </div>
+          <div class="col-4 col-sm-2 col-md-2">
+            <div data-edit-name="perm_u" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'u' }}"></div>
+          </div>
+          <div class="col-4 col-sm-2 col-md-2">
+            <div data-edit-name="perm_d" data-edit-type="bool" data-edit-value="{{ perm|check_perms:'d' }}"></div>
+          </div>
+          <div class="col-12 col-sm-1 col-md-1 right">
+          </div>
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <div data-edit-component="add"
+         data-edit-toggled="edit"
+         class="editable">
+
+      <div class="payload">
+        <div data-edit-name="org_id">{{ instance.id }}</div>
+        <div data-edit-name="key_prefix">{{ kperms.prefix }}</div>
+      </div>
+
+      <div class="row marg-top item">
+        <div class="col-12 col-sm-5 col-md-5">
+          <div data-edit-name="entity"
+               data-edit-type="select"
+               data-edit-data="permissions"></div>
+        </div>
+        <div class="col-4 col-sm-2 col-md-2">
+          <div data-edit-name="perm_c" data-edit-type="bool"></div>
+        </div>
+        <div class="col-4 col-sm-2 col-md-2">
+          <div data-edit-name="perm_u" data-edit-type="bool"></div>
+        </div>
+        <div class="col-4 col-sm-2 col-md-2">
+          <div data-edit-name="perm_d" data-edit-type="bool"></div>
+        </div>
+        <div class="col-12 col-sm-1 col-md-1 right">
+          <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
+
+  {% endfor %}
+
+    <div class="row marg-top">
+      <div class="col-md-12 center">
+        <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+      </div>
+    </div>
+
+
+</div>

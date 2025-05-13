@@ -1,0 +1,406 @@
+{% load util %}
+{% load i18n %}
+
+<div class="list"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:campus">
+
+     <!-- FACILITIES -->
+
+     <div class="list"
+          id="api-listing-facility"
+          data-sort-container=".scrollable"
+          data-sort-row=".row.item"
+          data-edit-module="api_listing"
+          data-edit-group="#view"
+          data-edit-target="api:facility">
+       <div class="row">
+         <div class="col-6 col-sm-8 col-md-8">
+          <h5>{% trans "Facilities" %}</h5>
+         </div>
+         <div class="col-6 col-sm-4 col-md-4 filter">
+          <div class="inner-addon left-addon">
+            <i class="material-icons input-icon">filter_list</i>
+            <input type="text" placeholder="Filter" data-filter-target="#list-facilities" class="form-control" />
+          </div>
+         </div>
+       </div>
+       <div class="row header">
+        <div class="col-6 col-sm-6 col-md-6">
+          <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+        </div>
+        <div class="col-3 col-sm-3 col-md-3">
+          <div data-sort-target=".country">{% trans "Country" %}</div>
+        </div>
+        <div class="col-3 col-sm-3 col-md-3">
+          <div data-sort-target=".city">{% trans "City" %}</div>
+        </div>
+        </div>
+        <div class="scrollable"
+        id="list-facilities"
+        data-edit-component="list"
+        data-edit-template="campusfac-item">
+        <div class="empty-result">
+          <div class="message">{% trans "No filter matches." %}</div>
+          <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+        </div>
+        {% for f in data.facilities %}
+        {% if f.status == "ok" or permissions.can_create %}
+          <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans 'Facility link' %}: {{ f.name }}">
+            <div class="editable payload">
+              <div data-edit-name="campus_id">{{ f.campus_id }}</div>
+              <div data-edit-name="fac_id">{{ f.id }}</div>
+            </div>
+            <div class="col-6 col-sm-6 col-md-6">
+              {% if permissions.can_delete %}
+              <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans 'Remove this carrier from your facility.' %}">&times;</a>
+              {% endif %}
+              <div class="facility" data-sort-value="{{ f.name|lower }}" data-filter-value="{{ f.name }}">
+                <a href="/{{ f|ref_tag }}/{{ f.id }}">{{ f.name }}</a>
+              </div>
+              <div class="status">{% if f.status == "pending" %}{% trans "Pending" %}{% endif %}</div>
+            </div>
+            <div class="col-3 col-sm-3 col-md-3">
+              <div class="country" data-sort-value="{{ f.country.name|lower }}" data-filter-value="{{ f.country.name }}">{{ f.country.name }}</div>
+            </div>
+            <div class="col-3 col-sm-3 col-md-3">
+              <div class="city" data-sort-value="{{ f.city }}" data-filter-value="{{ f.city }}">{{ f.city }}</div>
+            </div>
+          </div>
+        {% endif %}
+        {% endfor %}
+
+       </div>
+     </div>
+     {% if permissions.can_create %}
+    <!-- ADD CAMPUS FACILITY  -->
+    <div class="editable list"
+        data-edit-toggled="edit"
+        data-edit-component="add">
+
+        <div class="payload">
+          <div data-edit-name="campus_id">{{ instance.id }}</div>
+        </div>
+
+        <div class="row view_row">
+          <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+          <div class="view_value col-8 col-sm-7 col-md-8">
+            <div data-edit-type="autocomplete"
+                  data-edit-autocomplete="fac/org/{{ instance.org.id }}"
+                  data-edit-name="fac_id">
+            </div>
+            <div data-autocomplete-confirm></div>
+          </div>
+        </div>
+
+        <div class="row marg-top">
+          <div class="col-12 right">
+            {% if permissions.can_delete %}
+              <a class="btn btn-default" data-edit-action="add_campus_facility">{% trans "Add Facility" %}</a>
+            {% endif %}
+          </div>
+        </div>
+    </div>
+    <!-- END ADD -->
+    {% endif %}
+
+
+
+<!-- CARRIERS -->
+
+{% if data.carriers or permissions.can_create_carrier %}
+<div class="list"
+     id="api-listing-carrier"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:carrier">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Carriers" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" data-filter-target="#list-carriers" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-6 col-sm-6 col-md-6">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+      <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-carriers"
+       data-edit-component="list"
+       data-edit-template="carrier-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+    </div>
+
+    {% for carrier, facilities in data.carriers.items %}
+
+    <div class="row item status-{{ carrier.status }}" data-edit-id="{{ carrier.id }}" data-edit-label="{{ carrier.name }}">
+      <div class="col-6 col-sm-6 col-md-6">
+        <div class="name" data-sort-value="{{ carrier.name|lower }}" data-filter-value="{{ carrier.name }}">
+          <a {% if carrier.status == "ok" %} href="/carrier/{{ carrier.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ carrier.name }}</a>
+        </div>
+        {% if permissions.can_edit and carrier.status != "ok" %}
+        <div>
+          {{ carrier.status }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-6 col-sm-6 col-md-6">
+        <div class="facility" data-sort-value="{{ facilities|length }}">{% if facilities|length == data.facilities|length %}{% trans "ALL" %}{% else %}{{facilities|length}}{% endif %} </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+
+<!-- CARRIERS -->
+
+{% if data.carriers or permissions.can_create_carrier %}
+<div class="list"
+     id="api-listing-carrier"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:carrier">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Carriers" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" data-filter-target="#list-carriers" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-6 col-sm-6 col-md-6">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+      <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-carriers"
+       data-edit-component="list"
+       data-edit-template="carrier-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b></div>
+    </div>
+
+    {% for carrier, facilities in data.carriers.items %}
+
+    <div class="row item status-{{ carrier.status }}" data-edit-id="{{ carrier.id }}" data-edit-label="{{ carrier.name }}">
+      <div class="col-6 col-sm-6 col-md-6">
+        <div class="name" data-sort-value="{{ carrier.name|lower }}" data-filter-value="{{ carrier.name }}">
+          <a {% if carrier.status == "ok" %} href="/carrier/{{ carrier.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ carrier.name }}</a>
+        </div>
+        {% if permissions.can_edit and carrier.status != "ok" %}
+        <div>
+          {{ carrier.status }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-6 col-sm-6 col-md-6">
+        <div class="facility" data-sort-value="{{ facilities|length }}">{% if facilities|length == data.facilities|length %}{% trans "ALL" %}{% else %}{{facilities|length}}{% endif %} </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+{% endif %}
+
+<!-- EXCHANGES -->
+
+{% if data.exchanges  or permissions.can_create_ix %}
+<div class="list"
+     id="api-listing-ix"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:ix">
+
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Exchanges" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" data-filter-target="#list-exchanges" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name"%}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".asns">{% trans "ASNs" %}</div>
+    </div>
+    <div class="col-4 col-sm-4 col-md-4">
+      <div data-sort-target=".prefix">{% trans "Prefixes (IPv4/IPv6)" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".routeservers">{% trans "Routeservers" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-exchanges"
+       data-edit-component="list"
+       data-edit-template="exchange-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Name" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+    </div>
+
+    {% for  ix, facilities  in data.exchanges.items %}
+    <div class="row item status-{{ ix.status }}" data-edit-id="{{ ix.id }}" data-edit-label="{% trans "Exchange" %}: {{ ix.name }}">
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="name" data-sort-value="{{ ix.name|lower }}" data-filter-value="{{ ix.name }}">
+          <a {% if ix.status == "ok" %} href="/ix/{{ ix.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ ix.name }}</a>
+        </div>
+        {% if permissions.can_edit and ix.status != "ok" %}
+        <div>
+          {{ ix.status }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="facility" data-sort-value="{{ facilities|length }}">{% if facilities|length == data.facilities|length %}{% trans "ALL" %}{% else %}{{facilities|length}}{% endif %} </div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="asns" data-sort-value="{{ix.ixlan.netixlan_set.count}}">{{ix.ixlan.netixlan_set.count}}</div>
+      </div>
+      <div class="col-4 col-sm-4 col-md-4">
+        {% for perfix in ix|prefix %}
+        <div class="row sub">
+        <div class="col-3 col-sm-3 col-md-3">{{perfix.protocol}}</div>
+        <div class="col-9 col-sm-9 col-md-9 prefix" data-sort-value="{{perfix.prefix}}">{{perfix.prefix}}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="routeservers" data-sort-value="{{ix|ix_routeservers}}">{{ix|ix_routeservers}}</div>
+      </div>
+
+    </div>
+
+    {% endfor %}
+
+  </div>
+</div>
+{% endif %}
+
+<!-- NETWORKS -->
+
+{% if data.networks  or permissions.can_create_net %}
+<div class="list"
+     id="api-listing-net"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:net">
+
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Networks" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" data-filter-target="#list-networks" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".asn" class="numeric" data-sort-initial="asc">{% trans "ASN" %}</div>
+    </div>
+    <div class="col-5 col-sm-5 col-md-5">
+      <div data-sort-target=".name">{% trans "Name" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2">
+      <div data-sort-target=".facility">{% trans "Facilities" %}</div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div data-sort-target=".ixs">{% trans "IX Connections" %}</div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-networks"
+       data-edit-component="list"
+       data-edit-template="network-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by"%} <b>{% trans "Name" %}</b> {% trans "or" %} <b>{% trans "ASN" %}.</b></div>
+    </div>
+
+    {% for network, facilities in data.networks.items %}
+
+    <div class="row item status-{{ network.status }}" data-edit-id="{{ network.id }}" data-edit-label="{% trans "Network" %}: {{ network.name }}">
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="asn" data-sort-value="{{ network.asn }}" data-filter-value="{{ network.asn }}">{{ network.asn }}</div>
+      </div>
+      <div class="col-5 col-sm-5 col-md-5">
+        <div class="name" data-sort-value="{{ network.name|lower }}" data-filter-value="{{ network.name }}">
+          <a {% if network.status == "ok" %} href="/net/{{ network.id }}" {% else %} style="text-decoration: none !important;" {% endif %}>{{ network.name }}</a>
+        </div>
+        {% if permissions.can_edit and network.status != "ok" %}
+        <div>
+          {{ network.status }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="facility" data-sort-value="{{ facilities|length }}">{% if facilities|length == data.facilities|length %}{% trans "ALL" %}{% else %}{{facilities|length}}{% endif %} </div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="ixs" data-sort-value="{{ network.ix_count }}" data-filter-value="{{ network.ix_count }}">{{ network.ix_count }}</div>
+      </div>
+
+    </div>
+
+    {% endfor %}
+
+  </div>
+{% endif %}

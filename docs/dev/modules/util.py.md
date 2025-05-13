@@ -1,4 +1,4 @@
-Generated from util.py on 2025-04-21 14:27:07.752913
+Generated from util.py on 2025-05-12 16:19:34.467425
 
 # peeringdb_server.util
 
@@ -33,6 +33,57 @@ It will return the original string.
 
 Generate the data for rendering the social media in view.html.
 This function will insert the generated social media data to `data`.
+
+---
+## get_template
+`def get_template(request, template_name)`
+
+Loads a template using UI version resolution based on request.
+
+This is a wrapper around Django's template loader to resolve
+and load the correct template version (default or *_next).
+
+Parameters:
+    request (HttpRequest): The HTTP request object.
+    template_name (str): The original template path.
+
+Returns:
+    Template: The Django template object.
+
+---
+## render
+`def render(request, template_name, context=None, *args, **kwargs)`
+
+Renders a template using UI version resolution based on request.
+
+This is a wrapper around Django's default render function that uses
+`resolve_template` to determine the correct template path.
+
+Parameters:
+    request (HttpRequest): The HTTP request object.
+    template_name (str): The original template path.
+    context (dict, optional): The context data passed to the template.
+
+Returns:
+    HttpResponse: The rendered template response.
+
+---
+## resolve_template
+`def resolve_template(request, template_name)`
+
+Resolves the template path based on user preferences for the UI version.
+
+This function checks whether the request should use the 'next' version
+of the UI templates (e.g., 'site_next/' or 'two_factor_next/') based on:
+  - User flags (opt_flags with UI_NEXT and UI_NEXT_REJECTED),
+  - or a global setting for unauthenticated users.
+
+Parameters:
+    request (HttpRequest): The HTTP request object.
+    template_name (str): The original template path.
+
+Returns:
+    str: The resolved template path (may be modified to '..._next/').
 
 ---
 ## v2_social_media_services

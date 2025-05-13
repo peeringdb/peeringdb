@@ -1,4 +1,4 @@
-Generated from serializers.py on 2025-04-21 14:27:07.752913
+Generated from serializers.py on 2025-05-12 16:19:34.467425
 
 # peeringdb_server.serializers
 
@@ -603,20 +603,6 @@ Possible relationship queries:
   - fac_id, handled by serializer
   - net_id, handled by seralizers
 
-
-### Methods
-
-#### run_validation
-`def run_validation(self, data=<class 'rest_framework.fields.empty'>)`
-
-Custom validation handling.
-
-Will run the vanilla django-rest-framework validation but
-wrap it with logic to handle unique constraint errors to
-restore soft-deleted objects that are blocking a save on basis
-of a unique constraint violation.
-
----
 
 ## NetworkIXLanSerializer
 
