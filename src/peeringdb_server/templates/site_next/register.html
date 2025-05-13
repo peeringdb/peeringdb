@@ -1,0 +1,119 @@
+{% include "site_next/header.html" %}
+{% include "site_next/view_header.html" with errors=errors %}
+{% load i18n %}
+
+<div class="view_info">
+<div class="container">
+
+  {% include "site_next/beta_banner.html" %}
+
+  <div class="row marg-top-15" id="success-create-account" style="display:none;">
+    <div class="col-md-2 col-sm-3 col-12"></div>
+    <div class="col-md-8 col-sm-6 col-12 panel">
+      <h3>{% trans "Account Created" %}</h3>
+      <p>
+      {% trans "Your account was created, but won't have full access until we have reviewed it. Thank you for your patience." %}
+      </p>
+      <p>
+      <a href="/">{% trans "Return Home" %}</a>
+      </p>
+    </div>
+    <div class="col-md-2 col-sm-3 col-12"></div>
+  </div>
+
+  {% include "site_next/oauth-login.html" with OAUTH_ENABLED=OAUTH_ENABLED %}
+  <div class="row{% if not OAUTH_ENABLED %} marg-top-15{% endif %}" id="container-create-account">
+    <div class="col-md-4 col-sm-3 col-12"></div>
+
+    <!-- REGISTER VIA SITE -->
+    <div class="editable always col-md-4 col-sm-6 col-12 panel marg-right"
+         data-edit-target="/register"
+         id="form-create-account">
+      <h3>{% trans "Create account" %}</h3>
+
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Username" %}"
+             data-edit-name="username"
+             data-edit-type="string"
+             data-edit-required="yes" />
+
+      <input type="password"
+             class="editable string form-control"
+             placeholder="{% trans "Password" %}"
+             data-edit-name="password1"
+             data-edit-type="password"
+             data-edit-required="yes" />
+
+      <input type="password"
+             class="editable string form-control"
+             placeholder="{% trans "Confirm password" %}"
+             data-edit-name="password2"
+             data-edit-type="password"
+             data-edit-confirm-with="password1"
+             data-edit-required="yes" />
+
+      <div class="editable popin help marg-top-15">
+      {% blocktrans trimmed %}For speedy validation, it is required that you use a work e-mail address. If you
+      plan to register your ASN with PeeringDB, it is recommended that you use an email-address
+      that exists in your ASN's public contact details.{% endblocktrans %}
+      </div>
+
+      <input type="text"
+             class="editable string form-control marg-bot-15"
+             placeholder="{% trans "Email" %}"
+             data-edit-name="email"
+             data-edit-type="email"
+             data-edit-required="yes" />
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "First name" %}"
+             data-edit-name="first_name"
+             data-edit-type="string" />
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "Last name" %}"
+             data-edit-name="last_name"
+             data-edit-type="string" />
+
+      <div class="captcha">
+        <div class="loading center"><img src="{{ STATIC_URL }}loading.gif"> {% trans "Loading anti-spam challenge" %} ...</div>
+        <div class="captcha-container">
+          <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_PUBLIC_KEY }}"></div>
+          <div class="fallback">
+          {% for field in register_form.visible_fields %}
+            {% if field.name == "captcha_generator" %}
+              {{ field }}
+            {% endif %}
+          {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Create" %}</a>
+    </div>
+
+    <div class="col-md-4 col-sm-3 col-12"></div>
+  </div>
+</div>
+</div>
+
+
+<script language="javascript" type="text/javascript">
+$('#form-create-account').each(function(idx) {
+  $(this).on("action-success:submit", function(ev, data) {
+    $('#success-create-account').show();
+    $('#container-create-account').hide();
+    $('#container-oauth').hide();
+    window.document.location.href = "/verify"
+  })
+  $(this).on("action-error:submit", function(ev, data) {
+    if(PeeringDB.recaptcha_loaded()) {
+      grecaptcha.reset()
+    }
+  });
+});
+</script>
+{% include "site_next/footer.html" %}

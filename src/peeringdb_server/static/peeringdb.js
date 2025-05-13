@@ -270,6 +270,37 @@ PeeringDB = {
     popin.removeClass("hidden").show();
    },
 
+
+   add_normalized_address : function(meta, endpoint) {
+    let popin = $('.normalized-address').filter(function() {
+        return $(this).data("edit-geotag") == endpoint
+    });
+
+    if (popin.length === 0) {
+        return;
+    }
+
+    let normalized_address = meta.normalized_address;
+    let addressHTML = "";
+
+    // Create list of normalized fields showing original → normalized
+    for (const [field, values] of Object.entries(normalized_address)) {
+        let fieldName = field.charAt(0).toUpperCase() + field.slice(1);
+        addressHTML += `<div><strong>${fieldName}:</strong> ${values.original} → <strong>${values.normalized}</strong></div>`;
+    }
+
+    // Fill in the changes to the notification
+    popin.find('.normalized-fields').html(addressHTML);
+
+    // Initialize the acknowledge button
+    let acknowledge_button = popin.find("a.btn.normalization-acknowledge");
+    acknowledge_button.click(() => popin.addClass("hidden").hide());
+
+    // Show the popin
+    popin.removeClass("hidden").show();
+
+  },
+
   // initializes the "Accept suggestion" button
 
   init_accept_suggestion : function(button, response, endpoint){
@@ -433,6 +464,7 @@ PeeringDB.ViewTools = {
     if(target == "api:ix:update") {
       this.apply_data(container, data, "tech_phone");
       this.apply_data(container, data, "policy_phone");
+      this.apply_data(container, data, "sales_phone");
     }
     if (target === "api:fac:update" || target === "api:org:update") {
       addressFields.forEach(field => this.apply_data(container, data, field));
@@ -2412,6 +2444,8 @@ twentyc.editable.target.register(
           PeeringDB.add_geo_warning(r.meta, endpoint);
         } else if (r && r.meta && r.meta.suggested_address){
           PeeringDB.add_suggested_address(r, endpoint);
+        } else if (r && r.meta && r.meta.normalized_address) {
+          PeeringDB.add_normalized_address(r.meta, endpoint);
         }
 
       }).fail(function(r) {

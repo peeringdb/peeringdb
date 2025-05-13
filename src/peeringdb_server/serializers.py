@@ -306,13 +306,25 @@ class GeocodeSerializerMixin:
         if need_geosync:
             try:
                 suggested_address = instance.process_geo_location()
+                normalized_fields = {}
 
-                # Normalize fields if needed
-                for field in ["state", "city"]:
+                # Force Normalization fields without suggestion
+                for field in ["state", "city", "address1"]:
                     suggested_value = suggested_address.get(field, "")
                     if suggested_value and suggested_value != getattr(instance, field):
+                        # Store original value before normalizing
+                        normalized_fields[field] = {
+                            "original": getattr(instance, field),
+                            "normalized": suggested_value,
+                        }
                         setattr(instance, field, suggested_value)
-                        instance.save(update_fields=[field])
+
+                # If we force normalizations, save and add meta info
+                if normalized_fields:
+                    instance.save(update_fields=list(normalized_fields.keys()))
+                    self._add_meta_information(
+                        {"normalized_address": normalized_fields}
+                    )
 
                 # Provide address suggestions if necessary
                 if self.needs_address_suggestion(suggested_address, instance):
@@ -2594,7 +2606,7 @@ class NetworkFacilitySerializer(ModelSerializer):
 
         validators = [
             validators.UniqueTogetherValidator(
-                NetworkFacility.objects.all(), ["net_id", "fac_id", "local_asn"]
+                NetworkFacility.objects.all(), ["net_id", "fac_id"]
             )
         ]
 
@@ -2640,19 +2652,6 @@ class NetworkFacilitySerializer(ModelSerializer):
 
     def get_city(self, inst):
         return inst.facility.city
-
-    def run_validation(self, data=serializers.empty):
-        # `local_asn` will eventually be dropped from the schema
-        # for now make sure it is always a match to the related
-        # network
-
-        if data.get("net_id"):
-            try:
-                net = Network.objects.get(id=data.get("net_id"))
-                data["local_asn"] = net.asn
-            except Exception:
-                pass
-        return super().run_validation(data=data)
 
 
 class LegacyInfoTypeField(serializers.Field):
@@ -3739,6 +3738,13 @@ class InternetExchangeSerializer(ModelSerializer):
             )
         except ValidationError as exc:
             raise serializers.ValidationError({"policy_phone": exc.message})
+
+        try:
+            data["sales_phone"] = validate_phonenumber(
+                data["sales_phone"], data["country"]
+            )
+        except ValidationError as exc:
+            raise serializers.ValidationError({"sales_phone": exc.message})
 
         return data
 

@@ -721,16 +721,18 @@ def test_update_data_attributes(entities, use_ip, save):
 
         # #793 we are currently ignoring is_rs_peer
         # and speed for modifies
-        assert "is_rs_peer" not in log["reason"]
-        assert "speed" not in log["reason"]
+        # #1614 will include modifying is_rs_peer and speed if related network allow_ixp_update is set to True.
+        assert "is_rs_peer" in log["reason"]
+        assert "speed" in log["reason"]
 
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
     assert netixlan.operational == True
 
     # #793 we are currently ignoring is_rs_peer
     # and speed for modifies
-    assert netixlan.is_rs_peer == False
-    assert netixlan.speed == 20000
+    # #1614 will include modifying is_rs_peer and speed if related network allow_ixp_update is set to True.
+    assert netixlan.is_rs_peer == True
+    assert netixlan.speed == 10000
 
     # Assert idempotent
     assert_idempotent(importer, ixlan, data)
@@ -751,6 +753,91 @@ def test_update_data_attributes(entities, use_ip, save):
     assert netixlan.speed == 20000
     assert netixlan.ipaddr4 == use_ip(4, "195.69.147.250")
     assert netixlan.ipaddr6 == use_ip(6, "2001:7f8:1::a500:2906:1")
+
+
+@pytest.mark.django_db
+def test_update_speed_and_rs_peer_attributes(entities, use_ip, save):
+    """
+    Test that speed and is_rs_peer are updated when allow_ixp_update is True,
+    and not updated when allow_ixp_update is False.
+    """
+    data = setup_test_data("ixf.member.0")
+    print("data", data)
+    network_update_enabled = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    # Determine if we have protocol compatibilityc
+    ipv4_compatible = network_update_enabled.ipv4_support and use_ip.use_ipv4
+    ipv6_compatible = network_update_enabled.ipv6_support and use_ip.use_ipv6
+    protocol_compatible = ipv4_compatible or ipv6_compatible
+
+    # Create a netixlan with different speed and is_rs_peer from IXF data
+    with reversion.create_revision():
+        netixlan_update_enabled = NetworkIXLan.objects.create(
+            network=network_update_enabled,
+            ixlan=ixlan,
+            asn=network_update_enabled.asn,
+            speed=20000,
+            ipaddr4=use_ip(4, "195.69.147.250"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
+            status="ok",
+            is_rs_peer=False,
+            operational=True,
+        )
+
+    network_update_disabled = entities["net"]["UPDATE_DISABLED"]
+
+    with reversion.create_revision():
+        netixlan_update_disabled = NetworkIXLan.objects.create(
+            network=network_update_disabled,
+            ixlan=ixlan,
+            asn=network_update_disabled.asn,
+            speed=20000,
+            ipaddr4=use_ip(4, "195.69.147.251"),
+            ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:2"),
+            status="ok",
+            is_rs_peer=False,
+            operational=True,
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan_update_enabled.refresh_from_db()
+    netixlan_update_disabled.refresh_from_db()
+
+    # Check the network with allow_ixp_update=True
+    # Speed and is_rs_peer should be updated only if protocols are compatible
+    if protocol_compatible:
+        assert (
+            netixlan_update_enabled.speed == 10000
+        ), "Speed should be updated for network with allow_ixp_update=True"
+        assert (
+            netixlan_update_enabled.is_rs_peer == True
+        ), "is_rs_peer should be updated for network with allow_ixp_update=True"
+    else:
+        # If protocols are incompatible, we expect no updates to occur
+        assert (
+            netixlan_update_enabled.speed == 20000
+        ), "Speed should NOT be updated when protocols are incompatible"
+        assert (
+            netixlan_update_enabled.is_rs_peer == False
+        ), "is_rs_peer should NOT be updated when protocols are incompatible"
+
+    # For the network with allow_ixp_update=False, values should never update
+    assert (
+        netixlan_update_disabled.speed == 20000
+    ), "Speed should NOT be updated for network with allow_ixp_update=False"
+    assert (
+        netixlan_update_disabled.is_rs_peer == False
+    ), "is_rs_peer should NOT be updated for network with allow_ixp_update=False"
+
+    assert_idempotent(importer, ixlan, data)
 
 
 @pytest.mark.django_db
@@ -2474,7 +2561,8 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
     # #793 count should be 2 if we were not ignoring changes
     # to is_rs_peer and speed, but because we currently are
     # one of the pre-existing ixfmemberdata entries gets resolved
-    assert IXFMemberData.objects.count() == 1
+    # #1614 count return 2 because allow_ixp_update from related net is set to True
+    assert IXFMemberData.objects.count() == 2
 
     assert_no_emails(network, ixlan.ix)
 
@@ -2521,7 +2609,8 @@ def test_mark_invalid_remote_auto_update(entities, save):
     importer.notify_proposals()
 
     assert NetworkIXLan.objects.count() == 1
-    assert IXFMemberData.objects.count() == 1
+    # #1614 will include modifying is_rs_peer and speed if related network allow_ixp_update is set to True.
+    assert IXFMemberData.objects.count() == 2
 
     # We email to say there is invalid data
     if network.ipv4_support and network.ipv6_support:
@@ -2797,12 +2886,23 @@ def test_mark_invalid_multiple_vlans(entities, save):
 
     assert IXFMemberData.objects.count() == 0
     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
+
+    email = IXFImportEmail.objects.filter(ix=ixlan.ix.id).first()
+    email_message = email.message
+
     ERROR_MESSAGE = "We found that your IX-F output contained multiple VLANs"
     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-    assert (
-        ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
-    )
+    assert ERROR_MESSAGE in email_message
+
+    # New detailed information checks
+    assert "Error occurred at data.member_list" in email_message
+    assert "ASN:" in email_message
+    assert "First VLAN ID:" in email_message
+    assert "Conflicting VLAN ID:" in email_message
+
+    if "Conflicting VLAN object:" in email_message:
+        assert "```" in email_message
 
     # Assert idempotent / lock
     importer.update(ixlan, data=data)

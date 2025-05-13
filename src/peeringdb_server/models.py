@@ -4044,16 +4044,28 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         """
         Returns whether or not the `speed` property
         is enabled to receive modify updates or not (#793).
+
+        Will return True if the related network has `allow_ixp_update` set to True.
+        Otherwise returns False (#1614).
         """
-        return False
+        try:
+            return self.net.allow_ixp_update
+        except Exception:
+            return False
 
     @property
     def modify_is_rs_peer(self):
         """
         Returns whether or not the `is_rs_peer` property
         is enabled to receive modify updates or not (#793).
+
+        Will return True if the related network has `allow_ixp_update` set to True.
+        Otherwise returns False (#1614).
         """
-        return False
+        try:
+            return self.net.allow_ixp_update
+        except Exception:
+            return False
 
     @property
     def changed_fields(self):
@@ -4771,6 +4783,37 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
     def ix_sub_result_name(self):
         return self.prefix
 
+    @property
+    def deletable(self):
+        """
+        Returns whether or not the prefix is currently
+        in a state where it can be marked as deleted.
+        This will be False if there are netixlans using IPs from this prefix.
+        """
+        if not self.id:
+            return True
+
+        ip_network = ipaddress.ip_network(self.prefix)
+        ip_field = "ipaddr4" if self.protocol == "IPv4" else "ipaddr6"
+        netixlans = self.ixlan.netixlan_set.filter(status="ok")
+
+        for netixlan in netixlans:
+            ip_value = getattr(netixlan, ip_field)
+            if ip_value:
+                try:
+                    ip_addr = ipaddress.ip_address(ip_value)
+                    if ip_addr in ip_network:
+                        self._not_deletable_reason = _(
+                            "Cannot delete prefix {}: IP address {} from network ASN {} is still using this prefix"
+                        ).format(self.prefix, ip_value, netixlan.asn)
+                        return False
+                except (ValueError, ipaddress.AddressValueError):
+                    # Skip if IP address is invalid
+                    pass
+
+        self._not_deletable_reason = None
+        return True
+
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register
@@ -5267,7 +5310,7 @@ class NetworkFacility(
 
     class Meta:
         db_table = "peeringdb_network_facility"
-        unique_together = ("network", "facility", "local_asn")
+        unique_together = ("network", "facility")
         indexes = [models.Index(fields=["status"], name="netfac_status")]
 
     @classmethod
@@ -5315,12 +5358,12 @@ class NetworkFacility(
         """
         return f"netfac{self.id} AS{self.network.asn} {self.network.name} <-> {self.facility.name}"
 
-    def clean(self):
-        # `local_asn` will eventually be dropped from the schema
-        # for now make sure it is always a match to the related
-        # network (#168)
-
-        self.local_asn = self.network.asn
+    @property
+    def local_asn(self):
+        """
+        Read-only property that returns the ASN of the parent network.
+        """
+        return self.network.asn
 
     def save(self, *args, **kwargs):
         """
@@ -6107,6 +6150,14 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     def hide_ixs_without_fac(self):
         """Returns whether user has enabled hiding IXs without facilities"""
         return bool(self.opt_flags & settings.OPTFLAG_HIDE_IX_WITHOUT_FAC)
+
+    @property
+    def ui_next_enabled(self):
+        return bool(self.opt_flags & settings.USER_OPT_FLAG_UI_NEXT)
+
+    @property
+    def ui_next_rejected(self):
+        return bool(self.opt_flags & settings.USER_OPT_FLAG_UI_NEXT_REJECTED)
 
     @staticmethod
     def autocomplete_search_fields():

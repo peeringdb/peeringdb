@@ -7,8 +7,12 @@ from django.urls import include, re_path
 from django.views.generic.base import RedirectView
 from two_factor.urls import urlpatterns as tf_urls
 
-from peeringdb_server.views import (
+from peeringdb_server.two_factor_ui_next import (
+    BackupTokensView,
     LoginView,
+    ProfileView,
+    QRGeneratorView,
+    SetupCompleteView,
     TwoFactorDisableView,
     TwoFactorSetupView,
 )
@@ -36,6 +40,30 @@ tf_urls[0][1] = re_path(
     r"^account/two_factor/setup/$",
     TwoFactorSetupView.as_view(),
     name="setup",
+)
+
+tf_urls[0][2] = re_path(
+    r"^account/two_factor/backup/tokens/$",
+    BackupTokensView.as_view(),
+    name="backup_tokens",
+)
+
+tf_urls[0][3] = re_path(
+    r"^account/two_factor/$",
+    ProfileView.as_view(),
+    name="profile",
+)
+
+tf_urls[0][4] = re_path(
+    r"^account/two_factor/qrcode/$",
+    QRGeneratorView.as_view(),
+    name="qr",
+)
+
+tf_urls[0][5] = re_path(
+    r"^account/two_factor/setup/complete/$",
+    SetupCompleteView.as_view(),
+    name="setup_complete",
 )
 
 urlpatterns = [

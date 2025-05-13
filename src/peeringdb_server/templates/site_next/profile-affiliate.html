@@ -1,0 +1,105 @@
+{% load i18n util %}
+    <div class="editable always panel"
+         data-edit-target="/affiliate-to-org"
+         id="form-affiliate-account">
+      <h3>{% trans "Affiliate with organization" %}</h3>
+
+      {% for affiliation_request in request.user.affiliation_requests.all %}
+        {% if affiliation_request.status == "pending" %}
+        <div class="editable popin alert alert-warning">
+          <div class="row">
+            {% if affiliation_request.org.owned %}
+            <div class="col-8 col-md-9">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is pending approval.  {% endblocktrans %}
+            </div>
+            <div class="col-4 col-md-3 right">
+              <form
+                action="{% url "cancel-affiliation-request" uoar_id=affiliation_request.id %}"
+                method="POST">
+                {% csrf_token %}
+                <button class="btn btn-warning btn-sm" type="submit">{% trans "Cancel" %}</button>
+              </form>
+            </div>
+            {% else %}
+            <div class="col-12">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} is being reviewed by the PeeringDB administrative staff.{% endblocktrans %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% elif affiliation_request.status == "canceled" %}
+        <div class="editable popin alert alert-info">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} You have canceled your affiliation request with {{ ar_name }} {% endblocktrans %}
+        </div>
+        {% elif affiliation_request.status == "denied" %}
+        <div class="editable popin alert alert-danger">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was denied {% endblocktrans %}
+          {% if affiliation_request.org and affiliation_request.org|org_restricted_emails:affiliation_request.user %}
+            <div>
+            {% blocktrans trimmed %}The organization requires you to have a confirmed email address at one of the following domains{% endblocktrans %}
+            </div>
+            <ul class="marg-top">
+            {% for domain in affiliation_request.org.email_domains_list %}
+              <li>{{ domain }}</li>
+            {% endfor %}
+            </ul>
+
+          {% endif %}
+        </div>
+        {% elif affiliation_request.status == "approved" %}
+        <div class="editable popin alert alert-success">
+          {% blocktrans with ar_name=affiliation_request.name trimmed %} Your affiliation with {{ ar_name }} was approved {% endblocktrans %}
+        </div>
+        {% endif %}
+      {% endfor %}
+
+
+      <div class="editable popin help marg-top-15">
+        <p>
+        {% trans "To affiliate with an existing organization, please enter the ASN or organization name below." %}
+        </p>
+
+        <p>
+        {% trans "To register a new network organization, please enter the ASN and organization name below." %}
+        </p>
+
+        <p>
+        {% trans "To register a new facility or exchange organization, please enter the organization name below (ASN is optional)." %}
+        </p>
+        <p>
+        {% blocktrans trimmed %}
+Affiliation is your own organisation. That means you are an employee or otherwise working for the organisation. The affiliation request is sent to support@peeringdb.com if no one is affiliated to the organisation yet. Otherwise, the admins are contacted. Only affiliate once per organisation. If you don't get an answer within a couple of days, please contact support@peeringdb.com.
+        {% endblocktrans %}
+      </div>
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "ASN" %}"
+             data-edit-name="asn"
+             data-edit-type="string" />
+
+      <input type="text"
+             class="editable string form-control"
+             placeholder="{% trans "Organization" %}"
+             data-edit-name="org"
+             data-edit-autocomplete="org"
+             data-edit-autocomplete-allow-nonexistent="yes"
+             data-edit-type="autocomplete" />
+
+      <a class="btn btn-default" data-edit-action="submit">{% trans "Affiliate" %}</a>
+
+      <div class="editable popin help marg-top-15">
+            {% trans "In case the RiR entry cannot be retrieved for your ASN, please contact" %}
+            <a href="mailto:support@peeringdb.com">support@peeringdb.com</a> {% trans "for assistance" %}.
+      </div>
+
+      <div class="marg-top">
+        <h3 class="marg-top">{% trans "Existing affiliations" %}</h3>
+
+        {% for org in affiliations %}
+        <div class="editable popin help">{% trans "Your affiliation with" %} <a href="/org/{{ org.id }}">{{ org.name }}</a> {% trans "has been approved" %}.</div>
+        {% endfor %}
+      </div>
+
+
+    </div>

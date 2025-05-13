@@ -1,0 +1,54 @@
+<div class="row view_row social_media">
+  <!-- row header -->
+  <div
+    data-edit-toggled="view"
+    class="view_field col-4 col-sm-5 col-md-4 social_media_label"
+    style="display: none"
+  >
+  </div>
+
+  <div
+    id="label_soc"
+    data-edit-toggled="edit"
+    style="color: black; display: block"
+    class="view_field col-4 col-sm-5 col-md-4"
+    data-edit-type="select"
+    data-edit-name="sc_field_0"
+    data-edit-data="enum/social_media_services"
+    data-edit-value="website"
+  >
+    <div class="editable input-frame">
+      <select
+        data-edit-data="enum/social_media_services"
+        class="editable select"
+      >
+      {% for key, value in social_media_enum %}
+        <option value="{{key}}">{{ value }}</option>
+      {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <button
+    onclick="deleteElement(this)"
+    data-edit-toggled="edit"
+    style="
+      display: inline-block;
+      left: -28px;
+      top: 5px;
+      position: absolute;
+      border: 1.2px solid rgb(75, 96, 99);
+      width: auto;
+    "
+    class="btn btn-sm"
+  >
+    -
+  </button>
+
+  <div
+    class="new_service_identifier view_value editable col-8 col-sm-7 col-md-8"
+    data-edit-type="social_media"
+    data-edit-reset-value=""
+    data-edit-name="smi_value_"
+  ></div>
+</div>

@@ -1,0 +1,49 @@
+{% load util i18n static %}
+<div id="search-result" data-campus-icon-path="{% static "campus.svg" %}">
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Exchanges" %} (<span id="search-result-length-{{'InternetExchange'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'InternetExchange'|ref_tag}}"></div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Networks" %} (<span id="search-result-length-{{'Network'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'Network'|ref_tag}}"></div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Facilities" %} (<span id="search-result-length-{{'Facility'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'Facility'|ref_tag}}"></div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Organizations" %} (<span id="search-result-length-{{'Organization'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'Organization'|ref_tag}}"></div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="view_title">{% trans "Carriers" %} (<span id="search-result-length-{{'Carrier'|ref_tag}}"></span>)</div>
+      <div id="search-result-{{'Carrier'|ref_tag}}"></div>
+    </div>
+  </div>
+{% if request.user.is_verified_user %}
+  <div class="row">
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <!-- <a class="btn btn-default" href="/suggest/ix">{% trans "Suggest Exchange" %}</a> -->
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <!-- <a class="btn btn-default" href="/suggest/net">{% trans "Suggest Network" %}</a> -->
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+        <a class="btn btn-default" href="/suggest/fac">{% trans "Suggest Facility" %}</a>
+      </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-12">
+      <div class="center marg-top-15">
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+</div>

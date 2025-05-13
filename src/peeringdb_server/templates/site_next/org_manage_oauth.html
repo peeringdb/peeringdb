@@ -1,0 +1,24 @@
+{% load i18n %}
+
+<div class="list">
+
+  <div class="row header">
+    <div class="col-12 col-sm-10">{% trans "Application" %}</div>
+    <div class="col-12 col-sm-2"></div>
+  </div>
+
+  {% for application in instance.oauth_applications.all %}
+  <div class="row">
+    <div class="col-12 col-sm-10">{{ application.name }}</div>
+    <div class="col-12 col-sm-2 right"><a class="btn btn-primary" href="{{ application.get_absolute_url }}">{% trans "Details" %}</a></div>
+  </div>
+  {% endfor %}
+
+  <div class="row">
+    <div class="col-12 center">
+      <a class="btn btn-success" href="{% url "oauth2_provider:register" %}?org={{ instance.id }}">{% trans "New Application" %}</a>
+    </div>
+  </div>
+
+
+</div>

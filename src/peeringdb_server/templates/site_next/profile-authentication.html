@@ -1,0 +1,7 @@
+{% load i18n %}
+<div class="panel">
+  <h3>{% trans "Account Security" %}</h3>
+  <div class="d-block d-md-flex justify-content-center">
+    <a class="btn btn-default m-2" href="{% url "two_factor:profile" %}">{% trans "Manage Multi-factor Authentication" %}</a>
+  </div>
+</div>

@@ -1,0 +1,176 @@
+{% load i18n %}
+<!-- TEMPLATES -->
+<div id="editable-templates">
+
+  <!-- USER PERMISSION ROW -->
+  <div id="user-permission-item" class="row item">
+    <div class="col-12 col-sm-5 col-md-5">
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      <div data-edit-name="entity"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_c" data-edit-type="bool"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_u" data-edit-type="bool"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_d" data-edit-type="bool"></div>
+    </div>
+    <div class="col-1 col-sm-1 col-md-1">
+    </div>
+  </div>
+
+  <!-- Key PERMISSION ROW -->
+  <div id="key-permission-item" class="row item">
+    <div class="col-12 col-sm-5 col-md-5">
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      <div data-edit-name="entity"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_c" data-edit-type="bool"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_u" data-edit-type="bool"></div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2">
+      <div data-edit-name="perm_d" data-edit-type="bool"></div>
+    </div>
+    <div class="col-1 col-sm-1 col-md-1">
+    </div>
+  </div>
+
+  <!-- USER ROW -->
+
+  <div id="user-item" class="row item">
+    <div class="col-4 col-sm-5 col-md-4" data-edit-name="full_name"></div>
+    <div class="col-4 col-sm-5 col-md-4" data-edit-name="email"></div>
+    <div class="col-4 col-sm-5 col-md-2">
+      <div data-edit-type="select"
+           data-edit-data="enum/org_groups"
+           data-edit-name="group"
+           data-edit-value="member">{% trans "member" %}</div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2 right">
+      <a class="btn btn-default" data-edit-action="remove">{% trans "Remove" %}</a>
+    </div>
+
+  </div>
+
+  <!-- KEY ROW -->
+
+  <div
+    id="api-key-item"
+    class="row marg-top editable">
+
+    <div class="editable update-key col-11"
+      data-edit-target="/org_admin/manage_key/update">
+      <div class="row">
+        <div class="col-2">
+          <div class="editable payload">
+            <div data-edit-name="org_id"></div>
+            <div data-edit-name="prefix"></div>
+          </div>
+
+          <span data-edit-toggled="view">
+            <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Edit" %}</a>
+          </span>
+          <span data-edit-toggled="edit">
+            <a class="btn btn-default" data-edit-action="toggle-edit">{% trans "Cancel" %}</a>
+            <a class="btn btn-default" data-edit-action="submit">{% trans "Save" %}</a>
+          </span>
+        </div>
+
+        <div class="col-2">
+          <div data-edit-name="prefix"></div>
+        </div>
+
+        <div class="col-3">
+          <div data-edit-type="string" data-edit-name="name"></div>
+        </div>
+
+        <div class="col-3">
+          <div data-edit-type="email" data-edit-name="email"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col-1 right">
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+    </div>
+  </div>
+
+  <!-- FACILITY ROW -->
+
+  <div id="facility-item" class="row item">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete_fac %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="name" data-edit-name="name"></div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+      <div class="country" data-edit-name="country"></div>
+      <div class="city" data-edit-name="city"></div>
+    </div>
+  </div>
+
+  <!-- EXCHANGE ROW -->
+
+  <div id="exchange-item" class="row item">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete_ix %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="name" data-edit-name="name"></div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+      <div class="country" data-edit-name="country"></div>
+      <div class="city" data-edit-name="city"></div>
+    </div>
+  </div>
+
+  <!-- NETWORK ROW -->
+
+  <div id="network-item" class="row item">
+    <div class="col-9 col-sm-9 col-md-9">
+      {% if permissions.can_delete_net %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="name" data-edit-name="name"></div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div class="asn" data-edit-name="asn"></div>
+    </div>
+  </div>
+
+  <!-- CARRIER ROW -->
+
+  <div id="carrier-item" class="row item">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete_carrier %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="name" data-edit-name="name"></div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+    </div>
+  </div>
+
+  <!-- CAMPUS ROW -->
+
+  <div id="campus-item" class="row item">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete_campus %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="name" data-edit-name="name"></div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+    </div>
+  </div>
+
+
+
+</div>

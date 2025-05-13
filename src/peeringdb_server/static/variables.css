@@ -55,3 +55,32 @@
   --pagination-color: #fbfbfb;
   --pagination-color-hover: #9cc2a8;
 }
+
+[data-theme="light-ui-next"] {
+  --bg-color: #ebecf0;
+  --tertiary-bg-color: #455157;
+  --secondary-bg-color: #f1f1f1;
+  --active-bg-color: #0d6efd;
+  --form-bg-color: #ffffff;
+  --heading-color: #00203e;
+  --text-color: #212024;
+  --hyperlink-color: #1c3f28;
+  --special-text-color: #ffffff;
+  --alert-text: #9e1e1e;
+  --alert-info-border: #b6effb;
+  --alert-info-text: #055160;
+  --alert-info-bg: #cff4fc;
+  --alert-danger-bg: #f8d7da;
+  --alert-danger-text: #842029;
+  --alert-danger-border: #f5c2c7;
+  --button-regular-color: #33744a;
+  --button-hover-color: #4b6063;
+  --button-text-color-1: #ffffff;
+  --button-text-color-2: #0d6efd;
+  --border-color: #1c3f28;
+  --border-color-2: #212024;
+  --input-bg-color: #ffffff;
+  --placeholder: gray;
+  --pagination-color: #000000;
+  --pagination-color-hover: #0a58ca;
+}

@@ -15,6 +15,13 @@ html, body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+/* Scrollbar color for firefox */
+@-moz-document url-prefix() {
+  * {
+    scrollbar-color: #999 transparent !important;
+  }
+}
+
 body {
   background-color: var(--tertiary-bg-color);
   overflow-y: scroll;
@@ -564,7 +571,10 @@ div.view_info .theme-container h3{
   text-align: center;
 }
 
-div.view_info .theme-container .btn-outline-dark.active{
+div.view_info .theme-container .btn-outline-dark.active,
+#ui-next-rejected.btn-outline-dark.active,
+#ui-next-enabled.btn-outline-dark.active
+{
   background-color: var(--button-hover-color) !important;
 }
 

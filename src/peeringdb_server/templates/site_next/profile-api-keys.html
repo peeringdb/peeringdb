@@ -1,0 +1,86 @@
+{% load i18n %}
+<div class="panel api-keys">
+    <h3><a name="api-keys">{% trans "API Keys" %}</a></h3>
+
+    <div class="alert alert-info">
+    {% blocktrans trimmed %}
+    API Keys allow you to authenticate a client without providing your username and password.
+    {% endblocktrans %}
+    </div>
+
+
+<div class="list editable always"
+         data-edit-module="key_listing"
+         data-edit-target="/user_keys"
+         data-edit-id="{{ instance.id }}"
+      >
+  <div class="row header">
+    <div class="col-4 col-sm-5 col-md-4">
+      <div>{% trans "Prefix" %}</div>
+    </div>
+    <div class="col-6 col-sm-5 col-md-6">
+      <div>{% trans "Description" %}</div>
+    </div>
+    <div class="col-4 col-sm-2 col-md-2"></div>
+  </div>
+
+  <div data-edit-component="list" data-edit-template="api-key-item">
+  {% for key in user.api_keys.all %}
+  {% if not key.revoked %}
+  <div class="row marg-top" data-edit-id="{{ key.prefix }}" data-edit-label="{{ key.prefix }} - {{ key.name }}">
+    <div class="col-4 col-sm-5 col-md-4" data-edit-name="prefix">{{ key.prefix }}</div>
+    <div class="col-6 col-sm-5 col-md-6">
+      <span data-edit-name="name">{{ key.name }}</span>
+      <span>{% if key.readonly %}({% trans "read-only" %}){% endif %}</span>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 right">
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  </div>
+
+
+  {% if request.user.is_superuser %}
+  <div class="alert alert-danger marg-top">
+  {% blocktrans trimmed %}
+  You are creating an API Key for a superuser account. Such API keys cannot be made
+  read only and will always have full access. Proceed with caution.
+  {% endblocktrans %}
+  </div>
+  {% endif %}
+
+
+  <div id="api-key-popin-frame"></div>
+
+  <div class="row marg-top editable" data-edit-component="add">
+    <div class="col-4 col-sm-5 col-md-4">
+      <div>{% trans "Add Key" %}</div>
+    </div>
+    <div class="col-6 col-sm-5 col-md-6">
+      <div data-edit-type="string" data-edit-name="name"></div>
+      {% if not request.user.is_superuser %}
+      <div data-edit-type="bool" data-edit-name="readonly" style="display:inline"></div> <span>{% trans "Read only" %}</span>
+      {% endif %}
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 right">
+      <a class="btn btn-default" data-edit-action="add">{% trans "Add" %}</a>
+    </div>
+  </div>
+</div>
+</div>
+
+<div id="editable-templates">
+  <!-- KEY ROW -->
+
+  <div id="api-key-item" class="row item">
+    <div class="col-4 col-sm-5 col-md-4" data-edit-name="prefix"></div>
+    <div class="col-6 col-sm-5 col-md-6" data-edit-name="name"></div>
+    <div class="col-2 col-sm-2 col-md-2 right">
+      <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
+    </div>
+  </div>
+
+
+</div>

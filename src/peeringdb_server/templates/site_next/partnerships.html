@@ -1,0 +1,28 @@
+{% extends "site_next/base.html" %}
+{% load util %}
+{% load i18n %}
+{% block header %}
+{% include "site_next/header-partnerships.html" %}
+{% endblock %}
+{% block content %}
+
+<div class="partnerspage">
+  {% for level, rows in partnerships.items %}
+	<div class="partners-group level{{ level }}">
+	  <h2 class="level">
+		{{ level|partnership_label }} <br>{% trans "Partners" %}
+      </h2>
+	  <div class="partners">
+      {% for row in rows|shuffle %}
+        {% if row.logo %}
+          {% if row.url %}<a href="{{row.url}}">{% endif %}
+            <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
+          {% if row.url %}</a>{% endif %}
+        {% endif %}
+      {% endfor %}
+	  </div>
+	</div>
+  {% endfor %}
+</div>
+
+{% endblock %}

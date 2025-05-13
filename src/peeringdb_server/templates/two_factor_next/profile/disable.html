@@ -1,0 +1,14 @@
+{% extends "two_factor_next/_base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>{% block title %}{% trans "Disable TOTP Authentication" %}{% endblock %}</h1>
+  <p>{% blocktrans trimmed %}You are about to disable TOTP authentication. This
+    could weaken your account security, are you sure?{% endblocktrans %}</p>
+  <form method="post" style="margin-bottom:10px;">
+    {% csrf_token %}
+    <table>{{ form.as_table }}</table>
+    <button class="btn btn-danger"
+            type="submit">{% trans "Disable" %}</button>
+  </form>
+{% endblock %}

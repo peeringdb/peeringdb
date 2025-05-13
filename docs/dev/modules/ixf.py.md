@@ -1,4 +1,4 @@
-Generated from ixf.py on 2025-04-21 14:27:07.752913
+Generated from ixf.py on 2025-05-12 16:19:34.467425
 
 # peeringdb_server.ixf
 
@@ -30,7 +30,7 @@ is not a compatible setup for import (see #889).
 ### Methods
 
 #### \__init__
-`def __init__(self, importer, *args, **kwargs)`
+`def __init__(self, importer, conflict_info, *args, **kwargs)`
 
 Initialize self.  See help(type(self)) for accurate signature.
 

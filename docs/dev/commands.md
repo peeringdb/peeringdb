@@ -1,4 +1,4 @@
-Generated on 2025-04-21 14:27:07.752913
+Generated on 2025-05-12 16:19:34.467425
 
 ## _db_command.py
 
@@ -151,6 +151,10 @@ Post stat breakdown for any given date.
 ## pdb_status.py
 
 Checks entity status integrity (looks for orphaned entities).
+
+## pdb_ui_opt_flags.py
+
+# Classes
 
 ## pdb_undelete.py
 

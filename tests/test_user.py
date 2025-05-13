@@ -603,3 +603,12 @@ class UserTests(TestCase):
             b"window.location.href + '&commit=1'",
             response.content,
         )
+
+    def test_ui_next_property(self):
+        self.user_a.opt_flags = settings.USER_OPT_FLAG_UI_NEXT
+        self.assertTrue(self.user_a.ui_next_enabled)
+        self.assertFalse(self.user_a.ui_next_rejected)
+
+        self.user_b.opt_flags = settings.USER_OPT_FLAG_UI_NEXT_REJECTED
+        self.assertTrue(self.user_b.ui_next_rejected)
+        self.assertFalse(self.user_b.ui_next_enabled)

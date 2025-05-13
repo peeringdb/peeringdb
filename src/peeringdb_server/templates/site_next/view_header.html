@@ -1,0 +1,15 @@
+{% if errors %}
+<div class="view_error">
+<div class="container">
+<div class="row">
+  <div class="col-md-1 col-sm-12 col-12"></div>
+  <div class="error col-md-10 col-sm-12 col-12">
+{% for err in errors %}
+  <div>{{ err }}</div>
+{% endfor %}
+  </div>
+  <div class="col-md-1 col-sm-12 col-12"></div>
+</div>
+</div>
+</div>
+{% endif %}

@@ -1,0 +1,195 @@
+{% load i18n util %}
+
+<div class="editable always auto-toggled filter-form"
+     data-edit-target="advanced_search:campus"
+     data-edit-enter-action="submit"
+     data-sort-container=".results"
+     data-sort-row=".row">
+  <div class="row">
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- LEFT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-name="name_search"
+               data-edit-reset-value=""
+               data-edit-value="{{ request.GET.name_search }}"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Address" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.facility__address1 }}"
+               data-edit-reset-value=""
+               data-edit-name="facility__address1"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}/ {% trans "State" %}/ {% trans "Postal" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div class="row">
+            <div class="col-4 col-sm-4 col-md-4">
+              <div data-edit-type="string"
+                   data-edit-value="{{ request.GET.facility__city }}"
+                   data-edit-reset-value=""
+                   data-edit-name="facility__city"></div>
+            </div>
+            <div class="col-4 col-sm-4 col-md-4">
+              <div data-edit-type="string"
+                   data-edit-value="{{ request.GET.facility__state }}"
+                   data-edit-reset-value=""
+                   data-edit-name="facility__state"></div>
+            </div>
+            <div class="col-4 col-sm-4 col-md-4">
+              <div data-edit-type="string"
+                   data-edit-value="{{ request.GET.facility__zipcode }}"
+                   data-edit-reset-value=""
+                   data-edit-name="facility__zipcode"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="facility__country__in"
+               data-edit-error-field="country"
+               data-edit-data="countries"
+               {% if request.GET.facility__country %}
+                  data-edit-value="{{ request.GET.facility__country }}"
+               {% else %}
+                  data-edit-value="{{ request.GET.facility__country__in }}"
+               {% endif %}
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               --data-edit-data-all-entry=":-- All Countries --"></div>
+        </div>
+      </div>
+
+
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Continental Region" %}<span class="hint">(ctrl/cmd {% trans "click to select multiple" %})</span></div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="select"
+               data-edit-name="facility__region_continent__in"
+               data-edit-data="enum/regions"
+               data-edit-value="{{ request.GET.facility__region_continent__in }}"
+               data-edit-reset-value=""
+               data-edit-multiple="yes"
+               --data-edit-data-all-entry=":-- All Regions --"></div>
+        </div>
+      </div>
+      {% if can_use_distance_filter %}
+        <div class="row">
+          <div class="col-4 col-sm-5 col-md-4">{% trans "Within Distance" %}
+          </div>
+          <div class="col-8 col-sm-7 col-md-8">
+            <div class="row">
+              <div class="col-12">
+                <div data-edit-type="spatial_distance"
+                     data-edit-value="{{ request.GET.distance|default:0 }}"
+                     data-edit-reset-value=""
+                     data-edit-name="distance">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+         {% if not request.user.is_authenticated %}
+           {% trans "Additional filters are available to authenticated users, and you are currently not logged in." %}
+         {% elif not request.user.is_verified_user %}
+           {% trans "Additional filters are available to verified users, and you are currently not affiliated with any organizations." %}
+         {% endif %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- RIGHT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+               {% if request.GET.org__name__contains %}
+                 data-edit-name="org__name__contains"
+                 data-edit-value="{{ request.GET.org__name__contains }}"
+                 data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+                 data-edit-name="org"
+                 data-edit-value="{{ request.GET.org }}"
+                 data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+  </div>
+
+  <div class="right marg-top-30">
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="campus"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="campus"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="kmz" data-export-tag="campus"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> KMZ</a>
+  </div>
+
+  <div class="editable-templates">
+    <div id="advanced-search-campus-item" class="row">
+      <div class="col-4 col-sm-4 col-md-4">
+        <a href="/campus/$id" data-edit-name="name" class="name"></a>
+        <div class="org_name" data-edit-name="org_name"></div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="city" data-edit-name="city"></div>
+        <div class="country" data-edit-name="country"></div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div class="state" data-edit-name="state"></div>
+        <div class="zipcode" data-edit-name="zipcode"></div>
+      </div>
+    </div>
+  </div>
+  {% if request.GET.reftag == 'campus' %}
+  <nav aria-label="...">
+    <ul class="pagination-top pagination">
+    </ul>
+  </nav>
+  {% endif %}
+  <div class="headers marg-top-15">
+    <div class="row">
+      <div class="col-4 col-sm-4 col-md-4">
+        <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+        <div data-sort-target=".org_name">{% trans "Management" %}</div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div data-sort-target=".city">{% trans "City" %}</div>
+        <div data-sort-target=".country">{% trans "Country" %}</div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2">
+        <div data-sort-target=".state">{% trans "State" %}</div>
+        <div data-sort-target=".zipcode" class="ambiguous">{% trans "Postal Code" %}</div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="results-empty center" style="display:none;">{% trans "No search results." %}</div>
+
+  <div class="results"></div>
+
+  <div class="results-cutoff center marg-top-15" style="display:none;">
+    {% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}
+  </div>
+
+
+</div>

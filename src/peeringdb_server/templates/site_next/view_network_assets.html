@@ -1,0 +1,144 @@
+{% load i18n %}
+<!-- TEMPLATES -->
+<div id="editable-templates">
+
+  <!-- NETWORK IX LINK ROW -->
+  <div id="netixlan-item" class="row item">
+    <div class="row squeeze-15">
+      <div class="col-3 col-sm-4 col-md-4">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="exchange"
+             data-sort-name="exchange_name"
+             data-filter-name="exchange_name"
+             data-edit-name="exchange">
+        </div>
+
+        <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
+
+      </div>
+
+      <div class="col-3 col-sm-4 col-md-3">
+        <div class="asn"
+          data-edit-type="readonly"
+           data-edit-name="asn"
+           data-filter-name="asn"
+           data-sort-name="asn">
+        </div>
+        <div class="editable-inline netixlan-extra">
+          <div
+            data-edit-type="bool"
+            data-edit-name="operational"
+            data-edit-toggled="edit"
+            data-sort-value="{{ x.operational }}"
+            data-edit-value="{{ x.operational }}">
+          </div>
+          <span data-edit-toggled="edit">{% trans "Operational" %}</span>
+        </div>
+      </div>
+
+      <div class="col-3 col-sm-2 col-md-3">
+        <div class="speed"
+             data-sort-name="speed"
+             data-filter-name="speed"
+             data-edit-type="network_speed"
+             data-edit-name="speed"
+             data-edit-required="yes">
+        </div>
+      </div>
+
+      <div class="col-3 col-sm-2 col-md-2">
+        <div class="is_rs_peer"
+             data-sort-name="is_rs_peer"
+             data-filter-name="is_rs_peer"
+             data-edit-type="bool"
+             data-edit-name="is_rs_peer"
+             data-edit-template="check">
+        </div>
+      </div>
+    </div>
+    <div class="row ip-addr squeeze-15">
+      <div class="col-12 col-sm-4">
+        <div data-edit-type="string"
+             data-edit-name="ipaddr4">
+        </div>
+      </div>
+      <div class="col-12 col-sm-8">
+        <div data-edit-type="string"
+             data-edit-name="ipaddr6" class="ip6">
+         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NETWORK FACILITY ROW -->
+  <div id="netfac-item" class="row item">
+    <div class="col-6 col-sm-6 col-md-6">
+      {% if permissions.can_delete %}
+      <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+      {% endif %}
+      <div class="facility"
+           data-filter-name="facility"
+           data-sort-name="facility"
+           data-edit-name="facility">
+      </div>
+      <div class="local_asn"
+           data-filter-name="local_asn"
+           data-edit-name="local_asn">
+      </div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-6">
+      <div class="country"
+           data-filter-name="country"
+           data-sort-name="country"
+           data-edit-name="country">
+      </div>
+      <div class="city"
+           data-filter-name="city"
+           data-sort-name="city"
+           data-edit-name="city">
+      </div>
+    </div>
+  </div>
+
+  <!-- POC ITEM TEMPLATE -->
+  <div class="row item" id="poc-item">
+       <div class="col-3 col-sm-3 col-md-3">
+         {% if permissions.can_delete %}
+         <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+         {% endif %}
+         <div class="role"
+              data-edit-name="role">
+         </div>
+       </div>
+       <div class="col-4 col-sm-4 col-md-4">
+         <div class="name"
+              data-edit-name="name"
+              data-edit-type="string"
+              data-edit-required="yes">
+         </div>
+         <div class="visible"
+              data-edit-type="select"
+              data-edit-toggled="edit"
+              data-edit-data="enum/visibility"
+              data-edit-name="visible">
+         </div>
+       </div>
+       <div class="col-5 col-sm-5 col-md-5">
+         <div class="phone"
+              data-edit-type="string"
+              data-edit-name="phone">
+         </div>
+         <div class="email"
+              data-edit-type="email"
+              data-edit-name="email">
+         </div>
+       </div>
+  </div>
+
+</div>
+<script language="javascript" type="text/javascript">
+twentyc.data.loaders.get("network_data").prototype.id = {{ instance.id }};
+twentyc.data.loaders.assign("asns", "network_data");
+</script>

@@ -19,6 +19,7 @@ import os
 import re
 import uuid
 from typing import Any, Union
+from urllib.parse import urlparse
 
 import django_read_only
 import googlemaps.exceptions
@@ -53,8 +54,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import redirect, render
-from django.template import loader
+from django.shortcuts import redirect
 from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
 from django.utils.crypto import constant_time_compare
@@ -73,8 +73,8 @@ from django_peeringdb.const import (
     WEBSITE_OVERRIDE_HELP_TEXT,
 )
 from django_ratelimit.decorators import ratelimit
-from django_security_keys.ext.two_factor.views import (  # noqa
-    DisableView as TwoFactorDisableView,
+from django_security_keys.ext.two_factor.views import (
+    DisableView as TwoFactorDisableView,  # noqa
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from django_security_keys.models import SecurityKey
@@ -137,10 +137,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
-from peeringdb_server.search import (
-    get_lat_long_from_search_result,
-    search,
-)
+from peeringdb_server.search import get_lat_long_from_search_result, search
 from peeringdb_server.search_v2 import (
     elasticsearch_proximity_entity,
     is_valid_latitude,
@@ -160,7 +157,10 @@ from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import (
     generate_social_media_render_data,
+    get_template,
     objfac_tupple,
+    objfac_tupple_ui_next,
+    render,
     v2_social_media_services,
 )
 
@@ -316,12 +316,12 @@ def make_env(**data):
 
 
 def view_http_error_404(request):
-    template = loader.get_template("site/error_404.html")
+    template = get_template(request, "site/error_404.html")
     return HttpResponseNotFound(template.render(make_env(), request))
 
 
 def view_http_error_403(request):
-    template = loader.get_template("site/error_403.html")
+    template = get_template(request, "site/error_403.html")
     return HttpResponseForbidden(template.render(make_env(), request))
 
 
@@ -334,7 +334,7 @@ def view_http_error_invalid(request, reason):
 
 
 def view_maintenance(request):
-    template = loader.get_template("site/maintenance.html")
+    template = get_template(request, "site/maintenance.html")
     return HttpResponse(template.render({}, request), status=503)
 
 
@@ -377,7 +377,7 @@ def view_request_ownership(request):
                 ],
             )
 
-        template = loader.get_template("site/request-ownership.html")
+        template = get_template(request, "site/request-ownership.html")
         return HttpResponse(template.render(make_env(org=org), request))
 
     elif request.method == "POST":
@@ -643,6 +643,32 @@ def update_user_options(request):
     return redirect("user-profile")
 
 
+@login_required
+@ensure_csrf_cookie
+def update_ui_versions(request):
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("login")
+
+        selected_version = request.POST.get("ui_version")
+
+        if selected_version == "new-ui":
+            user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT, True)
+            user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT_REJECTED, False)
+
+        elif selected_version == "legacy-ui":
+            if getattr(user, "ui_next_enabled", False):
+                user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT, False)
+                user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT_REJECTED, True)
+            else:
+                user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT, False)
+                user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT_REJECTED, False)
+
+        user.save()
+    return redirect("user-profile")
+
+
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -716,6 +742,7 @@ class ApplicationFormMixin:
                 "client_type",
                 "authorization_grant_type",
                 "redirect_uris",
+                "allowed_origins",
                 "algorithm",
             ),
             labels={"org": _("Organization")},
@@ -731,6 +758,32 @@ class ApplicationFormMixin:
         org_ids = [org.id for org in self.request.user.admin_organizations]
         form.fields["org"].queryset = Organization.objects.filter(id__in=org_ids)
 
+        original_clean = form.fields["allowed_origins"].clean
+
+        def validate_allowed_origins(value):
+            value = original_clean(value)
+
+            if value and value is not "*":
+                origins = [origin.strip() for origin in value.split(",")]
+
+                for origin in origins:
+                    if not origin:
+                        continue
+
+                    if not origin.startswith("https://"):
+                        raise ValidationError("Origins must start with https://")
+
+                    try:
+                        parsed = urlparse(origin)
+                        if not all([parsed.scheme, parsed.netloc]):
+                            raise ValidationError(f"Invalid origin format: {origin}")
+                    except Exception:
+                        raise ValidationError(f"Invalid origin URL: {origin}")
+
+                value = ",".join(origins)
+            return value
+
+        form.fields["allowed_origins"].clean = validate_allowed_origins
         return form
 
 
@@ -860,7 +913,7 @@ def view_profile_v1(request):
 @login_required
 @require_http_methods(["GET"])
 def view_verify(request):
-    template = loader.get_template("site/verify.html")
+    template = get_template(request, "site/verify.html")
     env = BASE_ENV.copy()
     env.update(
         {"affiliations": request.user.organizations, "global_stats": global_stats()}
@@ -1241,7 +1294,7 @@ def view_password_reset(request):
                 env["username"] = pr.user.username
                 env["token_valid"] = True
 
-        template = loader.get_template("site/password-reset.html")
+        template = get_template(request, "site/password-reset.html")
 
         return HttpResponse(template.render(env, request))
 
@@ -1312,7 +1365,7 @@ def view_registration(request):
         )
 
     if request.method in ["GET", "HEAD"]:
-        template = loader.get_template("site/register.html")
+        template = get_template(request, "site/register.html")
         env = BASE_ENV.copy()
         env.update(
             {"global_stats": global_stats(), "register_form": UserCreationForm()}
@@ -1408,7 +1461,7 @@ def view_index(request, errors=None):
     if not errors:
         errors = []
 
-    template = loader.get_template("site/index.html")
+    template = get_template(request, "site/index.html")
 
     if request.user.is_authenticated:
         organizations_require_2fa = any(
@@ -1443,7 +1496,15 @@ def view_component(
     if not perms:
         perms = {}
 
-    template = loader.get_template("site/view.html")
+    user = request.user
+    use_next_ui = user.is_authenticated and getattr(user, "ui_next_enabled", False)
+
+    if use_next_ui:
+        base_template_path = "site_next"
+    else:
+        base_template_path = "site"
+
+    template = get_template(request, f"{base_template_path}/view.html")
 
     env = BASE_ENV.copy()
     env.update(
@@ -1456,12 +1517,31 @@ def view_component(
             "instance": instance,
             "ref_tag": instance._handleref.tag,
             "global_stats": global_stats(),
-            "asset_template_name": "site/view_%s_assets.html" % component,
-            "tools_template_name": "site/view_%s_tools.html" % component,
-            "side_template_name": "site/view_%s_side.html" % component,
-            "bottom_template_name": "site/view_%s_bottom.html" % component,
+            "asset_template_name": f"{base_template_path}/view_{component}_assets.html",
+            "tools_template_name": f"{base_template_path}/view_{component}_tools.html",
+            "side_template_name": f"{base_template_path}/view_{component}_side.html",
+            "bottom_template_name": f"{base_template_path}/view_{component}_bottom.html",
         }
     )
+
+    if component == "campus":
+        env.update(
+            {
+                "facilities_template_name": f"{base_template_path}/view_{component}_facilities.html",
+                "carriers_template_name": f"{base_template_path}/view_{component}_carriers.html",
+                "exchanges_template_name": f"{base_template_path}/view_{component}_exchanges.html",
+                "networks_template_name": f"{base_template_path}/view_{component}_networks.html",
+            }
+        )
+    else:
+        env.update(
+            {
+                "asset_template_name": f"{base_template_path}/view_{component}_assets.html",
+                "tools_template_name": f"{base_template_path}/view_{component}_tools.html",
+                "side_template_name": f"{base_template_path}/view_{component}_side.html",
+                "bottom_template_name": f"{base_template_path}/view_{component}_bottom.html",
+            }
+        )
 
     update_env_settings(env)
 
@@ -2150,9 +2230,18 @@ def view_campus(request, id):
         ixfac = ixfac.union(facility.ixfac_set_active, all=False)
         netfac = netfac.union(facility.netfac_set_active, all=False)
         carrierfac = carrierfac.union(facility.carrierfac_set_active, all=False)
-    carriers = objfac_tupple(carrierfac, "carrier")
-    networks = objfac_tupple(netfac, "network")
-    exchanges = objfac_tupple(ixfac, "ix")
+
+    user = request.user
+    use_next_ui = user.is_authenticated and getattr(user, "ui_next_enabled", False)
+
+    if use_next_ui:
+        carriers = objfac_tupple_ui_next(carrierfac, "carrier", "mixed")
+        networks = objfac_tupple_ui_next(netfac, "network", "grouped")
+        exchanges = objfac_tupple_ui_next(ixfac, "ix", "grouped")
+    else:
+        carriers = objfac_tupple(carrierfac, "carrier")
+        networks = objfac_tupple(netfac, "network")
+        exchanges = objfac_tupple(ixfac, "ix")
     org = data.get("org")
 
     social_media = data.get("social_media")
@@ -2968,7 +3057,7 @@ def view_suggest(request, reftag):
     if reftag not in ["net", "ix", "fac"]:
         return HttpResponseRedirect("/")
 
-    template = loader.get_template(f"site/view_suggest_{reftag}.html")
+    template = get_template(request, f"site/view_suggest_{reftag}.html")
     env = make_env()
 
     env["phone_help_text"] = field_help(NetworkContact, "phone")
@@ -2982,7 +3071,7 @@ def view_simple_content(request, content_name):
     the peeringdb layout.
     """
 
-    template = loader.get_template("site/simple_content.html")
+    template = get_template(request, "site/simple_content.html")
 
     env = make_env(content_name=content_name)
 
@@ -3010,7 +3099,7 @@ def view_sponsorships(request):
     View current sponsorships.
     """
 
-    template = loader.get_template("site/sponsorships.html")
+    template = get_template(request, "site/sponsorships.html")
     now = datetime.datetime.now().replace(tzinfo=UTC())
 
     qset = Sponsorship.objects.filter(start_date__lte=now, end_date__gte=now)
@@ -3031,7 +3120,7 @@ def view_partnerships(request):
     View current partners.
     """
 
-    template = loader.get_template("site/partnerships.html")
+    template = get_template(request, "site/partnerships.html")
     qset = Partnership.objects.filter(logo__isnull=False)
 
     partnerships = {}
@@ -3051,7 +3140,7 @@ def view_advanced_search(request):
     View for advanced search.
     """
 
-    template = loader.get_template("site/advanced-search.html")
+    template = get_template(request, "site/advanced-search.html")
     env = make_env(row_limit=getattr(dj_settings, "API_DEPTH_ROW_LIMIT", 250))
 
     reftag = request.GET.get("reftag")
@@ -3149,7 +3238,7 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
 
     # Build the environment for rendering the template
     env = build_template_environment(result, geo, version, request, q)
-    template = loader.get_template("site/search_result.html")
+    template = get_template(request, "site/search_result.html")
 
     return HttpResponse(template.render(env, request))
 

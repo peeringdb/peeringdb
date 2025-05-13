@@ -1,4 +1,4 @@
-Generated from admin.py on 2025-04-21 14:27:08.036539
+Generated from admin.py on 2025-05-12 16:19:35.017067
 
 # peeringdb_server.admin
 
@@ -789,6 +789,27 @@ Soft delete admin.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### change_view
+`def change_view(self, request, object_id, form_url=, extra_context=None)`
+
+Show message to the admin page if the prefix is not deletable
+
+---
+#### delete_model
+`def delete_model(self, request, obj)`
+
+Check the deletable property
+
+---
+#### delete_view
+`def delete_view(self, request, object_id, extra_context=None)`
+
+Custom delete view to check deletable property before confirming deletion
+
+---
 
 ## IXLanPrefixForm
 

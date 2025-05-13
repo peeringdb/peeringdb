@@ -1063,3 +1063,73 @@ class AdminTests(TestCase):
             in page
         )
         assert 'name="webauthn_security_keys-0-credential_id" value="1234"' in page
+
+    def test_protected_ixlanprefix_deletion(self):
+        ixlan = self.entities["ixlan"][0]
+        prefix = models.IXLanPrefix.objects.create(
+            ixlan=ixlan, protocol="IPv4", prefix="198.51.100.0/24", status="ok"
+        )
+
+        netixlan = models.NetworkIXLan.objects.create(
+            network=self.entities["net"][0],
+            ixlan=ixlan,
+            ipaddr4="198.51.100.10",
+            status="ok",
+            asn=self.entities["net"][0].asn,
+            speed=1000,
+        )
+
+        self.assertFalse(prefix.deletable)
+        self.assertIn("198.51.100.10", prefix.not_deletable_reason)
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse("admin:peeringdb_server_ixlanprefix_changelist")
+        response = client.post(
+            url, {"_selected_action": prefix.id, "action": "soft_delete"}, follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertIn("Please confirm deletion of selected objects", str(messages[0]))
+
+        response = client.post(
+            url,
+            {"_selected_action": prefix.id, "action": "soft_delete", "delete": "true"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # Verify prefix still exists
+        self.assertTrue(models.IXLanPrefix.objects.filter(id=prefix.id).exists())
+
+        # Check for error message
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 1)
+        self.assertIn("Protected object", str(messages[0]))
+        self.assertIn("IP address 198.51.100.10", str(messages[0]))
+
+        url = reverse("admin:peeringdb_server_ixlanprefix_delete", args=[prefix.id])
+        response = client.get(url, follow=True)
+
+        # Redirect back to the change list with error
+        messages = list(get_messages(response.wsgi_request))
+        self.assertEqual(len(messages), 2)
+        self.assertIn("IP address 198.51.100.10", str(messages[0]))
+
+        self.assertTrue(models.IXLanPrefix.objects.filter(id=prefix.id).exists())
+
+        # Clean up the netixlan to make prefix deletable
+        netixlan.delete()
+
+        prefix = models.IXLanPrefix.objects.get(id=prefix.id)
+        self.assertTrue(prefix.deletable)
+
+        response = client.post(url, {"post": "yes"}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        # True because it just soft delete, so the data is still exist
+        self.assertTrue(
+            models.IXLanPrefix.objects.filter(id=prefix.id).filter(status="deleted")
+        )

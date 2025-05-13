@@ -1,0 +1,55 @@
+{% load util %}
+{% load i18n %}
+<div class="editable note info">
+{% if entity_name == "Facility" %}
+<p><strong>{% trans "Only use this if you own the facility" %}</strong></p>
+{% elif entity_name == "Exchange" %}
+<p><strong>{% trans "Only use this if you own the exchange" %}</strong></p>
+{% elif entity_name == "Carrier" %}
+<p><strong>{% trans "Only use this if you own the carrier" %}</strong></p>
+{% elif entity_name == "Campus" %}
+<p><strong>{% trans "Only use this if you own the campus" %}</strong></p>
+{% endif %}
+
+
+{% if entity_name != "Carrier" and entity_name != "Campus" %}
+{% blocktrans trimmed %}
+Add a new {{ entity_name }} to your Organization.
+Note that the newly created {{ entity_name }} will need to be
+approved by PeeringDB staff before it will appear in the search results or the API listings{% endblocktrans %}
+{% elif entity_name == "Campus" %}
+{% blocktrans trimmed %}
+Add a new {{ entity_name }} to your Organization.
+Note that your campus will not be visible to other users until it has at least <strong>2</strong> facilities in it.
+{% endblocktrans %}
+{% elif entity_name == "Carrier" %}
+{% trans "Add a new carrier to your Organization." %}
+{% endif %}
+
+{% if entity_name == "Facility" %}
+<p class="marg-top-15">
+{% blocktrans trimmed %}
+To be listed as a Facility in PeeringDB we would expect that you offer colocation, data center and/or meet-me-room services to the public.
+{% endblocktrans %}
+</p>
+
+{% elif entity_name == "Exchange" %}
+<p class="marg-top-15">
+{% blocktrans trimmed %}
+To be listed as an Internet Exchange in PeeringDB we would expect that you meet the following criteria:
+{% endblocktrans %}
+<br><br>
+{% blocktrans trimmed %}
+An Internet Exchange Point (IXP) is a network facility that enables the interconnection of more than two independent Autonomous Systems, primarily for the purpose of facilitating the exchange of Internet traffic.
+{% endblocktrans %}
+<br><br>
+{% blocktrans trimmed %}
+An IXP provides interconnection only for Autonomous Systems. An IXP does not require the Internet traffic passing between any pair of participating Autonomous Systems to pass through any third Autonomous System, nor does it alter or otherwise interfere with such traffic
+{% endblocktrans %}
+</p>
+{% endif %}
+
+</div>
+<div class="marg-top">
+  <a class="btn btn-default" data-edit-action="submit">{% trans "Submit" %} {{ entity_name }}</a>
+</div>

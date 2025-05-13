@@ -799,6 +799,7 @@ _TEMPLATE_CONTEXT_PROCESSORS = (
     "django.template.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
     "peeringdb_server.context_processors.theme_mode",
+    "peeringdb_server.context_processors.ui_version",
 )
 
 _TEMPLATE_DIRS = (os.path.join(BASE_DIR, "peeringdb_server", "templates"),)
@@ -1135,7 +1136,6 @@ set_option("MAX_LENGTH_PASSWORD", 1024)
 
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
-ACCOUNT_EMAIL_REQUIRED = True
 
 # Webauthn (U2F) settings
 
@@ -1505,6 +1505,15 @@ set_option("USER_MAX_EMAIL_ADDRESSES", 5)
 
 # User option flag to hide IXs without a linked facility
 set_option("OPTFLAG_HIDE_IX_WITHOUT_FAC", 1)
+
+# Default UI Version for unauthenticated users
+set_option("DEFAULT_UI_NEXT_ENABLED", False)
+
+# User option flag to enable UI NEXT
+set_option("USER_OPT_FLAG_UI_NEXT", 0x02)
+
+# User option flag to enable UI NEXT
+set_option("USER_OPT_FLAG_UI_NEXT_REJECTED", 0x04)
 
 # Authentication settings to use when syncing via pdb_load
 set_option("PEERINGDB_SYNC_USERNAME", "")

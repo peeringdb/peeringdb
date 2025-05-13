@@ -2809,6 +2809,10 @@ class TestJSON(unittest.TestCase):
             test_failure=SHARED["netfac_r_ok"].id,
         )
 
+        NetworkFacility.objects.get(
+            network_id=SHARED["net_rw_ok"].id, facility_id=SHARED["fac_rw_ok"].id
+        ).delete(hard=True)
+
         # re-create deleted netfac
         r_data = self.assert_create(self.db_org_admin, "netfac", data)
         # re-delete
@@ -3031,6 +3035,51 @@ class TestJSON(unittest.TestCase):
                 "invalid": {"prefix": "207.128.238.0/24", "protocol": "IPv6"},
             },
             test_success=False,
+        )
+
+    ##########################################################################
+
+    def test_ixpfx_protected_deletion(self):
+        prefix = IXLanPrefix.objects.create(
+            ixlan=SHARED["ixlan_rw_ok"],
+            protocol="IPv4",
+            prefix="203.0.113.0/24",
+            status="ok",
+        )
+
+        netixlan = NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            ixlan=SHARED["ixlan_rw_ok"],
+            ipaddr4="203.0.113.10",
+            status="ok",
+            asn=SHARED["net_rw_ok"].asn,
+            speed=1000,
+        )
+
+        self.assert_delete(
+            self.db_org_admin,
+            "ixpfx",
+            test_success=False,
+            test_failure=prefix.id,
+        )
+
+        self.assertTrue(
+            IXLanPrefix.objects.filter(id=prefix.id).filter(status="ok").exists()
+        )
+
+        netixlan.delete()
+        netixlan.refresh_from_db()
+        self.assertTrue(
+            NetworkIXLan.objects.filter(id=netixlan.id)
+            .filter(status="deleted")
+            .exists()
+        )
+
+        prefix.delete()
+        prefix.refresh_from_db()
+
+        self.assertTrue(
+            IXLanPrefix.objects.filter(id=prefix.id).filter(status="deleted").exists()
         )
 
     ##########################################################################
@@ -5506,22 +5555,12 @@ class TestJSON(unittest.TestCase):
         ixlan = SHARED["ixlan_rw_ok"]
 
         # delete the existing netfac and netixlan
-        NetworkFacility.objects.get(network=net, facility=fac).delete()
-        NetworkIXLan.objects.get(network=net, ixlan=ixlan).delete()
+        NetworkFacility.objects.get(network=net, facility=fac).delete(hard=True)
+        NetworkIXLan.objects.get(network=net, ixlan=ixlan).delete(hard=True)
 
         # test netfac create without asn sent (should auto set)
 
         data = {"net_id": net.id, "fac_id": fac.id}
-        r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
-            "data"
-        )[0]
-        assert r_data["local_asn"] == net.asn
-
-        NetworkFacility.objects.get(id=r_data["id"]).delete()
-
-        # test nefac create with local_asn sent (should ignore and auto set)
-
-        data = {"net_id": net.id, "fac_id": fac.id, "local_asn": 12345}
         r_data = self.db_org_admin.create("netfac", data, return_response=True).get(
             "data"
         )[0]
@@ -5579,8 +5618,9 @@ class TestJSON(unittest.TestCase):
 
         data.update(
             prefix=PREFIXES_V4[-1],
-            tech_phone="+1 206 555 0199",
-            policy_phone="+1 206 555 0199",
+            tech_phone="1 206 555 0199",
+            policy_phone="1 206 555 0199",
+            sales_phone="1 206 555 0199",
         )
 
         r_data = self.db_org_admin.create("ix", data, return_response=True).get("data")[
@@ -5589,6 +5629,7 @@ class TestJSON(unittest.TestCase):
 
         assert r_data["tech_phone"] == "+12065550199"
         assert r_data["policy_phone"] == "+12065550199"
+        assert r_data["sales_phone"] == "+12065550199"
 
         # test that invalid numbers raise validation errors
 

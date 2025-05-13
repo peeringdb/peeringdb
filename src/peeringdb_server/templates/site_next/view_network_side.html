@@ -1,0 +1,375 @@
+{% load util i18n static %}
+
+{% include "site_next/view_network_ixf_suggestions.html" with data=data permissions=permissions %}
+
+<!-- EXCHANGE POINTS -->
+
+<div class="list"
+     id="api-listing-netixlan"
+     data-sort-container=".scrollable"
+     data-sort-row=".item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:netixlan">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Public Peering Exchange Points" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-3 col-sm-3 col-md-3 col-lg-3">
+      <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
+      <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2">
+      <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
+      <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
+      <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
+      <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
+    </div>
+    <div class="col-3 col-sm-2 col-md-2 col-lg-3 ">
+      <div data-sort-target=".bfd_support" class="numeric">{% trans "BFD Support" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-exchanges" class="form-control" />
+      </div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-exchanges"
+       data-edit-component="list"
+       data-edit-template="netixlan-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b> {% trans "or" %} <b>{% trans "Speed" %}.</b></div>
+    </div>
+
+    {% for x in data.exchanges %}
+
+    <div class="row item {% if x.operational %}operational{% endif %}" data-edit-id="{{ x.id }}" data-edit-label="{% trans "Network - Exchange link" %}: {{ x.ixlan.ix.name }}">
+      <div class="editable payload">
+        <div data-edit-name="net_id">{{ instance.id }}</div>
+        <div data-edit-name="ixlan_id">{{ x.ixlan_id }}</div>
+      </div>
+      <div class="row squeeze-15">
+
+          <div class="exchange col-3 col-sm-4 col-md-3 col-lg-3" data-sort-value="{{ x.ixlan.ix.name }}" data-filter-value="{{ x.ixlan.ix.name }}">
+
+            {% if permissions.can_delete %}
+            <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+            {% endif %}
+
+
+            <a href="/{{x.ixlan.ix|ref_tag}}/{{ x.ixlan.ix.id }}">{{ x.ixlan.ix.name }}</a>
+
+            <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
+
+          </div>
+          <div class="col-2 col-sm-4 col-md-2 col-lg-2">
+            <div class="asn{% if permissions.can_write and x.asn != x.network.asn %} mark-value-error{% endif %}"
+               {% if permissions.can_write and x.asn != x.network.asn %}
+               data-bs-toggle="tooltip"
+               data-placement="left"
+               title="{% trans "Entry needs to be moved to correct network" %}"
+               {% endif %}
+               data-edit-type="readonly"
+               data-edit-name="asn"
+               data-edit-value="{{ x.asn }}"
+               data-sort-value="{{ x.asn }}"
+               data-filter-value="{{ x.asn }}">
+                {{ x.asn }}
+            </div>
+            <div data-edit-toggled="edit" class="editable-inline netixlan-extra">
+              <div
+                data-edit-type="bool"
+                data-edit-name="operational"
+                data-edit-toggled="edit"
+                data-sort-value="{{ x.operational }}"
+                data-edit-value="{{ x.operational }}">
+              </div>
+              <span data-edit-toggled="edit">{% trans "Operational" %}</span>
+            </div>
+          </div>
+
+
+          <div class="speed col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block"
+               data-sort-value="{{ x.speed }}"
+               data-filter-value="{{ x.speed|pretty_speed}}"
+               {% if permissions.can_write %}
+               data-edit-type="network_speed"
+               {% endif %}
+               data-edit-name="speed"
+               data-edit-value="{{ x.speed }}"
+               data-edit-required="yes">
+               {{ x.speed|pretty_speed }}
+          </div>
+          <div class= "col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block" data-edit-type="bool"
+               data-edit-name="is_rs_peer"
+               data-edit-template="check"
+               data-sort-value="{{ x.is_rs_peer }}"
+               data-edit-value="{{ x.is_rs_peer }}">
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
+          </div>
+          <div class= "col-3 col-sm-2 col-md-3 col-lg-2 d-sm-block text-center" data-edit-type="bool"
+               data-edit-name="bfd_support"
+               data-edit-template="check"
+               data-sort-value="{{ x.bfd_support }}"
+               data-edit-value="{{ x.bfd_support }}">
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.bfd_support|as_bool %}-off{% endif %}.png" alt="BFD Support" />
+          </div>
+
+      </div>
+      <div class="ip-addr row squeeze-15">
+
+        <div class="col-3 col-sm-4 col-md-3 col-lg-3">
+          <div class="ip4"
+               {% if permissions.can_write %}
+               data-edit-type="string"
+               {% endif %}
+               data-filter-value="{{ x.ipaddr4|none_blank }}"
+               data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}"
+               data-edit-name="ipaddr4">
+               {{ x.ipaddr4|none_blank }}
+          </div>
+        </div>
+        <div class="col-4 col-sm-8 col-md-4 col-lg-3">
+          <div class="ip6"
+               {% if permissions.can_write %}
+               data-edit-type="string"
+               {% endif %}
+               data-filter-value="{{ x.ipaddr6|none_blank }}"
+               data-sort-value="{{ x.ipaddr6|none_blank }} {{ x.ipaddr4|none_blank }}"
+               data-edit-name="ipaddr6">
+               {{ x.ipaddr6|none_blank }}
+           </div>
+        </div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+  <!-- ADD NET IXLINK-->
+  {% if permissions.can_create %}
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="net_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Exchange" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="ixlan"
+                data-edit-required="yes"
+                data-edit-name="ixlan_id">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "IPv4" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="string"
+                data-edit-name="ipaddr4">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "IPv6" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="string"
+                data-edit-name="ipaddr6">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Speed (mbit/sec)" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="network_speed"
+                data-edit-name="speed"
+                data-edit-value="0"
+                data-edit-required="yes">
+           </div>
+         </div>
+       </div>
+
+       <div class="row view_row">
+        <div class="view_field col-4 col-sm-5 col-md-4">{% trans "RS Peer" %}</div>
+        <div class="view_value col-8 col-sm-7 col-md-8">
+          <div data-edit-type="bool"
+               data-edit-name="is_rs_peer">
+          </div>
+        </div>
+      </div>
+
+      <div class="row view_row">
+        <div class="view_field col-4 col-sm-5 col-md-4">{% trans "BFD Support" %}</div>
+        <div class="view_value col-8 col-sm-7 col-md-8">
+          <div data-edit-type="bool"
+               data-edit-name="bfd_support">
+          </div>
+        </div>
+      </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Operational" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="bool"
+                data-edit-name="operational"
+                data-edit-value="true">
+           </div>
+         </div>
+       </div>
+
+       <div class="row marg-top">
+         <div class="col-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add Exchange Point" %}</a>
+         </div>
+       </div>
+  </div>
+  <!-- END ADD NET IXLINK -->
+  {% endif %}
+
+
+</div>
+
+<!-- PEERING FACILITIES -->
+
+<div class="list"
+     id="api-listing-netfac"
+     data-sort-container=".scrollable"
+     data-sort-row=".row.item"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:netfac">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Interconnection Facilities" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-6 col-sm-6 col-md-5">
+      <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+      <div>{% trans "ASN" %}</div>
+    </div>
+    <div class="col-6 col-sm-6 col-md-5">
+      <div data-sort-target=".country">{% trans "Country" %}</div>
+      <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" oninput="syncValue(this)"  data-filter-target="#list-facilities" class="form-control" />
+      </div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-facilities"
+       data-edit-component="list"
+       data-edit-template="netfac-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+    </div>
+
+    {% for f in data.facilities %}
+
+    <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="Network - Facility link: {{ f.facility.name }}">
+      <div class="editable payload">
+        <div data-edit-name="fac_id">{{ f.facility_id }}</div>
+        <div data-edit-name="net_id">{{ instance.id }}</div>
+      </div>
+      <div class="col-6 col-sm-6 col-md-5">
+
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
+          <a href="/{{f.facility|ref_tag}}/{{f.facility_id}}">{{f.facility.name}}</a>
+        </div>
+        <div class="local_asn{% if permissions.can_write and f.local_asn != f.network.asn %} mark-value-error{% endif %}"
+             {% if permissions.can_write and f.local_asn != f.network.asn %}
+             data-bs-toggle="tooltip"
+             data-placement="left"
+             title="{% trans "Entry needs to be moved to correct network" %}"
+             {% endif %}
+             data-edit-type="readonly"
+             data-edit-name="asn"
+             data-edit-value="{{ f.local_asn }}"
+             data-sort-value="{{ f.local_asn }}"
+             data-filter-value="{{ f.local_asn }}">
+             {{ f.local_asn }}
+        </div>
+
+      </div>
+      <div class="col-6 col-sm-6 col-md-5">
+        <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
+        <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+
+  <!-- ADD NETWORK FACILITY  -->
+  {% if permissions.can_create %}
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="net_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+         <div class="view_value col-8 col-sm-7 col-md-8">
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac/net/{{ instance.id }}"
+                data-edit-name="fac_id">
+           </div>
+           <div data-autocomplete-confirm></div>
+         </div>
+       </div>
+
+       <div class="row marg-top">
+         <div class="col-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add Facility" %}</a>
+         </div>
+       </div>
+  </div>
+  {% endif %}
+
+
+</div>

@@ -1,0 +1,25 @@
+{% block header %}
+{% include 'site_next/header.html' %}
+{% endblock %}
+{% include 'site_next/view_header.html' %}
+
+<div class="view_info left">
+  <div class="container container-ui-next">
+
+    <div id="inline-search-container" style="display:none">
+      {% include "site_next/search_result_frame.html" %}
+    </div>
+
+
+    <div id="content">
+      {% include "site_next/verification_banner.html" %}
+      {% include "site_next/tutorial_mode_banner.html" %}
+      {% include "site_next/beta_banner.html" %}
+      {% block content_pre %}{% endblock %}
+      {% block content %}{% endblock %}
+      {% block content_post %}{% endblock %}
+    </div>
+  </div>
+</div>
+
+{% include 'site_next/footer.html' %}

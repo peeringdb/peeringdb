@@ -1,0 +1,32 @@
+{% load i18n util %}
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Network Presence" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div class="editable net_present_input"
+               data-edit-type="autocomplete"
+               data-edit-placeholder="{% trans "Search networks ..." %}"
+               data-edit-autocomplete="net"
+               {% if request.GET.net__in %}
+               data-edit-name="net__in"
+               data-edit-value="{{ request.GET.net__in|autocomplete_preload_net }}"
+               {% elif request.GET.all_net %}
+               data-edit-name="all_net"
+               data-edit-value="{{ request.GET.all_net|autocomplete_preload_net }}"
+               {% elif request.GET.not_net %}
+               data-edit-name="not_net"
+               data-edit-value="{{ request.GET.not_net|autocomplete_preload_net }}"
+               {% else %}
+               data-edit-name="net__in"
+               {% endif %}
+               data-edit-multiple="yes"
+               placeholder="Network"></div>
+
+          <div class="editable input-frame">
+            <select id="net_present_filter" class="editable select net_present_filter">
+            <option value="all_net">{% trans "All present" %}</option>
+            <option value="net__in" {% if request.GET.net__in %}selected{% endif %}>{% trans "Any present" %}</option>
+            <option value="not_net" {% if request.GET.not_net %}selected{% endif %}>{% trans "None present" %}</option>
+            </select>
+          </div>
+        </div>
+      </div>

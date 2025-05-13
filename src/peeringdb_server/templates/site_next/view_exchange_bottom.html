@@ -1,0 +1,240 @@
+{% load util %}
+{% load i18n %}
+<!-- PREFIXES -->
+
+
+<div class="list"
+     id="api-listing-ixpfx"
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:ixpfx">
+
+  <h5>{% trans "Prefixes" %}</h5>
+
+  <div class="row header">
+    <div class="col-sm-3">
+      <div data-sort-target=".protocol" data-sort-initial="asc">{% trans "Protocol" %}</div>
+    </div>
+    <div class="col-sm-9">
+      <div data-sort-target=".prefix" class="ambiguous">{% trans "Prefix" %}</div>
+    </div>
+  </div>
+
+  {% with x=instance.ixlan %}
+  <div
+    id="list-prefixes"
+    data-edit-component="list"
+    data-edit-template="prefix-item">
+
+    {% for prefix in x.ixpfx_set_active_or_pending %}
+    <div class="row sub" data-edit-id="{{ prefix.id }}" data-edit-label="{% trans "IXLAN Prefix" %}: {{ prefix.prefix }}">
+      <div class="editable payload">
+        <div data-edit-name="ixlan_id">{{ x.id }}</div>
+        <div data-edit-name="protocol" class="protocol">{{ prefix.protocol }}</div>
+      </div>
+      <div class="col-sm-3">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        {{ prefix.protocol }}
+      </div>
+      <div class="col-sm-9 prefix"
+           {% if permissions.can_write %}
+           data-edit-type="string"
+           {% endif %}
+           data-edit-name="prefix"
+           data-edit-required="yes">{{ prefix.prefix }}</div>
+
+      </div>
+    {% endfor %}
+  </div>
+  {% if permissions.can_create %}
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+    <div class="payload">
+      <div data-edit-name="ixlan_id">{{ x.id }}</div>
+    </div>
+
+    <div class="row sub add">
+      <div class="col-sm-3"
+           data-edit-type="select"
+           data-edit-name="protocol"
+           data-edit-data="enum/protocols">
+      </div>
+      <div class="col-sm-6 input-note-long"
+           data-edit-type="string"
+           data-edit-name="prefix"
+           data-edit-placeholder="{% trans "Prefix" %}"
+           data-edit-required="yes">
+      </div>
+      <div class="col-sm-3">
+         <a class="btn btn-primary" data-edit-action="add">{% trans "Add Prefix" %}</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endwith %}
+  <!-- END ADD IXLAN PFX -->
+</div>
+
+<!-- IXFACS -->
+
+<div class="list"
+     id="api-listing-ixfac"
+     data-sort-container=".scrollable"
+     data-sort-row=".row"
+
+     data-edit-module="api_listing"
+     data-edit-group="#view"
+     data-edit-target="api:ixfac">
+  <div class="row">
+    <div class="col-6 col-sm-8 col-md-8">
+      <h5>{% trans "Local Facilities" %}</h5>
+    </div>
+    <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" oninput="syncValue(this)" data-filter-target="#list-facilities" class="form-control" />
+      </div>
+    </div>
+  </div>
+  <div class="row header">
+    <div class="col-6 col-sm-6 col-md-4">
+      <div data-sort-target=".facility" data-sort-initial="asc">{% trans "Facility" %}</div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div data-sort-target=".country">{% trans "Country" %}</div>
+    </div>
+    <div class="col-3 col-sm-3 col-md-3">
+      <div data-sort-target=".city">{% trans "City" %}</div>
+    </div>
+    <div class="col-2 col-sm-2 col-md-2" id="filter-web">
+      <div class="inner-addon left-addon">
+        <i class="material-icons input-icon">filter_list</i>
+        <input type="text" placeholder="Filter" data-filter-target="#list-facilities" class="form-control" />
+      </div>
+    </div>
+  </div>
+
+  <div class="scrollable"
+       id="list-facilities"
+       data-edit-component="list"
+       data-edit-template="ixfac-item">
+
+    <div class="empty-result">
+      <div class="message">{% trans "No filter matches." %}</div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Facility" %}</b>, <b>{% trans "Country" %}</b> {% trans "or" %} <b>{% trans "City" %}.</b></div>
+    </div>
+
+    {% for f in data.facilities %}
+
+    <div class="row item" data-edit-id="{{ f.id }}" data-edit-label="{% trans "Exchange - Facility link" %}: {{ f.facility.name }}">
+      <div class="editable payload">
+        <div data-edit-name="ix_id">{{ f.ix_id }}</div>
+        <div data-edit-name="fac_id">{{ f.facility_id }}</div>
+      </div>
+      <div class="col-6 col-sm-6 col-md-4">
+        {% if permissions.can_delete %}
+        <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove">&times;</a>
+        {% endif %}
+        <div class="facility" data-sort-value="{{ f.facility.name|lower }}" data-filter-value="{{ f.facility.name }}">
+          <a href="/{{ f.facility|ref_tag }}/{{ f.facility.id }}">{{ f.facility.name }}</a>
+        </div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="country" data-sort-value="{{ f.facility.country.name|lower }}" data-filter-value="{{ f.facility.country.name }}">{{ f.facility.country.name }}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="city" data-sort-value="{{ f.facility.city }}" data-filter-value="{{ f.facility.city }}">{{ f.facility.city }}</div>
+      </div>
+    </div>
+
+    {% endfor %}
+
+  </div>
+  {% if permissions.can_create %}
+  <!-- ADD IX FACILITY  -->
+  <div class="editable"
+       data-edit-toggled="edit"
+       data-edit-component="add">
+
+       <div class="payload">
+         <div data-edit-name="ix_id">{{ instance.id }}</div>
+       </div>
+
+       <div class="row view_row">
+         <div class="view_field col-sm-4 col-sm-5 col-md-4">{% trans "Facility" %}</div>
+         <div class="view_value col-sm-8 col-sm-7 col-md-8">
+           <div data-edit-type="autocomplete"
+                data-edit-autocomplete="fac/ix/{{ instance.id }}"
+                data-edit-name="fac_id">
+           </div>
+           <div data-autocomplete-confirm></div>
+         </div>
+       </div>
+
+       <div class="row marg-top">
+         <div class="col-sm-12 right">
+           <a class="btn btn-default" data-edit-action="add">{% trans "Add Facility" %}</a>
+         </div>
+       </div>
+  </div>
+  <!-- END ADD -->
+  {% endif %}
+
+
+</div>
+
+{% if permissions.can_write %}
+
+<div class="modal fade" id="ixf-preview-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+      </div>
+      <div class="modal-body">
+        <p>{% blocktrans %}The actual import will run once per day at 00:00Z - use this to preview the changes that will be done{% endblocktrans %}</p>
+        <div class="ixf-log" id="ixf-log">
+          <ul class="nav nav-tabs" role="tablist">
+            <li role="presentation" class="active nav-item">
+              <a href="#ixf-changes" id="tab-ixf-changes" aria-controls="add_fac" role="tab" data-bs-toggle="tab" class="nav-link">
+                {% trans "Changes" %}
+              </a>
+            </li>
+            <li role="presentation" class"nav-item">
+              <a href="#ixf-errors" id="tab-ixf-errors" aria-controls="add_net" role="tab" data-bs-toggle="tab" class="nav-link">
+                {% trans "Errors" %}<span class="ixf-error-counter"></span>
+              </a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane active" id="ixf-changes">
+              <div class="ixf-headers row">
+                <div class="col-sm-1"><strong>action</strong></div>
+                <div class="col-sm-2"><strong>asn</strong></div>
+                <div class="col-sm-3"><strong>ipv4</strong></div>
+                <div class="col-sm-3"><strong>ipv6</strong></div>
+                <div class="col-sm-1"><strong>{% trans "speed" %}</strong></div>
+                <div class="col-sm-2"><strong>{% trans "routeserver" %}</strong></div>
+              </div>
+              <div class="ixf-result"></div>
+            </div>
+            <div role="tabpanel" class="tab-pane ixf-errors" id="ixf-errors">
+              <div>{% blocktrans %}Sometimes we encounter some errors when parsing IX-F data, these will usually affect the import, you can view any of those errors below{% endblocktrans %}</div>
+              <div class="ixf-errors-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+{% endif %}

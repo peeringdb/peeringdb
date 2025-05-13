@@ -68,14 +68,35 @@ class MultipleVlansInPrefix(ValueError):
     is not a compatible setup for import (see #889).
     """
 
-    def __init__(self, importer, *args, **kwargs):
+    def __init__(self, importer, conflict_info, *args, **kwargs):
         importer.ixlan.ixf_ixp_member_list_url
         importer.ixlan.ix.name
         support_email = settings.DEFAULT_FROM_EMAIL
+        self.conflict_info = conflict_info
+        first_vlan = conflict_info["first_vlan"]
+        conflicting_vlan = conflict_info["conflicting_vlan"]
+        asn = conflict_info.get("asn", "Unknown")
+        path = conflict_info.get("path", "Unknown")
+
+        vlan_obj = conflict_info.get("vlan_obj", {})
+        vlan_obj_str = json.dumps(vlan_obj, indent=2) if vlan_obj else ""
+
+        detail_msg = (
+            f"\nError occurred at {path}"
+            f"\n"
+            f"\nASN: {asn}"
+            f"\nFirst VLAN ID: {first_vlan}"
+            f"\nConflicting VLAN ID: {conflicting_vlan}"
+        )
+
+        if vlan_obj_str:
+            detail_msg += f"\n\nConflicting VLAN object:\n```\n{vlan_obj_str}\n```"
+
         super().__init__(
             _(
                 f"We found that your IX-F output "
                 f"contained multiple VLANs for the prefixes defined in the PeeringDB entry for your exchange."
+                f"{detail_msg}"
                 "\n"
                 f"This setup is not compatible as PeeringDB regards each VLAN as its own exchange."
                 "\n"
@@ -154,6 +175,8 @@ class Importer:
     def __init__(self):
         self.cache_only = False
         self.skip_import = False
+        # For MultipleVlansInPrefix Error
+        self.current_path = {"member": None, "connection": None, "vlan": None}
         self.reset()
 
     def reset(self, ixlan=None, save=False, asn=None):
@@ -838,7 +861,12 @@ class Importer:
         Arguments:
             - member_list <list>
         """
-        for member in member_list:
+        for member_index, member in enumerate(member_list):
+            # Update current path for member
+            self.current_path["member"] = member_index
+            self.current_path["connection"] = None
+            self.current_path["vlan"] = None
+
             asn = member["asnum"]
 
             # if we are only processing a specific asn, ignore all
@@ -877,7 +905,11 @@ class Importer:
         """
 
         asn = member["asnum"]
-        for connection in connection_list:
+        for connection_index, connection in enumerate(connection_list):
+            # Update current path for connection
+            self.current_path["connection"] = connection_index
+            self.current_path["vlan"] = None
+
             self.connection_errors = {}
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
@@ -904,7 +936,10 @@ class Importer:
         """
 
         asn = member["asnum"]
-        for lan in vlan_list:
+        for vlan_index, lan in enumerate(vlan_list):
+            # Update current path for vlan
+            self.current_path["vlan"] = vlan_index
+
             ipv4 = lan.get("ipv4", {})
             ipv6 = lan.get("ipv6", {})
 
@@ -989,7 +1024,18 @@ class Importer:
                 # prefixes spread over multiple vlans and
                 # cannot be represented properly at one ixlan
                 # fail the import
-                raise MultipleVlansInPrefix(self)
+                path = f"data.member_list[{self.current_path['member']}]"
+                path += f".connection_list[{self.current_path['connection']}]"
+                path += f".vlan_list[{self.current_path['vlan']}]"
+
+                conflict_info = {
+                    "first_vlan": self.vlan,
+                    "conflicting_vlan": vlan,
+                    "asn": asn,
+                    "path": path,
+                    "vlan_obj": lan,
+                }
+                raise MultipleVlansInPrefix(self, conflict_info)
 
             self.vlan = vlan
 

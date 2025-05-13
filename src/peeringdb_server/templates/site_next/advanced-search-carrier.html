@@ -1,0 +1,114 @@
+{% load i18n util %}
+
+
+<div class="editable always auto-toggled filter-form"
+     data-edit-target="advanced_search:carrier"
+     data-edit-enter-action="submit"
+     data-sort-container=".results"
+     data-sort-row=".row">
+  <div class="row">
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- LEFT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.name_search }}"
+               data-edit-reset-value=""
+               data-edit-name="name_search"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Long Name" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="string"
+               data-edit-value="{{ request.GET.name_long__in }}"
+               data-edit-reset-value=""
+               data-edit-name="name_long__icontains"></div>
+        </div>
+      </div>
+
+
+
+    </div>
+    <div class="col-12 col-sm-6 col-md-6">
+      <!-- RIGHT COLUMN -->
+      <div class="row">
+        <div class="col-4 col-sm-5 col-md-4">{% trans "Organization" %}</div>
+        <div class="col-8 col-sm-7 col-md-8">
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="org"
+
+               {% if request.GET.org__name__contains %}
+               data-edit-name="org__name__contains"
+               data-edit-value="{{ request.GET.org__name__contains }}"
+               data-edit-autocomplete-text="{{ request.GET.org__name__contains }}"
+               {% else %}
+               data-edit-name="org"
+               data-edit-value="{{ request.GET.org }}"
+               data-edit-autocomplete-text="{{ request.GET.org|autocomplete_preload_org_single }}"
+               {% endif %}
+
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value="">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+  </div>
+
+  <div class="right marg-top-30">
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="carrier"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="carrier"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="kmz" data-export-tag="carrier"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> KMZ</a>
+  </div>
+
+  <div class="editable-templates">
+    <div id="advanced-search-carrier-item" class="row">
+      <div class="col-3 col-sm-3 col-md-3">
+        <a href="/carrier/$id" data-edit-name="name" class="name"></a>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="name_long" data-edit-name="name_long"></div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="org_name" data-edit-name="org_name"></div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div class="facilities" data-edit-name="fac_count"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="headers marg-top-15">
+    <div class="row">
+      <div class="col-3 col-sm-3 col-md-3">
+        <div data-sort-target=".name" data-sort-initial="asc">{% trans "Name" %}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div data-sort-target=".name_long">{% trans "Long Name" %}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div data-sort-target=".org_name">{% trans "Organization" %}</div>
+      </div>
+      <div class="col-3 col-sm-3 col-md-3">
+        <div data-sort-target=".fac_name">{% trans "Facilities" %}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-empty center" style="display:none;">{% trans "No search results." %}</div>
+
+  <div class="results"></div>
+
+  <div class="results-cutoff center marg-top-15" style="display:none;">
+    {% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}
+  </div>
+
+</div>

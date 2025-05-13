@@ -1,0 +1,49 @@
+{% load util %}
+<div class="stats_row row">
+      {% if ref_tag == "ix" %}
+      <div class="col-md-8 col-sm-8 col-10">
+        <span class="stats">
+
+          <a class="stat-property">Peers</a>
+          <a class="stat-value">{{ data.stats.peer_count }}</a>
+        </span>
+        <span class="stats">
+
+          <a class="stat-property">Connections</a>
+          <a class="stat-value">{{ data.stats.connection_count }}</a>
+        </span>
+        <span class="stats">
+
+          <a class="stat-property">Open Peers</a>
+          <a class="stat-value">{{ data.stats.open_peer_count }}</a>
+        </span>
+
+        <span class="stats">
+
+          <a class="stat-property">Total Speed</a>
+          <a class="stat-value">{{ data.stats.total_speed|pretty_speed }}</a>
+        </span>
+        <span class="stats">
+
+          <a class="stat-property">% with IPv6 </a>
+          <a class="stat-value">{{ data.stats.ipv6_percentage}}</a>
+        </span>
+      </div>
+      {% endif %}
+
+      {% if ref_tag == "fac" %}
+      <div class="col-md-8 col-sm-8 col-10">
+        <span class="stats">
+
+          <a class="stat-property">Networks</a>
+          <a class="stat-value">{{ data.stats.networks }}</a>
+        </span>
+        <span class="stats">
+
+          <a class="stat-property">Local Exchanges</a>
+          <a class="stat-value">{{ data.stats.ix }}</a>
+        </span>
+
+      </div>
+      {% endif %}
+</div>

@@ -1,0 +1,29 @@
+{% load i18n %}
+{% load util %}
+{% if RELEASE_ENV == 'beta'%}
+
+<div class="marg-bot-15">
+<div class="editable popin info panel">
+<p class="center">
+{% blocktrans trimmed  %}
+This is a beta/testing instance of PeeringDB. Some features may work differently than production. Do not store data here that you intend to keep
+{% endblocktrans %}
+{% if SHOW_AUTO_PROD_SYNC_WARNING %}
+{% blocktrans trimmed with beta_sync_dt|date:"Y-m-d H:i:s" as dt %}
+- all data will be refreshed from production at {{ dt }}Z
+{% endblocktrans %}
+{% else %}
+- automatically scheduled refreshes from production are currently disabled.
+{% endif %}
+</p>
+{% last_database_sync as last_sync %}
+{% if last_sync %}
+<p class="center">
+{% blocktrans trimmed with last_sync|date:"Y-m-d H:i:s" as ls_dt %}
+Database last synchronized at {{ ls_dt }}
+{% endblocktrans %}
+</p>
+{% endif %}
+</div>
+</div>
+{% endif %}
