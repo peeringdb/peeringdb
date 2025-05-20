@@ -763,7 +763,7 @@ class ApplicationFormMixin:
         def validate_allowed_origins(value):
             value = original_clean(value)
 
-            if value and value is not "*":
+            if value and value != "*":
                 origins = [origin.strip() for origin in value.split(",")]
 
                 for origin in origins:
