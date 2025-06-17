@@ -1556,9 +1556,17 @@ set_option(
 )
 
 # Date when MFA setup will be requested for new users.
-set_option("MFA_FORCE_SOFT_START", None, envvar_type=datetime)
+set_option("MFA_FORCE_SOFT_START", None, envvar_type=str)
+
+# if set convert to datetime off of YYYY-MM-DD
+if MFA_FORCE_SOFT_START:
+    MFA_FORCE_SOFT_START = datetime.strptime(MFA_FORCE_SOFT_START, "%Y-%m-%d")
 
 # Date when MFA will be enforced for all users.
-set_option("MFA_FORCE_HARD_START", None, envvar_type=datetime)
+set_option("MFA_FORCE_HARD_START", None, envvar_type=str)
+
+# if set convert to datetime off of YYYY-MM-DD
+if MFA_FORCE_HARD_START:
+    MFA_FORCE_HARD_START = datetime.strptime(MFA_FORCE_HARD_START, "%Y-%m-%d")
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
