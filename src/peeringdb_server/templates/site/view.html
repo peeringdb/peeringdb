@@ -696,17 +696,16 @@ $(document).ready(function() {
     }
   })
 
-  $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
 
 });
 </script>
-{% else %}
+{% endif %}
+
 <script>
   $(document).ready(function(){
-    $('[data-bs-toggle="tooltip"][data-tooltip-show="always"]').tooltip({container:"body", trigger:"hover"});
+    $('[data-bs-toggle="tooltip"]').tooltip({container:"body", trigger:"hover"});
   })
 </script>
-{% endif %}
 
 {% if ref_tag != "org" and  ref_tag != "campus" %}
 <!-- EXPORT FORM LOGIC -->

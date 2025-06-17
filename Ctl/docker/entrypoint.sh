@@ -53,7 +53,7 @@ case "$1" in
     echo generating schema visualization
     python manage.py graph_models -E -X .*Base --pydot -o docs/img/schema.png peeringdb_server
     echo generating api docs
-    python manage.py generateschema --file peeringdb_server/static/api-schema.yaml
+    python manage.py generateschema --file peeringdb_server/static/api-schema.yaml --generator_class peeringdb_server.api_schema.CustomSchemaGenerator
     ;;
   "makemessages" | "compilemessages" )
     cd /mnt

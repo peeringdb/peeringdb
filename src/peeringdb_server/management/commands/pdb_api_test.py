@@ -151,11 +151,74 @@ PREFIXES_V6 = [
     "2001:504:0:9::/64",
 ]
 
+MFA_FORCE_HARD_START = (
+    settings.MFA_FORCE_HARD_START is None or DATETIME >= settings.MFA_FORCE_HARD_START
+)
+
 
 def clear_negative_cache():
     caches["negative"].clear()
 
 
+def enforce_mfa(test_func):
+    """
+    Decorator to enforce Multi-Factor Authentication (MFA) policy in test methods.
+
+    When the global setting MFA_FORCE_HARD_START is active (non-null and in the past),
+    this decorator modifies the behavior of the decorated test method to:
+
+    - Perform a representative API request using basic authentication via a guest test client.
+    - Assert that the response returns HTTP 403 Forbidden, indicating that basic authentication
+      is correctly blocked by the MFA enforcement middleware.
+    - Skip the actual test logic when MFA enforcement is in effect, as the rejection of basic
+      auth becomes the expected outcome.
+
+    If MFA_FORCE_HARD_START is not active, the test method runs normally.
+
+    This is useful for retrofitting existing tests to comply with an enforced MFA policy
+    without needing to rewrite or disable them.
+    """
+
+    def wrapper(self, *args, **kwargs):
+        if MFA_FORCE_HARD_START:
+            response = self.db_guest._request(
+                "org", method="GET"
+            )  # example request if enforce MFA mandatory
+            self.assert_basic_auth_403(response)
+            return
+        return test_func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def mfa_guard_class(cls):
+    """
+    Class decorator that automatically applies MFA enforcement to all test methods.
+
+    This decorator iterates over all methods in the given test class whose names
+    start with 'test_' (standard unittest convention) and wraps them with the
+    `enforce_mfa` decorator.
+
+    This ensures that every test method will honor the MFA_FORCE_HARD_START policy,
+    enforcing that API requests using basic authentication are blocked as expected
+    once MFA becomes mandatory.
+
+    By applying this decorator at the class level, developers can ensure consistency
+    and avoid manually decorating each individual test method with `@enforce_mfa`.
+
+    Intended for use in integration or API tests where MFA enforcement may affect
+    authentication behavior and test outcomes.
+    """
+
+    for attr in dir(cls):
+        if attr.startswith("test_"):
+            method = getattr(cls, attr)
+            if callable(method):
+                setattr(cls, attr, enforce_mfa(method))
+    return cls
+
+
+@mfa_guard_class
 class TestJSON(unittest.TestCase):
     rest_client = RestClient
 
@@ -975,6 +1038,22 @@ class TestJSON(unittest.TestCase):
                     obj,
                     msg=f"Netsted set not existing (d0) {note_tag} {n_fld}",
                 )
+
+    def assert_basic_auth_403(self, response):
+        """
+        Assert that the response is 403 Forbidden, with a helpful message.
+        """
+        assert (
+            response.status_code == 403
+        ), f"Expected 403 Forbidden for Basic Auth with MFA_FORCE_HARD_START, got {response.status_code}"
+        self.assertEqual(
+            response.json(),
+            {
+                "meta": {
+                    "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+                }
+            },
+        )
 
     ##########################################################################
     # TESTS WITH USER THAT IS NOT A MEMBER OF AN ORGANIZATION

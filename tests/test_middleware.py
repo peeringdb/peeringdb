@@ -1,9 +1,10 @@
 import base64
-from unittest.mock import patch
+from datetime import datetime, timedelta
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.test import (
     Client,
     RequestFactory,
@@ -12,17 +13,27 @@ from django.test import (
     override_settings,
 )
 from django.urls.resolvers import ResolverMatch
+from django.utils.timezone import make_aware
 from rest_framework.response import Response
 from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import (
     ERR_BASE64_DECODE,
     ERR_VALUE_ERROR,
+    EnforceMFAMiddleware,
     PDBCommonMiddleware,
 )
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
 
 from .util import reset_group_ids
+
+DATETIME = datetime.now()
+MFA_FORCE_HARD_START = (
+    settings.MFA_FORCE_HARD_START is None or DATETIME >= settings.MFA_FORCE_HARD_START
+)
+MFA_FORCE_SOFT_START = (
+    settings.MFA_FORCE_SOFT_START is None or DATETIME >= settings.MFA_FORCE_SOFT_START
+)
 
 
 def get_response_empty(request):
@@ -46,6 +57,10 @@ class PDBCommonMiddlewareTest(TestCase):
     MIDDLEWARE={
         "append": "peeringdb_server.middleware.PDBPermissionMiddleware",
     }
+)
+@override_settings(
+    MFA_FORCE_SOFT_START=datetime.now() + timedelta(days=1),
+    MFA_FORCE_HARD_START=datetime.now() + timedelta(days=1),
 )
 class PDBPermissionMiddlewareTest(APITestCase):
     def setUp(self):
@@ -473,7 +488,159 @@ def test_auth_basic(auth, status_code, message, success):
     res = client.get("/api/fac", **headers)
     json = res.json()
     if success:
+        if MFA_FORCE_HARD_START or MFA_FORCE_SOFT_START:
+            assert res.status_code == 403
+            assert (
+                json["meta"].get("error")
+                == "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+            )
+            return
         assert json["meta"].get("error") is None
     else:
         assert json["meta"]["error"] == message
     assert res.status_code == status_code
+
+
+class TestEnforceMFAMiddleware(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        # Pass a dummy get_response callable to the middleware
+        self.middleware = EnforceMFAMiddleware(lambda request: HttpResponse())
+        self.user = self.create_user()
+
+    @patch("peeringdb_server.models.User.email_confirmed", new_callable=PropertyMock)
+    def create_user(self, mock_email_confirmed):
+        mock_email_confirmed.return_value = True
+        user = User.objects.create_user(username="testuser", password="password")
+        user.save()
+        return user
+
+    @override_settings(
+        MFA_FORCE_HARD_START=make_aware(datetime.now() - timedelta(days=1))
+    )
+    def test_basic_auth_without_mfa(self):
+        with patch(
+            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
+        ) as mock_has_2fa:
+            mock_has_2fa.return_value = False
+
+            request = self.factory.get("/")
+            request.user = self.user
+            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
+
+            response = JsonResponse({})
+            response = self.middleware.process_response(request, response)
+
+            self.assertEqual(response.status_code, 403)
+            self.assertJSONEqual(
+                response.content,
+                {
+                    "meta": {
+                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+                    }
+                },
+            )
+
+    @override_settings(
+        MFA_FORCE_HARD_START=make_aware(datetime.now() - timedelta(days=1))
+    )
+    def test_basic_auth_with_mfa(self):
+        with patch(
+            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
+        ) as mock_has_2fa:
+            mock_has_2fa.return_value = True  # Simulate a user with MFA
+
+            request = self.factory.get("/")
+            request.user = self.user
+            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
+
+            response = JsonResponse({})
+            response = self.middleware.process_response(request, response)
+
+            self.assertEqual(response.status_code, 403)
+            self.assertJSONEqual(
+                response.content,
+                {
+                    "meta": {
+                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+                    }
+                },
+            )
+
+    @override_settings(
+        MFA_FORCE_SOFT_START=make_aware(
+            datetime.now() - timedelta(days=1)
+        ),  # MFA warning active
+        MFA_FORCE_HARD_START=make_aware(
+            datetime.now() + timedelta(days=1)
+        ),  # Force MFA not yet active
+    )
+    def test_x_mfa_warning_header(self):
+        with patch(
+            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
+        ) as mock_has_2fa:
+            mock_has_2fa.return_value = False  # Simulate a user without MFA
+
+            request = self.factory.get("/")
+            request.user = self.user
+            request.META["HTTP_AUTHORIZATION"] = (
+                "Basic dGVzdHVzZXI6cGFzc3dvcmQ="  # Base64 for "testuser:password"
+            )
+
+            response = JsonResponse({})
+            response = self.middleware.process_response(request, response)
+
+            # Assert that the X-Auth-Warning header is present
+            self.assertIn("X-Auth-Warning", response)
+            self.assertEqual(
+                response["X-Auth-Warning"],
+                "Basic authentication will soon be deprecated, please switch to API key authentication.",
+            )
+
+            # Assert that the response is not blocked (status code is not 403)
+            self.assertNotEqual(response.status_code, 403)
+
+    @override_settings(
+        MFA_FORCE_SOFT_START=None,
+        MFA_FORCE_HARD_START=None,
+    )
+    def test_basic_auth_none_value(self):
+        with patch(
+            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
+        ) as mock_has_2fa:
+            mock_has_2fa.return_value = False
+
+            request = self.factory.get("/")
+            request.user = self.user
+            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
+
+            response = JsonResponse({})
+            response = self.middleware.process_response(request, response)
+
+            self.assertEqual(response.status_code, 403)
+            self.assertJSONEqual(
+                response.content,
+                {
+                    "meta": {
+                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+                    }
+                },
+            )
+
+    def test_non_basic_auth_request(self):
+        with patch(
+            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
+        ) as mock_has_2fa:
+            mock_has_2fa.return_value = False  # Simulate a user without MFA
+
+            request = self.factory.get("/")
+            request.user = self.user
+
+            # No Basic Auth header
+            request.META["HTTP_AUTHORIZATION"] = ""
+
+            response = JsonResponse({})
+            response = self.middleware.process_response(request, response)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertNotIn("X-Auth-Warning", response)

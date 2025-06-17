@@ -1,10 +1,19 @@
+from datetime import datetime, timedelta
+
 import pytest
+from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.test import Client
 from django.urls import reverse
 
 from peeringdb_server.models import EmailAddress, User
 from tests.util import reset_group_ids
+
+
+@pytest.fixture(autouse=True)
+def override_mfa_settings(settings):
+    settings.MFA_FORCE_SOFT_START = datetime.now() + timedelta(days=1)
+    settings.MFA_FORCE_HARD_START = datetime.now() + timedelta(days=1)
 
 
 @pytest.fixture

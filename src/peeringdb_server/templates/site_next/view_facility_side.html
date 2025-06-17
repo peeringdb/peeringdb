@@ -5,8 +5,19 @@
 
 <div class="list" id="api-listing-carrier" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
-    <div class="col-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8 d-flex justify-content-start align-items-center">
       <h5>{% trans "Carriers" %}</h5>
+      {% if user_carriers %}
+      <a href="#" id="add-your-carrier-btn" class="btn btn-sm btn-primary" style="margin-left: 10px; margin-bottom: 0px; padding: 0.3rem 0.5rem; font-size: 0.80rem">
+        {% trans "Add your carrier" %}
+      </a>
+      <div id="carrier-selection-menu" class="dropdown-menu" style="display: none;">
+        {% for carrier in user_carriers %}
+        <a class="dropdown-item add-carrier-item" href="#" data-carrier-id="{{ carrier.id }}" data-carrier-name="{{ carrier.name }}">{{ carrier.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
     </div>
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
@@ -70,8 +81,18 @@
 
 <div class="list" id="api-listing-ixfac" data-sort-container=".scrollable" data-sort-row=".row">
   <div class="row">
-    <div class="col-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8 d-flex justify-content-start align-items-center">
       <h5>{% trans "Exchanges" %}</h5>
+      {% if user_exchanges %}
+      <a href="#" id="add-your-exchange-btn" class="btn btn-sm btn-primary" style="margin-left: 10px; margin-bottom: 0px; padding: 0.3rem 0.5rem; font-size: 0.80rem">
+        {% trans "Add your exchange" %}
+      </a>
+      <div id="exchange-selection-menu" class="dropdown-menu" style="display: none;">
+        {% for ix in user_exchanges %}
+        <a class="dropdown-item add-exchange-item" href="#" data-ix-id="{{ ix.id }}" data-ix-name="{{ ix.name }}">{{ ix.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
@@ -132,8 +153,18 @@
 
 <div class="list" id="api-listing-netixlan" data-sort-container=".scrollable" data-sort-row=".row.item">
   <div class="row">
-    <div class="col-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8 d-flex justify-content-start align-items-center">
       <h5>{% trans "Networks" %}</h5>
+      {% if user_networks %}
+      <a id="add-your-network-btn" class="btn btn-sm btn-primary" style="margin-left: 10px; margin-bottom: 0px; padding: 0.3rem 0.5rem; font-size: 0.80rem">
+        {% trans "Add your network" %}
+      </a>
+      <div id="network-selection-menu" class="dropdown-menu" style="display: none;">
+        {% for network in user_networks %}
+        <a class="dropdown-item add-network-item" href="#" data-network-id="{{ network.id }}" data-network-name="{{ network.name }}">{{ network.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     <div class="col-6 col-sm-4 col-md-4 filter" id="filter-mobile">
       <div class="inner-addon left-addon">
@@ -182,3 +213,32 @@
 
   </div>
 </div>
+
+{% if user_exchanges %}
+<script>
+  // Configuration for facility exchange management
+  window.facilityExchangeConfig = {
+    userExchanges: {{ user_exchanges|safe }},
+    facilityId: {{ instance.id }}
+  };
+</script>
+{% endif %}
+
+{% if user_carriers %}
+<script>
+  // Configuration for facility carrier management
+  window.facilityCarrierConfig = {
+    userCarriers: {{ user_carriers|safe }},
+    facilityId: {{ instance.id }}
+  };
+</script>
+{% endif %}
+
+{% if user_networks %}
+<script>
+  window.facilityNetworkConfig = {
+    userNetworks: {{ user_networks|safe }},
+    facilityId: {{ instance.id }}
+  };
+</script>
+{% endif %}

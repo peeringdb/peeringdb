@@ -1,15 +1,21 @@
 import base64
+import datetime
 import json
 
 from allauth.account.models import EmailAddress
+from django.conf import settings
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 import peeringdb_server.models as models
 from peeringdb_server.validators import validate_verified_update_data
 
 
+@override_settings(
+    MFA_FORCE_SOFT_START=datetime.datetime.now() + datetime.timedelta(days=1),
+    MFA_FORCE_HARD_START=datetime.datetime.now() + datetime.timedelta(days=1),
+)
 class VerifiedUpdateTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

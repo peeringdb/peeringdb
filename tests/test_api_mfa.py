@@ -1,6 +1,8 @@
 from base64 import b64encode
+from datetime import datetime, timedelta
 
 import pytest
+from django.conf import settings
 from django.core.cache import caches
 from django_security_keys.models import SecurityKey
 from rest_framework.test import APIClient
@@ -8,6 +10,12 @@ from rest_framework.test import APIClient
 from peeringdb_server.models import Network, Organization, User
 
 from .util import reset_group_ids
+
+
+@pytest.fixture(autouse=True)
+def override_mfa_settings(settings):
+    settings.MFA_FORCE_SOFT_START = datetime.now() + timedelta(days=1)
+    settings.MFA_FORCE_HARD_START = datetime.now() + timedelta(days=1)
 
 
 @pytest.mark.django_db

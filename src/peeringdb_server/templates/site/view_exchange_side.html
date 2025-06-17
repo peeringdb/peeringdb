@@ -13,8 +13,21 @@
      data-edit-group="#view"
      data-edit-target="api:netixlan:create:set-ix-side">
   <div class="row">
-    <div class="col-6 col-sm-8 col-md-8">
+    <div class="col-6 col-sm-8 col-md-8 d-flex justify-content-start align-items-center">
       <h5>{% trans "Peers at this Exchange Point" %}</h5>
+      {% if user_networks %}
+      <a href="#" id="add-your-network-btn" class="btn btn-sm btn-primary" style="margin-left: 10px; margin-bottom: 0px; padding: 0.3rem 0.5rem; font-size: 0.80rem">
+        {% trans "Add your network" %}
+      </a>
+      <div id="network-selection-menu" class="dropdown-menu" style="display: none;">
+        {% for network in user_networks %}
+        <a class="dropdown-item add-network-item"
+           href="#"
+           data-network-id="{{ network.id }}"
+           data-network-name="{{ network.name }}" >{{ network.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     <div class="col-6 col-sm-4 col-md-4 filter">
       <input type="text" placeholder="{% trans "Filter" %}" data-filter-target="#list-networks" class="form-control" />
@@ -119,7 +132,7 @@
              {% endif %}
              data-edit-name="fac_id">
              {% if x.ix_side %}
-              <a href="/{{x.ix_side|ref_tag}}/{{ x.ix_side.id }}" data-tooltip-show="always" data-bs-toggle="tooltip" title="{{ x.ix_side }}">{{ x.ix_side.name }}</a>
+              <a href="/{{x.ix_side|ref_tag}}/{{ x.ix_side.id }}" data-bs-toggle="tooltip" title="{{ x.ix_side }}">{{ x.ix_side.name }}</a>
              {% endif %}
         </div>
       </div>
@@ -130,3 +143,67 @@
 
   </div>
 </div>
+
+<div class="modal fade" id="add-netixlan-modal" tabindex="-1" role="dialog" aria-labelledby="add-netixlan-modal-label">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="add-netixlan-modal-label">Add Network to Exchange Point</h4>
+        <button type="button" class="btn-close{% if prefers_dark_mode %}-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <div id="error-container" class="alert alert-danger mb-3" style="display: none;"></div>
+
+        <form id="add-netixlan-form">
+          <input type="hidden" id="netixlan-network-id" name="net_id" value="">
+          <input type="hidden" id="netixlan-ixlan-id" name="ixlan_id" value="{{ instance.id }}">
+
+          <div class="mb-3">
+            <label for="netixlan-ipv4" class="form-label">IPv4</label>
+            <input type="text" class="form-control" id="netixlan-ipv4" name="ipaddr4" placeholder="198.51.100.1">
+            <small class="form-text text-muted">At least one of IPv4 or IPv6 is required</small>
+          </div>
+
+          <div class="mb-3">
+            <label for="netixlan-ipv6" class="form-label">IPv6</label>
+            <input type="text" class="form-control" id="netixlan-ipv6" name="ipaddr6" placeholder="2001:478:186::5">
+            <small class="form-text text-muted">At least one of IPv4 or IPv6 is required</small>
+          </div>
+
+          <div class="mb-3">
+            <label for="netixlan-speed" class="form-label">Speed (Mbit/sec)</label>
+            <input type="number" class="form-control" id="netixlan-speed" name="speed" placeholder="1000">
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="netixlan-rs-peer" name="is_rs_peer">
+            <label class="form-check-label" for="netixlan-rs-peer">RS Peer</label>
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="netixlan-bfd-support" name="bfd_support">
+            <label class="form-check-label" for="netixlan-bfd-support">BFD Support</label>
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="netixlan-operational" name="operational" checked>
+            <label class="form-check-label" for="netixlan-operational">Operational</label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="add-netixlan-submit">Add Network</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if user_networks %}
+<script>
+  window.exchangeNetworkConfig = {
+    userNetworks: {{ user_networks|safe }},
+    ixlanId: {{ instance.id }}
+  };
+</script>
+{% endif %}

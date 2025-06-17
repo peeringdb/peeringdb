@@ -1,6 +1,8 @@
+import datetime
 from datetime import timedelta
 
 import pytest
+from django.conf import settings
 from django.test import Client
 from django.utils import timezone
 
@@ -12,6 +14,12 @@ from peeringdb_server.models import (
     User,
 )
 from tests.util import reset_group_ids
+
+
+@pytest.fixture(autouse=True)
+def override_mfa_settings(settings):
+    settings.MFA_FORCE_SOFT_START = datetime.datetime.now() + timedelta(days=1)
+    settings.MFA_FORCE_HARD_START = datetime.datetime.now() + timedelta(days=1)
 
 
 @pytest.mark.django_db

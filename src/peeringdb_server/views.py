@@ -130,6 +130,7 @@ from peeringdb_server.models import (
     OAuthAccessTokenInfo,
     Organization,
     Partnership,
+    SearchLog,
     Sponsorship,
     User,
     UserOrgAffiliationRequest,
@@ -2087,8 +2088,64 @@ def view_facility(request, id):
     data = generate_social_media_render_data(data, social_media, 3, dismiss)
 
     data["stats"] = get_fac_stats(peers, exchanges)
+
+    user_networks = []
+    user_exchanges = []
+    user_carriers = []
+    if not isinstance(request.user, AnonymousUser):
+        existing_network_ids = set(
+            NetworkFacility.handleref.undeleted()
+            .filter(facility=facility)
+            .values_list("network_id", flat=True)
+        )
+        existing_exchange_ids = set(
+            InternetExchangeFacility.handleref.undeleted()
+            .filter(facility=facility)
+            .values_list("ix_id", flat=True)
+        )
+        existing_carrier_ids = set(
+            CarrierFacility.handleref.undeleted()
+            .filter(facility=facility)
+            .values_list("carrier_id", flat=True)
+        )
+
+        for network in request.user.networks:
+            # Check if user can manage network and network is not already connected to facility
+            if (
+                check_permissions(request.user, network, PERM_CREATE)
+                and check_permissions(request.user, network, PERM_UPDATE)
+                and check_permissions(request.user, network, PERM_DELETE)
+            ) and network.id not in existing_network_ids:
+                user_networks.append({"id": network.id, "name": network.name})
+
+        for ix in request.user.exchanges:
+            # Check if user can manage ix and ix is not already connected to facility
+            if (
+                check_permissions(request.user, ix, PERM_CREATE)
+                and check_permissions(request.user, ix, PERM_UPDATE)
+                and check_permissions(request.user, ix, PERM_DELETE)
+            ) and ix.id not in existing_exchange_ids:
+                user_exchanges.append({"id": ix.id, "name": ix.name})
+
+        for carrier in request.user.carriers:
+            # Check if user can update carrier and carrier is not already connected to facility
+            if (
+                check_permissions(request.user, carrier, PERM_CREATE)
+                and check_permissions(request.user, carrier, PERM_UPDATE)
+                and check_permissions(request.user, carrier, PERM_DELETE)
+            ) and carrier.id not in existing_carrier_ids:
+                user_carriers.append({"id": carrier.id, "name": carrier.name})
+
     return view_component(
-        request, "facility", data, "Facility", perms=perms, instance=facility
+        request,
+        "facility",
+        data,
+        "Facility",
+        perms=perms,
+        instance=facility,
+        user_networks=user_networks,
+        user_exchanges=user_exchanges,
+        user_carriers=user_carriers,
     )
 
 
@@ -2593,8 +2650,27 @@ def view_exchange(request, id):
 
     data["stats"] = get_ix_stats(networks, ixlan)
 
+    user_networks = []
+    if not isinstance(request.user, AnonymousUser):
+        for network in request.user.networks:
+            # Check if user can update network
+            if (
+                check_permissions(request.user, network, PERM_CREATE)
+                and check_permissions(request.user, network, PERM_UPDATE)
+                and check_permissions(request.user, network, PERM_DELETE)
+            ):
+                user_networks.append(
+                    {"id": network.id, "name": network.name, "asn": network.asn}
+                )
+
     return view_component(
-        request, "exchange", data, "Exchange", perms=perms, instance=exchange
+        request,
+        "exchange",
+        data,
+        "Exchange",
+        perms=perms,
+        instance=exchange,
+        user_networks=user_networks,
     )
 
 
@@ -3221,6 +3297,12 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
     """
     # Extract and process the query
     q, geo, original_query = extract_query(request, version)
+
+    SearchLog.objects.create(
+        query=original_query,
+        authenticated=request.user.is_authenticated,
+        version=version,
+    )
 
     # Redirect if no valid query
     if not q and not geo:

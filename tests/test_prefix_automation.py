@@ -1,13 +1,18 @@
 import base64
+import datetime
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import Group
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 import peeringdb_server.models as models
 
 
+@override_settings(
+    MFA_FORCE_SOFT_START=datetime.datetime.now() + datetime.timedelta(days=1),
+    MFA_FORCE_HARD_START=datetime.datetime.now() + datetime.timedelta(days=1),
+)
 class PrefixAutomationTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

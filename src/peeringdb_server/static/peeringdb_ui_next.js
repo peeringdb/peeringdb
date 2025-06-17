@@ -5104,3 +5104,393 @@ PeeringDB = {
       });
     });
   });
+
+
+/**
+ * Facility and Exchange Add Common Connections
+ * Handles adding networks, exchanges, and carriers to facilities/exchanges
+ */
+
+$(document).ready(function() {
+
+  /**
+   * Generic dropdown menu handler
+   * @param {string} btnSelector - Button selector (e.g., '#add-your-network-btn')
+   * @param {string} menuSelector - Menu selector (e.g., '#network-selection-menu')
+   * @param {string} itemSelector - Item selector (e.g., '.add-network-item')
+   * @param {number} itemCount - Number of items available
+   * @param {Object} singleItem - Single item data when count is 1
+   * @param {Function} onSelect - Callback when item is selected
+   */
+  function initializeDropdownHandler(btnSelector, menuSelector, itemSelector, itemCount, singleItem, onSelect) {
+    $(btnSelector).click(function(e) {
+      e.preventDefault();
+
+      if (itemCount > 1) {
+        var menu = $(menuSelector);
+        var btn = $(this);
+        var position = btn.position();
+
+        menu.css({
+          display: "block",
+          position: "absolute",
+          top: position.top + btn.outerHeight(),
+          left: position.left + btn.outerWidth(),
+          zIndex: 999
+        });
+
+        // Close the menu when clicking outside
+        $(document).one('click', function() {
+          menu.hide();
+        });
+
+        e.stopPropagation();
+        return false;
+      } else if (itemCount === 1) {
+        onSelect(singleItem.id, singleItem.name);
+      }
+    });
+
+    // Handle item selection from dropdown menu
+    $(itemSelector).click(function(e) {
+      e.preventDefault();
+      var id = $(this).data(getDataAttribute(itemSelector));
+      var name = $(this).data(getDataAttributeName(itemSelector));
+      onSelect(id, name);
+    });
+  }
+
+  /**
+   * Get the appropriate data attribute based on item selector
+   */
+  function getDataAttribute(itemSelector) {
+    if (itemSelector.includes('network')) return 'network-id';
+    if (itemSelector.includes('exchange')) return 'ix-id';
+    if (itemSelector.includes('carrier')) return 'carrier-id';
+    return 'id';
+  }
+
+  /**
+   * Get the appropriate data attribute name based on item selector
+   */
+  function getDataAttributeName(itemSelector) {
+    if (itemSelector.includes('network')) return 'network-name';
+    if (itemSelector.includes('exchange')) return 'ix-name';
+    if (itemSelector.includes('carrier')) return 'carrier-name';
+    return 'name';
+  }
+
+  /**
+   * Generic API request handler for creating relationships
+   * @param {string} endpoint - API endpoint (e.g., 'netfac', 'ixfac', 'carrierfac')
+   * @param {Object} data - Data to send to API
+   * @param {string} successMessage - Success message to display
+   * @param {string} errorMessage - Error message prefix
+   */
+  function createRelationship(endpoint, data, successMessage, errorMessage) {
+    PeeringDB.API.request(
+      "POST",
+      endpoint,
+      null,
+      data,
+      function(r) {
+        alert(successMessage);
+        location.reload();
+      }
+    ).fail(function(r) {
+      var errorMsg = errorMessage;
+      if (r.responseJSON && r.responseJSON.meta && r.responseJSON.meta.error) {
+        errorMsg = r.responseJSON.meta.error;
+      }
+      alert(errorMsg);
+    });
+  }
+
+  /**
+   * Generic confirmation and creation handler
+   * @param {number} id - Entity ID
+   * @param {string} name - Entity name
+   * @param {string} entityType - Type of entity (network, exchange, carrier)
+   * @param {number} facilityId - Facility ID
+   * @param {string} confirmMessage - Confirmation message template
+   */
+  function confirmAndCreate(id, name, entityType, facilityId, confirmMessage) {
+    if (confirm(confirmMessage.replace('{name}', name))) {
+      var endpoint, data, successMessage, errorMessage;
+
+      switch(entityType) {
+        case 'network':
+          endpoint = 'netfac';
+          data = { net_id: id, fac_id: facilityId };
+          successMessage = 'Network connection added successfully!';
+          errorMessage = 'Error creating network-facility link';
+          break;
+        case 'exchange':
+          endpoint = 'ixfac';
+          data = { ix_id: id, fac_id: facilityId };
+          successMessage = 'Exchange connection added successfully!';
+          errorMessage = 'Error creating exchange-facility link';
+          break;
+        case 'carrier':
+          endpoint = 'carrierfac';
+          data = { carrier_id: id, fac_id: facilityId };
+          successMessage = 'Carrier connection added successfully!';
+          errorMessage = 'Error creating carrier-facility link';
+          break;
+      }
+
+      createRelationship(endpoint, data, successMessage, errorMessage);
+    }
+  }
+
+  // Initialize facility network management
+  if (window.facilityNetworkConfig) {
+    var config = window.facilityNetworkConfig;
+    if (config.userNetworks.length > 0) {
+      initializeDropdownHandler(
+        '#add-your-network-btn',
+        '#network-selection-menu',
+        '.add-network-item',
+        config.userNetworks.length,
+        config.userNetworks[0],
+        function(networkId, networkName) {
+          confirmAndCreate(
+            networkId,
+            networkName,
+            'network',
+            config.facilityId,
+            "Are you sure you want to add '{name}' to this facility?"
+          );
+        }
+      );
+    }
+  }
+
+  // Initialize facility exchange management
+  if (window.facilityExchangeConfig) {
+    var config = window.facilityExchangeConfig;
+    if (config.userExchanges.length > 0) {
+      initializeDropdownHandler(
+        '#add-your-exchange-btn',
+        '#exchange-selection-menu',
+        '.add-exchange-item',
+        config.userExchanges.length,
+        config.userExchanges[0],
+        function(exchangeId, exchangeName) {
+          confirmAndCreate(
+            exchangeId,
+            exchangeName,
+            'exchange',
+            config.facilityId,
+            "Are you sure you want to add '{name}' to this facility?"
+          );
+        }
+      );
+    }
+  }
+
+  // Initialize facility carrier management
+  if (window.facilityCarrierConfig) {
+    var config = window.facilityCarrierConfig;
+    if (config.userCarriers.length > 0) {
+      initializeDropdownHandler(
+        '#add-your-carrier-btn',
+        '#carrier-selection-menu',
+        '.add-carrier-item',
+        config.userCarriers.length,
+        config.userCarriers[0],
+        function(carrierId, carrierName) {
+          confirmAndCreate(
+            carrierId,
+            carrierName,
+            'carrier',
+            config.facilityId,
+            "Are you sure you want to add '{name}' to this facility?"
+          );
+        }
+      );
+    }
+  }
+
+  // Initialize exchange network management (netixlan)
+  if (window.exchangeNetworkConfig) {
+    var config = window.exchangeNetworkConfig;
+    if (config.userNetworks.length > 0) {
+      initializeNetixlanManagement(config);
+    }
+  }
+
+  /**
+   * Initialize add netixlan management
+   */
+  function initializeNetixlanManagement(config) {
+
+    /**
+     * Display inline field errors and general error messages
+     */
+    function renderErrors(fieldErrors, generalMessage) {
+      clearErrors();
+
+      var errorContainer = $("#error-container");
+      var generalErrors = [];
+
+      if (generalMessage) {
+        generalErrors.push(generalMessage);
+      }
+
+      if (fieldErrors && fieldErrors.non_field_errors && Array.isArray(fieldErrors.non_field_errors)) {
+        generalErrors = generalErrors.concat(fieldErrors.non_field_errors);
+      }
+
+      if (generalErrors.length > 0) {
+        errorContainer.text(generalErrors.join("\n")).show();
+      }
+
+      if (fieldErrors) {
+        $.each(fieldErrors, function(field, errors) {
+          if (field === "meta" || field === "non_field_errors") return;
+
+          var msg = errors;
+          if (Array.isArray(errors)) {
+            msg = errors.join(", ");
+          }
+
+          var fieldMap = {
+            "ipaddr4": "ipv4",
+            "ipaddr6": "ipv6",
+            "speed": "speed",
+            "net_id": "network-id",
+            "ixlan_id": "ixlan-id",
+            "is_rs_peer": "rs-peer",
+            "bfd_support": "bfd-support",
+            "operational": "operational"
+          };
+
+          var fieldId = fieldMap[field] || field;
+          var element = $("#netixlan-" + fieldId);
+
+          if (element.length) {
+            element.addClass("is-invalid");
+            $("<div>")
+              .addClass("invalid-feedback")
+              .text(msg)
+              .insertAfter(element);
+          }
+        });
+      }
+    }
+
+    /**
+     * Clear all error messages and validation states
+     */
+    function clearErrors() {
+      $(".invalid-feedback").remove();
+      $(".is-invalid").removeClass("is-invalid");
+      $("#error-container").hide().empty();
+    }
+
+    /**
+     * Open the netixlan modal
+     */
+    function openNetixlanModal(networkId, networkName) {
+      $("#netixlan-network-id").val(networkId);
+      $("#add-netixlan-modal-label").text("Add " + networkName + " to Exchange Point");
+      $("#add-netixlan-modal").modal("show");
+    }
+
+    // Initialize dropdown handler for network selection
+    initializeDropdownHandler(
+      '#add-your-network-btn',
+      '#network-selection-menu',
+      '.add-network-item',
+      config.userNetworks.length,
+      config.userNetworks[0],
+      openNetixlanModal
+    );
+
+    // Reset form when modal is opened
+    $("#add-netixlan-modal").on("show.bs.modal", function() {
+      clearErrors();
+      $("#netixlan-ipv4, #netixlan-ipv6").val("");
+      $("#netixlan-speed").val("");
+      $("#netixlan-rs-peer, #netixlan-bfd-support").prop("checked", false);
+      $("#netixlan-operational").prop("checked", true);
+    });
+
+    // Handle form submission
+    $("#add-netixlan-submit").click(function() {
+      clearErrors();
+
+      var formData = $("#add-netixlan-form").serializeArray();
+      var data = {};
+
+      // Convert form data to object
+      $.each(formData, function(i, field) {
+        data[field.name] = field.value;
+      });
+
+      // Add checkbox values
+      data.is_rs_peer = $("#netixlan-rs-peer").prop("checked") ? 1 : 0;
+      data.bfd_support = $("#netixlan-bfd-support").prop("checked") ? 1 : 0;
+      data.operational = $("#netixlan-operational").prop("checked") ? 1 : 0;
+
+      // Client-side validation
+      var hasErrors = false;
+
+      if (!data.ipaddr4 && !data.ipaddr6) {
+        $("#netixlan-ipv4, #netixlan-ipv6").addClass("is-invalid");
+        $("<div>")
+          .addClass("invalid-feedback")
+          .text("At least one IP address (IPv4 or IPv6) is required")
+          .insertAfter($("#netixlan-ipv6"));
+        hasErrors = true;
+      }
+
+      if (!data.speed) {
+        data.speed = 0;
+      }
+
+      data.net_id = parseInt(data.net_id);
+
+      if (!data.net_id) {
+        $("#error-container").text("Network ID is required").show();
+        hasErrors = true;
+      }
+
+      if (hasErrors) {
+        return;
+      }
+
+      var submitBtn = $("#add-netixlan-submit");
+      var originalText = submitBtn.text();
+      submitBtn.prop("disabled", true).text("Processing...");
+
+      PeeringDB.API.request(
+        "POST",
+        "netixlan",
+        null,
+        data,
+        function(r) {
+          $("#add-netixlan-modal").modal("hide");
+          alert("Network connection added successfully!");
+          location.reload();
+        }
+      ).fail(function(xhr) {
+        var errorMsg = "Error adding network-exchange connection";
+        var fieldErrors = {};
+
+        if (xhr.responseJSON) {
+          fieldErrors = xhr.responseJSON;
+          if (xhr.responseJSON.meta && xhr.responseJSON.meta.error) {
+            errorMsg = xhr.responseJSON.meta.error;
+          }
+        }
+
+        console.log("Error response:", xhr.responseJSON);
+        renderErrors(fieldErrors, errorMsg);
+      }).always(function() {
+        submitBtn.prop("disabled", false).text(originalText);
+      });
+    });
+  }
+});

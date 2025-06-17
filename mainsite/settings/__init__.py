@@ -2,6 +2,7 @@
 
 import os
 import sys
+from datetime import datetime
 
 import django.conf.global_settings
 import django.conf.locale
@@ -970,6 +971,7 @@ MIDDLEWARE += (
     "peeringdb_server.middleware.CurrentRequestContext",
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
+    "peeringdb_server.middleware.EnforceMFAMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
 )
@@ -1515,6 +1517,12 @@ set_option("USER_OPT_FLAG_UI_NEXT", 0x02)
 # User option flag to enable UI NEXT
 set_option("USER_OPT_FLAG_UI_NEXT_REJECTED", 0x04)
 
+# User option flag to mfa notification
+set_option("USER_OPT_FLAG_NOTIFIED_MFA", 0x08)
+
+# User option flag to api keys notification
+set_option("USER_OPT_FLAG_NOTIFIED_API_KEY", 0x10)
+
 # Authentication settings to use when syncing via pdb_load
 set_option("PEERINGDB_SYNC_USERNAME", "")
 set_option("PEERINGDB_SYNC_PASSWORD", "")
@@ -1546,5 +1554,11 @@ set_option(
         "VA",  # Vatican City
     ],
 )
+
+# Date when MFA setup will be requested for new users.
+set_option("MFA_FORCE_SOFT_START", None, envvar_type=datetime)
+
+# Date when MFA will be enforced for all users.
+set_option("MFA_FORCE_HARD_START", None, envvar_type=datetime)
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")
