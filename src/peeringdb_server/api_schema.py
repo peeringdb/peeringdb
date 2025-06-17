@@ -13,7 +13,7 @@ from copy import deepcopy
 from django.conf import settings
 from django.utils.translation import gettext as _
 from rest_framework import serializers
-from rest_framework.schemas.openapi import AutoSchema
+from rest_framework.schemas.openapi import AutoSchema, SchemaGenerator
 from rest_framework.schemas.utils import is_list_view
 
 from peeringdb_server.serializers import (
@@ -35,6 +35,22 @@ class CustomField:
 
     def get_internal_type(self):
         return self.typ
+
+
+class CustomSchemaGenerator(SchemaGenerator):
+    def get_schema(self, request=None, public=False):
+        """Override SchemaGenerator for the Information section in the PeeringDB API docs."""
+        schema = super().get_schema(request, public)
+        if not self.title:
+            schema["info"]["title"] = "PeeringDB API"
+
+        if not self.version:
+            schema["info"]["version"] = settings.PEERINGDB_VERSION
+
+        if not self.description:
+            schema["info"]["description"] = "PeeringDB REST API"
+
+        return schema
 
 
 class BaseSchema(AutoSchema):

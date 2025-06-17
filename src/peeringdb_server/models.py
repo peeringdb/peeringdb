@@ -6096,6 +6096,26 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         )
 
     @property
+    def exchanges(self):
+        """
+        Returns all exchanges this user is a member of.
+        """
+        return list(
+            chain.from_iterable(org.ix_set_active.all() for org in self.organizations)
+        )
+
+    @property
+    def carriers(self):
+        """
+        Returns all carriers this user is a member of.
+        """
+        return list(
+            chain.from_iterable(
+                org.carrier_set_active.all() for org in self.organizations
+            )
+        )
+
+    @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -6158,6 +6178,14 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     @property
     def ui_next_rejected(self):
         return bool(self.opt_flags & settings.USER_OPT_FLAG_UI_NEXT_REJECTED)
+
+    @property
+    def was_notified_mfa(self):
+        return bool(self.opt_flags & settings.USER_OPT_FLAG_NOTIFIED_MFA)
+
+    @property
+    def was_notified_api_key(self):
+        return bool(self.opt_flags & settings.USER_OPT_FLAG_NOTIFIED_API_KEY)
 
     @staticmethod
     def autocomplete_search_fields():
@@ -7391,6 +7419,22 @@ class DataChangeEmail(StripFieldMixin):
             self.user.email_user(self.subject, self.content)
             self.sent = timezone.now()
             self.save()
+
+
+class SearchLog(StripFieldMixin):
+    """
+    Rudimentary logging of search queries.
+    """
+
+    query = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    authenticated = models.BooleanField(default=False)
+    version = models.SmallIntegerField(default=1)
+
+    class Meta:
+        db_table = "peeringdb_search_log"
+        verbose_name = _("Search Log")
+        verbose_name_plural = _("Search Logs")
 
 
 REFTAG_MAP = {

@@ -1,0 +1,24 @@
+Dear {{ user.username }},
+
+{% if needs_api_key %}
+PeeringDB will deprecate basic authentication after {{ deadline }}.
+
+To continue accessing the API, you must create and use an API key instead of using your username and password.
+
+You can create an API key from your profile here:
+{{ create_api_key_url }}
+
+{% endif %}
+{% if needs_mfa %}
+PeeringDB will soon require all users to enable Multi-Factor Authentication (MFA) to continue accessing the platform.
+
+Please enable MFA before {{ deadline }} to avoid interruptions to your access.
+
+You can enable MFA from your profile here:
+{{ enable_mfa_url }}
+
+{% endif %}
+If you have any questions or need assistance, please contact us at {{ support_email }}.
+
+Thank you,
+PeeringDB Support Team

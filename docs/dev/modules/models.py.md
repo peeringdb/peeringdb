@@ -1,4 +1,4 @@
-Generated from models.py on 2025-05-12 16:19:34.467425
+Generated from models.py on 2025-06-17 14:04:27.689296
 
 # peeringdb_server.models
 
@@ -2281,8 +2281,10 @@ These attributes / properties will be available on instances of the class
 - affiliation_requests_available (`@property`): Returns whether the user currently has any affiliation request
 slots available by checking that the number of pending affiliation requests
 the user has is lower than MAX_USER_AFFILIATION_REQUESTS
+- carriers (`@property`): Returns all carriers this user is a member of.
 - email_confirmed (`@property`): Returns True if the email specified by the user has
 been confirmed, False if not.
+- exchanges (`@property`): Returns all exchanges this user is a member of.
 - full_name (`@property`): None
 - get_2fa_security_keys (`@property`): None
 - get_passkey_security_keys (`@property`): None
@@ -2301,6 +2303,8 @@ requests for this user.
 - self_entity_org (`@property`): None
 - ui_next_enabled (`@property`): None
 - ui_next_rejected (`@property`): None
+- was_notified_api_key (`@property`): None
+- was_notified_mfa (`@property`): None
 
 ### Methods
 

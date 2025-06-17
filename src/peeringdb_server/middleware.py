@@ -13,8 +13,9 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
+from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils import translation
+from django.utils import timezone, translation
 from django.utils.deprecation import MiddlewareMixin
 
 from peeringdb_server.context import current_request
@@ -627,3 +628,121 @@ class ActivateUserLocaleMiddleware(MiddlewareMixin):
         if not request.COOKIES.get("django_language"):
             if request.user.is_authenticated:
                 translation.activate(request.user.locale)
+
+
+class EnforceMFAMiddleware(MiddlewareMixin):
+    EXCLUDED_PREFIXES = [
+        reverse("two_factor:setup"),
+        reverse("two_factor:login"),
+        reverse("two_factor:backup_tokens"),
+        reverse("two_factor:qr"),
+        reverse("two_factor:setup_complete"),
+        "/account/",
+        "/logout",
+        "/security_keys/",
+        settings.STATIC_URL,
+        settings.MEDIA_URL,
+    ]
+
+    def is_path_excluded(self, path):
+        return any(path.startswith(prefix) for prefix in self.EXCLUDED_PREFIXES)
+
+    def get_setting_time(self, setting_name):
+        value = getattr(settings, setting_name, None)
+        if value and timezone.is_naive(value):
+            try:
+                return timezone.make_aware(value)
+            except Exception:
+                return None
+        return value
+
+    def process_request(self, request):
+        """
+        Handle MFA enforcement for all authenticated users.
+
+        This middleware will redirect users to the MFA setup page if they have not set it up yet.
+        If the user has not confirmed their email, they are not in a position to set up MFA so will
+        be excluded from MFA enforcement. This is OK because unverified users are by nature read-only users.
+
+        The enforcement is controlled through the MFA_FORCE_SOFT_START and MFA_FORCE_HARD_START settings.
+
+        When the grace period (controlled by MFA_FORCE_SOFT_START) has started, new users missing MFA
+        will be redirected to the MFA setup page.
+
+        When the enforcement period (controlled by MFA_FORCE_HARD_START) has started, all users missing MFA
+        will be redirected to the MFA setup page.
+        """
+
+        user = request.user
+        if not user.is_authenticated:
+            return
+
+        if not user.email_confirmed or user.has_2fa:
+            return
+
+        if self.is_path_excluded(request.path):
+            return
+
+        now = timezone.localtime()
+        soft_start = self.get_setting_time("MFA_FORCE_SOFT_START")
+        force_start = self.get_setting_time("MFA_FORCE_HARD_START")
+
+        # If MFA_FORCE_HARD_START is not configured or the enforcement date has passed,
+        # require MFA immediately for all users.
+        if not force_start or now >= force_start:
+            return redirect(reverse("two_factor:profile"))
+
+        # If MFA_FORCE_SOFT_START is not configured or the user's registration date is after `MFA_FORCE_SOFT_START`
+        # redirect them to the MFA setup page if they haven't set it up.
+        if not soft_start or user.date_joined >= soft_start:
+            return redirect(reverse("two_factor:profile"))
+
+    def process_response(self, request, response):
+        """
+        Once MFA is being enforced, basic-authentication is no longer supported and API key authentication is required
+        for any requests to the API or endpoints that previously allowed basic-authentication.
+
+        This processes any basic-authentication responses and will either
+        return a 403 error or a warning header, depending on the current stage of the MFA enforcement.
+
+        Stage 1: Controlled through MFA_FORCE_SOFT_START indicates the start of a grace period where
+        basic-authentication is still supported.
+
+        Stage 2: Controlled through MFA_FORCE_HARD_START indicates the start of the enforcement period where
+        basic-authentication is no longer supported.
+        """
+
+        user = request.user
+
+        # Skip for unauthenticated
+        if not user.is_authenticated:
+            return response
+
+        auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+        is_basic_auth = auth_header.startswith("Basic ")
+
+        if not is_basic_auth:
+            return response
+
+        now = timezone.now()
+        soft_start = self.get_setting_time("MFA_FORCE_SOFT_START")
+        force_start = self.get_setting_time("MFA_FORCE_HARD_START")
+
+        # MFA is being enforced and basic-authentication is no longer supported. replace the response with a 403 error.
+        if not force_start or now >= force_start:
+            return JsonResponse(
+                {
+                    "meta": {
+                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
+                    }
+                },
+                status=403,
+            )
+
+        # MFA enforcement grace period has started and is ongoing, add a warning header to the response.
+        if not soft_start or now >= soft_start:
+            response["X-Auth-Warning"] = (
+                "Basic authentication will soon be deprecated, please switch to API key authentication."
+            )
+
+        return response

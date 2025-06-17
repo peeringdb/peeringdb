@@ -96,6 +96,7 @@ from peeringdb_server.models import (
     OrganizationMergeEntity,
     Partnership,
     ProtectedAction,
+    SearchLog,
     Sponsorship,
     SponsorshipOrganization,
     User,
@@ -2920,6 +2921,13 @@ class TOTPDeviceAdminCustom(TOTPDeviceAdmin):
 
     get_username.admin_order_field = "user__username"
     get_username.short_description = "user"
+
+
+@admin.register(SearchLog)
+class SearchLogAdmin(admin.ModelAdmin):
+    list_display = ["id", "query", "authenticated", "created", "version"]
+    search_fields = ["query"]
+    list_filter = ["authenticated", "version"]
 
 
 admin.site.unregister(TOTPDevice)
