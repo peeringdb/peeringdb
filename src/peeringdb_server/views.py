@@ -3300,7 +3300,7 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
 
     SearchLog.objects.create(
         query=original_query,
-        authenticated=request.user.is_authenticated if hasattr(request, "user") else False,
+        authenticated=request.user.is_authenticated if getattr(request, "user", None) else False,
         version=version,
     )
 
