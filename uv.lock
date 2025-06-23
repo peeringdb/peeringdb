@@ -1602,7 +1602,7 @@ wheels = [
 
 [[package]]
 name = "peeringdb-server"
-version = "2.69.0b0"
+version = "2.69.0b1"
 source = { virtual = "." }
 dependencies = [
     { name = "bleach" },
