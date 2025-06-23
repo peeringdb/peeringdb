@@ -533,18 +533,24 @@ class Importer:
             - asn (int): only process changes for this ASN
 
         Returns:
-            - Tuple(success<bool>, netixlans<list>, log<list>)
+            - success (bool)
         """
 
         self.reset(ixlan=ixlan, save=save, asn=asn)
 
         # if data is not provided, retrieve it either from cache or
         # from the remote resource
-        if data is None:
-            if self.cache_only:
-                data = self.fetch_cached(ixlan.ixf_ixp_member_list_url)
-            else:
-                data = self.fetch(ixlan.ixf_ixp_member_list_url, timeout=timeout)
+        try:
+            if data is None:
+                if self.cache_only:
+                    data = self.fetch_cached(ixlan.ixf_ixp_member_list_url)
+                else:
+                    data = self.fetch(ixlan.ixf_ixp_member_list_url, timeout=timeout)
+        except Exception as exc:
+            # any errors happening during retrieval and sanitization are fatal
+            # and will be logged and the import will be aborted
+            self.log_error(f"Internal Error: {exc}", save=save)
+            return False
 
         # bail if there has been any errors during sanitize() or fetch()
         if data.get("pdb_error"):
@@ -575,10 +581,9 @@ class Importer:
             self.log_error(f"{exc}", save=save)
             self.notifications = []
             return False
-        except (KeyError, AttributeError) as exc:
-            # any key or attribute errors mean that the data is invalid, log the error and
-            # bail (transactions are atomic and will be rolled back)
-            self.log_error(f"Internal Error (key or attribute error): {exc}", save=save)
+        except Exception as exc:
+            # any errors when parsing the data are fatal and will be logged and the import will be aborted
+            self.log_error(f"Internal Error: {exc}", save=save)
             return False
 
         # null IX-F error note on ixlan if it had error'd before
