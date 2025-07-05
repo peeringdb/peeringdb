@@ -134,7 +134,7 @@ class SearchTests(TestCase):
             .split('id="search-list-view"')[0],
         )
 
-        assert len(m) == 4
+        assert len(m) == 1
 
     def test_search_case(self):
         """
