@@ -24,5 +24,5 @@ jobs:
         run: ./Ctl/dev/compose.sh up -d database elasticsearch redis
       - name: build PeeringDB
         run: ./Ctl/dev/compose.sh build --pull peeringdb
-      - name: run tests
-        run: ./Ctl/dev/run.sh run_tests
+      - name: run tests with optimizations
+        run: ./Ctl/dev/run_tests.sh

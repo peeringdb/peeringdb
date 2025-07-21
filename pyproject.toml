@@ -99,6 +99,8 @@ dev-dependencies = [
     "pytest-django>=2.9.1",
     "pytest-filedata>=0.1.0",
     "pytest-mock>=3.3.1",
+    "pytest-xdist>=3.0.0",
+    "pytest-benchmark>=4.0.0",
     "freezegun>=1.5.1",
 
     # selenium testing
