@@ -460,7 +460,8 @@
               `;
             });
 
-            headersContainer.innerHTML = headersHTML;
+            // Sanitize the generated HTML before injecting it into the DOM to avoid XSS
+            headersContainer.innerHTML = DOMPurify.sanitize(headersHTML, {SAFE_FOR_JQUERY: true});
           } else {
             const facilityColWidth = Math.max(3, Math.min(6, 12 - asnList.length));
             const asnColWidth = Math.max(1, Math.floor((12 - facilityColWidth) / asnList.length));
@@ -483,7 +484,8 @@
               `;
             });
 
-            headersContainer.innerHTML = headersHTML;
+            // Sanitize the generated HTML before injecting it into the DOM to avoid XSS
+            headersContainer.innerHTML = DOMPurify.sanitize(headersHTML, {SAFE_FOR_JQUERY: true});
           }
         }
       }
