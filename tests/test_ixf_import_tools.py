@@ -5,6 +5,7 @@ import os
 import time
 
 import jsonschema
+import pytest
 import pytest_filedata
 import requests
 import reversion
@@ -36,6 +37,7 @@ from peeringdb_server.models import (
 from .util import ClientCase
 
 
+@pytest.mark.xdist_group(name="ixf_import_tests")
 class TestImportPreview(ClientCase):
     """
     Test the ixf import preview

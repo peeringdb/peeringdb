@@ -3256,6 +3256,29 @@ def view_advanced_search(request):
 
     env["campus_help_text"] = CAMPUS_HELP_TEXT
 
+    params = request.GET
+    is_spatial_search = False
+    is_location_search = False
+    country_filter = params.get("country__in")
+
+    if (
+        params.get("state")
+        or (params.get("zipcode"))
+        or (params.get("address1"))
+        or (params.get("city"))
+        or country_filter
+    ):
+        is_location_search = True
+
+    if params.get("distance") or (params.get("city")):
+        is_spatial_search = True
+
+    env["is_spatial_search"] = is_spatial_search
+    env["is_location_search"] = is_location_search
+    env["country_filter"] = country_filter
+
+    env["asn_connectivity_limit"] = getattr(dj_settings, "ASN_CONNECTIVITY_LIMIT")
+
     return HttpResponse(template.render(env, request))
 
 

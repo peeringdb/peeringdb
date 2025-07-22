@@ -47,23 +47,35 @@ PeeringDB = {
    * @returns {object} The jQuery node for the rendered link.
    */
   social_media_link: function(identifier, service) {
-    if (service === "website") {
-      return $('<a/>').attr('href', identifier).text(identifier);
-    }
-    if (service === "facebook") {
-      return $('<a/>').attr('href', 'https://www.facebook.com/' + identifier).text(identifier);
-    }
-    if (service === "x") {
-      return $('<a/>').attr('href', 'https://x.com/' + identifier).text(identifier);
-    }
-    if (service === "instagram") {
-      return $('<a/>').attr('href', 'https://www.instagram.com/' + identifier).text(identifier);
-    }
-    if (service === "linkedin") {
-      return $('<a/>').attr('href', 'https://www.linkedin.com/company/' + identifier).text(identifier);
-    }
-    if (service === "tiktok") {
-      return $('<a/>').attr('href', 'https://www.tiktok.com/@' + identifier).text(identifier);
+    const formats = {
+      "website": null,
+      "facebook": "https://www.facebook.com/{identifier}",
+      "x": "https://x.com/{identifier}",
+      "instagram": "https://www.instagram.com/{identifier}",
+      "linkedin": "https://www.linkedin.com/company/{identifier}",
+      "tiktok": "https://www.tiktok.com/@{identifier}",
+      "bluesky": "https://bsky.app/profile/{identifier}",
+      "threads": "https://www.threads.net/@{identifier}",
+      "youtube": "https://www.youtube.com/@{identifier}",
+      "mastodon": null,
+      "whatsapp": "https://wa.me/{identifier}",
+      "wechat": null,
+      "telegram": "https://t.me/{identifier}",
+      "snapchat": "https://www.snapchat.com/add/{identifier}",
+      "douyin": "https://www.douyin.com/user/{identifier}",
+      "kuaishou": "https://www.kuaishou.com/profile/{identifier}",
+      "reddit": "https://www.reddit.com/user/{identifier}",
+      "weibo": "https://weibo.com/{identifier}",
+      "qq": null,
+      "pinterest": "https://www.pinterest.com/{identifier}"
+    };
+
+    const format = formats[service];
+    if (format) {
+      const url = format.replace('{identifier}', identifier);
+      return $('<a/>').attr('href', url).attr('target', '_blank').text(identifier);
+    } else if (identifier.startsWith("https://")) {
+      return $('<a/>').attr('href', identifier).attr('target', '_blank').text(identifier);
     }
 
     return $('<span/>').text(identifier);
@@ -2294,7 +2306,14 @@ twentyc.editable.target.register(
                 if(fld.data("sort-target")) {
                   sortValue = d[fld.data("sort-target")];
                 }
-                fld.data("sort-value", typeof sortValue == "string" ? sortValue.toLowerCase() : sortValue);
+
+                // Handle boolean values for proper sorting
+                if (typeof sortValue === "boolean") {
+                  fld.data("sort-value", sortValue ? 1 : 0);
+                } else {
+                  fld.data("sort-value", typeof sortValue == "string" ? sortValue.toLowerCase() : sortValue);
+                }
+
                 fld.html(value);
                 if(this.tagName == "A") {
                   fld.attr("href", fld.attr("href").replace("$id", d.id));

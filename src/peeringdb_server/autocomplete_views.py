@@ -205,6 +205,18 @@ class NetworkAutocomplete(AutocompleteHTMLResponse):
         return f'<span data-value="{item.pk}"><div class="main">{html.escape(item.name)}</div> <div class="sub">AS{html.escape(item.asn)}</div></span>'
 
 
+class ASNAutocomplete(AutocompleteHTMLResponse):
+    def get_queryset(self):
+        qs = Network.objects.filter(status="ok")
+        if self.q:
+            qs = qs.filter(Q(asn__icontains=self.q) | Q(name__icontains=self.q))
+        qs = qs.order_by("asn")
+        return qs
+
+    def get_result_label(self, item):
+        return f'<span data-value="{item.asn}"><div class="main">AS{html.escape(str(item.asn))}</div> <div class="sub">{html.escape(item.name)}</div></span>'
+
+
 class FacilityAutocompleteForNetwork(FacilityAutocomplete):
     def get_queryset(self):
         qs = super().get_queryset()

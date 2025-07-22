@@ -221,8 +221,8 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title">{% trans "IX-F Import Preview" %}</h4>
+        <button type="button" class="btn-close{% if prefers_dark_mode %}-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body">
         <p>{% blocktrans %}Below is a preview of changes that will be done to your network during the next IX-F data import. The actual import will run once per day at 00:00Z{% endblocktrans %}</p>
@@ -272,8 +272,8 @@
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title">{% trans "IX-F Import Postmortem" %}</h4>
+        <button type="button" class="btn-close{% if prefers_dark_mode %}-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body">
         <p>{% blocktrans %}Below is a log of changes done to you network -&gt; exchange connections as a result of IX-F data imports. Note that this does not contain any adjustments done by staff to rollback such changes, but should be viewed as a raw log of actions taken by the IX-F data import.{% endblocktrans %}</p>

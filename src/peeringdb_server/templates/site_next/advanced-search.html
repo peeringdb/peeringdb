@@ -1,4 +1,4 @@
-{% extends "site_next/base.html" %}
+{% extends "site/base.html" %}
 {% load i18n util static %}
 
 {% block header %}
@@ -14,6 +14,9 @@
     </li>
     <li role="presentation" class"nav-item">
       <a href="#net" aria-controls="net" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "net" %}active{% else %}inactive{% endif %}">{% trans "Networks"  %}</a>
+    </li>
+    <li role="presentation" class="nav-item">
+      <a href="#asn_connectivity" aria-controls="asn_connectivity" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "asn_connectivity" %}active{% else %}inactive{% endif %}">{% trans "ASN Connectivity" %}</a>
     </li>
     <li role="presentation" class"nav-item">
       <a href="#fac" aria-controls="fac" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "fac" %}active{% else %}inactive{% endif %}">{% trans "Facilities" %}</a>
@@ -38,22 +41,25 @@
 
   <div class="tab-content">
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "ix" or not request.GET.reftag %} active{% endif %}" id="ix">
-      {% include "site_next/advanced-search-ix.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-ix.html" with row_limit=row_limit%}
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "net"%} active{% endif %}" id="net">
-      {% include "site_next/advanced-search-net.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-net.html" with row_limit=row_limit%}
+    </div>
+    <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "asn_connectivity" %} active{% endif %}" id="asn_connectivity">
+      {% include "site/advanced-search-asn-connectivity.html" with row_limit=row_limit%}
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "fac" %} active{% endif %}" id="fac">
-      {% include "site_next/advanced-search-fac.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-fac.html" with row_limit=row_limit%}
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "org" %} active{% endif %}" id="org">
-      {% include "site_next/advanced-search-org.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-org.html" with row_limit=row_limit%}
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "campus" %} active{% endif %}" id="campus">
-      {% include "site_next/advanced-search-campus.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-campus.html" with row_limit=row_limit%}
     </div>
     <div role="tabpanel" class="tab-pane{% if request.GET.reftag == "carrier" %} active{% endif %}" id="carrier">
-      {% include "site_next/advanced-search-carrier.html" with row_limit=row_limit%}
+      {% include "site/advanced-search-carrier.html" with row_limit=row_limit%}
     </div>
 
     <nav aria-label="...">
@@ -174,6 +180,10 @@
 
       // Function to update search results
       function updateResults(reftag, page = 1) {
+         if (reftag === 'asn_connectivity') {
+            handleAsnConnectivity();
+            return;
+          }
         let apiUrl = `/api/${reftag}?page=${page}`;
 
         const searchParams = getSearchParameters(reftag);
@@ -182,7 +192,6 @@
 
         var searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
         searchForm.editable("loading-shim", "show");
-
 
         fetch(apiUrl)
           .then((response) => response.json())
@@ -233,6 +242,374 @@
           });
       }
 
+      /**
+        * Handles ASN connectivity search - fetches network facility data and builds connectivity matrix
+        * @async
+        */
+      async function handleAsnConnectivity() {
+        const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+        searchForm.editable("loading-shim", "show");
+
+        try {
+          const searchParams = getSearchParameters('asn_connectivity');
+          const urlParams = new URLSearchParams(searchParams);
+          const asnList = urlParams.get('asn_list');
+
+          if (!asnList) {
+            console.error('No ASN list provided');
+            displayNoResults('asn_connectivity');
+            searchForm.editable("loading-shim", "hide");
+            return;
+          }
+
+          const asnArray = asnList.split(',').filter(asn => asn.trim() !== '');
+          const asnLimit = parseInt('{{ asn_connectivity_limit }}') || 9;
+
+          if (asnArray.length > asnLimit) {
+            alert(`Maximum ${asnLimit} ASNs allowed. You have selected ${asnArray.length} ASNs.`);
+            searchForm.editable("loading-shim", "hide");
+            return;
+          }
+
+          const netfacUrl = `/api/netfac?net__asn__in=${asnList}`;
+
+          const netfacResponse = await fetch(netfacUrl);
+          const netfacData = await netfacResponse.json();
+
+          if (!netfacData.data || netfacData.data.length === 0) {
+            displayNoResults('asn_connectivity');
+            searchForm.editable("loading-shim", "hide");
+            return;
+          }
+
+          const facIds = [...new Set(netfacData.data.map(item => item.fac_id))];
+
+          const facUrl = `/api/fac?id__in=${facIds.join(',')}`;
+
+          const facResponse = await fetch(facUrl);
+          const facData = await facResponse.json();
+
+          buildConnectivityMatrix(netfacData.data, facData.data, asnList.split(','));
+
+          searchForm.editable("loading-shim", "hide");
+
+        } catch (error) {
+          console.error('Error fetching ASN connectivity:', error);
+          displayNoResults('asn_connectivity');
+          searchForm.editable("loading-shim", "hide");
+        }
+      }
+
+      /**
+        * Builds connectivity matrix showing which ASNs are present at each facility
+        * @param {Array} netfacData - Network facility data from API
+        * @param {Array} facData - Facility details
+        * @param {Array} asnList - List of ASN numbers
+        */
+      function buildConnectivityMatrix(netfacData, facData, asnList) {
+        const resultsContainer = document.querySelector('#asn_connectivity .results');
+        resultsContainer.innerHTML = '';
+
+        const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+        searchForm.find('.results-empty').hide();
+        searchForm.find('.results-cutoff').hide();
+
+        // Create facility lookup map
+        const facilityMap = {};
+        facData.forEach(fac => {
+          facilityMap[fac.id] = fac;
+        });
+
+        // Group netfac by facility ID
+        const facilityGroups = {};
+        netfacData.forEach(netfac => {
+          if (!facilityGroups[netfac.fac_id]) {
+            facilityGroups[netfac.fac_id] = [];
+          }
+          facilityGroups[netfac.fac_id].push(netfac);
+        });
+
+        updateConnectivityHeaders(asnList);
+
+        const connectivityData = [];
+        Object.keys(facilityGroups).forEach(facId => {
+          const facility = facilityMap[facId];
+          if (!facility) return;
+
+          const row = {
+            id: facility.id,
+            facility_name: facility.name,
+            facility_city: facility.city,
+            facility_country: facility.country,
+            asn_presence: {}
+          };
+
+          asnList.forEach(asn => {
+            row.asn_presence[asn] = false;
+          });
+
+          facilityGroups[facId].forEach(netfac => {
+            if (asnList.includes(netfac.local_asn.toString())) {
+              row.asn_presence[netfac.local_asn] = true;
+            }
+          });
+
+          connectivityData.push(row);
+        });
+
+        connectivityData.sort((a, b) => a.facility_name.localeCompare(b.facility_name));
+
+        const templateRow = document.querySelector('#advanced-search-asn-connectivity-item');
+
+        if (templateRow) {
+          updateTemplateRowStructure(templateRow, asnList);
+
+          if (asnList.length > 9) {
+            const facilityWidthPercent = 25;
+            const minAsnWidth = 60;
+            const totalMinWidth = 300 + (minAsnWidth * asnList.length);
+            resultsContainer.style.minWidth = `${totalMinWidth}px`;
+            resultsContainer.style.width = '100%';
+          } else {
+            resultsContainer.style.minWidth = '';
+            resultsContainer.style.width = '';
+          }
+
+          connectivityData.forEach(item => {
+            const rowElement = templateRow.cloneNode(true);
+            rowElement.id = '';
+
+            const facilityLink = rowElement.querySelector('[data-edit-name="facility_name"]');
+            if (facilityLink) {
+              facilityLink.textContent = item.facility_name;
+              facilityLink.href = `/fac/${item.id}`;
+              $(facilityLink).data("sort-value", item.facility_name.toLowerCase());
+            }
+
+            // Update checkmark images
+            asnList.forEach(asn => {
+              const asnElement = rowElement.querySelector(`[data-edit-name="asn_${asn}"]`);
+              if (asnElement) {
+                const isPresent = item.asn_presence[asn];
+                const checkmarkImg = asnElement.querySelector('img.checkmark');
+                if (checkmarkImg) {
+                  const checkmarkSrc = isPresent ?
+                    STATIC_URL + "checkmark.png" :
+                    STATIC_URL + "checkmark-off.png";
+                  checkmarkImg.src = checkmarkSrc;
+                  checkmarkImg.alt = isPresent ? 'Present' : 'Not Present';
+                  checkmarkImg.title = `AS${asn} ${isPresent ? 'present' : 'not present'} at this facility`;
+                }
+              }
+            });
+
+            // Highlight facilities that host two or more of the selected ASNs
+            const asnCount = asnList.reduce((cnt, asn) => cnt + (item.asn_presence[asn] ? 1 : 0), 0);
+            if (asnCount >= 2) {
+              rowElement.classList.add('row-hilight'); // subtle grey highlight defined in site.css
+            }
+
+            resultsContainer.appendChild(rowElement);
+          });
+        }
+
+        // Set up export buttons with connectivity data
+        PeeringDB.advanced_search_result['asn_connectivity'] = {
+          param: `asn_list=${asnList.join(',')}`,
+          data: connectivityData
+        };
+
+        searchForm.parent().find("[data-export-format]").each(function () {
+          $(this).removeClass("d-none");
+          $(this).attr(
+            "href",
+            "/export/advanced-search/asn_connectivity/" +
+              $(this).data("export-format") +
+              "?asn_list=" + asnList.join(',')
+          );
+        });
+      }
+      /**
+        * Updates column headers for connectivity matrix
+        * @param {Array} asnList - List of ASN numbers
+        */
+      function updateConnectivityHeaders(asnList) {
+        const headersContainer = document.querySelector('#asn_connectivity .headers .row');
+        if (headersContainer) {
+          if (asnList.length > 9) {
+            const facilityWidthPercent = 25;
+            const asnWidthPercent = (100 - facilityWidthPercent) / asnList.length;
+            const minAsnWidth = 60;
+            const totalMinWidth = 300 + (minAsnWidth * asnList.length);
+
+            headersContainer.style.minWidth = `${totalMinWidth}px`;
+            headersContainer.style.display = 'flex';
+            headersContainer.style.width = '100%';
+
+            let headersHTML = `
+              <div style="width: ${facilityWidthPercent}%; min-width: 200px; flex-shrink: 0;" data-sort-target=".facility-name" data-sort-initial="asc">
+                Facility
+              </div>
+            `;
+
+            asnList.forEach(asn => {
+              headersHTML += `
+                <div style="width: ${asnWidthPercent}%; min-width: ${minAsnWidth}px; text-align: center; flex-shrink: 0;" data-sort-target=".asn-${asn}">
+                  AS${asn}
+                </div>
+              `;
+            });
+
+            headersContainer.innerHTML = headersHTML;
+          } else {
+            const facilityColWidth = Math.max(3, Math.min(6, 12 - asnList.length));
+            const asnColWidth = Math.max(1, Math.floor((12 - facilityColWidth) / asnList.length));
+
+            headersContainer.style.minWidth = '';
+            headersContainer.style.display = '';
+            headersContainer.style.width = '';
+
+            let headersHTML = `
+              <div class="col-${facilityColWidth}" data-sort-target=".facility-name" data-sort-initial="asc">
+                Facility
+              </div>
+            `;
+
+            asnList.forEach(asn => {
+              headersHTML += `
+                <div class="col-${asnColWidth} text-center" data-sort-target=".asn-${asn}">
+                  AS${asn}
+                </div>
+              `;
+            });
+
+            headersContainer.innerHTML = headersHTML;
+          }
+        }
+      }
+
+      /**
+        * Updates template row structure for dynamic ASN columns
+        * @param {HTMLElement} templateRow - Template DOM element
+        * @param {Array} asnList - List of ASN numbers
+        */
+      function updateTemplateRowStructure(templateRow, asnList) {
+        const facilityCol = templateRow.querySelector('[data-edit-name="facility_name"]').closest('[class*="col-"]');
+
+        // Remove old connectivity column
+        const oldConnectivityCol = templateRow.querySelector('[data-edit-name="connectivity_info"]');
+        if (oldConnectivityCol) {
+          oldConnectivityCol.closest('[class*="col-"]').remove();
+        }
+
+        // Clear existing ASN columns
+        const existingAsnCols = templateRow.querySelectorAll('[class*="asn-"]');
+        existingAsnCols.forEach(col => col.remove());
+
+        if (asnList.length > 9) {
+          const facilityWidthPercent = 25;
+          const asnWidthPercent = (100 - facilityWidthPercent) / asnList.length;
+          const minAsnWidth = 60;
+          const totalMinWidth = 300 + (minAsnWidth * asnList.length);
+
+          templateRow.style.display = 'flex';
+          templateRow.style.minWidth = `${totalMinWidth}px`;
+          templateRow.style.width = '100%';
+
+          facilityCol.className = '';
+          facilityCol.style.width = `${facilityWidthPercent}%`;
+          facilityCol.style.minWidth = '200px';
+          facilityCol.style.flexShrink = '0';
+
+          let lastInsertedCol = facilityCol;
+          asnList.forEach(asn => {
+            const asnCol = document.createElement('div');
+            asnCol.className = `asn-${asn}`;
+            asnCol.style.width = `${asnWidthPercent}%`;
+            asnCol.style.minWidth = `${minAsnWidth}px`;
+            asnCol.style.textAlign = 'center';
+            asnCol.style.flexShrink = '0';
+
+            const asnContainer = document.createElement('div');
+            asnContainer.setAttribute('data-edit-name', `asn_${asn}`);
+            const checkmarkImg = document.createElement('img');
+            checkmarkImg.className = 'checkmark';
+            checkmarkImg.src = STATIC_URL + 'checkmark-off.png';
+
+            asnContainer.appendChild(checkmarkImg);
+            asnCol.appendChild(asnContainer);
+
+            facilityCol.parentNode.insertBefore(asnCol, lastInsertedCol.nextSibling);
+            lastInsertedCol = asnCol;
+          });
+        } else {
+          const facilityColWidth = Math.max(3, Math.min(6, 12 - asnList.length));
+          const asnColWidth = Math.max(1, Math.floor((12 - facilityColWidth) / asnList.length));
+
+          templateRow.style.display = '';
+          templateRow.style.minWidth = '';
+          templateRow.style.width = '';
+
+          facilityCol.className = `col-${facilityColWidth}`;
+          facilityCol.style.width = '';
+          facilityCol.style.minWidth = '';
+          facilityCol.style.flexShrink = '';
+
+          // Create ASN columns
+          let lastInsertedCol = facilityCol;
+          asnList.forEach(asn => {
+            const asnCol = document.createElement('div');
+            asnCol.className = `col-${asnColWidth} text-center asn-${asn}`;
+
+            const asnContainer = document.createElement('div');
+            asnContainer.setAttribute('data-edit-name', `asn_${asn}`);
+            const checkmarkImg = document.createElement('img');
+            checkmarkImg.className = 'checkmark';
+            checkmarkImg.src = STATIC_URL + 'checkmark-off.png';
+
+            asnContainer.appendChild(checkmarkImg);
+            asnCol.appendChild(asnContainer);
+
+            facilityCol.parentNode.insertBefore(asnCol, lastInsertedCol.nextSibling);
+            lastInsertedCol = asnCol;
+          });
+        }
+      }
+
+
+      /**
+      * Displays "no results" message for specified search
+      * @param {string} reftag - Search reference tag
+      */
+      function displayNoResults(reftag) {
+        const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
+        searchForm.find('.results-empty').show();
+        searchForm.find('.results').empty();
+      }
+
+      /**
+        * Extracts ASN numbers from formatted display string
+        * @param {string} displayValue - Formatted string with ASN data
+        * @returns {string} Comma-separated ASN numbers
+        */
+      function extractAsnNumbers(displayValue) {
+        if (!displayValue) return "";
+
+        const entries = displayValue.split(',');
+        const asnNumbers = [];
+
+        entries.forEach(entry => {
+          const parts = entry.split(';');
+          if (parts.length > 0) {
+            const asnNumber = parts[0].trim();
+            if (asnNumber && !isNaN(asnNumber)) {
+              asnNumbers.push(asnNumber);
+            }
+          }
+        });
+
+        return asnNumbers.join(',');
+      }
       // Function to get search parameters from the form
       function getSearchParameters(reftag) {
         let params = "";
@@ -241,7 +618,6 @@
 
           const nameElement = $(this).closest('[data-edit-name]');
           const name = nameElement.attr('data-edit-name');
-
 
           let inputElement = $(this).find(':input');
 
@@ -283,6 +659,12 @@
             value = nameElement.data('edit-value');
           }
 
+
+          if (name === "asn_list") {
+            displayValue = nameElement.data('edit-value');
+            value = extractAsnNumbers(displayValue);
+          }
+
           // Handle empty values and the default value for traffic capacity
           if (value !== "" && value !== "Gbps") {
             // Handle array values (for multi-selects)
@@ -305,17 +687,15 @@
           // network presence (all)
           "all_net",
           // network presence (none)
-          "not_net"
+          "not_net",
         ];
 
         let currentUrlParams = new URLSearchParams(window.location.search);
-
         passThrough.forEach(param => {
           if (currentUrlParams.has(param)) {
             params += `${param}=${currentUrlParams.get(param)}&`;
           }
         });
-
         return params;
       }
 
@@ -363,7 +743,9 @@
             reftag == "ix" ||
             reftag == "fac" ||
             reftag == "org" ||
-            reftag == "campus" || reftag == "carrier"
+            reftag == "campus" ||
+            reftag == "carrier" ||
+            reftag == "asn_connectivity"
           ) {
             var searchForm = $(
               '[data-edit-target="advanced_search:' + reftag + '"]'

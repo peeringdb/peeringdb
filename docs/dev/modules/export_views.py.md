@@ -1,4 +1,4 @@
-Generated from export_views.py on 2025-06-17 14:04:28.345215
+Generated from export_views.py on 2025-07-21 14:23:09.006993
 
 # peeringdb_server.export_views
 
@@ -54,6 +54,12 @@ Arguments:
 
 Returns:
     - list: list containing rendered data rows ready for export
+
+---
+#### generate_asn_connectivity
+`def generate_asn_connectivity(self, request)`
+
+Export ASN connectivity as a matrix: Facility vs ASN (✔/✗ or true/false)
 
 ---
 #### generate_campus

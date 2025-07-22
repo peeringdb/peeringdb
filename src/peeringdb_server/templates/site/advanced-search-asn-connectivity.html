@@ -1,0 +1,80 @@
+{% load util i18n %}
+<div class="editable always auto-toggled filter-form"
+    data-edit-target="advanced_search:asn_connectivity"
+    data-edit-enter-action="submit"
+    data-sort-container=".results"
+    data-sort-row=".row">
+    <div class="row">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-4 col-sm-3 col-md-2">{% trans "ASNs" %}</div>
+                <div class="col-8 col-sm-9 col-md-10">
+                    <div class="editable asn_list_input"
+                        data-edit-type="autocomplete"
+                        data-edit-placeholder="{% trans "Search ASN numbers ..." %}"
+                        data-edit-autocomplete="asn"
+                        data-edit-name="asn_list"
+                        data-edit-value="{{ request.GET.asn_list|autocomplete_preload_asn }}"
+                        data-edit-multiple="yes"
+                        placeholder="ASN"></div>
+                    <small class="text-muted">{% blocktrans with limit=asn_connectivity_limit %}Maximum {{ limit }} ASNs.{% endblocktrans %}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+<div class="right">
+    <a class="btn btn-default" data-edit-action="reset">{% trans "Reset" %}</a>
+    <a class="btn btn-default" data-edit-action="submit">{% trans "Search" %}</a>
+</div>
+<div class="right marg-top-30">
+    <a class="btn btn-default btn-sm d-none" data-export-format="json-pretty" data-export-tag="asn_connectivity">
+        <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg> JSON
+    </a>
+    <a class="btn btn-default btn-sm d-none" data-export-format="csv" data-export-tag="asn_connectivity">
+        <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg> CSV
+    </a>
+</div>
+
+<div class="editable-templates" style="display: none;">
+    <div id="advanced-search-asn-connectivity-item" class="row">
+        <div class="col-6">
+            <a href="/fac/$facility_id" data-edit-name="facility_name" class="facility-name"></a>
+        </div>
+<!-- ASN columns will be dynamically added here by JavaScript -->
+    </div>
+</div>
+
+{% if request.GET.reftag == 'asn_connectivity' %}
+<nav aria-label="...">
+    <ul class="pagination-top pagination"></ul>
+</nav>
+{% endif %}
+
+<div class="headers marg-top-15">
+    <div class="row">
+    <!-- Headers will be dynamically populated by JavaScript -->
+        <div class="col-6" data-sort-target=".facility-name" data-sort-initial="asc">
+            {% trans "Facility" %}
+        </div>
+    </div>
+</div>
+
+<div class="results-empty center" style="display:none;">
+{% trans "No connectivity data found." %}
+</div>
+
+<div class="results">
+<!-- Results will be populated here by the editable system -->
+</div>
+
+<div class="results-cutoff center marg-top-15" style="display:none;">
+{% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}
+</div>
+
+</div>

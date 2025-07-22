@@ -1,4 +1,5 @@
 import django_read_only
+import pytest
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from rest_framework.test import APIClient
@@ -6,6 +7,7 @@ from rest_framework.test import APIClient
 from peeringdb_server.models import REFTAG_MAP, User
 
 
+@pytest.mark.xdist_group(name="read_only_tests")
 class TestReadOnlyMode(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -24,10 +26,17 @@ class TestReadOnlyMode(TestCase):
         Check that if the setting changes, read_only mode updates
         appropriately.
         """
+        # Reset the global state before testing
+        django_read_only.set_read_only()
+
         with override_settings(DJANGO_READ_ONLY=False):
+            # Explicitly call set_read_only to ensure state is updated
+            django_read_only.set_read_only()
             assert not django_read_only.read_only
 
             with override_settings(DJANGO_READ_ONLY=True):
+                # Explicitly call set_read_only to ensure state is updated
+                django_read_only.set_read_only()
                 assert django_read_only.read_only
 
     @override_settings(

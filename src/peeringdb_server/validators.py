@@ -4,6 +4,7 @@ peeringdb model / field validators
 
 import ipaddress
 import re
+from urllib.parse import urlparse
 
 import phonenumbers
 from django.conf import settings
@@ -205,32 +206,98 @@ def validate_info_prefixes6(value):
     return value
 
 
-def validate_prefix_overlap(prefix):
+def validate_prefix_overlap(prefix, instance=None):
     """
-    Validate that a prefix does not overlap with another prefix
-    on an already existing ixlan.
+    Validate that a prefix does not overlap with another prefix on an already existing ixlan.
+
+    This function performs two types of validation:
+
+    1. Cross-IXLan overlap check: Ensures the prefix doesn't overlap with any prefix
+       on a different IXLan (raises ValidationError if it does).
+
+    2. Same-IXLan renumbering: When updating an existing prefix on the same IXLan,
+       allows two specific cases:
+       - Shrinking: new prefix is a subnet of the old one AND all existing peer IPs
+         are still covered by the new prefix
+       - Growing: new prefix is a supernet of the old one
+
+       In both cases, sets instance._being_renumbered = True for downstream handling.
 
     Arguments:
         - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
+        - instance (optional): IXLanPrefix instance being validated (for self-overlap skip)
 
     Raises:
         - ValidationError on failed validation
     """
 
     prefix = validate_prefix(prefix)
+    protocol = f"IPv{prefix.version}"
+
     qs = peeringdb_server.models.IXLanPrefix.objects.filter(
-        protocol=f"IPv{prefix.version}", status="ok"
-    )
-    qs = qs.exclude(prefix=prefix)
+        protocol=protocol, status="ok"
+    ).exclude(prefix=prefix)
+
+    being_renumbered: bool = False
+    overlap_found = None
+
     for ixpfx in qs:
-        if ixpfx.prefix.overlaps(prefix):
-            raise ValidationError(
-                _(
-                    "Prefix overlaps with {}'s prefix: {}".format(
-                        ixpfx.ixlan.ix.name, ixpfx.prefix
+        # Skip overlap validation if same ixlan and handle special subnet case
+        if instance and ixpfx.ixlan == instance.ixlan:
+            new_prefix = ipaddress.ip_network(prefix)
+            old_prefix = ipaddress.ip_network(ixpfx.prefix)
+
+            # Allow if new prefix is a subnet and covers same netixlans
+            if new_prefix.subnet_of(old_prefix):
+                ixlan = instance.ixlan
+                ip_field = "ipaddr4" if new_prefix.version == 4 else "ipaddr6"
+
+                netixlans = ixlan.netixlan_set.filter(status="ok")
+                old_covered = {
+                    n
+                    for n in netixlans
+                    if getattr(n, ip_field)
+                    and ipaddress.ip_address(getattr(n, ip_field)) in old_prefix
+                }
+                new_covered = {
+                    n
+                    for n in netixlans
+                    if getattr(n, ip_field)
+                    and ipaddress.ip_address(getattr(n, ip_field)) in new_prefix
+                }
+
+                if set(old_covered).issubset(set(new_covered)):
+                    being_renumbered = True
+                    continue
+                else:
+                    raise ValidationError(
+                        _(
+                            "Cannot change prefix because at least one peer still uses an IP address in the original block."
+                        )
                     )
-                )
+
+            # Allow if new prefix is a subnet of old prefix
+            # IN this case we dont need to check the netixlans, since the
+            # new prefix contains the old prefix entirely.
+            elif old_prefix.subnet_of(new_prefix):
+                being_renumbered = True
+
+            continue  # safe self-overlap in same ixlan
+
+        # Otherwise check for prefix overlap across ixlan
+        if ixpfx.prefix.overlaps(prefix):
+            overlap_found = ixpfx
+            break
+
+    if overlap_found:
+        raise ValidationError(
+            _("Prefix overlaps with prefix {} on IXP '{}'").format(
+                overlap_found.prefix, overlap_found.ixlan.ix.name
             )
+        )
+
+    if being_renumbered:
+        instance._being_renumbered = True
 
 
 def validate_irr_as_set(value):
@@ -399,6 +466,121 @@ def validate_api_rate(value):
         )
 
 
+def validate_identifier(service: str, identifier: str):
+    """
+    Validates a identifier based on the specific rules of different social media platforms.
+    Raises a ValueError if the identifier is invalid for the given service.
+
+    Args:
+        service (str): The name of the social media service (e.g., "x", "instagram").
+        identifier (str): The identifier string to validate.
+
+    Raises:
+        ValueError: If the identifier does not meet the specified platform's criteria.
+    """
+
+    service = service.lower()
+    is_valid = False  # Default to False, will be updated if a regex matches
+
+    # Define regex patterns and specific rules for each service
+    if service == "x":
+        # X: 4-15 characters, alphanumeric and underscores only.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{4,15}$", identifier))
+
+    elif service == "instagram":
+        # Instagram: 1-30 characters, alphanumeric, periods, and underscores.
+        # Cannot start or end with a period, and cannot have consecutive periods.
+        if identifier.startswith(".") or identifier.endswith(".") or ".." in identifier:
+            is_valid = False
+        else:
+            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{1,30}$", identifier))
+
+    elif service == "facebook":
+        # Facebook: Min 5 characters, alphanumeric and periods only.
+        # Cannot start or end with a period, and cannot have consecutive periods.
+        if identifier.startswith(".") or identifier.endswith(".") or ".." in identifier:
+            is_valid = False
+        else:
+            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9.]{5,}$", identifier))
+
+    elif service == "tiktok":
+        # TikTok: 2-24 characters, alphanumeric, periods, and underscores.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{2,24}$", identifier))
+
+    elif service == "youtube":
+        # YouTube (Handles): 3-30 characters, alphanumeric and periods only.
+        # Cannot start or end with a period, and cannot have consecutive periods.
+        if identifier.startswith(".") or identifier.endswith(".") or ".." in identifier:
+            is_valid = False
+        else:
+            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{3,30}$", identifier))
+
+    elif service == "linkedin":
+        # LinkedIn: 5-100 characters, alphanumeric and hyphens only.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9-]{5,100}$", identifier))
+
+    elif service == "pinterest":
+        # Pinterest: 3-30 characters, alphanumeric, hyphens, and underscores.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_-]{3,30}$", identifier))
+
+    elif service == "reddit":
+        # Reddit: 3-20 characters, alphanumeric and underscores only.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{3,20}$", identifier))
+
+    elif service == "snapchat":
+        # Snapchat: 3-15 characters, alphanumeric and hyphens only.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9-]{3,15}$", identifier))
+
+    elif service == "telegram":
+        # Telegram: 5-32 characters, alphanumeric and underscores only.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{5,32}$", identifier))
+
+    elif service == "bluesky":
+        # Bluesky: 4-32 characters, alphanumeric (case-insensitive) and hyphens.
+        # Must start and end with letter/number. No consecutive hyphens.
+        if "--" in identifier:
+            is_valid = False
+        else:
+            is_valid = bool(
+                re.fullmatch(
+                    r"^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,30}[a-zA-Z0-9])?$", identifier
+                )
+            )
+
+    elif service == "threads":
+        # Threads: Follows Instagram's identifier rules due to integration.
+        if identifier.startswith(".") or identifier.endswith(".") or ".." in identifier:
+            is_valid = False
+        else:
+            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{1,30}$", identifier))
+
+    # For platforms primarily used in China (Douyin, Kuaishou, Weibo),
+    # their identifier rules can be more complex and may involve CJK characters.
+    # A simple alphanumeric regex might not be fully comprehensive for native users.
+    elif service in ["douyin", "kuaishou", "weibo"]:
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._-]{4,30}$", identifier))
+
+    else:
+        # If the service is not recognized, consider it an error in the input service name.
+        raise ValueError(
+            f"Unrecognized service: '{service}'. Cannot validate identifier."
+        )
+
+    # If after all checks, the identifier is not valid, raise an exception.
+    if not is_valid:
+        raise ValueError(f"Invalid identifier {identifier} for service {service}!")
+
+
+def validate_url(url):
+    try:
+        URLValidator()(url)
+        parsed = urlparse(url)
+        if parsed.scheme not in ["http", "https"] or not parsed.netloc:
+            raise ValidationError("Invalid URL: missing scheme or host.")
+    except Exception:
+        raise ValidationError("Invalid URL.")
+
+
 def validate_social_media(value):
     """
     Validates a social media value
@@ -429,26 +611,45 @@ def validate_social_media(value):
                 raise ValidationError(_("Service should not be empty!"))
             elif identifier == "":
                 raise ValidationError(_("Identifier should not be empty!"))
-            if service in ["website"]:
+            if service in ["website", "mastodon", "qq"]:
                 # validate URL
                 try:
-                    URLValidator(identifier)
+                    validate_url(identifier)
                 except Exception:
                     raise ValidationError(
                         _("Invalid {service} URL!").format(service=service)
                     )
-            elif service in ["instagram", "x", "tiktok", "facebook", "linkedin"]:
-                # validate username
-                if service in ["x"]:
-                    regex = r"^[a-zA-Z0-9_]{4,15}$"
-                else:
-                    regex = r"^(-*)(?=.{4,32}$)(?![.\-])(?!.*[.]{2})[a-zA-Z0-9._\-]+(?<![.])$"
-
-                matches = re.search(regex, identifier)
-                if not matches:
+            elif service in ["whatsapp"]:
+                # validate phone number
+                try:
+                    validate_phonenumber(identifier)
+                except Exception:
                     raise ValidationError(
-                        _("Invalid {service} username!").format(service=service)
+                        _("Invalid {service} phone number!").format(service=service)
                     )
+            elif service in [
+                "bluesky",
+                "douyin",
+                "facebook",
+                "instagram",
+                "kuaishou",
+                "linkedin",
+                "pinterest",
+                "reddit",
+                "snapchat",
+                "telegram",
+                "threads",
+                "tiktok",
+                "weibo",
+                "x",
+                "youtube",
+            ]:
+                # validate username
+                try:
+                    validate_identifier(service, identifier)
+                except ValueError as e:
+                    raise ValidationError(_("{error_message}").format(error_message=e))
+
             elif not service:
                 # service can't be None and empty.
                 raise ValidationError(_("Invalid service!"))

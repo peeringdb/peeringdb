@@ -1320,6 +1320,34 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    @override_settings(API_CACHE_ENABLED=False)
+    def test_user_001_GET_fac_only_address1(self):
+        fac_data = self.make_data_fac(address1="5900 Wilshire Blvd")
+        facility = Facility.objects.create(status="ok", **fac_data)
+
+        response = self.db_user._request("fac?address1=wilshire", method="GET")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertIn(facility.name, [f["name"] for f in data["data"]])
+        self.assertIn(facility.address1, [f["address1"] for f in data["data"]])
+
+    ##########################################################################
+
+    @override_settings(API_CACHE_ENABLED=False)
+    def test_user_001_GET_org_only_address1(self):
+        org_data = self.make_data_org(address1="707 Wilshire Blvd")
+        organization = Organization.objects.create(status="ok", **org_data)
+
+        response = self.db_user._request("org?address1=wilshire", method="GET")
+        self.assertEqual(response.status_code, 200)
+
+        data = response.json()
+        self.assertIn(organization.name, [f["name"] for f in data["data"]])
+        self.assertIn(organization.address1, [f["address1"] for f in data["data"]])
+
+    ##########################################################################
+
     def test_user_001_GET_poc_public(self):
         self.assert_get_handleref(self.db_user, "poc", SHARED["poc_r_ok_public"].id)
 
@@ -3160,6 +3188,83 @@ class TestJSON(unittest.TestCase):
         self.assertTrue(
             IXLanPrefix.objects.filter(id=prefix.id).filter(status="deleted").exists()
         )
+
+
+    ##########################################################################
+
+    def test_ixpfx_renumber_validation_001(self):
+        prefix = IXLanPrefix.objects.create(
+            ixlan=SHARED["ixlan_rw_ok"],
+            protocol="IPv4",
+            prefix="203.0.113.0/24",
+            status="ok",
+        )
+
+        netixlan = NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            ixlan=SHARED["ixlan_rw_ok"],
+            ipaddr4="203.0.113.10",
+            status="ok",
+            asn=SHARED["net_rw_ok"].asn,
+            speed=1000,
+        )
+
+        # changing the prefix to a subnet of the old one should be allowed
+        # via the API
+
+        # failure: entirely different prefix
+
+        self.assert_update(
+            self.db_org_admin,
+            "ixpfx",
+            prefix.id,
+            {"prefix": "203.0.113.0/25", "protocol": "IPv4"},
+            test_failures={
+                "invalid": {"prefix": "203.0.114.0/25"},
+            },
+        )
+        
+        # changing the prefix to a supernet of the old one should be allowed
+        # via the API
+
+        self.assert_update(
+            self.db_org_admin,
+            "ixpfx",
+            prefix.id,
+            {"prefix": "203.0.113.0/24", "protocol": "IPv4"},
+        )
+
+
+    def test_ixpfx_renumber_validation_002(self):
+        prefix = IXLanPrefix.objects.create(
+            ixlan=SHARED["ixlan_rw_ok"],
+            protocol="IPv4",
+            prefix="203.0.113.0/24",
+            status="ok",
+        )
+
+        netixlan = NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            ixlan=SHARED["ixlan_rw_ok"],
+            ipaddr4="203.0.113.250",
+            status="ok",
+            asn=SHARED["net_rw_ok"].asn,
+            speed=1000,
+        )
+
+        # changing the prefix to a subnet of the old one should not be allowed
+        # if the netixlan is not covered by the new prefix
+
+        self.assert_update(
+            self.db_org_admin,
+            "ixpfx",
+            prefix.id,
+            test_failures={
+                "invalid": {"prefix": "203.0.113.0/25", "protocol": "IPv4"},
+            },
+            test_success=False,
+        )
+
 
     ##########################################################################
 

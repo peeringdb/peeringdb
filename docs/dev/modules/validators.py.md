@@ -1,4 +1,4 @@
-Generated from validators.py on 2025-06-17 14:04:27.689296
+Generated from validators.py on 2025-07-21 14:23:08.671110
 
 # peeringdb_server.validators
 
@@ -73,6 +73,20 @@ Returns:
 - validated value (`bool`)
 
 ---
+## validate_identifier
+`def validate_identifier(service, identifier)`
+
+Validates a identifier based on the specific rules of different social media platforms.
+Raises a ValueError if the identifier is invalid for the given service.
+
+Args:
+    service (str): The name of the social media service (e.g., "x", "instagram").
+    identifier (str): The identifier string to validate.
+
+Raises:
+    ValueError: If the identifier does not meet the specified platform's criteria.
+
+---
 ## validate_irr_as_set
 `def validate_irr_as_set(value)`
 
@@ -123,13 +137,13 @@ Returns:
 
 ---
 ## validate_prefix_overlap
-`def validate_prefix_overlap(prefix)`
+`def validate_prefix_overlap(prefix, instance=None)`
 
-Validate that a prefix does not overlap with another prefix
-on an already existing ixlan.
+Validate that a prefix does not overlap with another prefix on an already existing ixlan.
 
 Arguments:
     - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network
+    - instance (optional): IXLanPrefix instance being validated (for self-overlap skip)
 
 Raises:
     - ValidationError on failed validation

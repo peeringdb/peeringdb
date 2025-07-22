@@ -120,7 +120,7 @@ dev-dependencies = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202504" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202506" }
 # from branch until passkey support is released
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
 

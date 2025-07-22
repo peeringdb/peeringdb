@@ -36,7 +36,8 @@
       <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
-      <div data-sort-target=".speed" class="numeric">{% trans "RS Peer" %}</div>
+      <div data-sort-target=".is_rs_peer" class="numeric">{% trans "RS Peer" %}</div>
+      <div data-sort-target=".net_side">{% trans "Port Location" %}</div>
     </div>
     <div class="col-3 col-sm-2 col-md-2 col-lg-3 ">
       <div data-sort-target=".bfd_support" class="numeric">{% trans "BFD Support" %}</div>
@@ -118,14 +119,14 @@
                data-edit-required="yes">
                {{ x.speed|pretty_speed }}
           </div>
-          <div class= "col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block" data-edit-type="bool"
+          <div class="is_rs_peer col-2 col-sm-2 col-md-2 col-lg-2 d-sm-block" data-edit-type="bool"
                data-edit-name="is_rs_peer"
                data-edit-template="check"
                data-sort-value="{{ x.is_rs_peer }}"
                data-edit-value="{{ x.is_rs_peer }}">
             <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.is_rs_peer|as_bool %}-off{% endif %}.png" alt="RS PEER" />
           </div>
-          <div class= "col-3 col-sm-2 col-md-3 col-lg-2 d-sm-block text-center" data-edit-type="bool"
+          <div class="bfd_support col-sm-2 col-md-3 col-lg-2 d-sm-block text-center" data-edit-type="bool"
                data-edit-name="bfd_support"
                data-edit-template="check"
                data-sort-value="{{ x.bfd_support }}"
@@ -157,6 +158,26 @@
                data-edit-name="ipaddr6">
                {{ x.ipaddr6|none_blank }}
            </div>
+        </div>
+        <div class="col-12 col-sm-6">
+          <div class="net_side"
+               {% if permissions.can_write %}
+               data-edit-type="autocomplete"
+               data-edit-autocomplete="netfac/{{ instance.id }}"
+               data-edit-autocomplete-text="{{ x.net_side.name }}"
+               data-edit-value="{{ x.net_side }}"
+               data-edit-id="{{ x.id }}"
+               data-edit-autocomplete-allow-nonexistent="yes"
+               data-edit-reset-value=""
+               data-edit-keep-content="yes"
+               data-edit-sub-target="api:set-net-side"
+               data-edit-autocomplete-mincharacter=0
+               {% endif %}
+               data-edit-name="fac_id">
+               {% if x.net_side %}
+               <a href="/{{x.net_side|ref_tag}}/{{ x.net_side.id }}" data-bs-toggle="tooltip" title="{{ x.net_side }}">{{ x.net_side.name }}</a>
+               {% endif %}
+          </div>
         </div>
       </div>
     </div>

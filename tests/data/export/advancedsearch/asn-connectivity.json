@@ -1,0 +1,28 @@
+{
+  "results": [
+    {
+      "Facility ID": 2361,
+      "Facility Name": "Equinix HK3 - Hong Kong",
+      "City": "Tsuen Wan",
+      "Country": "HK",
+      "AS932": true,
+      "AS1024": false
+    },
+    {
+      "Facility ID": 13626,
+      "Facility Name": "MEGA Gateway (iAdvantage Hong Kong)",
+      "City": "Hong Kong",
+      "Country": "HK",
+      "AS932": true,
+      "AS1024": false
+    },
+    {
+      "Facility ID": 9693,
+      "Facility Name": "TGT Hong Kong Data Centre 1",
+      "City": "Hong Kong",
+      "Country": "HK",
+      "AS932": true,
+      "AS1024": false
+    }
+  ]
+}

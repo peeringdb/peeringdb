@@ -1,4 +1,4 @@
-Generated from models.py on 2025-06-17 14:04:27.689296
+Generated from models.py on 2025-07-21 14:23:08.671110
 
 # peeringdb_server.models
 
@@ -2121,6 +2121,15 @@ Runs cleanup before delete.
 Override this in the class that uses this mixin (if needed).
 
 ---
+
+## SearchLog
+
+```
+SearchLog(peeringdb_server.models.StripFieldMixin)
+```
+
+Rudimentary logging of search queries.
+
 
 ## SocialMediaMixin
 

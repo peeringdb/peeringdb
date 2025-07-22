@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2025-06-17 14:04:27.689296
+Generated from autocomplete_views.py on 2025-07-21 14:23:08.671110
 
 # peeringdb_server.autocomplete_views
 
@@ -9,6 +9,30 @@ Handle most autocomplete functionality found in peeringdb.
 Note: Quick search behavior is specified in search.py
 
 # Classes
+---
+
+## ASNAutocomplete
+
+```
+ASNAutocomplete(peeringdb_server.autocomplete_views.AutocompleteHTMLResponse)
+```
+
+List options for a Select2 widget.
+
+
+### Methods
+
+#### get_queryset
+`def get_queryset(self)`
+
+Filter the queryset with GET['q'].
+
+---
+#### get_result_label
+`def get_result_label(self, item)`
+
+Return the label of a result.
+
 ---
 
 ## AutocompleteHTMLResponse

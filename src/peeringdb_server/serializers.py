@@ -3169,7 +3169,6 @@ class IXLanPrefixSerializer(ModelSerializer):
         validators=[
             validators.UniqueValidator(queryset=IXLanPrefix.objects.all()),
             validate_address_space,
-            validate_prefix_overlap,
         ]
     )
     in_dfz = serializers.BooleanField(required=False, default=True)
@@ -3255,6 +3254,8 @@ class IXLanPrefixSerializer(ModelSerializer):
 
         if self.instance:
             prefix = data["prefix"]
+            if prefix:
+                validate_prefix_overlap(prefix, self.instance)
             if prefix != self.instance.prefix and not self.instance.deletable:
                 raise serializers.ValidationError(
                     {"prefix": self.instance.not_deletable_reason}
