@@ -3189,7 +3189,6 @@ class TestJSON(unittest.TestCase):
             IXLanPrefix.objects.filter(id=prefix.id).filter(status="deleted").exists()
         )
 
-
     ##########################################################################
 
     def test_ixpfx_renumber_validation_001(self):
@@ -3223,7 +3222,7 @@ class TestJSON(unittest.TestCase):
                 "invalid": {"prefix": "203.0.114.0/25"},
             },
         )
-        
+
         # changing the prefix to a supernet of the old one should be allowed
         # via the API
 
@@ -3233,7 +3232,6 @@ class TestJSON(unittest.TestCase):
             prefix.id,
             {"prefix": "203.0.113.0/24", "protocol": "IPv4"},
         )
-
 
     def test_ixpfx_renumber_validation_002(self):
         prefix = IXLanPrefix.objects.create(
@@ -3264,7 +3262,6 @@ class TestJSON(unittest.TestCase):
             },
             test_success=False,
         )
-
 
     ##########################################################################
 
