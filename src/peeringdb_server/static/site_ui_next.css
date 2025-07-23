@@ -2109,10 +2109,21 @@ span.inline.delimited input {
   margin-bottom: 10px;
 }
 
+
+.ip4,
+div[name=ipaddr4],
+div[data-edit-name=ipaddr4] {
+  word-break: break-all;
+  white-space: normal !important;
+}
+
 .ip6,
 div[name=ipaddr6],
-div[data-edit-name=ipaddr6]
-{ word-break: break-all; }
+div[data-edit-name=ipaddr6] {
+  word-break: break-all;
+  white-space: normal !important;
+}
+
 
 .ixf-log {
   max-height: 400px;
@@ -2520,4 +2531,9 @@ input.input-block-level {
 .copy-btn .material-icons {
   font-size: 18px;
   color: var(--heading-color);
+}
+
+/* Highlight rows that contain two or more ASNs in ASN Connectivity table */
+div.advanced-search-view div.results div.row.row-hilight {
+  background-color: var(--alert-info-bg);
 }

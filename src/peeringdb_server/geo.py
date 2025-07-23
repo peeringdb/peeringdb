@@ -89,6 +89,8 @@ class GoogleMaps:
             is_city = (
                 "locality" in result[0]["types"]
                 or "administrative_area_level_1" in result[0]["types"]
+                or "administrative_area_level_2" in result[0]["types"]
+                or "administrative_area_level_3" in result[0]["types"]
             )
             is_state = False
 

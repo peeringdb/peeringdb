@@ -55,6 +55,7 @@ def teardown_module(module):
     pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
 
 
+@pytest.mark.xdist_group(name="asn_automation_tests")
 class AsnAutomationTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

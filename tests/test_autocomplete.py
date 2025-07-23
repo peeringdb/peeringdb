@@ -190,3 +190,58 @@ class TestAutocomplete(ClientCase):
         )
 
         assert 129 == rsp.count("data-value")
+
+    def test_asn_autocomplete(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+        net1 = Network.objects.create(
+            name="First Network", asn=1000, status="ok", org=org
+        )
+        net2 = Network.objects.create(
+            name="Second Network", asn=2000, status="ok", org=org
+        )
+
+        url = reverse("autocomplete-asn")
+
+        # Test search by ASN number
+        req = self.factory.get(f"{url}?q=1000")
+        rsp = autocomplete_views.ASNAutocomplete.as_view()(req).content.decode("utf-8")
+
+        assert "AS1000" in rsp
+        assert "First Network" in rsp
+        assert "AS2000" not in rsp
+
+        # Test search by network name
+        req = self.factory.get(f"{url}?q=First")
+        rsp = autocomplete_views.ASNAutocomplete.as_view()(req).content.decode("utf-8")
+
+        assert "AS1000" in rsp
+        assert "First Network" in rsp
+        assert "AS2000" not in rsp
+
+        # Test search returns both networks
+        req = self.factory.get(f"{url}?q=Network")
+        rsp = autocomplete_views.ASNAutocomplete.as_view()(req).content.decode("utf-8")
+
+        assert "AS1000" in rsp
+        assert "AS2000" in rsp
+        assert "First Network" in rsp
+        assert "Second Network" in rsp
+
+    def test_asn_autocomplete_ordering(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+
+        # Create networks with ASNs in non-sequential order
+        net1 = Network.objects.create(name="Network A", asn=1000, status="ok", org=org)
+        net2 = Network.objects.create(name="Network B", asn=2000, status="ok", org=org)
+        net3 = Network.objects.create(name="Network C", asn=3000, status="ok", org=org)
+
+        url = reverse("autocomplete-asn")
+        req = self.factory.get(f"{url}?q=Network")
+        rsp = autocomplete_views.ASNAutocomplete.as_view()(req).content.decode("utf-8")
+
+        # Results should be ordered by ASN (1000, 2000, 3000)
+        asn1000_pos = rsp.find("AS1000")
+        asn2000_pos = rsp.find("AS2000")
+        asn3000_pos = rsp.find("AS3000")
+
+        assert asn1000_pos < asn2000_pos < asn3000_pos

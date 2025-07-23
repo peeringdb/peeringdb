@@ -1,4 +1,4 @@
-Generated from admin.py on 2025-06-17 14:04:28.345215
+Generated from admin.py on 2025-07-21 14:23:09.006993
 
 # peeringdb_server.admin
 
@@ -1419,6 +1419,21 @@ model instance. If `obj` is None, this should return True if the given
 request has permission to delete *any* object of the given type.
 
 ---
+
+## SearchLogAdmin
+
+```
+SearchLogAdmin(django.contrib.admin.options.ModelAdmin)
+```
+
+Encapsulate all admin options and functionality for a given model.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## SoftDeleteAdmin
 

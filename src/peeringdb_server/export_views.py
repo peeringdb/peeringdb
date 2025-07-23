@@ -20,7 +20,14 @@ from django.views import View
 from rest_framework.test import APIRequestFactory
 from simplekml import Kml, Style
 
-from peeringdb_server.models import Campus, InternetExchange, IXLan, Network
+from peeringdb_server.models import (
+    Campus,
+    Facility,
+    InternetExchange,
+    IXLan,
+    Network,
+    NetworkFacility,
+)
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
 from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
@@ -353,7 +360,15 @@ class AdvancedSearchExportView(ExportView):
             - list: list containing rendered data rows ready for export
         """
         fmt = fmt.replace("-", "_")
-        if self.tag not in ["net", "ix", "fac", "org", "campus", "carrier"]:
+        if self.tag not in [
+            "net",
+            "ix",
+            "fac",
+            "org",
+            "campus",
+            "carrier",
+            "asn_connectivity",
+        ]:
             raise ValueError(_("Invalid tag"))
 
         if fmt == "kmz" and self.tag not in ["org", "fac", "campus", "ix", "carrier"]:
@@ -555,6 +570,56 @@ class AdvancedSearchExportView(ExportView):
                 )
             )
         return download_data
+
+    def generate_asn_connectivity(self, request):
+        """
+        Export ASN connectivity as a matrix: Facility vs ASN (✔/✗ or true/false)
+        """
+        asn_list_str = request.GET.get("asn_list", "")
+        asn_list = [
+            asn.strip() for asn in asn_list_str.split(",") if asn.strip().isdigit()
+        ]
+        if not asn_list:
+            return []
+        asn_list = [int(asn) for asn in asn_list]
+
+        # Query all netfac for these ASNs (fix: use network__asn__in)
+        netfac_qs = NetworkFacility.objects.filter(
+            network__asn__in=asn_list, status="ok"
+        )
+        facility_ids = set(netfac_qs.values_list("facility_id", flat=True))
+        fac_qs = Facility.objects.filter(id__in=facility_ids, status="ok")
+        fac_map = {fac.id: fac for fac in fac_qs}
+
+        # Group netfac by facility_id
+        facility_groups = {}
+        for netfac in netfac_qs:
+            facility_groups.setdefault(netfac.facility_id, []).append(netfac)
+
+        # Build matrix rows
+        matrix = []
+        for facility_id, netfacs in facility_groups.items():
+            fac = fac_map.get(facility_id)
+            if not fac:
+                continue
+            row = collections.OrderedDict()
+            row["Facility ID"] = facility_id
+            row["Facility Name"] = fac.name
+            row["City"] = fac.city
+            row["Country"] = fac.country
+            # Init all asn columns as False
+            for asn in asn_list:
+                row[f"AS{asn}"] = False
+            # Mark present ASNs
+            for netfac in netfacs:
+                asn = netfac.network.asn
+                if asn in asn_list:
+                    row[f"AS{asn}"] = True
+            matrix.append(row)
+
+        # Sort by facility name
+        matrix.sort(key=lambda r: r["Facility Name"].lower())
+        return matrix
 
 
 def kmz_download(request):

@@ -616,6 +616,10 @@ class GeoCoordinateCache(StripFieldMixin):
             if tdiff.total_seconds() > settings.GEOCOORD_CACHE_EXPIRY:
                 cache.delete()
                 cache = None
+            # check if geospatial cache data exist
+            elif cache.latitude is None or cache.longitude is None:
+                cache.delete()
+                cache = None
 
         if not cache:
             # valid geo-coord cache does not exist, request coordinates
@@ -4796,6 +4800,9 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         ip_network = ipaddress.ip_network(self.prefix)
         ip_field = "ipaddr4" if self.protocol == "IPv4" else "ipaddr6"
         netixlans = self.ixlan.netixlan_set.filter(status="ok")
+
+        if getattr(self, "_being_renumbered", False):
+            return True
 
         for netixlan in netixlans:
             ip_value = getattr(netixlan, ip_field)

@@ -553,6 +553,10 @@ class ModelViewSet(viewsets.ModelViewSet):
                     "zipcode",
                 ]:
                     continue
+            else:
+                if k in ["address1", "city", "country", "state"]:
+                    filters[f"{k}__icontains"] = v
+                    continue
 
             v = unidecode.unidecode(v)
 

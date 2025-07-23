@@ -14,6 +14,7 @@ import peeringdb_server.data_views
 import peeringdb_server.org_admin_views
 import peeringdb_server.rest
 from peeringdb_server.autocomplete_views import (
+    ASNAutocomplete,
     DeletedVersionAutocomplete,
     ExchangeAutocomplete,
     ExchangeAutocompleteJSON,
@@ -440,6 +441,7 @@ urlpatterns += [
     re_path(
         r"^autocomplete/net$", NetworkAutocomplete.as_view(), name="autocomplete-net"
     ),
+    re_path(r"^autocomplete/asn$", ASNAutocomplete.as_view(), name="autocomplete-asn"),
     re_path(
         r"^autocomplete/ixlan/$", IXLanAutocomplete.as_view(), name="autocomplete-ixlan"
     ),

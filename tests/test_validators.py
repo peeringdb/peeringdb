@@ -157,20 +157,111 @@ def test_validate_prefixlen():
 
 
 @pytest.mark.django_db
-def test_validate_prefix_overlap():
+def test_validate_prefix_overlap_all_netixlans_covered():
     org = Organization.objects.create(name="Test org", status="ok")
-    ix = InternetExchange.objects.create(name="Text exchange", status="ok", org=org)
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
     ixlan = ix.ixlan
 
-    pfx1 = IXLanPrefix.objects.create(
+    # Existing prefix in ixlan
+    IXLanPrefix.objects.create(
         ixlan=ixlan,
         protocol="IPv4",
-        prefix=ipaddress.ip_network("198.32.125.0/24"),
+        prefix=ipaddress.ip_network("1.1.1.0/24"),
         status="ok",
     )
 
-    with pytest.raises(ValidationError) as exc:
-        validate_prefix_overlap("198.32.124.0/23")
+    # No netixlan yet, should allow renumbering
+    instance = IXLanPrefix(ixlan=ixlan, protocol="IPv4", prefix="1.1.1.0/24")
+    # Should not raise
+    validate_prefix_overlap("1.1.1.0/25", instance)
+
+    # Add netixlan with IP in new prefix
+    net = Network.objects.create(org=org, name="net", asn=12345, status="ok")
+    ixlan.netixlan_set.create(
+        network=net,
+        asn=net.asn,
+        speed=1000,
+        ipaddr4="1.1.1.10",
+        status="ok",
+    )
+    # Still covered by new prefix
+    validate_prefix_overlap("1.1.1.0/25", instance)
+
+
+@pytest.mark.django_db
+def test_validate_prefix_overlap_not_all_netixlans_covered():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
+    ixlan = ix.ixlan
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("1.1.1.0/24"),
+        status="ok",
+    )
+
+    instance = IXLanPrefix(ixlan=ixlan, protocol="IPv4", prefix="1.1.1.0/24")
+    net = Network.objects.create(org=org, name="net", asn=12345, status="ok")
+    ixlan.netixlan_set.create(
+        network=net,
+        asn=net.asn,
+        speed=1000,
+        ipaddr4="1.1.1.200",
+        status="ok",
+    )
+    # netixlan IP not covered by new prefix
+    with pytest.raises(ValidationError) as excinfo:
+        validate_prefix_overlap("1.1.1.0/25", instance)
+    assert (
+        "Cannot change prefix because at least one peer still uses an IP address in the original block."
+        in str(excinfo.value)
+    )
+
+
+@pytest.mark.django_db
+def test_validate_prefix_overlap_non_overlapping():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
+    ixlan = ix.ixlan
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("1.1.1.0/24"),
+        status="ok",
+    )
+    instance = IXLanPrefix(ixlan=ixlan, protocol="IPv4", prefix="1.1.1.0/24")
+    # Should not raise for non-overlapping prefix
+    validate_prefix_overlap("1.1.2.0/24", instance)
+
+
+@pytest.mark.django_db
+def test_validate_prefix_overlap_error():
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
+    ix2 = InternetExchange.objects.create(name="Test exchange2", status="ok", org=org)
+    ixlan = ix.ixlan
+    ixlan2 = ix2.ixlan
+
+    IXLanPrefix.objects.create(
+        ixlan=ixlan,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("1.1.1.0/24"),
+        status="ok",
+    )
+    IXLanPrefix.objects.create(
+        ixlan=ixlan2,
+        protocol="IPv4",
+        prefix=ipaddress.ip_network("1.1.2.0/24"),
+        status="ok",
+    )
+
+    instance = IXLanPrefix(ixlan=ixlan, protocol="IPv4", prefix="1.1.1.0/24")
+    # Should raise for overlapping prefix (not subnet case)
+    with pytest.raises(ValidationError) as excinfo:
+        validate_prefix_overlap("1.1.2.0/25", instance)
+    assert "Prefix overlaps with prefix" in str(excinfo.value)
 
 
 @pytest.mark.parametrize(
@@ -798,111 +889,123 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "x", "identifier": "unknown12"},
+                {"service": "x", "identifier": "user_123"},
             ],
             [
                 {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "x", "identifier": "unknown12"},
+                {"service": "x", "identifier": "user_123"},
+            ],
+        ),
+        (
+            [
+                {"service": "instagram", "identifier": "john_doe.123"},
+                {"service": "tiktok", "identifier": "unknown_12"},
+            ],
+            [
+                {"service": "instagram", "identifier": "john_doe.123"},
+                {"service": "tiktok", "identifier": "unknown_12"},
             ],
         ),
         (
             [
                 {"service": "instagram", "identifier": "john__doe_"},
-                {"service": "tiktok", "identifier": "unknown_12"},
+                {"service": "tiktok", "identifier": "Unknown_12"},
             ],
             [
                 {"service": "instagram", "identifier": "john__doe_"},
-                {"service": "tiktok", "identifier": "unknown_12"},
+                {"service": "tiktok", "identifier": "Unknown_12"},
             ],
         ),
         (
             [
-                {"service": "instagram", "identifier": "john-doe-"},
-                {"service": "tiktok", "identifier": "-unknown-12"},
+                {"service": "linkedin", "identifier": "jane-doe-pro"},
+                {"service": "bluesky", "identifier": "myblueskyhandle"},
             ],
             [
-                {"service": "instagram", "identifier": "john-doe-"},
-                {"service": "tiktok", "identifier": "-unknown-12"},
+                {"service": "linkedin", "identifier": "jane-doe-pro"},
+                {"service": "bluesky", "identifier": "myblueskyhandle"},
             ],
         ),
-        # fail validation
         (
             [
-                {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "x", "identifier": "unknown11."},
+                {"service": "reddit", "identifier": "reddit_user_1"},
+                {"service": "snapchat", "identifier": "snap-user-2"},
             ],
-            False,
+            [
+                {"service": "reddit", "identifier": "reddit_user_1"},
+                {"service": "snapchat", "identifier": "snap-user-2"},
+            ],
         ),
+        (
+            [
+                {"service": "youtube", "identifier": "My.YT.Channel"},
+                {"service": "telegram", "identifier": "Telegram_User_ID"},
+            ],
+            [
+                {"service": "youtube", "identifier": "My.YT.Channel"},
+                {"service": "telegram", "identifier": "Telegram_User_ID"},
+            ],
+        ),
+        (
+            [
+                {"service": "threads", "identifier": "threads.user_name"},
+                {"service": "pinterest", "identifier": "my-pin_board"},
+            ],
+            [
+                {"service": "threads", "identifier": "threads.user_name"},
+                {"service": "pinterest", "identifier": "my-pin_board"},
+            ],
+        ),
+        (
+            [
+                {"service": "douyin", "identifier": "douyin_user_123"},
+                {"service": "weibo", "identifier": "weibo-user.456"},
+            ],
+            [
+                {"service": "douyin", "identifier": "douyin_user_123"},
+                {"service": "weibo", "identifier": "weibo-user.456"},
+            ],
+        ),
+        (
+            [
+                {"service": "qq", "identifier": "https://im.qq.com/user123"},
+                {"service": "mastodon", "identifier": "https://mastodon.social/@user"},
+                {"service": "whatsapp", "identifier": "+628123456789"},
+            ],
+            [
+                {"service": "qq", "identifier": "https://im.qq.com/user123"},
+                {"service": "mastodon", "identifier": "https://mastodon.social/@user"},
+                {"service": "whatsapp", "identifier": "+628123456789"},
+            ],
+        ),
+        # --- Service Rule Failures ---
+        ([{"service": "x", "identifier": "aaa"}], False),  # too short
+        ([{"service": "x", "identifier": "a" * 16}], False),  # too long
+        ([{"service": "x", "identifier": "$bla/"}], False),  # invalid characters
         ([{"service": "instagram", "identifier": "john__doe_*"}], False),
+        ([{"service": "instagram", "identifier": ".starts.with.dot"}], False),
+        ([{"service": "instagram", "identifier": "ends.with.dot."}], False),
+        ([{"service": "instagram", "identifier": "consecutive..dots"}], False),
+        ([{"service": "facebook", "identifier": "user_name"}], False),
+        ([{"service": "facebook", "identifier": "bad"}], False),
+        ([{"service": "youtube", "identifier": ".mychannel"}], False),
+        ([{"service": "bluesky", "identifier": "-bad-handle"}], False),
+        ([{"service": "bluesky", "identifier": "bad--handle"}], False),
+        ([{"service": "reddit", "identifier": "user-name"}], False),
+        ([{"service": "snapchat", "identifier": "user_name"}], False),
+        ([{"service": "telegram", "identifier": "user-name"}], False),
+        ([{"service": "x", "identifier": None}], False),
+        ([{"service": "x", "identifier": ""}], False),
+        ([{"service": "qq", "identifier": "http://??.com"}], False),
+        ([{"service": "mastodon", "identifier": "test_fail.com"}], False),
+        ([{"service": "whatsapp", "identifier": "abc123"}], False),
+        ([{"service": "whatsapp", "identifier": "08123456789"}], False),
         (
-            [
-                {"service": "website", "identifier": ""},
-                {"service": "x", "identifier": "unknown"},
-            ],
+            {"service": "website", "identifier": "https://www.example.com"},
             False,
-        ),
-        (
-            [
-                {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "", "identifier": "unknown"},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "website", "identifier": None},
-                {"service": "", "identifier": "unknown"},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "website", "identifier": "https://www.example.com"},
-                {"service": None, "identifier": "unknown"},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "website", "identifier": "https://www.example.com"},
-                {"service": "website", "identifier": "https://www.unknown.com"},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "website", "identifier": "https://www.example.com"},
-                {"foo": "bar"},
-            ],
-            False,
-        ),
-        (
-            {
-                "service": {
-                    "service": "website",
-                    "identifier": "https://www.example.com",
-                },
-            },
-            False,
-        ),
-        (
-            [
-                {"service": "x", "identifier": "aaa"},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "x", "identifier": "a" * 16},
-            ],
-            False,
-        ),
-        (
-            [
-                {"service": "x", "identifier": "$bla/"},
-            ],
-            False,
-        ),
+        ),  # not a list
+        ([{"service": None, "identifier": "username"}], False),
+        ([{"service": "", "identifier": "username"}], False),
     ],
 )
 @pytest.mark.django_db

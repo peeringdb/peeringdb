@@ -705,3 +705,87 @@ class AdvancedSearchExportTest(ClientCase):
                 response["Content-Disposition"]
                 == f'attachment; filename="{os.path.basename(output_file)}"'
             )
+
+    @patch(
+        "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
+    )
+    def test_export_asn_connectivity_json(self, mock_generate):
+        """test JSON export of ASN connectivity"""
+        expected_results = [
+            {
+                "Facility ID": 2361,
+                "Facility Name": "Equinix HK3 - Hong Kong",
+                "City": "Tsuen Wan",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+            {
+                "Facility ID": 13626,
+                "Facility Name": "MEGA Gateway (iAdvantage Hong Kong)",
+                "City": "Hong Kong",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+            {
+                "Facility ID": 9693,
+                "Facility Name": "TGT Hong Kong Data Centre 1",
+                "City": "Hong Kong",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+        ]
+
+        mock_generate.return_value = expected_results
+
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=932,1024"
+        )
+        assert json.loads(response.content) == json.loads(
+            self.expected_data("asn-connectivity", "json")
+        )
+
+    @patch(
+        "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
+    )
+    def test_export_asn_connectivity_csv(self, mock_generate):
+        """test CSV export of ASN connectivity"""
+        expected_results = [
+            {
+                "Facility ID": 2361,
+                "Facility Name": "Equinix HK3 - Hong Kong",
+                "City": "Tsuen Wan",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+            {
+                "Facility ID": 13626,
+                "Facility Name": "MEGA Gateway (iAdvantage Hong Kong)",
+                "City": "Hong Kong",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+            {
+                "Facility ID": 9693,
+                "Facility Name": "TGT Hong Kong Data Centre 1",
+                "City": "Hong Kong",
+                "Country": "HK",
+                "AS932": True,
+                "AS1024": False,
+            },
+        ]
+
+        mock_generate.return_value = expected_results
+
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/csv?asn_list=932,1024"
+        )
+        assert response.content.decode("utf-8").replace(
+            "\r\n", "\n"
+        ).rstrip() == self.expected_data("asn-connectivity", "csv")

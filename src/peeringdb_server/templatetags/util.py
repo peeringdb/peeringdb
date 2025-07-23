@@ -11,6 +11,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
 from django_grainy.helpers import int_flags
+from django_peeringdb.const import SOCIAL_MEDIA_URL_FORMATS
 
 from peeringdb_server.inet import RdapException
 from peeringdb_server.models import (
@@ -339,29 +340,12 @@ def social_media_link(identifier, service):
     - identifier (str): The identifier to render (url or username relevant to the service)
     - service (str): The service to render the identifier for
     """
-
-    if service == "website":
+    format = SOCIAL_MEDIA_URL_FORMATS[service]
+    if format:
+        url = format.replace("{identifier}", identifier)
+        return mark_safe(f'<a href="{url}" target="_blank">{identifier}</a>')
+    elif identifier.startswith("https://"):
         return mark_safe(f'<a href="{identifier}" target="_blank">{identifier}</a>')
-    if service == "facebook":
-        return mark_safe(
-            f'<a href="https://www.facebook.com/{identifier}" target="_blank">{identifier}</a>'
-        )
-    if service == "x":
-        return mark_safe(
-            f'<a href="https://x.com/{identifier}" target="_blank">{identifier}</a>'
-        )
-    if service == "instagram":
-        return mark_safe(
-            f'<a href="https://www.instagram.com/{identifier}" target="_blank">{identifier}</a>'
-        )
-    if service == "linkedin":
-        return mark_safe(
-            f'<a href="https://www.linkedin.com/company/{identifier}" target="_blank">{identifier}</a>'
-        )
-    if service == "tiktok":
-        return mark_safe(
-            f'<a href="https://www.tiktok.com/@{identifier}" target="_blank" >{identifier}</a>'
-        )
 
     return identifier
 
@@ -438,3 +422,31 @@ def objfac_value_length(values):
 @register.filter
 def get_user_initial(username):
     return username[0].upper()
+
+
+@register.filter
+def autocomplete_preload_asn(value):
+    """
+    Convert comma-separated ASN list to format expected by autocomplete
+    """
+    if not value:
+        return ""
+
+    asns = [asn.strip() for asn in value.split(",") if asn.strip()]
+    result = []
+
+    for asn in asns:
+        try:
+            network = Network.objects.filter(asn=asn, status="ok").first()
+            if network:
+                try:
+                    name = network.name.replace(",", " ")
+                except Exception as e:
+                    name = network.name
+                result.append(f"{asn};AS{asn} - {name}")
+            else:
+                result.append(f"{asn};AS{asn}")
+        except:
+            result.append(f"{asn};AS{asn}")
+
+    return ",".join(result)

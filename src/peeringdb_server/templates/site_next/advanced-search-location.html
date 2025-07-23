@@ -31,6 +31,16 @@
                    data-edit-name="zipcode"></div>
             </div>
           </div>
+          {% if is_location_search and not is_spatial_search %}
+          <div class="alert alert-info mt-2" style="font-size: 90%">
+            {% trans "Only exact matches in the location fields will be shown. To enable geospatial searching please specify concrete values in city." %}
+          </div>
+          {% endif %}
+          {% if is_spatial_search and not country_filter %}
+          <div class="alert alert-info mt-2" style="font-size: 90%">
+            {% trans "Specify a value in country to increase accuracy" %}
+          </div>
+          {% endif %}
         </div>
       </div>
       <div class="row">
