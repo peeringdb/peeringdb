@@ -178,45 +178,42 @@ urlpatterns = [
     re_path(r"^verified-update/$", view_verified_update),
     re_path(r"^verified-update/accept/$", view_verified_update_accept),
     re_path(
-        r"^%s/(?P<net_id>\d+)/dismiss-ixf-proposal/(?P<ixf_id>\d+)/$"
-        % Network.handleref.tag,
+        rf"^{Network.handleref.tag}/(?P<net_id>\d+)/dismiss-ixf-proposal/(?P<ixf_id>\d+)/$",
         network_dismiss_ixf_proposal,
         name="net-dismiss-ixf-proposal",
     ),
     re_path(
-        r"^%s/(?P<net_id>\d+)/reset-ixf-proposals/$" % Network.handleref.tag,
+        rf"^{Network.handleref.tag}/(?P<net_id>\d+)/reset-ixf-proposals/$",
         network_reset_ixf_proposals,
         name="net-reset-ixf-proposals",
     ),
+    re_path(rf"^{Network.handleref.tag}/(?P<id>\d+)/?$", view_network, name="net-view"),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % Network.handleref.tag, view_network, name="net-view"
-    ),
-    re_path(
-        r"^%s/(?P<id>\d+)/watch/?$" % Network.handleref.tag,
+        rf"^{Network.handleref.tag}/(?P<id>\d+)/watch/?$",
         watch_network,
         name="net-watch",
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/unwatch/?$" % Network.handleref.tag,
+        rf"^{Network.handleref.tag}/(?P<id>\d+)/unwatch/?$",
         unwatch_network,
         name="net-unwatch",
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % InternetExchange.handleref.tag,
+        rf"^{InternetExchange.handleref.tag}/(?P<id>\d+)/?$",
         view_exchange,
         name="ix-view",
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % Facility.handleref.tag, view_facility, name="fac-view"
+        rf"^{Facility.handleref.tag}/(?P<id>\d+)/?$", view_facility, name="fac-view"
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % Carrier.handleref.tag, view_carrier, name="carrier-view"
+        rf"^{Carrier.handleref.tag}/(?P<id>\d+)/?$", view_carrier, name="carrier-view"
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % Campus.handleref.tag, view_campus, name="campus-view"
+        rf"^{Campus.handleref.tag}/(?P<id>\d+)/?$", view_campus, name="campus-view"
     ),
     re_path(
-        r"^%s/(?P<id>\d+)/?$" % Organization.handleref.tag,
+        rf"^{Organization.handleref.tag}/(?P<id>\d+)/?$",
         view_organization,
         name="org-view",
     ),
@@ -225,7 +222,7 @@ urlpatterns = [
     re_path(
         r"^remove-affiliation/$", view_remove_org_affiliation, name="remove-affiliation"
     ),
-    re_path(r"^%s$" % Network.handleref.tag, view_network_by_query),
+    re_path(rf"^{Network.handleref.tag}$", view_network_by_query),
     re_path(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
     re_path(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
     re_path(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),

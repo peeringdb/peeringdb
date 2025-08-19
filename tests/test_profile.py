@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 
 import pytest
-from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.test import Client
 from django.urls import reverse
@@ -29,7 +28,7 @@ def profile_user():
         email="user@localhost", verified=True, user=user, primary=True
     )
 
-    user_b = User.objects.create_user("user_b", "user_b", "user@xyz.com")
+    User.objects.create_user("user_b", "user_b", "user@xyz.com")
     EmailAddress.objects.create(email="user@xyz..com", verified=True, user=user)
 
     return user

@@ -2,15 +2,12 @@ import json
 import os
 
 import pytest
-from allauth.account.signals import email_confirmed, user_signed_up
-from django.conf import settings
+from allauth.account.signals import user_signed_up
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 
 import peeringdb_server.inet as pdbinet
 from mainsite.settings import _set_bool, _set_option
-from peeringdb_server import models, serializers
-from peeringdb_server import settings as pdb_settings
+from peeringdb_server import models
 
 from .util import SettingsCase
 
@@ -84,22 +81,20 @@ class TestAutoApproveAffiliation(SettingsCase):
         user.set_verified()
         user_b.set_verified()
 
-        uoar = models.UserOrgAffiliationRequest.objects.create(
-            user=user, org=org, asn=net.asn
-        )
+        models.UserOrgAffiliationRequest.objects.create(user=user, org=org, asn=net.asn)
         assert user.is_org_admin(org) is True
 
-        uoar = models.UserOrgAffiliationRequest.objects.create(user=user, asn=9000000)
+        models.UserOrgAffiliationRequest.objects.create(user=user, asn=9000000)
         net = models.Network.objects.get(asn=9000000)
         assert user.is_org_admin(net.org) is True
 
-        uoar = models.UserOrgAffiliationRequest.objects.create(
+        models.UserOrgAffiliationRequest.objects.create(
             user=user, org_name="Test Org 2"
         )
         org = models.Organization.objects.get(name="Test Org 2")
         assert user.is_org_admin(org) is True
 
-        uoar = models.UserOrgAffiliationRequest.objects.create(user=user_b, asn=9000000)
+        models.UserOrgAffiliationRequest.objects.create(user=user_b, asn=9000000)
         assert user_b.is_org_admin(net.org) is False
         assert user_b.is_org_member(net.org) is False
 

@@ -1,4 +1,4 @@
-Generated from forms.py on 2025-07-21 14:23:08.671110
+Generated from forms.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.forms
 
@@ -146,6 +146,9 @@ UserCreationForm(django.contrib.auth.forms.UserCreationForm)
 
 A form that creates a user, with no privileges, from the given username and
 password.
+
+This is the documented base class for customizing the user creation form.
+It should be kept mostly unchanged to ensure consistency and compatibility.
 
 
 ### Instanced Attributes

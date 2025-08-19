@@ -5,12 +5,12 @@ description = "source code for PeeringDB.com"
 readme = "README.md"
 authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
 license = { text = "BSD-2-Clause" }
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 
 
 dependencies = [
     # core requirements
-    "django>=4.2,<4.3",
+    "django>=5.2",
     "django-inet>=1.1.1",
     "django-handleref>=2",
     "django-peeringdb>=3.4.0",
@@ -22,7 +22,7 @@ dependencies = [
     "uwsgi>=2.0.14",
 
     "bleach>=2.1.3",
-    "django-allauth>=0.54.0",
+    "django-allauth>=65.0.0",
     "django-simple-captcha>=0.5.17",
     "django-autocomplete-light>=3.9.4",
     "django-bootstrap5>=23.1",
@@ -48,7 +48,7 @@ dependencies = [
     "django-extensions>=1.3.3",
     "django-grainy>=2",
     "django-grappelli>=2.10.1",
-    "django-import-export>2.8.0,<3",
+    "django-import-export>=3",
     "django-oauth-toolkit>=2",
     "django-phonenumber-field>=0.6",
     "django-ratelimit>=4.0.0",
@@ -70,16 +70,17 @@ dependencies = [
     "rdap>=1.5.2",
     "schema>=0.7.7",
     "unidecode>=1.0.23",
+    "argon2-cffi>=23.1.0",
 
     # search
-    "django-haystack<4",
-    "whoosh<3",
+    "django-haystack>=3",
+    "whoosh>=2.7",
     "geopy>=2.3.0",
     "simplekml>=1.3.6",
     "pycountry>=23.12.11",
 
     # these should just be pulled in automatically?
-    "django-reversion>=4, <5",
+    "django-reversion>=5",
     "certifi>=2017.11.5",
     "tld>=0.7.6",
     # deprecated from drf -- used by rest swagger
@@ -120,9 +121,11 @@ dev-dependencies = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202506" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202507" }
 # from branch until passkey support is released
-django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "passkey" }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202507-modernize" }
+# modernization fixes alignment (until 2.4.0 is tagged)
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202507" }
 
 
 [tool.ruff.lint]

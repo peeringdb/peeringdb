@@ -35,12 +35,12 @@ const.TERMS_TYPES_TRUNC = const.TERMS_TYPES[1:]
 # values in a comma separated fashion - user for
 # advanced search
 const.RATIOS_ADVS = list(const.RATIOS[1:])
-const.RATIOS_ADVS[0] = (",%s" % const.RATIOS_ADVS[0][0], const.RATIOS_ADVS[0][1])
+const.RATIOS_ADVS[0] = (f",{const.RATIOS_ADVS[0][0]}", const.RATIOS_ADVS[0][1])
 const.SCOPES_ADVS = list(const.SCOPES[1:])
-const.SCOPES_ADVS[0] = (",%s" % const.SCOPES_ADVS[0][0], const.SCOPES_ADVS[0][1])
+const.SCOPES_ADVS[0] = (f",{const.SCOPES_ADVS[0][0]}", const.SCOPES_ADVS[0][1])
 const.NET_TYPES_ADVS = list(const.NET_TYPES[1:])
 const.NET_TYPES_ADVS[0] = (
-    ",%s" % const.NET_TYPES_ADVS[0][0],
+    f",{const.NET_TYPES_ADVS[0][0]}",
     const.NET_TYPES_ADVS[0][1],
 )
 const.SERVICE_LEVEL_TYPES_ADVS = list(const.SERVICE_LEVEL_TYPES[1:])
@@ -183,7 +183,7 @@ def enum(request, name):
 
     return JsonResponse(
         {
-            "enum/%s" % name: [
+            f"enum/{name}": [
                 {
                     "id": id,
                     # as of django-peeringdb 1.0.0 already comes in

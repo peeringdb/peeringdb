@@ -48,7 +48,7 @@ class MultipleChoiceKeywordField(fields.KeywordField):
         value = super().get_value_from_instance(instance, field_value_to_ignore)
 
         # If the value is a list or a set, convert it to a list of strings
-        if isinstance(value, (list, set)):
+        if isinstance(value, list | set):
             return list(map(str, value))
 
         # If the value is a string, assume it's a comma-separated list and split it

@@ -9,8 +9,6 @@ import base64
 
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
-from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 

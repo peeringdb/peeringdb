@@ -36,7 +36,7 @@ def new_elasticsearch() -> Elasticsearch:
     return es
 
 
-def elasticsearch_proximity_entity(name) -> Union[dict, None]:
+def elasticsearch_proximity_entity(name) -> dict | None:
     """
     Perform an Elasticsearch search for a proximity
     entity based on the provided name.
@@ -166,10 +166,10 @@ def is_valid_longitude(long: str) -> bool:
 
 
 def order_results_alphabetically(
-    result: dict[str, list[dict[str, Union[str, int]]]],
+    result: dict[str, list[dict[str, str | int]]],
     search_terms: list[str],
     original_query: str = "",
-) -> dict[str, list[dict[str, Union[str, int]]]]:
+) -> dict[str, list[dict[str, str | int]]]:
     """
     Order the search results alphabetically and put the exact case-insensitive matches in front with special handling for OR queries.
 
@@ -370,7 +370,7 @@ def construct_name_query(clean_term: str, term: str) -> dict:
 
 def construct_query_body(
     term: str,
-    geo: dict[str, Union[str, float]],
+    geo: dict[str, str | float],
     indexes: list[str],
     ipv6_construct: bool,
     user,
@@ -472,8 +472,8 @@ def construct_query_body(
 
 
 def build_geo_filter(
-    geo: dict[str, Union[str, float]],
-) -> dict[str, dict[str, Union[str, float]]] | None:
+    geo: dict[str, str | float],
+) -> dict[str, dict[str, str | float]] | None:
     """
     Build geo filter for Elasticsearch query if geo parameters are valid.
 
@@ -500,7 +500,7 @@ def build_geo_filter(
 
 def process_search_results(
     search_query: dict,
-    geo: dict[str, Union[str, float]],
+    geo: dict[str, str | float],
     categories: list[str],
     limit: int,
 ) -> dict:
@@ -532,7 +532,7 @@ def process_search_results(
     return result
 
 
-def is_matching_geo(sq: dict, geo: dict[str, Union[str, float]]) -> bool:
+def is_matching_geo(sq: dict, geo: dict[str, str | float]) -> bool:
     """
     Check if the search result matches the given geo constraints.
 
@@ -610,8 +610,8 @@ def append_result_to_category(sq: dict, result: dict, pk_map: dict):
 
 
 def search_v2(
-    term: list[Union[str, int]], geo: dict[str, Union[str, float]] = {}, user=None
-) -> dict[str, list[dict[str, Union[str, int]]]]:
+    term: list[str | int], geo: dict[str, str | float] = {}, user=None
+) -> dict[str, list[dict[str, str | int]]]:
     """
     Search searchable objects (ixp, network, facility ...) by term on elasticsearch engine.
 

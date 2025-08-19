@@ -34,21 +34,17 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import re_path
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
-from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 from django_security_keys.models import SecurityKeyDevice
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
-from rest_framework import permissions, routers, serializers, status, viewsets
+from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import exception_handler
 from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
@@ -61,7 +57,6 @@ from peeringdb_server.models import (
     CarrierFacility,
     Facility,
     InternetExchange,
-    InternetExchangeFacility,
     Network,
     NetworkIXLan,
     Organization,
@@ -394,7 +389,7 @@ class InactiveKeyBlock(permissions.BasePermission):
     def has_permission(self, request, view):
         permission_holder = get_permission_holder_from_request(request)
 
-        if not isinstance(permission_holder, (UserAPIKey, OrganizationAPIKey)):
+        if not isinstance(permission_holder, UserAPIKey | OrganizationAPIKey):
             return True
 
         if permission_holder.status == "inactive":
@@ -606,7 +601,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if intyp in date_fields:
                     if m.group(2) in ["gt", "lte"]:
                         if len(v) == 10:
-                            v = "%s 23:59:59.999" % v
+                            v = f"{v} 23:59:59.999"
 
                     # convert to datetime and make tz aware
                     try:
@@ -621,9 +616,9 @@ class ModelViewSet(viewsets.ModelViewSet):
                 # contains should become icontains because we always
                 # want it to do case-insensitive checks
                 if m.group(2) == "contains":
-                    filters["%s__icontains" % flt] = v
+                    filters[f"{flt}__icontains"] = v
                 elif m.group(2) == "startswith":
-                    filters["%s__istartswith" % flt] = v
+                    filters[f"{flt}__istartswith"] = v
                 # when the 'in' filters is found attempt to split the
                 # provided search value into a list
                 elif m.group(2) == "in":
@@ -638,13 +633,13 @@ class ModelViewSet(viewsets.ModelViewSet):
                 except Exception:
                     intyp = "CharField"
                 if intyp == "ForeignKey":
-                    filters["%s_id" % k] = v
+                    filters[f"{k}_id"] = v
                 elif intyp == "DateTimeField" or intyp == "DateField":
-                    filters["%s__startswith" % k] = v
+                    filters[f"{k}__startswith"] = v
                 elif intyp == "BooleanField":
                     filters[k] = v.lower() == "true" or v == "1"
                 else:
-                    filters["%s__iexact" % k] = v
+                    filters[f"{k}__iexact"] = v
 
         # any object ids we got back from processing a `q` (haystack)
         # search we will now merge into the `id__in` filter
@@ -729,8 +724,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             if enforced_limit and depth > 0 and row_count > enforced_limit:
                 qset = qset[:enforced_limit]
                 self.request.meta_response["truncated"] = (
-                    "Your search query (with depth %d) returned more than %d rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
-                    % (depth, enforced_limit)
+                    f"Your search query (with depth {depth}) returned more than {enforced_limit} rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
                 )
 
         if depth > 0 or self.kwargs:
@@ -812,7 +806,7 @@ class ModelViewSet(viewsets.ModelViewSet):
             return r
         finally:
             d = time.time() - t
-            print("done in %.5f seconds, %d queries" % (d, len(connection.queries)))
+            print(f"done in {d:.5f} seconds, {len(connection.queries)} queries")
 
     @client_check()
     def retrieve(self, request, *args, **kwargs):

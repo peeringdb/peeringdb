@@ -1,5 +1,5 @@
-import time
-from datetime import datetime, timedelta, timezone
+import datetime
+from datetime import timedelta
 
 import pytest
 import reversion
@@ -19,11 +19,11 @@ from peeringdb_server.models import (
 
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 def two_weeks_ago():
-    return datetime.now(timezone.utc) - timedelta(days=14)
+    return datetime.datetime.now(datetime.timezone.utc) - timedelta(days=14)
 
 
 def assert_same_time(time1, time2, eps=100):
@@ -209,8 +209,8 @@ def test_bulk_create_signal():
     org_list = [Organization(id=i, name=f"org-{i}") for i in range(1, 6)]
     Organization.objects.bulk_create(org_list)
     for i in range(1, 6):
-        assert Group.objects.filter(name=f"org.{i}").exists() == True
-        assert Group.objects.filter(name=f"org.{i}.admin").exists() == True
+        assert Group.objects.filter(name=f"org.{i}").exists() is True
+        assert Group.objects.filter(name=f"org.{i}.admin").exists() is True
 
 
 @pytest.mark.django_db

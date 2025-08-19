@@ -61,7 +61,7 @@ def entities():
             operational=False,
         )
 
-        netfac = NetworkFacility.objects.create(
+        NetworkFacility.objects.create(
             network=network,
             facility=facility,
         )
@@ -134,8 +134,8 @@ def test_net_side_ix_side(entities):
     fac = Facility.objects.first()
     netixlan = NetworkIXLan.objects.first()
 
-    assert netixlan.net_side == None
-    assert netixlan.ix_side == None
+    assert netixlan.net_side is None
+    assert netixlan.ix_side is None
 
     netixlan.net_side = fac
     netixlan.ix_side = fac

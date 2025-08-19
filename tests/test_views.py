@@ -241,8 +241,8 @@ def test_close_account():
     client = Client()
     client.login(username="test", password="test1234")
 
-    response = client.post("/user_keys/add", {"name": "test key"})
-    response = client.post("/profile/close", {"password": "test1234"})
+    client.post("/user_keys/add", {"name": "test key"})
+    client.post("/profile/close", {"password": "test1234"})
 
     user = User.objects.get(username=f"closed-account-{user.id}")
     assert user.is_active is False
@@ -275,8 +275,8 @@ def test_close_account_pending_user():
     client = Client()
     client.login(username="test", password="test1234")
 
-    response = client.post("/user_keys/add", {"name": "test key"})
-    response = client.post("/profile/close", {"password": "test1234"})
+    client.post("/user_keys/add", {"name": "test key"})
+    client.post("/profile/close", {"password": "test1234"})
 
     assert not User.objects.filter(username="test").exists()
 
@@ -500,7 +500,7 @@ def test_post_select_ui_next():
     client.login(username="testuser", password="pass")
 
     # never opt in
-    response = client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
+    client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
 
     user.refresh_from_db()
 
@@ -508,7 +508,7 @@ def test_post_select_ui_next():
     assert user.ui_next_rejected is False
 
     # ui opt in
-    response = client.post(reverse("update-ui-versions"), {"ui_version": "new-ui"})
+    client.post(reverse("update-ui-versions"), {"ui_version": "new-ui"})
 
     user.refresh_from_db()
 
@@ -519,7 +519,7 @@ def test_post_select_ui_next():
     user.set_opt_flag(settings.USER_OPT_FLAG_UI_NEXT, True)
     user.save()
 
-    response = client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
+    client.post(reverse("update-ui-versions"), {"ui_version": "legacy-ui"})
 
     user.refresh_from_db()
 

@@ -92,7 +92,8 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.InternetExchange.objects.all()):
             self.assertIn(
-                f'<a href="/ix/{id+1}">{obj.name}</a>', response.content.decode("utf-8")
+                f'<a href="/ix/{id + 1}">{obj.name}</a>',
+                response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
 
@@ -108,7 +109,7 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.Network.objects.all()):
             self.assertIn(
-                f'<a href="/net/{id+1}">{obj.name} ({obj.asn})</a>',
+                f'<a href="/net/{id + 1}">{obj.name} ({obj.asn})</a>',
                 response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
@@ -125,7 +126,7 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.Facility.objects.all()):
             self.assertIn(
-                f'<a href="/fac/{id+1}">{obj.name}</a>',
+                f'<a href="/fac/{id + 1}">{obj.name}</a>',
                 response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
@@ -142,7 +143,7 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.Organization.objects.all()):
             self.assertIn(
-                f'<a href="/org/{id+1}">{obj.name}</a>',
+                f'<a href="/org/{id + 1}">{obj.name}</a>',
                 response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
@@ -159,7 +160,7 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.Campus.objects.all()):
             self.assertIn(
-                f'<a href="/campus/{id+1}">{obj.name}</a>',
+                f'<a href="/campus/{id + 1}">{obj.name}</a>',
                 response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
@@ -176,7 +177,7 @@ class SearchV2TestCase(TestCase):
         )
         for id, obj in enumerate(models.Carrier.objects.all()):
             self.assertIn(
-                f'<a href="/carrier/{id+1}">{obj.name}</a>',
+                f'<a href="/carrier/{id + 1}">{obj.name}</a>',
                 response.content.decode("utf-8"),
             )
         self.assertEqual(response.status_code, 200)
@@ -859,7 +860,7 @@ class SearchV2TestCase(TestCase):
 
     def test_search_api_view_invalid_key(self):
         request = self.factory.get("/api/search?q=sila")
-        request.META["HTTP_AUTHORIZATION"] = f"api-key invalid-key"
+        request.META["HTTP_AUTHORIZATION"] = "api-key invalid-key"
 
         response = search_api_view(request)
 

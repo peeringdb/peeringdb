@@ -1,10 +1,6 @@
-import datetime
 import io
 import json
-import time
-from pprint import pprint
 
-import jsonschema
 import pytest
 import requests
 import reversion
@@ -20,13 +16,9 @@ from peeringdb_server.models import (
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
-    IXLan,
-    IXLanIXFMemberImportLog,
-    IXLanIXFMemberImportLogEntry,
     IXLanPrefix,
     Network,
     NetworkContact,
-    NetworkIXLan,
     Organization,
     User,
 )
@@ -551,7 +543,7 @@ def entities():
         )
         entities["netixlan"] = []
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
-        ixf_importer_user = User.objects.create_user(
+        User.objects.create_user(
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
         )
         entities["org"].admin_usergroup.user_set.add(admin_user)
@@ -674,7 +666,7 @@ def entities_base():
         ]
         entities["netixlan"] = []
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
-        ixf_importer_user = User.objects.create_user(
+        User.objects.create_user(
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
         )
         entities["org"][0].admin_usergroup.user_set.add(admin_user)

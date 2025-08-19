@@ -231,10 +231,10 @@ def test_watched_object_collect(datachange_objects):
 def test_command(datachange_objects, emails):
     settings.DATA_CHANGE_SEND_EMAILS = emails
 
-    user = datachange_objects["user"]
+    datachange_objects["user"]
     netixlan = datachange_objects["netixlan"]
     watched = datachange_objects["watched_object"]
-    net = netixlan.network
+    netixlan.network
 
     netixlan_2 = NetworkIXLan(
         status="ok",

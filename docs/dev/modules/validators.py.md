@@ -1,4 +1,4 @@
-Generated from validators.py on 2025-07-21 14:23:08.671110
+Generated from validators.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.validators
 
@@ -140,6 +140,19 @@ Returns:
 `def validate_prefix_overlap(prefix, instance=None)`
 
 Validate that a prefix does not overlap with another prefix on an already existing ixlan.
+
+This function performs two types of validation:
+
+1. Cross-IXLan overlap check: Ensures the prefix doesn't overlap with any prefix
+   on a different IXLan (raises ValidationError if it does).
+
+2. Same-IXLan renumbering: When updating an existing prefix on the same IXLan,
+   allows two specific cases:
+   - Shrinking: new prefix is a subnet of the old one AND all existing peer IPs
+     are still covered by the new prefix
+   - Growing: new prefix is a supernet of the old one
+
+   In both cases, sets instance._being_renumbered = True for downstream handling.
 
 Arguments:
     - prefix: ipaddress.IPv4Network or an ipaddress.IPv6Network

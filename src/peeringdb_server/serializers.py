@@ -441,7 +441,7 @@ def single_url_param(params, key, fn=None):
 def validate_relation_filter_field(a, b):
     b = queryable_field_xl(b)
     a = queryable_field_xl(a)
-    if a == b or a == "%s_id" % b or a.find("%s__" % b) == 0:
+    if a == b or a == f"{b}_id" or a.find(f"{b}__") == 0:
         return True
     return False
 
@@ -654,7 +654,7 @@ class ModelSerializer(serializers.ModelSerializer):
     for example
     test_depth = serializers.SerializerMethodField('check_for_fk')
     def check_for_fk(self, obj):
-        print "check ", type(obj)
+        print("check", type(obj))
 
     class Meta:
         fields = [
@@ -863,7 +863,7 @@ class ModelSerializer(serializers.ModelSerializer):
                 # in order to get the actual model field source we can check
                 # the primary key relation ship field on the serializer which
                 # has the same name with '_id' prefixed to it
-                pk_rel_fld = cls._declared_fields.get("%s_id" % fld)
+                pk_rel_fld = cls._declared_fields.get(f"{fld}_id")
 
                 # if serializer class specifies a through field name, rename
                 # field to that
@@ -890,15 +890,15 @@ class ModelSerializer(serializers.ModelSerializer):
                     # attribute "path" in tact
                     if not nested:
                         src_fld = fld
-                        attr_fld = "%s_active_prefetched" % fld
+                        attr_fld = f"{fld}_active_prefetched"
                     else:
                         if getter:
                             src_fld = f"{nested}__{getter}__{fld}"
                         else:
                             src_fld = f"{nested}__{fld}"
-                        attr_fld = "%s_active_prefetched" % fld
+                        attr_fld = f"{fld}_active_prefetched"
 
-                    route_fld = "%s_active_prefetched" % src_fld
+                    route_fld = f"{src_fld}_active_prefetched"
 
                     # print "(SET)", src_fld, attr_fld, getattr(cls.Meta.model,
                     # fld).related.related_model
@@ -1799,16 +1799,16 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         for field, e in list(filters.items()):
             for valid in ["net", "ix"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     qset = fn(qset=qset, field=field, **e)
                     break
             if field == "org_name":
-                flt = {"org__name__%s" % (e["filt"] or "icontains"): e["value"]}
+                flt = {f"org__name__{e['filt'] or 'icontains'}": e["value"]}
                 qset = qset.filter(**flt)
 
             if field == "network_count":
                 if e["filt"]:
-                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                    flt = {f"net_count__{e['filt']}": e["value"]}
                 else:
                     flt = {"net_count": e["value"]}
                 qset = qset.filter(**flt)
@@ -2249,7 +2249,7 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     field = f"facility__{valid}"
                     qset = fn(qset=qset, field=field, **e)
                     break
@@ -2461,7 +2461,7 @@ class NetworkIXLanSerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["ix", "name"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     if field == "name":
                         field = "ix__name"
                     qset = fn(qset=qset, field=field, **e)
@@ -2618,7 +2618,7 @@ class NetworkFacilitySerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["name", "country", "city"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     field = f"facility__{valid}"
                     qset = fn(qset=qset, field=field, **e)
                     break
@@ -2849,13 +2849,13 @@ class NetworkSerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["ix", "ixlan", "netixlan", "netfac", "fac"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     qset = fn(qset=qset, field=field, **e)
                     break
 
             if field == "facility_count":
                 if e["filt"]:
-                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                    flt = {f"fac_count__{e['filt']}": e["value"]}
                 else:
                     flt = {"fac_count": e["value"]}
                 qset = qset.filter(**flt)
@@ -3196,7 +3196,7 @@ class IXLanPrefixSerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["ix"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     qset = fn(qset=qset, field=field, **e)
                     break
 
@@ -3519,20 +3519,20 @@ class InternetExchangeSerializer(ModelSerializer):
         for field, e in list(filters.items()):
             for valid in ["ixlan", "ixfac", "fac", "net"]:
                 if validate_relation_filter_field(field, valid):
-                    fn = getattr(cls.Meta.model, "related_to_%s" % valid)
+                    fn = getattr(cls.Meta.model, f"related_to_{valid}")
                     qset = fn(qset=qset, field=field, **e)
                     break
 
             if field == "network_count":
                 if e["filt"]:
-                    flt = {"net_count__%s" % e["filt"]: e["value"]}
+                    flt = {f"net_count__{e['filt']}": e["value"]}
                 else:
                     flt = {"net_count": e["value"]}
                 qset = qset.filter(**flt)
 
             if field == "facility_count":
                 if e["filt"]:
-                    flt = {"fac_count__%s" % e["filt"]: e["value"]}
+                    flt = {f"fac_count__{e['filt']}": e["value"]}
                 else:
                     flt = {"fac_count": e["value"]}
                 qset = qset.filter(**flt)

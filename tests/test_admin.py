@@ -546,18 +546,19 @@ class AdminTests(TestCase):
 
     def test_search_network_prefixed(self):
         expected = [
-            f'Org {i} net</a></th><td class="field-asn">{i+1}</td>' for i in range(0, 9)
+            f'Org {i} net</a></th><td class="field-asn">{i + 1}</td>'
+            for i in range(0, 9)
         ]
         for i, e in enumerate(expected):
             ## AS prefix
-            content_as = self._run_regex_search("network", f"AS{i+1}")
+            content_as = self._run_regex_search("network", f"AS{i + 1}")
             assert e in content_as
 
             for x in set(expected) - {expected[i]}:
                 assert x not in content_as
 
             ## ASN prefix
-            content_asn = self._run_regex_search("network", f"ASN{i+1}")
+            content_asn = self._run_regex_search("network", f"ASN{i + 1}")
             assert e in content_asn
 
             for x in set(expected) - {expected[i]}:
@@ -603,7 +604,7 @@ class AdminTests(TestCase):
 
         # create a verification queue item we can check
         org = models.Organization.objects.all().first()
-        _ = models.Facility.objects.create(
+        models.Facility.objects.create(
             name="Unverified facility", org=org, status="pending"
         )
         vqitem = models.VerificationQueueItem.objects.all().first()
@@ -614,7 +615,7 @@ class AdminTests(TestCase):
         models.SponsorshipOrganization.objects.create(sponsorship=sponsorship, org=org)
 
         # create partnership we can check
-        _ = models.Partnership.objects.create(org=org)
+        models.Partnership.objects.create(org=org)
 
         # create ixlan IX-F import log we can check
         ixfmemberdata = models.IXFMemberData.instantiate(
@@ -626,17 +627,17 @@ class AdminTests(TestCase):
         ixfmemberdata.save()
 
         # create ixlan IX-F import log we can check
-        _ = models.IXLanIXFMemberImportLog.objects.create(
+        models.IXLanIXFMemberImportLog.objects.create(
             ixlan=models.IXLan.objects.all().first()
         )
 
         # create user to organization affiliation request
-        _ = models.UserOrgAffiliationRequest.objects.create(
+        models.UserOrgAffiliationRequest.objects.create(
             org=org, user=self.readonly_admin
         )
 
         # create command line tool instance
-        _ = models.CommandLineTool.objects.create(
+        models.CommandLineTool.objects.create(
             user=self.readonly_admin, arguments="{}", tool="pdb_renumber_lans"
         )
 
@@ -893,7 +894,7 @@ class AdminTests(TestCase):
         client.force_login(self.admin_user)
 
         user = models.User.objects.first()
-        _ = models.UserOrgAffiliationRequest.objects.create(
+        models.UserOrgAffiliationRequest.objects.create(
             user=user, asn=1, status="pending"
         )
 

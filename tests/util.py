@@ -3,11 +3,10 @@ import os
 from importlib import import_module
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser, Group
-from django.contrib.sessions.models import Session
+from django.contrib.auth.models import Group
 from django.middleware.csrf import CSRF_SESSION_KEY, _get_new_csrf_string
 from django.test import TestCase
-from django_grainy.models import GroupPermission, UserPermission
+from django_grainy.models import GroupPermission
 
 import peeringdb_server.models as models
 from peeringdb_server import settings as pdb_settings
@@ -116,7 +115,6 @@ def override_group_id():
 # For IXF member tests
 def setup_test_data(filename):
     json_data = {}
-    entities = {}
 
     with open(
         os.path.join(

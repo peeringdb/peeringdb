@@ -30,7 +30,7 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import transaction
 from django.db.models import Q
 from django.db.utils import OperationalError
 from django.forms import DecimalField
@@ -52,7 +52,6 @@ from import_export.admin import ExportMixin
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
-from reversion.models import Version
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
@@ -171,7 +170,7 @@ def fk_handleref_filter(form, field, tag=None):
     if tag in REFTAG_MAP and form.instance:
         model = REFTAG_MAP.get(tag)
         qset = model.handleref.filter(
-            Q(status="ok") | Q(id=getattr(form.instance, "%s_id" % field))
+            Q(status="ok") | Q(id=getattr(form.instance, f"{field}_id"))
         )
 
         try:
@@ -417,8 +416,7 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
                 return redir
                 # return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
         return redirect(
-            "admin:%s_%s_changelist"
-            % (obj.model._meta.app_label, obj.model._meta.model_name)
+            f"admin:{obj.model._meta.app_label}_{obj.model._meta.model_name}_changelist"
         )
 
     def get_urls(self):
@@ -2097,8 +2095,7 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
 
     def view_permissions(self, obj):
         url = django.urls.reverse(
-            "admin:%s_%s_change"
-            % (UserPermission._meta.app_label, UserPermission._meta.model_name),
+            f"admin:{UserPermission._meta.app_label}_{UserPermission._meta.model_name}_change",
             args=(obj.id,),
         )
 

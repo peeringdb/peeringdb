@@ -42,7 +42,7 @@ class NotifyUsersMissingMfaAndApiKeysTest(TestCase):
         mock_email_confirmed,
         mock_has_2fa,
     ):
-        user = self.create_user("testuser1", "user1@example.com", api_key=True)
+        self.create_user("testuser1", "user1@example.com", api_key=True)
 
         mock_email_confirmed.return_value = True
         mock_has_2fa.return_value = False
@@ -84,7 +84,7 @@ class NotifyUsersMissingMfaAndApiKeysTest(TestCase):
         mock_email_confirmed,
         mock_has_2fa,
     ):
-        user = self.create_user("testuser2", "user2@example.com", api_key=False)
+        self.create_user("testuser2", "user2@example.com", api_key=False)
 
         mock_email_confirmed.return_value = True
         mock_has_2fa.return_value = True
@@ -126,7 +126,7 @@ class NotifyUsersMissingMfaAndApiKeysTest(TestCase):
         mock_email_confirmed,
         mock_has_2fa,
     ):
-        user = self.create_user("testuser3", "user3@example.com", api_key=False)
+        self.create_user("testuser3", "user3@example.com", api_key=False)
 
         mock_email_confirmed.return_value = True
         mock_has_2fa.return_value = False
@@ -170,7 +170,7 @@ class NotifyUsersMissingMfaAndApiKeysTest(TestCase):
         mock_email_confirmed,
         mock_has_2fa,
     ):
-        user = self.create_user("testuser4", "user4@example.com", api_key=True)
+        self.create_user("testuser4", "user4@example.com", api_key=True)
 
         mock_email_confirmed.return_value = True
         mock_has_2fa.return_value = True

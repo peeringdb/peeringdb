@@ -1,17 +1,13 @@
-import io
 from datetime import timedelta
 
-import pytest
 import reversion
 from django.conf import settings
 from django.core.management import call_command
-from django.db.transaction import commit
 from django.utils import timezone
-from reversion.models import Version
 
 from peeringdb_server.models import Facility, InternetExchange, Network, Organization
 
-from .util import ClientCase, Group
+from .util import ClientCase
 
 
 class TestChildlessDeleteOrg(ClientCase):
@@ -32,9 +28,9 @@ class TestChildlessDeleteOrg(ClientCase):
         org.save()
 
         # delete child objects
-        net = Network.objects.filter(org=org).delete()
-        ix = InternetExchange.objects.filter(org=org).delete()
-        fac = Facility.objects.filter(org=org).delete()
+        Network.objects.filter(org=org).delete()
+        InternetExchange.objects.filter(org=org).delete()
+        Facility.objects.filter(org=org).delete()
 
         # Check if org is childless and can be deleted
         assert org.deletable

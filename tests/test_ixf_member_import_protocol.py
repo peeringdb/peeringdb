@@ -1,10 +1,6 @@
 import datetime
-import io
 import ipaddress
 import json
-import os
-import time
-from pprint import pprint
 
 import jsonschema
 import pytest
@@ -22,7 +18,6 @@ from peeringdb_server.models import (
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
-    IXLan,
     IXLanIXFMemberImportLog,
     IXLanPrefix,
     Network,
@@ -87,8 +82,8 @@ def test_add_deleted_netixlan(entities, use_ip, save):
 
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
     # Assert data values are updated
-    assert netixlan.is_rs_peer == True
-    assert netixlan.operational == True
+    assert netixlan.is_rs_peer is True
+    assert netixlan.operational is True
     assert netixlan.speed == 0
 
 
@@ -397,7 +392,7 @@ def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
 
     data = setup_test_data("ixf.member.7")
     network = entities["net"]["UPDATE_DISABLED_2"]
-    network_o = entities["net"]["UPDATE_ENABLED"]
+    entities["net"]["UPDATE_ENABLED"]
 
     ixlan = entities["ixlan"][0]
     ixlan.ixf_ixp_import_enabled = True
@@ -726,12 +721,12 @@ def test_update_data_attributes(entities, use_ip, save):
         assert "speed" in log["reason"]
 
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
-    assert netixlan.operational == True
+    assert netixlan.operational is True
 
     # #793 we are currently ignoring is_rs_peer
     # and speed for modifies
     # #1614 will include modifying is_rs_peer and speed if related network allow_ixp_update is set to True.
-    assert netixlan.is_rs_peer == True
+    assert netixlan.is_rs_peer is True
     assert netixlan.speed == 10000
 
     # Assert idempotent
@@ -748,8 +743,8 @@ def test_update_data_attributes(entities, use_ip, save):
     import_log = IXLanIXFMemberImportLog.objects.first()
     import_log.rollback()
     netixlan = NetworkIXLan.objects.filter(status="ok").first()
-    assert netixlan.operational == False
-    assert netixlan.is_rs_peer == False
+    assert netixlan.operational is False
+    assert netixlan.is_rs_peer is False
     assert netixlan.speed == 20000
     assert netixlan.ipaddr4 == use_ip(4, "195.69.147.250")
     assert netixlan.ipaddr6 == use_ip(6, "2001:7f8:1::a500:2906:1")
@@ -818,7 +813,7 @@ def test_update_speed_and_rs_peer_attributes(entities, use_ip, save):
             netixlan_update_enabled.speed == 10000
         ), "Speed should be updated for network with allow_ixp_update=True"
         assert (
-            netixlan_update_enabled.is_rs_peer == True
+            netixlan_update_enabled.is_rs_peer is True
         ), "is_rs_peer should be updated for network with allow_ixp_update=True"
     else:
         # If protocols are incompatible, we expect no updates to occur
@@ -826,7 +821,7 @@ def test_update_speed_and_rs_peer_attributes(entities, use_ip, save):
             netixlan_update_enabled.speed == 20000
         ), "Speed should NOT be updated when protocols are incompatible"
         assert (
-            netixlan_update_enabled.is_rs_peer == False
+            netixlan_update_enabled.is_rs_peer is False
         ), "is_rs_peer should NOT be updated when protocols are incompatible"
 
     # For the network with allow_ixp_update=False, values should never update
@@ -834,7 +829,7 @@ def test_update_speed_and_rs_peer_attributes(entities, use_ip, save):
         netixlan_update_disabled.speed == 20000
     ), "Speed should NOT be updated for network with allow_ixp_update=False"
     assert (
-        netixlan_update_disabled.is_rs_peer == False
+        netixlan_update_disabled.is_rs_peer is False
     ), "is_rs_peer should NOT be updated for network with allow_ixp_update=False"
 
     assert_idempotent(importer, ixlan, data)
@@ -879,7 +874,7 @@ def test_update_data_attributes_no_routeserver(entities, save):
 
     netixlan = entities["netixlan"][-1]
     netixlan.refresh_from_db()
-    assert netixlan.is_rs_peer == True
+    assert netixlan.is_rs_peer is True
 
 
 @pytest.mark.django_db
@@ -1067,8 +1062,8 @@ def test_suggest_modify(entities, use_ip, save):
 
     # NetIXLAN is unchanged
     assert NetworkIXLan.objects.first().speed == 20000
-    assert NetworkIXLan.objects.first().is_rs_peer == False
-    assert NetworkIXLan.objects.first().operational == False
+    assert NetworkIXLan.objects.first().is_rs_peer is False
+    assert NetworkIXLan.objects.first().operational is False
 
     # Consolidated email is sent to the Network and the IX
     email_info = [
@@ -1121,8 +1116,8 @@ def test_suggest_modify_no_routeserver(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert NetworkIXLan.objects.last().is_rs_peer == True
-    assert IXFMemberData.objects.first().is_rs_peer == None
+    assert NetworkIXLan.objects.last().is_rs_peer is True
+    assert IXFMemberData.objects.first().is_rs_peer is None
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data, save=save)
@@ -1213,8 +1208,8 @@ def test_add_netixlan(entities, use_ip, save):
     import_log = IXLanIXFMemberImportLog.objects.first()
     import_log.rollback()
     assert NetworkIXLan.objects.first().status == "deleted"
-    assert NetworkIXLan.objects.first().ipaddr4 == None
-    assert NetworkIXLan.objects.first().ipaddr6 == None
+    assert NetworkIXLan.objects.first().ipaddr4 is None
+    assert NetworkIXLan.objects.first().ipaddr6 is None
 
 
 @pytest.mark.django_db
@@ -1227,7 +1222,7 @@ def test_add_netixlan_no_routeserver(entities, use_ip, save):
     routeserver attribute isnt present at remote ,we ignore it
     """
     data = setup_test_data("ixf.member.4")
-    network = entities["net"]["UPDATE_ENABLED"]
+    entities["net"]["UPDATE_ENABLED"]
     ixlan = entities["ixlan"][0]
 
     importer = ixf.Importer()
@@ -1240,7 +1235,7 @@ def test_add_netixlan_no_routeserver(entities, use_ip, save):
 
     assert IXFMemberData.objects.count() == 0
     assert NetworkIXLan.objects.count() == 1
-    assert NetworkIXLan.objects.first().is_rs_peer == False
+    assert NetworkIXLan.objects.first().is_rs_peer is False
 
     assert_data_change_notification([("netixlan", "add")])
 
@@ -1272,7 +1267,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     ixpfx.ixlan = entities["ixlan"][1]
     ixpfx.save()
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=network.asn,
         # Matches remote-ixf, but conflicts with IXLan
         ipaddr4=use_ip(4, "195.69.147.250"),
@@ -1298,7 +1293,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    ixfmemberdata = IXFMemberData.objects.first()
+    IXFMemberData.objects.first()
 
     for email in IXFImportEmail.objects.all():
         print(email.message)
@@ -1446,7 +1441,7 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
         )
     )
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         # Matches remote-ixf data
         asn=1001,
         # Matches remote-ixf data
@@ -1767,7 +1762,7 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
     network = entities["net"]["UPDATE_DISABLED"]  # asn1001
     ixlan = entities["ixlan"][0]
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         # Matches remote-ixf data
         asn=1001,
         # Matches remote-ixf data
@@ -2312,7 +2307,7 @@ def test_suggest_delete_local_ixf_has_flag(entities, save):
         )
     )
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=1001,
         ipaddr4="195.69.147.251",
         ipaddr6=None,
@@ -2402,7 +2397,7 @@ def test_suggest_delete_local_ixf_no_flag(entities, save):
         ],
     }
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=1001,
         ipaddr4="195.69.147.251",
         ipaddr6=None,
@@ -2523,7 +2518,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         )
     )
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=2906,
         ipaddr4="195.69.147.200",
         ipaddr6="2001:7f8:1::a500:2906:2",
@@ -2536,7 +2531,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         error=json.dumps({"speed": "Invalid speed value: this is not valid"}),
     )
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=2906,
         ipaddr4="195.69.147.100",
         ipaddr6="2001:7f8:1::a500:2906:4",
@@ -2673,7 +2668,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     # this will get resolved since invalid speed means no changes
     # to the existing netixlan, thus it becomes noop (#792)
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=1001,
         ipaddr4="195.69.147.200",
         ipaddr6="2001:7f8:1::a500:2906:2",
@@ -2690,7 +2685,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
     # but with an error note attached that the speed could
     # not be parsed (#792)
 
-    preexisting_ixfmember_data = IXFMemberData.objects.create(
+    IXFMemberData.objects.create(
         asn=1001,
         ipaddr4="195.69.147.100",
         ipaddr6="2001:7f8:1::a500:2906:4",
@@ -2797,41 +2792,6 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
     assert_idempotent(importer, ixlan, data)
 
 
-# The following test no longer would cause an error because of
-# issue 882.
-
-# @pytest.mark.django_db
-# def test_remote_cannot_be_parsed(entities, save):
-#     """
-#     Remote cannot be parsed. We create a ticket, email the IX, and create a lock.
-#     """
-#     data = setup_test_data("ixf.member.unparsable")
-#     ixlan = entities["ixlan"][0]
-#     start = datetime.datetime.now(datetime.timezone.utc)
-#     importer = ixf.Importer()
-#     importer.sanitize(data)
-
-#     if not save:
-#         return assert_idempotent(importer, ixlan, data, save=False)
-
-#     importer.update(ixlan, data=data)
-#     importer.notify_proposals()
-
-#     ERROR_MESSAGE = "No entries in any of the vlan_list lists, aborting"
-#     assert importer.ixlan.ixf_ixp_import_error_notified > start  # This sets the lock
-#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-#     assert (
-#         ERROR_MESSAGE in IXFImportEmail.objects.filter(ix=ixlan.ix.id).first().message
-#     )
-
-#     # Assert idempotent / lock
-#     importer.sanitize(data)
-#     importer.update(ixlan, data=data)
-
-#     assert ERROR_MESSAGE in importer.ixlan.ixf_ixp_import_error
-#     assert IXFImportEmail.objects.filter(ix=ixlan.ix.id).count() == 1
-
-
 @pytest.mark.django_db
 def test_notify_duplicate_ip(entities, save):
     data = setup_test_data("ixf.member.dupe.ip")
@@ -2844,7 +2804,7 @@ def test_notify_duplicate_ip(entities, save):
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
 
-    assert importer.update(ixlan, data=data) == False
+    assert importer.update(ixlan, data=data) is False
     importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 0
@@ -2871,7 +2831,7 @@ def test_mark_invalid_multiple_vlans(entities, save):
     """
 
     data = setup_test_data("ixf.member.invalid.vlan")
-    network = entities["net"]["UPDATE_DISABLED"]
+    entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
     start = datetime.datetime.now(datetime.timezone.utc)
 
@@ -2881,7 +2841,7 @@ def test_mark_invalid_multiple_vlans(entities, save):
     if not save:
         return assert_idempotent(importer, ixlan, data, save=False)
 
-    assert importer.update(ixlan, data=data) == False
+    assert importer.update(ixlan, data=data) is False
     importer.notify_proposals()
 
     assert IXFMemberData.objects.count() == 0
@@ -3804,7 +3764,7 @@ def entities_base():
         ]
         entities["netixlan"] = []
         admin_user = User.objects.create_user("admin", "admin@localhost", "admin")
-        ixf_importer_user = User.objects.create_user(
+        User.objects.create_user(
             "ixf_importer", "ixf_importer@localhost", "ixf_importer"
         )
         entities["org"][0].admin_usergroup.user_set.add(admin_user)

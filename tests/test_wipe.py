@@ -42,7 +42,7 @@ class TestWipe(ClientCase):
 
         # only the superuser should be left
         assert get_user_model().objects.all().count() == 1
-        assert get_user_model().objects.first().is_superuser == True
+        assert get_user_model().objects.first().is_superuser is True
 
     @pytest.mark.django_db
     def test_run_with_sync(self):

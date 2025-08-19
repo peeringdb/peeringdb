@@ -1,9 +1,6 @@
-import re
-import sys
 from datetime import timedelta
 from io import StringIO
-from sys import stdout
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase

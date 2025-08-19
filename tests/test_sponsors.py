@@ -1,14 +1,9 @@
-import json
 import re
-import uuid
 
-import pytest
-from django.contrib.auth import get_user
-from django.contrib.auth.models import AnonymousUser, Group
+from django.contrib.auth.models import Group
 from django.test import Client, RequestFactory, TestCase
 
 import peeringdb_server.models as models
-import peeringdb_server.views as views
 
 
 class ViewTestCase(TestCase):
@@ -19,7 +14,7 @@ class ViewTestCase(TestCase):
         # create user and guest group
 
         guest_group = Group.objects.create(name="guest")
-        user_group = Group.objects.create(name="user")
+        Group.objects.create(name="user")
 
         cls.guest_user = models.User.objects.create_user(
             "guest", "guest@localhost", "guest"

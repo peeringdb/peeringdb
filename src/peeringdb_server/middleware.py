@@ -179,6 +179,10 @@ class PDBPermissionMiddleware(MiddlewareMixin):
     to access the requested resource.
     """
 
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+
     def get_username_and_password(self, http_auth):
         """
         Get the username and password from the HTTP auth header.
@@ -365,6 +369,10 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
     Middleware that uses Django's cache framework with Redis backend to cache error responses.
     """
 
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+
     def process_response(self, request, response):
         """
         Process the response before it's sent to the client.
@@ -505,6 +513,10 @@ class CacheControlMiddleware(MiddlewareMixin):
     Sets the Cache-Control s-maxage header on responses
     """
 
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+
     # views using CACHE_CONTROL_DYNAMIC_PAGE as value for s-maxage
     # views that will receive frequent update and require a shorter
     # TTL
@@ -622,6 +634,8 @@ class CacheControlMiddleware(MiddlewareMixin):
 class ActivateUserLocaleMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         self.get_response = get_response
+        # Required for Django 5.x compatibility
+        super().__init__(get_response)
 
     def process_view(self, request, view_func, *view_args, **view_kwargs):
         # Check if the 'django_language' cookie is not set
@@ -631,6 +645,10 @@ class ActivateUserLocaleMiddleware(MiddlewareMixin):
 
 
 class EnforceMFAMiddleware(MiddlewareMixin):
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+
     EXCLUDED_PREFIXES = [
         reverse("two_factor:setup"),
         reverse("two_factor:login"),

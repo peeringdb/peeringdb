@@ -1,7 +1,7 @@
 import json
 
 import reversion
-from django.test import Client, RequestFactory
+from django.test import RequestFactory
 from django.urls import resolve, reverse
 
 from peeringdb_server import autocomplete_views
@@ -53,12 +53,8 @@ class TestAutocomplete(ClientCase):
 
     def test_network_autocomplete(self):
         org = Organization.objects.create(name="Test Org", status="ok")
-        net = Network.objects.create(
-            name="First Network", asn=1000, status="ok", org=org
-        )
-        net = Network.objects.create(
-            name="Second Network", asn=2000, status="ok", org=org
-        )
+        Network.objects.create(name="First Network", asn=1000, status="ok", org=org)
+        Network.objects.create(name="Second Network", asn=2000, status="ok", org=org)
 
         url = reverse("autocomplete-net")
 
@@ -94,7 +90,7 @@ class TestAutocomplete(ClientCase):
 
         fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
 
-        netfac = NetworkFacility.objects.create(network=net, facility=fac, status="ok")
+        NetworkFacility.objects.create(network=net, facility=fac, status="ok")
 
         url = reverse("autocomplete-netfac", kwargs={"net_id": net.id})
         req = self.factory.get(url)
@@ -122,9 +118,7 @@ class TestAutocomplete(ClientCase):
 
         fac = Facility.objects.create(name="Test Facility", status="ok", org=org)
 
-        ixfac = InternetExchangeFacility.objects.create(
-            ix=ix, facility=fac, status="ok"
-        )
+        InternetExchangeFacility.objects.create(ix=ix, facility=fac, status="ok")
 
         url = reverse("autocomplete-ixfac", kwargs={"ix_id": ix.id})
         req = self.factory.get(url)
@@ -152,11 +146,11 @@ class TestAutocomplete(ClientCase):
         Network.objects.all().delete()
 
         # Data for exact matches
-        net1 = Network.objects.create(name=f"NET", asn=1, status="ok", org=org)
+        net1 = Network.objects.create(name="NET", asn=1, status="ok", org=org)
         # Data for startswith matches
-        net2 = Network.objects.create(name=f"NET DUMMY", asn=2, status="ok", org=org)
+        net2 = Network.objects.create(name="NET DUMMY", asn=2, status="ok", org=org)
         # Data for contains matches
-        net3 = Network.objects.create(name=f"TEST NET", asn=3, status="ok", org=org)
+        net3 = Network.objects.create(name="TEST NET", asn=3, status="ok", org=org)
 
         url = reverse("autocomplete-net")
 

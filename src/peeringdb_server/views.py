@@ -65,7 +65,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
-from django_otp import user_has_device
 from django_otp.plugins.otp_email.models import EmailDevice
 from django_peeringdb.const import (
     CAMPUS_HELP_TEXT,
@@ -77,13 +76,11 @@ from django_security_keys.ext.two_factor.views import (
     DisableView as TwoFactorDisableView,  # noqa
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
-from django_security_keys.models import SecurityKey
 from elasticsearch import Elasticsearch
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
-from two_factor.utils import default_device
 from two_factor.views import SetupView as BaseSetupView
 
 import peeringdb_server.geo
@@ -1624,10 +1621,10 @@ def view_organization(request, id):
     tags = ["fac", "net", "ix", "carrier", "campus"]
     for tag in tags:
         model = REFTAG_MAP.get(tag)
-        perms["can_create_%s" % tag] = check_permissions(
+        perms[f"can_create_{tag}"] = check_permissions(
             request.user, model.Grainy.namespace_instance("*", org=org), PERM_CREATE
         )
-        perms["can_delete_%s" % tag] = check_permissions(
+        perms[f"can_delete_{tag}"] = check_permissions(
             request.user, model.Grainy.namespace_instance("*", org=org), PERM_DELETE
         )
 
@@ -1638,8 +1635,8 @@ def view_organization(request, id):
         perms["can_create"] = False
         perms["can_manage"] = False
         for tag in tags:
-            perms["can_create_%s" % tag] = False
-            perms["can_delete_%s" % tag] = False
+            perms[f"can_create_{tag}"] = False
+            perms[f"can_delete_{tag}"] = False
 
     # if user has writing perms to entity, we want to load sub entities
     # that have status pending so we don't use the ones kicked back
@@ -1799,12 +1796,12 @@ def view_organization(request, id):
     tab_init = {}
     for tag in tags:
         tab_init[tag] = "inactive"
-        if perms.get("can_create_%s" % tag):
+        if perms.get(f"can_create_{tag}"):
             perms["can_use_tools"] = True
             if not active_tab:
                 tab_init[tag] = "active"
                 active_tab = tag
-        if perms.get("can_delete_%s" % tag):
+        if perms.get(f"can_delete_{tag}"):
             perms["can_edit"] = True
 
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
@@ -1913,7 +1910,7 @@ def view_facility(request, id):
                 "label": _("Organization"),
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
-                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+                "link": f"/{Organization._handleref.tag}/{org.get('id')}",
             },
             {
                 "name": "aka",
@@ -1982,7 +1979,7 @@ def view_facility(request, id):
                 "type": "entity_link",
                 "label": _("Campus"),
                 "value": (campus_name or dismiss),
-                "link": "/%s/%d" % (Campus._handleref.tag, campus_id),
+                "link": f"/{Campus._handleref.tag}/{campus_id}",
                 "help_text": _("Facility is part of a campus"),
             },
             {
@@ -2200,7 +2197,7 @@ def view_carrier(request, id):
                 "label": _("Organization"),
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
-                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+                "link": f"/{Organization._handleref.tag}/{org.get('id')}",
             },
             {
                 "name": "aka",
@@ -2320,7 +2317,7 @@ def view_campus(request, id):
                 "label": _("Organization"),
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
-                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+                "link": f"/{Organization._handleref.tag}/{org.get('id')}",
             },
             {
                 "name": "aka",
@@ -2446,7 +2443,7 @@ def view_exchange(request, id):
                 "label": _("Organization"),
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
-                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+                "link": f"/{Organization._handleref.tag}/{org.get('id')}",
             },
             {
                 "name": "aka",
@@ -2831,7 +2828,7 @@ def view_network(request, id):
                 "label": _("Organization"),
                 "value": org.get("name", dismiss),
                 "type": "entity_link",
-                "link": "/%s/%d" % (Organization._handleref.tag, org.get("id")),
+                "link": f"/{Organization._handleref.tag}/{org.get('id')}",
             },
             {
                 "name": "aka",
@@ -2902,9 +2899,11 @@ def view_network(request, id):
                 ),
                 "notify_incomplete": True,
                 "notify_incomplete_group": "prefixes",
-                "value": int(network_d.get("info_prefixes4"))
-                if network_d.get("info_prefixes4") is not None
-                else "",
+                "value": (
+                    int(network_d.get("info_prefixes4"))
+                    if network_d.get("info_prefixes4") is not None
+                    else ""
+                ),
             },
             {
                 "name": "info_prefixes6",
@@ -2918,9 +2917,11 @@ def view_network(request, id):
                 ),
                 "notify_incomplete": True,
                 "notify_incomplete_group": "prefixes",
-                "value": int(network_d.get("info_prefixes6"))
-                if network_d.get("info_prefixes6") is not None
-                else "",
+                "value": (
+                    int(network_d.get("info_prefixes6"))
+                    if network_d.get("info_prefixes6") is not None
+                    else ""
+                ),
             },
             {
                 "name": "info_traffic",
@@ -3323,9 +3324,9 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
 
     SearchLog.objects.create(
         query=original_query,
-        authenticated=request.user.is_authenticated
-        if getattr(request, "user", None)
-        else False,
+        authenticated=(
+            request.user.is_authenticated if getattr(request, "user", None) else False
+        ),
         version=version,
     )
 
@@ -3352,7 +3353,7 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
 
 def extract_query(
     request, version: int
-) -> tuple[list[str], dict[str, Union[str, float]], str]:
+) -> tuple[list[str], dict[str, str | float], str]:
     """
     Extracts the query and geographical parameters from the request.
 
@@ -3401,7 +3402,7 @@ def handle_asn_query(q: list[str], version: int) -> HttpResponseRedirect | None:
 
 def perform_search(
     q: list[str],
-    geo: dict[str, Union[str, float]],
+    geo: dict[str, str | float],
     version: int,
     original_query: str,
     user,
@@ -3489,7 +3490,7 @@ def get_page_range(paginator, current_page, show_pages=5):
 
 
 def build_template_environment(
-    result: dict, geo: dict[str, Union[str, float]], version: int, request, q: list
+    result: dict, geo: dict[str, str | float], version: int, request, q: list
 ) -> dict:
     """
     Constructs the environment dictionary for rendering the template.
@@ -3566,8 +3567,8 @@ def build_template_environment(
 
 
 def process_near_search(
-    q: list[str], geo: dict[str, Union[str, float]]
-) -> dict[str, Union[str, float]]:
+    q: list[str], geo: dict[str, str | float]
+) -> dict[str, str | float]:
     """
     Handles "NEAR" search patterns.
     Extracts and processes the "NEAR" search patterns from the query string
@@ -3597,8 +3598,8 @@ def process_near_search(
 
 
 def process_in_search(
-    q: list[str], geo: dict[str, Union[str, float]]
-) -> dict[str, Union[str, float]]:
+    q: list[str], geo: dict[str, str | float]
+) -> dict[str, str | float]:
     """
     Handles "IN" search patterns.
     Extracts and processes the "IN" search patterns from the query string
@@ -3628,8 +3629,8 @@ def handle_coordinate_search(
     idx: int,
     q: list[str],
     query_idx: int,
-    geo: dict[str, Union[str, float]],
-) -> dict[str, Union[str, float]]:
+    geo: dict[str, str | float],
+) -> dict[str, str | float]:
     """
     Handles coordinate search and updates the geo dictionary.
 
@@ -3670,8 +3671,8 @@ def handle_proximity_entity_search(
     idx: int,
     q: list[str],
     query_idx: int,
-    geo: dict[str, Union[str, float]],
-) -> dict[str, Union[str, float]]:
+    geo: dict[str, str | float],
+) -> dict[str, str | float]:
     """
     Handles proximity entity search and updates the geo dictionary.
 
@@ -3724,8 +3725,8 @@ def handle_city_country_search(
     idx: int,
     q: list[str],
     query_idx: int,
-    geo: dict[str, Union[str, float]],
-) -> dict[str, Union[str, float]]:
+    geo: dict[str, str | float],
+) -> dict[str, str | float]:
     """
     Handles city and country search and updates the geo dictionary.
 
@@ -4441,7 +4442,7 @@ def search_elasticsearch(request):
 
     try:
         indices = client.indices.get_alias().keys()
-    except Exception as e:
+    except Exception:
         indices = []
 
     if request.method == "POST":

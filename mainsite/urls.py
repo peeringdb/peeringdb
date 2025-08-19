@@ -1,3 +1,4 @@
+import allauth.account.views
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -7,6 +8,8 @@ from django.urls import include, re_path
 from django.views.generic.base import RedirectView
 from two_factor.urls import urlpatterns as tf_urls
 
+import peeringdb_server.urls
+from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
 from peeringdb_server.two_factor_ui_next import (
     BackupTokensView,
     LoginView,
@@ -19,10 +22,6 @@ from peeringdb_server.two_factor_ui_next import (
 
 admin.autodiscover()
 
-import allauth.account.views
-
-import peeringdb_server.urls
-from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
 
 tf_urls[0][0] = re_path(
     r"^account/login/$",
@@ -75,15 +74,6 @@ urlpatterns = [
     ),
     # grappelli admin interface improvements
     re_path(r"^grappelli/", include("grappelli.urls")),
-    # FIXME: adapt to DAL3 changes
-    # url(r'^autocomplete/',  include('dal.urls')),
-    # FIXME: can remove this if we upgrade to allauth > 0.24.2, upgrade
-    # has been held off at this point because it requires migrations
-    re_path(
-        r"^accounts/confirm-email/(?P<key>[-:\w]+)/$",
-        allauth.account.views.confirm_email,
-        name="account_confirm_email",
-    ),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(
         r"^cp/peeringdb_server/organizationmerge/add/",
