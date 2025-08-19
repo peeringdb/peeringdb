@@ -1,16 +1,14 @@
-import random
-import string
-from datetime import datetime, timedelta, timezone
+import datetime
+from datetime import timedelta
 
 import pytest
-from django.conf import settings
 from django.core.management import call_command
 from django.test import override_settings
 
-from peeringdb_server.models import Organization, Sponsorship
+from peeringdb_server.models import Sponsorship
 
-FIVE_MONTHS_AGO = datetime.now(tz=timezone.utc) - timedelta(days=150)
-TWO_MONTHS_AGO = datetime.now(tz=timezone.utc) - timedelta(days=60)
+FIVE_MONTHS_AGO = datetime.datetime.now(tz=datetime.timezone.utc) - timedelta(days=150)
+TWO_MONTHS_AGO = datetime.datetime.now(tz=datetime.timezone.utc) - timedelta(days=60)
 # max number of seconds we allow between running command and asserting date is
 # the same
 SECONDS_THRESHOLD = 120
@@ -19,7 +17,7 @@ SECONDS_THRESHOLD = 120
 @pytest.mark.django_db
 @override_settings(SPONSORSHIPS_EMAIL="localhost")
 def test_send_email(outdated_sponsorship):
-    NOW = datetime.now(tz=timezone.utc)
+    NOW = datetime.datetime.now(tz=datetime.timezone.utc)
     sponsorship = Sponsorship.objects.all()[0]
     call_command("pdb_sponsorship_notify")
     sponsorship.refresh_from_db()

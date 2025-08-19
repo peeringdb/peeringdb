@@ -1,13 +1,10 @@
 import ipaddress
-import os
 from unittest.mock import patch
 
 import pytest
-import requests
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from rest_framework.exceptions import ValidationError as RestValidationError
 
@@ -16,13 +13,11 @@ from peeringdb_server.context import current_request
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
-    IXLan,
     IXLanPrefix,
     Network,
     NetworkContact,
     NetworkIXLan,
     Organization,
-    ProtectedAction,
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -49,7 +44,7 @@ INVALID_ADDRESS_SPACES = [
     "127.0.0.0/8",
     "169.254.0.0/16",
     # FIXME: this fails still
-    #'172.0.0.0/11',
+    # '172.0.0.0/11',
     "172.16.0.0/12",
     "192.0.2.0/24",
     "192.168.0.0/16",
@@ -57,7 +52,7 @@ INVALID_ADDRESS_SPACES = [
     "198.51.100.0/24",
     "203.0.113.0/24",
     # FIXME: this fails still
-    #'224.0.0.0/3',
+    # '224.0.0.0/3',
     "224.0.0.0/4",
     "240.0.0.0/4",
     "100.64.0.0/10",
@@ -104,7 +99,7 @@ def test_validate_address_space(prefix):
     """
     Tests peeringdb_server.validators.validate_address_space
     """
-    with pytest.raises(ValidationError) as exc:
+    with pytest.raises(ValidationError):
         validate_address_space(ipaddress.ip_network(str(prefix)))
 
 
@@ -118,8 +113,8 @@ def test_validate_info_prefixes4():
     with pytest.raises(ValidationError):
         validate_info_prefixes4(-1)
     validate_info_prefixes4(500000)
-    assert validate_info_prefixes4(None) == None
-    assert validate_info_prefixes4("") == None
+    assert validate_info_prefixes4(None) is None
+    assert validate_info_prefixes4("") is None
 
 
 @override_settings(DATA_QUALITY_MAX_PREFIX_V6_LIMIT=500000)
@@ -132,8 +127,8 @@ def test_validate_info_prefixes6():
     with pytest.raises(ValidationError):
         validate_info_prefixes6(-1)
     validate_info_prefixes6(500000)
-    assert validate_info_prefixes6(None) == None
-    assert validate_info_prefixes6("") == None
+    assert validate_info_prefixes6(None) is None
+    assert validate_info_prefixes6("") is None
 
 
 @override_settings(
@@ -848,7 +843,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     IP4 = "195.69.147.250"
     IP6 = "2001:7f8:1::a500:2906:1"
 
-    ghost_peer = NetworkIXLan.objects.create(
+    NetworkIXLan.objects.create(
         network=network_other,
         ixlan=ixlan,
         asn=network_other.asn,

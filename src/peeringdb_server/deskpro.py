@@ -157,16 +157,16 @@ def ticket_queue_asnauto_create(
     subject = []
 
     if org_created:
-        subject.append("Organization '%s'" % org.name)
+        subject.append(f"Organization '{org.name}'")
     if net_created:
-        subject.append("Network '%s'" % net.name)
+        subject.append(f"Network '{net.name}'")
 
     if not subject:
         return
     subject = ", ".join(subject)
 
     ticket_queue(
-        "[ASNAUTO] %s created" % subject,
+        f"[ASNAUTO] {subject} created",
         loader.get_template(
             "email/notify-pdb-admin-asnauto-entity-creation.txt"
         ).render(

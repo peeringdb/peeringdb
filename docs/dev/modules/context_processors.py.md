@@ -1,10 +1,16 @@
-Generated from context_processors.py on 2025-07-21 14:23:08.671110
+Generated from context_processors.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.context_processors
 
 # Functions
 ---
 
+## admin_config
+`def admin_config(request)`
+
+Context processor to provide suggest entity org configuration values
+
+---
 ## theme_mode
 `def theme_mode(request)`
 

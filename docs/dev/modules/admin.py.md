@@ -1,4 +1,4 @@
-Generated from admin.py on 2025-07-21 14:23:09.006993
+Generated from admin.py on 2025-08-19 14:17:58.806377
 
 # peeringdb_server.admin
 
@@ -321,8 +321,8 @@ DeskProTicketAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.Custo
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -380,8 +380,8 @@ EnvironmentSettingAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -535,8 +535,8 @@ IXFImportEmailAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.Cust
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -563,8 +563,8 @@ IXFMemberDataAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.Custo
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -665,8 +665,8 @@ IXLanIXFMemberImportLogAdmin(import_export.admin.ExportMixin, peeringdb_server.a
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -1352,8 +1352,8 @@ PartnershipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomR
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -1474,8 +1474,8 @@ SponsorshipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomR
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -1628,8 +1628,8 @@ UserAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.ModelAdminWith
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes
@@ -1657,6 +1657,9 @@ UserCreationForm(peeringdb_server.forms.UserCreationForm)
 
 A form that creates a user, with no privileges, from the given username and
 password.
+
+This is the documented base class for customizing the user creation form.
+It should be kept mostly unchanged to ensure consistency and compatibility.
 
 
 ### Instanced Attributes
@@ -1859,8 +1862,8 @@ UserPermissionAdmin(peeringdb_server.admin.UserAdmin)
 
 Export mixin.
 
-This is intended to be mixed with django.contrib.admin.ModelAdmin
-https://docs.djangoproject.com/en/dev/ref/contrib/admin/
+This is intended to be mixed with
+`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
 
 
 ### Instanced Attributes

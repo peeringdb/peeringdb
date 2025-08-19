@@ -5,7 +5,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import Client, RequestFactory, TestCase
+from django.test import RequestFactory, TestCase
 
 import peeringdb_server.inet as pdbinet
 import peeringdb_server.models as models
@@ -60,7 +60,7 @@ class AsnAutomationTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         # create user and guest group
-        guest_group = Group.objects.create(name="guest")
+        Group.objects.create(name="guest")
         user_group = Group.objects.create(name="user")
 
         with open(
@@ -260,7 +260,7 @@ class AsnAutomationTestCase(TestCase):
 
         self.user_b.recheck_affiliation_requests()
 
-        ticket = models.DeskProTicket.objects.get(
+        models.DeskProTicket.objects.get(
             subject=f"[{settings.RELEASE_ENV}] [ASNAUTO] Ownership claim granted to Org 'ORG AS{asn_ok}' for user 'user_b'"
         )
 
@@ -407,7 +407,7 @@ class AsnAutomationTestCase(TestCase):
         org = models.Organization.objects.create(
             status="ok", name="test_claim_ownership ORG"
         )
-        net = models.Network.objects.create(
+        models.Network.objects.create(
             status="ok", name="test_claim_ownership NET", asn=9000100, org=org
         )
 
@@ -429,7 +429,7 @@ class AsnAutomationTestCase(TestCase):
         org = models.Organization.objects.create(
             status="ok", name="test_claim_ownership ORG"
         )
-        net = models.Network.objects.create(
+        models.Network.objects.create(
             status="ok", name="test_claim_ownership NET", asn=9000100, org=org
         )
 

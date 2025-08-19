@@ -1,9 +1,9 @@
 import json
 
-from allauth.account.models import EmailAddress, EmailConfirmation
+from allauth.account.models import EmailAddress
 from django.test import TestCase
 from django.urls import reverse
-from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_READ, PERM_UPDATE
+from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
@@ -347,7 +347,7 @@ class OrganizationUsersViewSetTests(TestCase):
         Tests that member2 cannot be added to the organization since"
         their email is not verified
         """
-        member = User.objects.create_user(
+        User.objects.create_user(
             "member2", "member2@localhost", first_name="member2", last_name="member"
         )
 

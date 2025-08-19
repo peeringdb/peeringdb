@@ -6,7 +6,6 @@ from django import template
 from django.utils.translation import gettext_lazy as _
 from django_otp import devices_for_user
 from django_otp.plugins.otp_email.models import EmailDevice
-from two_factor.plugins.phonenumber.templatetags import phonenumber
 
 register = template.Library()
 

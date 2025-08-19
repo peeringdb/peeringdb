@@ -19,7 +19,7 @@ def test_network_parent_status_validate():
     Validate parent status of Network model instance
     """
     org = Organization.objects.create(name="Test org", status="deleted")
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         Network.objects.create(name="Test", asn=63311, status="ok", org=org)
 
 
@@ -31,7 +31,7 @@ def test_networkfacility_parent_status_validate():
     org = Organization.objects.create(name="Test org", status="ok")
     net = Network.objects.create(name="Test", asn=63311, status="ok", org=org)
     fac = Facility.objects.create(org=org, status="deleted", name="Facility Issue 901")
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         NetworkFacility.objects.create(facility=fac, network=net, status="ok")
 
 
@@ -42,7 +42,7 @@ def test_networkcontact_parent_status_validate():
     """
     org = Organization.objects.create(name="Test org", status="ok")
     net = Network.objects.create(name="Test", asn=63311, status="deleted", org=org)
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         NetworkContact.objects.create(network=net, status="ok")
 
 
@@ -54,7 +54,7 @@ def test_networkixlan_parent_status_validate():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="deleted", org=org)
     network = Network.objects.create(asn=1001, name="AS1001", status="deleted", org=org)
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         NetworkIXLan.objects.create(
             network=network,
             ixlan=ix.ixlan,
@@ -74,7 +74,7 @@ def test_internetexchange_parent_status_validate():
     Validate parent status of InternetExchange model instance
     """
     org = Organization.objects.create(name="Test org", status="deleted")
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         InternetExchange.objects.create(name="Test ix", status="ok", org=org)
 
 
@@ -86,7 +86,7 @@ def test_internetexchangefacility_parent_status_validate():
     org = Organization.objects.create(name="Test org", status="ok")
     ix = InternetExchange.objects.create(name="Test ix", status="deleted", org=org)
     fac = Facility.objects.create(org=org, status="ok", name="Facility Issue 901")
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         InternetExchangeFacility.objects.create(facility=fac, ix=ix, status="ok")
 
 
@@ -96,5 +96,5 @@ def test_facility_parent_status_validate():
     Validate parent status of Facility model instance
     """
     org = Organization.objects.create(name="Test org", status="deleted")
-    with pytest.raises(ParentStatusException) as exc:
+    with pytest.raises(ParentStatusException):
         Facility.objects.create(org=org, status="ok", name="Facility Issue 901")

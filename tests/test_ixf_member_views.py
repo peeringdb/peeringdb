@@ -34,7 +34,7 @@ def test_reset_ixf_proposals(admin_user, entities, ip_addresses):
     create_IXFMemberData(network, ixlan, ip_addresses, True)
 
     response = client.post(url)
-    _ = response.content.decode("utf-8")
+    response.content.decode("utf-8")
 
     assert response.status_code == 200
     assert IXFMemberData.objects.filter(dismissed=True).count() == 0
@@ -51,7 +51,7 @@ def test_dismiss_ixf_proposals(admin_user, entities, ip_addresses):
     url = reverse("net-dismiss-ixf-proposal", args=(network.id, ids[-1]))
 
     response = client.post(url)
-    _ = response.content.decode("utf-8")
+    response.content.decode("utf-8")
 
     assert response.status_code == 200
     assert IXFMemberData.objects.filter(pk=ids[-1]).first().dismissed is True

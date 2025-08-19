@@ -66,7 +66,7 @@ class Backend(BaseBackend):
         really resources (sponsorships, partnerships etc.)
         """
 
-        return self.CONCRETE_MAP.get(cls)
+        return self.concrete_map.get(cls)
 
     @reftag_to_cls
     def get_fields(self, concrete, ignore_fields=None):

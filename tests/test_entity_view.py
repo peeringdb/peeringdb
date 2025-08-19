@@ -1,16 +1,8 @@
-import json
-import uuid
-
 import pytest
-from django.conf import settings
-from django.contrib.auth import get_user
-from django.contrib.auth.models import AnonymousUser, Group
 from django.core.exceptions import ValidationError
-from django.test import Client, RequestFactory, TestCase
-from django_grainy.models import GroupPermission, UserPermission
+from django.test import Client, RequestFactory
 
 import peeringdb_server.models as models
-import peeringdb_server.views as views
 
 from .util import ClientCase
 

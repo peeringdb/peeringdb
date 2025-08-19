@@ -1,5 +1,4 @@
 import json
-import os
 
 from django.conf import settings
 
@@ -92,9 +91,9 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
 
     cached_fac_path = f"{path}/fac-0.json"
 
-    ix_fac = collect_exchanges(path=path)
-    net_fac = collect_networks(path=path)
-    carrier_fac = collect_carriers(path=path)
+    collect_exchanges(path=path)
+    collect_networks(path=path)
+    collect_carriers(path=path)
 
     with open(cached_fac_path) as file:
         data = json.load(file)
@@ -141,7 +140,7 @@ def fac_export_kmz(limit=None, path=None, output_dir=None):
 
             for key in include_keys:
                 value = fac.get(key, "")
-                if not isinstance(value, (int, str, float)):
+                if not isinstance(value, int | str | float):
                     continue
 
                 key_name = rename_key.get(key, key)

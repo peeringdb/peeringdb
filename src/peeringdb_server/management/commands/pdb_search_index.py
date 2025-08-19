@@ -2,8 +2,6 @@ from django_elasticsearch_dsl.management.commands.search_index import (
     Command as SearchIndexCommand,
 )
 
-from peeringdb_server.context import incremental_period
-
 
 class Command(SearchIndexCommand):
     """

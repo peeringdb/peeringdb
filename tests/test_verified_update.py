@@ -3,7 +3,6 @@ import datetime
 import json
 
 from allauth.account.models import EmailAddress
-from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient

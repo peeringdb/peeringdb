@@ -1,4 +1,4 @@
-Generated on 2025-07-21 14:23:08.671110
+Generated on 2025-08-19 14:17:58.294002
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 

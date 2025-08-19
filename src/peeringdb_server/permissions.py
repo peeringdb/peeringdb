@@ -26,9 +26,7 @@ from rest_framework_api_key.permissions import KeyParser
 
 from peeringdb_server.models import (
     Group,
-    Organization,
     OrganizationAPIKey,
-    OrganizationAPIPermission,
     User,
     UserAPIKey,
 )

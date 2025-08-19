@@ -1,13 +1,15 @@
 import json
+import time
 from unittest.mock import patch
 
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.db import connection
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from django_otp.plugins.otp_totp.models import TOTPDevice
-from grainy.const import *
+from grainy.const import PERM_CREATE
 
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
@@ -199,21 +201,35 @@ class OrgAdminTests(TestCase):
         Test the result of org_admin_views.load_all_user_permissions
         """
 
-        uid = self.user_a.id
-        perms = {
-            uid: {
-                "perms": {"net.%d" % self.net.id: 0x01, "fac": 0x03},
-                "id": self.user_a.id,
-                "name": "%s <%s> %s"
-                % (self.user_a.full_name, self.user_a.email, self.user_a.username),
-            }
-        }
+        uid_a = self.user_a.id
+        uid_admin = self.org_admin.id
 
-        org_admin.save_user_permissions(self.org, self.user_a, perms[uid]["perms"])
+        # Set permissions for user_a
+        test_perms = {"net.%d" % self.net.id: 0x01, "fac": 0x03}
+        org_admin.save_user_permissions(self.org, self.user_a, test_perms)
 
         perms_all = org_admin.load_all_user_permissions(self.org)
 
-        self.assertEqual(perms_all, perms)
+        # Should include both regular users and admin users
+        self.assertIn(uid_a, perms_all)
+        self.assertIn(uid_admin, perms_all)
+
+        # Check user_a permissions
+        user_a_data = perms_all[uid_a]
+        self.assertEqual(user_a_data["id"], self.user_a.id)
+        self.assertEqual(user_a_data["perms"], test_perms)
+        self.assertEqual(
+            user_a_data["name"],
+            f"{self.user_a.full_name} <{self.user_a.email}> {self.user_a.username}",
+        )
+
+        # Check org_admin is included (admin users)
+        admin_data = perms_all[uid_admin]
+        self.assertEqual(admin_data["id"], self.org_admin.id)
+        self.assertEqual(
+            admin_data["name"],
+            f"{self.org_admin.full_name} <{self.org_admin.email}> {self.org_admin.username}",
+        )
 
     def test_user_permissions_update_remove(self):
         """
@@ -344,27 +360,33 @@ class OrgAdminTests(TestCase):
         )
         request.user = self.org_admin
 
-        uid = str(self.user_a.id)
+        uid_a = str(self.user_a.id)  # JSON converts to string
+        uid_admin = str(self.org_admin.id)  # JSON converts to string
 
-        # we  make some temporary perms for user_a
-        perms = {uid: {"net.%d" % self.net.id: 0x01, "fac": 0x03}}
-
-        org_admin.save_user_permissions(self.org, self.user_a, perms[uid])
+        # we make some temporary perms for user_a
+        test_perms = {"net.%d" % self.net.id: 0x01, "fac": 0x03}
+        org_admin.save_user_permissions(self.org, self.user_a, test_perms)
 
         resp = json.loads(org_admin.user_permissions(request).content)
 
         self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["user_permissions"], perms)
+
+        # Should include both regular and admin users
+        user_permissions = resp["user_permissions"]
+        self.assertIn(uid_a, user_permissions)
+        self.assertIn(uid_admin, user_permissions)
+        self.assertEqual(user_permissions[uid_a], test_perms)
 
         # Test #2 - clear the perms we just made for this test
         org_admin.save_user_permissions(self.org, self.user_a, {})
 
         resp = json.loads(org_admin.user_permissions(request).content)
         self.assertEqual(resp["status"], "ok")
-        self.assertEqual(resp["user_permissions"], {uid: {}})
 
-        # Test #5 - no permissions to org
+        user_permissions = resp["user_permissions"]
+        self.assertEqual(user_permissions[uid_a], {})
 
+        # Test #3 - no permissions to org
         request = self.factory.get(
             "/org-admin/user_permissions?org_id=%d" % (self.org_other.id)
         )
@@ -373,6 +395,77 @@ class OrgAdminTests(TestCase):
         resp = org_admin.user_permissions(request)
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(json.loads(resp.content), {})
+
+    def test_user_permissions_performance(self):
+        """
+        Test user permissions loading performance with multiple users
+        """
+
+        # Create additional test users to simulate larger organization
+        test_users = []
+        for i in range(20):  # Create 20 additional users
+            user = models.User.objects.create_user(
+                f"test_user_{i}", f"test{i}@localhost", f"password{i}"
+            )
+            # Add some as regular members, some as admins
+            if i % 3 == 0:
+                self.org.admin_usergroup.user_set.add(user)
+            else:
+                self.org.usergroup.user_set.add(user)
+
+            # Add some permissions to make it realistic
+            if i % 2 == 0:
+                org_admin.save_user_permissions(
+                    self.org, user, {"net.%d" % self.net.id: 0x01, "fac": 0x03}
+                )
+            test_users.append(user)
+
+        try:
+            # Test the performance
+            request = self.factory.get(
+                "/org-admin/user_permissions?org_id=%d" % (self.org.id)
+            )
+            request.user = self.org_admin
+
+            # Reset query count
+            connection.queries_log.clear()
+            start_time = time.time()
+
+            # Execute the request
+            resp = org_admin.user_permissions(request)
+
+            end_time = time.time()
+            query_count = len(connection.queries)
+            response_time = (end_time - start_time) * 1000  # Convert to milliseconds
+
+            # Assertions
+            self.assertEqual(resp.status_code, 200)
+
+            # Performance assertions
+            self.assertLess(
+                response_time,
+                200,
+                f"User permissions loading took {response_time:.2f}ms, should be < 500ms",
+            )
+            self.assertLess(
+                query_count,
+                10,
+                f"User permissions loading used {query_count} queries, should be < 10",
+            )
+
+            # Verify response contains all users
+            resp_data = json.loads(resp.content)
+            self.assertEqual(resp_data["status"], "ok")
+
+            # Should have original users + test users
+            expected_user_count = len(test_users) + 2  # +2 for org_admin and user_a
+            actual_user_count = len(resp_data["user_permissions"])
+            self.assertGreaterEqual(actual_user_count, expected_user_count)
+
+        finally:
+            # Cleanup test users
+            for user in test_users:
+                user.delete()
 
     def test_org_admin_tools(self):
         """

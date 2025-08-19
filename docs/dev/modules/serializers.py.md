@@ -1,4 +1,4 @@
-Generated from serializers.py on 2025-07-21 14:23:08.671110
+Generated from serializers.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.serializers
 
@@ -412,7 +412,7 @@ they're not called until they're serialized, and then are called once per row,
 for example
 test_depth = serializers.SerializerMethodField('check_for_fk')
 def check_for_fk(self, obj):
-    print "check ", type(obj)
+    print("check", type(obj))
 
 class Meta:
     fields = [

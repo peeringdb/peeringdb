@@ -1,4 +1,4 @@
-Generated from middleware.py on 2025-07-21 14:23:08.671110
+Generated from middleware.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.middleware
 
@@ -27,6 +27,15 @@ CacheControlMiddleware(django.utils.deprecation.MiddlewareMixin)
 
 Sets the Cache-Control s-maxage header on responses
 
+
+### Methods
+
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 
 ## CurrentRequestContext
 
@@ -110,6 +119,12 @@ to access the requested resource.
 
 ### Methods
 
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 #### get_username_and_password
 `def get_username_and_password(self, http_auth)`
 
@@ -159,6 +174,12 @@ Middleware that uses Django's cache framework with Redis backend to cache error 
 
 ### Methods
 
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 #### generate_cache_key
 `def generate_cache_key(self, request)`
 

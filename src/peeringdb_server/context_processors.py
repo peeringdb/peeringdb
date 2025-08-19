@@ -26,3 +26,10 @@ def ui_version(request):
         context["ui_next"] = user.ui_next_enabled and not user.ui_next_rejected
 
     return context
+
+
+def admin_config(request):
+    """
+    Context processor to provide suggest entity org configuration values
+    """
+    return {"SUGGEST_ENTITY_ORG": settings.SUGGEST_ENTITY_ORG}

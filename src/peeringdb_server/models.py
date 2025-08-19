@@ -140,8 +140,8 @@ def debug_mail(*args):
 
 def make_relation_filter(field, filt, value, prefix=None):
     if prefix:
-        field = re.sub("^%s__" % prefix, "", field)
-        field = re.sub("^%s_" % prefix, "", field)
+        field = re.sub(f"^{prefix}__", "", field)
+        field = re.sub(f"^{prefix}_", "", field)
         if field == prefix:
             field = "id"
     if filt:
@@ -192,7 +192,7 @@ def validate_PUT_ownership(permission_holder, instance, data, fields):
             field_name = fld
         a = getattr(instance, field_name)
         try:
-            s_id = int(data.get(fld, data.get("%s_id" % fld)))
+            s_id = int(data.get(fld, data.get(f"{fld}_id")))
         except ValueError:
             continue
 
@@ -291,7 +291,7 @@ class StripFieldMixin(models.Model):
         Strip value in string fields
         """
         for field in self._meta.fields:
-            if isinstance(field, (models.CharField, models.TextField)):
+            if isinstance(field, models.CharField | models.TextField):
                 value = getattr(self, field.name)
                 if value and type(value) is str:
                     setattr(self, field.name, value.strip())
@@ -1235,7 +1235,7 @@ class Organization(
         if self.website:
             rv.append(self.website)
         for tag in ["ix", "net", "fac"]:
-            for ent in getattr(self, "%s_set_active" % tag):
+            for ent in getattr(self, f"{tag}_set_active"):
                 if ent.website:
                     rv.append(ent.website)
 
@@ -1298,14 +1298,14 @@ class Organization(
         """
         Returns usergroup name for this organization.
         """
-        return "org.%s" % self.id
+        return f"org.{self.id}"
 
     @property
     def admin_group_name(self):
         """
         Returns admin usergroup name for this organization.
         """
-        return "%s.admin" % self.group_name
+        return f"{self.group_name}.admin"
 
     @property
     def usergroup(self):
@@ -1369,7 +1369,7 @@ class Organization(
         """
         name = rdap.org_name
         if not name:
-            name = org_name or ("AS%d" % (asn))
+            name = org_name or (f"AS{asn}")
         if cls.objects.filter(name=name).exists():
             return cls.objects.get(name=name), False
         else:
@@ -4696,7 +4696,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         """
         if not qset:
             qset = cls.handleref.undeleted()
-        filt = make_relation_filter("ixlan__%s" % field, filt, value)
+        filt = make_relation_filter(f"ixlan__{field}", filt, value)
         return qset.filter(**filt)
 
     @classmethod
@@ -4903,9 +4903,9 @@ class Network(
         """
         name = rdap.name
         if not rdap.name:
-            name = "AS%d" % (asn)
+            name = f"AS{asn}"
         if cls.objects.filter(name=name).exists():
-            net = cls.objects.create(org=org, asn=asn, name="%s !" % name, status="ok")
+            net = cls.objects.create(org=org, asn=asn, name=f"{name} !", status="ok")
         else:
             net = cls.objects.create(org=org, asn=asn, name=name, status="ok")
         return net, True
@@ -5001,7 +5001,7 @@ class Network(
         if not qset:
             qset = cls.handleref.undeleted()
 
-        filt = make_relation_filter("ixlan__%s" % field, filt, value)
+        filt = make_relation_filter(f"ixlan__{field}", filt, value)
 
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.filter(id__in=[i.network_id for i in q])
@@ -5018,7 +5018,7 @@ class Network(
         if not qset:
             qset = cls.handleref.undeleted()
 
-        filt = make_relation_filter("ixlan__%s" % field, filt, value)
+        filt = make_relation_filter(f"ixlan__{field}", filt, value)
         q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
         return qset.exclude(id__in=[i.network_id for i in q])
 
@@ -6259,7 +6259,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         self.save()
 
     def get_absolute_url(self):
-        return "/users/%s/" % urlquote(self.email)
+        return f"/users/{urlquote(self.email)}/"
 
     def get_full_name(self):
         """
@@ -6448,7 +6448,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
                 domain = email.split("@")[1]
                 if email_domain == domain:
                     return True
-            except IndexError, inst:
+            except IndexError as inst:
                 pass
         """
 
@@ -7334,7 +7334,7 @@ class DataChangeNotificationQueue(StripFieldMixin):
         if self.source == "ixf":
             ix = InternetExchange.objects.get(id=self.data["ixlan_id"])
             details = [
-                f"This change was the result of an IX-F import for { ix.name }",
+                f"This change was the result of an IX-F import for {ix.name}",
                 self.reason or "",
             ]
 

@@ -1,17 +1,11 @@
-import io
 from datetime import timedelta
-from unicodedata import name
 
-import pytest
 import reversion
-from django.conf import settings
-from django.core.management import call_command
 from django.utils import timezone
-from reversion.models import Version
 
 from peeringdb_server.models import Organization, User
 
-from .util import ClientCase, Group
+from .util import ClientCase
 
 
 class TestOrgCleanup(ClientCase):
