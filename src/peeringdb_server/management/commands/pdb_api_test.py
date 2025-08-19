@@ -18,7 +18,6 @@ import reversion
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.cache import caches
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 from django.test.utils import override_settings
@@ -1383,7 +1382,7 @@ class TestJSON(unittest.TestCase):
 
     def test_user_001_GET_ixlan(self):
         data = self.assert_get_handleref(self.db_user, "ixlan", SHARED["ixlan_r_ok"].id)
-        assert data.get("ixf_ixp_import_enabled") != None
+        assert data.get("ixf_ixp_import_enabled") is not None
 
     ##########################################################################
 
@@ -1926,8 +1925,8 @@ class TestJSON(unittest.TestCase):
             )
             fac_id = r_data.get("id")
 
-            assert r_data["latitude"] == None
-            assert r_data["longitude"] == None
+            assert r_data["latitude"] is None
+            assert r_data["longitude"] is None
 
             self.assert_update(
                 self.db_org_admin,
@@ -2364,7 +2363,7 @@ class TestJSON(unittest.TestCase):
             ix_side=SHARED["fac_rw_ok"],
         )
         data.pop("net_id")
-        _ = NetworkIXLan.objects.create(**data)
+        NetworkIXLan.objects.create(**data)
 
         # Get queryset of netixlan with status="ok"
         netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list(
@@ -3728,7 +3727,7 @@ class TestJSON(unittest.TestCase):
         data = self.assert_get_handleref(
             self.db_guest, "ixlan", SHARED["ixlan_r_ok"].id
         )
-        assert data.get("ixf_ixp_import_enabled") != None
+        assert data.get("ixf_ixp_import_enabled") is not None
 
     ##########################################################################
 

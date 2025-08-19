@@ -2,10 +2,7 @@ import os
 import re
 from string import Formatter
 
-from django.conf import settings
-from django.test import Client, TestCase
-
-from peeringdb_server.models import Organization, User
+from django.test import TestCase
 
 
 class LocaleFilesTest(TestCase):

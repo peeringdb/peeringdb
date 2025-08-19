@@ -76,7 +76,7 @@ def strip_string_fields(apps, schema_editor):
                 # the historical models will not have any custom methods
                 # https://docs.djangoproject.com/en/4.0/topics/migrations/#historical-models
                 for field in instance._meta.fields:
-                    if isinstance(field, (models.CharField, models.TextField)):
+                    if isinstance(field, models.CharField | models.TextField):
                         value = getattr(instance, field.name)
                         if value and isinstance(value, str):
                             field_to_update.add(field.name)

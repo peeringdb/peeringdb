@@ -48,7 +48,6 @@ from peeringdb_server.inet import (
     RdapInvalidRange,
     RdapLookup,
     rdap_pretty_error_message,
-    rir_status_is_ok,
 )
 from peeringdb_server.models import (
     QUEUE_ENABLED,
@@ -558,41 +557,16 @@ def uoar_creation(sender, instance, created=False, **kwargs):
 
             # organization has no owners and RDAP information could not verify the user's relationship to the organization, notify pdb staff for review
             ticket_queue(
-                "User %s wishes to %s %s"
-                % (instance.user.username, request_type, entity_name),
+                f"User {instance.user.username} wishes to {request_type} {entity_name}",
                 loader.get_template("email/notify-pdb-admin-user-affil.txt").render(
                     {
                         "user": instance.user,
                         "instance": instance,
                         "base_url": settings.BASE_URL,
-                        "org_add_url": "%s%s"
-                        % (
-                            settings.BASE_URL,
-                            django.urls.reverse(
-                                "admin:peeringdb_server_organization_add"
-                            ),
-                        ),
-                        "net_add_url": "%s%s"
-                        % (
-                            settings.BASE_URL,
-                            django.urls.reverse("admin:peeringdb_server_network_add"),
-                        ),
-                        "review_url": "%s%s"
-                        % (
-                            settings.BASE_URL,
-                            django.urls.reverse(
-                                "admin:peeringdb_server_user_change",
-                                args=(instance.user.id,),
-                            ),
-                        ),
-                        "approve_url": "%s%s"
-                        % (
-                            settings.BASE_URL,
-                            django.urls.reverse(
-                                "admin:peeringdb_server_userorgaffiliationrequest_actions",
-                                args=(instance.id, "approve_and_notify"),
-                            ),
-                        ),
+                        "org_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_organization_add')}",
+                        "net_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_network_add')}",
+                        "review_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_user_change', args=(instance.user.id,))}",
+                        "approve_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_userorgaffiliationrequest_actions', args=(instance.id, 'approve_and_notify'))}",
                         "emails": list(set(rdap_data["emails"])),
                         "rdap_lookup": rdap_lookup,
                     }

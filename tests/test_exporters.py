@@ -3,14 +3,12 @@ Test peeringdb data export views
 """
 
 import datetime
-import difflib
 import json
 import os
 import re
 import tempfile
 from unittest.mock import patch
 
-import pytest
 import reversion
 from django.core.management import call_command
 from django.test import Client
@@ -18,7 +16,6 @@ from django.test import Client
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
-    IXLan,
     Network,
     NetworkFacility,
     NetworkIXLan,

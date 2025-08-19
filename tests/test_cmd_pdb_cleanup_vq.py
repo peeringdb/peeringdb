@@ -1,9 +1,9 @@
+import datetime
 import random
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import pytest
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.test import override_settings
@@ -176,7 +176,9 @@ def create_users_and_vqi(users_to_generate, days_old):
     admin_user = admin_user()
 
     output = []
-    created_date = datetime.now(timezone.utc) - timedelta(days=days_old)
+    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
+        days=days_old
+    )
 
     for i in range(users_to_generate):
         user = User.objects.create(
@@ -220,7 +222,9 @@ def create_ix_and_vqi(ix_to_generate, days_old, org=None):
 
     admin_user = admin_user()
     output = []
-    created_date = datetime.now(timezone.utc) - timedelta(days=days_old)
+    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
+        days=days_old
+    )
 
     for i in range(ix_to_generate):
         ix = InternetExchange.objects.create(
@@ -263,7 +267,9 @@ def create_fac_and_vqi(fac_to_generate, days_old, org=None):
 
     admin_user = admin_user()
     output = []
-    created_date = datetime.now(timezone.utc) - timedelta(days=days_old)
+    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
+        days=days_old
+    )
 
     for i in range(fac_to_generate):
         fac = Facility.objects.create(

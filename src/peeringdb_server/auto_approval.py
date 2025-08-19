@@ -1,7 +1,7 @@
 import structlog
 from django.contrib.auth.models import AnonymousUser
 
-from peeringdb_server.inet import RdapException, RdapLookup
+from peeringdb_server.inet import RdapLookup
 
 log = structlog.get_logger("django")
 

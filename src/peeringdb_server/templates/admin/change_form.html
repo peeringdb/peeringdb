@@ -4,6 +4,13 @@
 {{ block.super }}
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="{{STATIC_URL}}peeringdb.admin.css" type="text/css" />
+<script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.core.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.edit.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}20c/twentyc.filter-field.js"></script>
+<script type="text/javascript">
+    window.SUGGEST_ENTITY_ORG = {{ SUGGEST_ENTITY_ORG }};
+</script>
+<script type="text/javascript" src="{{STATIC_URL}}peeringdb.admin.js"></script>
 {% endblock %}
 
 {% block js_remove_url %}

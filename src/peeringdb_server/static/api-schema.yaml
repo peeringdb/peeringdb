@@ -180,8 +180,8 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `oc`,
-          `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
+          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `lt`,
+          `oc`, `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'
@@ -14101,8 +14101,8 @@ paths:
         description: 'Filter results by matching a value against this field.
 
 
-          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `oc`,
-          `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
+          `cs-cz`, `de-de`, `el-gr`, `en`, `es-es`, `fr-fr`, `it`, `ja-jp`, `lt`,
+          `oc`, `pt`, `ro-ro`, `ru-ru`, `zh-cn`, `zh-tw`
 
 
           Supported filter suffixes: `__startswith`, `__contains`, `__in`'

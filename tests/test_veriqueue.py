@@ -151,7 +151,7 @@ class VeriQueueTests(TestCase):
         """
 
         fac = self.inst.get("fac")
-        vqi = models.VerificationQueueItem.get_for_entity(fac)
+        models.VerificationQueueItem.get_for_entity(fac)
 
         with pytest.raises(IntegrityError):
             models.VerificationQueueItem.objects.create(

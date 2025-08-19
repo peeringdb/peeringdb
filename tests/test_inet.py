@@ -25,7 +25,7 @@ def test_rdap_asn_lookup_not_found(rdap):
 @pytest.mark.django_db
 def test_mocker(rdap):
     with pytest_filedata.RequestsData("rdap"):
-        asn = rdap.get_asn(63311)
+        rdap.get_asn(63311)
 
 
 @pytest.mark.django_db

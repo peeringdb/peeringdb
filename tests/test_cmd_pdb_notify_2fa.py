@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+import datetime
+from datetime import timedelta
 
 import pytest
 from django.core.management import call_command
@@ -66,7 +67,7 @@ def test_send_email(setup_data):
     org_required_2fa_a = setup_data.org_required_2fa_a
     org_required_2fa_b = setup_data.org_required_2fa_b
     org_disabled_2fa = setup_data.org_disabled_2fa
-    MONTHS_AGO = datetime.now(tz=timezone.utc) - timedelta(days=30)
+    MONTHS_AGO = datetime.datetime.now(tz=datetime.timezone.utc) - timedelta(days=30)
     assert (
         org_required_2fa_a.last_notified is None
         and org_required_2fa_b.last_notified is None

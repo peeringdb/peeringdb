@@ -1,9 +1,7 @@
 import datetime
 import json
 
-import pytest
 from django.core.cache import caches
-from django.core.management import call_command
 from django.test import TestCase
 from freezegun import freeze_time
 from rest_framework.response import Response
@@ -557,7 +555,7 @@ class APIThrottleTests(TestCase):
         mock_csrf_session(request)
         request.user = user
 
-        thold = models.EnvironmentSetting.objects.create(
+        models.EnvironmentSetting.objects.create(
             setting="API_THROTTLE_REPEATED_REQUEST_THRESHOLD_USER", value_int=500
         )
         models.EnvironmentSetting.objects.create(
@@ -835,7 +833,7 @@ class APIThrottleTests(TestCase):
             pdb_settings.TUTORIAL_MODE = True
             client = APIClient()
             client.force_authenticate(self.superuser)
-            net = models.Network.objects.create(name="test", org=self.org, asn=9999999)
+            models.Network.objects.create(name="test", org=self.org, asn=9999999)
             for i in range(1, 5):
                 # max post 2/minute
                 r = client.post(

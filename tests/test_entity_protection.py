@@ -10,7 +10,6 @@ from peeringdb_server.models import (
     Organization,
     ProtectedAction,
     Sponsorship,
-    SponsorshipOrganization,
 )
 
 
@@ -182,7 +181,7 @@ def test_tech_poc_protection(role, deletable):
         poc.delete()
         return
 
-    poc2 = NetworkContact.objects.create(status="ok", role=role, network=net)
+    NetworkContact.objects.create(status="ok", role=role, network=net)
 
     poc.delete()
 
@@ -238,7 +237,7 @@ def test_org_protection_sponsor(db):
 
     assert org.sponsorship.active
 
-    assert org.deletable == False
+    assert org.deletable is False
     assert "Organization is currently an active sponsor" in org.not_deletable_reason
 
     with pytest.raises(ProtectedAction):

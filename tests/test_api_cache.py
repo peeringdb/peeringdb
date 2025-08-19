@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import re
 import tempfile
 
 import pytest
@@ -9,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
-from django_grainy.models import GroupPermission, UserPermission
+from django_grainy.models import GroupPermission
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
@@ -127,8 +126,8 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
 
 @pytest.mark.django_db
 def test_no_api_throttle():
-    guest_group = Group.objects.create(name="guest")
-    user_group = Group.objects.create(name="user")
+    Group.objects.create(name="guest")
+    Group.objects.create(name="user")
     reset_group_ids()
 
     models.EnvironmentSetting.objects.create(

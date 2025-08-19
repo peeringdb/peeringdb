@@ -3,7 +3,6 @@ Load initial data from another peeringdb instance using the REST API.
 """
 
 import logging
-import os
 
 import peeringdb.fetch
 from confu.schema import apply_defaults

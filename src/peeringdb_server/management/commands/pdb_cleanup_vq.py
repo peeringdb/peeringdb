@@ -2,7 +2,8 @@
 Verification queue cleanup.
 """
 
-from datetime import datetime, timedelta
+import datetime
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -51,7 +52,7 @@ class Command(PeeringDBBaseCommand):
     def _clean_verification_queue_items(self, model, setting_name):
         content_type = ContentType.objects.get_for_model(model)
         days = getattr(settings, setting_name)
-        date = datetime.now(timezone.utc) - timedelta(days=days)
+        date = datetime.datetime.now(datetime.timezone.utc) - timedelta(days=days)
 
         qset = VerificationQueueItem.objects.filter(
             content_type=content_type, created__lte=date

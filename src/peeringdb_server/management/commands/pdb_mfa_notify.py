@@ -53,7 +53,7 @@ class Command(BaseCommand):
 
         notified = 0
         # notify_needs = []
-        for user in users.iterator():
+        for user in users.iterator(chunk_size=1000):
             if not user.email_confirmed:
                 continue
 

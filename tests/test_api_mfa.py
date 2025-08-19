@@ -2,7 +2,6 @@ from base64 import b64encode
 from datetime import datetime, timedelta
 
 import pytest
-from django.conf import settings
 from django.core.cache import caches
 from django_security_keys.models import SecurityKey
 from rest_framework.test import APIClient
@@ -25,8 +24,8 @@ def test_mfa_basic_auth_block_writes():
         username="user", password="password", email="user@localhost"
     )
     org = Organization.objects.create(name="Test", status="ok")
-    net = Network.objects.create(name="Test", asn=63311, status="ok", org=org)
-    net_2 = Network.objects.create(name="Test 2", asn=63312, status="ok", org=org)
+    Network.objects.create(name="Test", asn=63311, status="ok", org=org)
+    Network.objects.create(name="Test 2", asn=63312, status="ok", org=org)
 
     user.set_verified()
     org.admin_usergroup.user_set.add(user)

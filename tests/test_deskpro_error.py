@@ -1,9 +1,7 @@
 import io
-from unicodedata import name
 
 import pytest
 from django.core.management import call_command
-from django.test import Client, RequestFactory, TestCase
 
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import DeskProTicket, Group, User
@@ -21,8 +19,6 @@ def teardown_module(module):
 
 @pytest.fixture
 def admin_user():
-    from django.conf import settings
-
     guest_group, _ = Group.objects.get_or_create(name="guest")
     user_group, _ = Group.objects.get_or_create(name="user")
 

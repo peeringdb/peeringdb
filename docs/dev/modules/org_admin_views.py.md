@@ -1,4 +1,4 @@
-Generated from org_admin_views.py on 2025-07-21 14:23:08.671110
+Generated from org_admin_views.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.org_admin_views
 
@@ -32,12 +32,14 @@ is_session to handle the peering sessions permission
 
 Return dict of all users with all their permissions for
 the given org.
+Optimized to use bulk queries instead of individual user queries.
 
 ---
 ## load_entity_permissions
-`def load_entity_permissions(org, entity)`
+`def load_entity_permissions(org, entity, entity_perms=None, org_entities=None)`
 
 Return entity's permissions for the specified org.
+Supports bulk mode when entity_perms and org_entities are provided.
 
 ---
 ## org_admin_required

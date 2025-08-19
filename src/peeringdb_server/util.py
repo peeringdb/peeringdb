@@ -12,13 +12,8 @@ from django.shortcuts import render as django_render
 from django.template import loader
 from django.utils.translation import gettext_lazy as _
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
-from simplekml import Kml, OverlayXY, ScreenXY, Style, Units
+from simplekml import OverlayXY, ScreenXY, Units
 
-from peeringdb_server.models import (
-    CarrierFacility,
-    InternetExchangeFacility,
-    NetworkFacility,
-)
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 

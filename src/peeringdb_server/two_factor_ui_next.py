@@ -1,6 +1,3 @@
-import re
-
-from django.urls import re_path
 from two_factor.views import BackupTokensView as BaseBackupTokensView
 from two_factor.views import ProfileView as BaseProfileView
 from two_factor.views import QRGeneratorView as BaseQRGeneratorView

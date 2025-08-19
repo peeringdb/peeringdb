@@ -1,6 +1,5 @@
 import datetime
 import io
-import time
 
 import pytest
 from django.conf import settings
@@ -22,7 +21,7 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.stats import get_fac_stats, get_ix_stats, reset_stats, stats
 
-from .util import ClientCase, Group, override_group_id
+from .util import Group, override_group_id
 
 DATE_PAST = datetime.datetime(year=2019, month=11, day=1)
 
@@ -147,7 +146,7 @@ def test_global_stats_cache(db, data_stats_global_cached):
 
     # create additional network (automated networks in db = 4)
 
-    net = Network.objects.create(org=org, asn=63311, status="ok", name="20C")
+    Network.objects.create(org=org, asn=63311, status="ok", name="20C")
 
     # run global stats using cached result (automated network = 3)
 

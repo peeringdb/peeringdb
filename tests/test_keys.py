@@ -1,6 +1,5 @@
 import pytest
-from django.conf import settings
-from django.test import Client, RequestFactory
+from django.test import RequestFactory
 from django.urls import reverse
 from django_grainy.models import UserPermission
 from grainy.const import PERM_CRUD, PERM_READ
@@ -356,9 +355,7 @@ def test_bogus_api_key(network):
 @pytest.mark.django_db
 def test_key_active_user_session(network, user, org):
     namespace = f"peeringdb.organization.{org.id}.network"
-    userperm = UserPermission.objects.create(
-        namespace=namespace, permission=PERM_CRUD, user=user
-    )
+    UserPermission.objects.create(namespace=namespace, permission=PERM_CRUD, user=user)
     api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
 
     url = reverse("api:net-detail", args=(network.id,))

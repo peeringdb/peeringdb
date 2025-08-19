@@ -2,7 +2,6 @@ import datetime
 from datetime import timedelta
 
 import pytest
-from django.conf import settings
 from django.test import Client
 from django.utils import timezone
 
@@ -45,12 +44,8 @@ def reauth_objects():
     email_data = EmailAddressData.objects.create(
         email=email, confirmed_date=timezone.now()
     )
-    email_data_b = EmailAddressData.objects.create(
-        email=email_b, confirmed_date=timezone.now()
-    )
-    email_c = EmailAddress.objects.create(
-        user=user_b, email="user_b@domain.com", verified=True
-    )
+    EmailAddressData.objects.create(email=email_b, confirmed_date=timezone.now())
+    EmailAddress.objects.create(user=user_b, email="user_b@domain.com", verified=True)
     user.set_verified()
     user_c.set_verified()
 

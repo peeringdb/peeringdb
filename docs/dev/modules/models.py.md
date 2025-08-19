@@ -1,4 +1,4 @@
-Generated from models.py on 2025-07-21 14:23:08.671110
+Generated from models.py on 2025-08-19 14:17:58.294002
 
 # peeringdb_server.models
 
@@ -2443,7 +2443,7 @@ for email in rdap.emails:
         domain = email.split("@")[1]
         if email_domain == domain:
             return True
-    except IndexError, inst:
+    except IndexError as inst:
         pass
 
 ---

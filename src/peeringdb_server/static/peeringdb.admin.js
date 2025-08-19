@@ -151,3 +151,28 @@ $(window).ready(function() {
 });
 
 })(jQuery);
+
+(function() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runScript);
+    } else {
+        runScript();
+    }
+
+    function runScript() {
+        let org = document.querySelector('#facility_form div fieldset:nth-child(2) div.form-row.grp-row.grp-cells-1.grainy_namespace div div.c-2 div');
+
+        if (!org) {
+            console.log("Element not found!");
+            return;
+        }
+
+        let orgId = parseInt(org.innerText.split('.')[2]);
+        let dummyOrgId = window.SUGGEST_ENTITY_ORG;
+        let bgContainer = document.querySelector('#grp-content');
+
+        if (orgId === dummyOrgId) {
+            bgContainer.style.backgroundColor = 'rgba(255, 255, 0, 0.5)';
+        }
+    }
+})();

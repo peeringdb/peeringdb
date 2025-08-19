@@ -49,7 +49,7 @@ def save_user_permissions(org, user, perms):
         if not permissions & PERM_READ:
             permissions = permissions | PERM_READ
 
-        if id == "org.%d" % org.id:
+        if id == f"org.{org.id}":
             grainy_perms[org.grainy_namespace] = permissions
             grainy_perms[f"{org.grainy_namespace}.network.*.poc_set.private"] = (
                 permissions
@@ -98,11 +98,43 @@ def load_all_user_permissions(org):
     """
     Return dict of all users with all their permissions for
     the given org.
+    Optimized to use bulk queries instead of individual user queries.
     """
 
+    # Get all users from both groups and deduplicate
+    all_users = set()
+    all_users.update(org.usergroup.user_set.select_related().all())
+    all_users.update(org.admin_usergroup.user_set.select_related().all())
+    users = list(all_users)
+
+    if not users:
+        return {}
+
+    # Bulk load all permissions for all users in this org
+    user_ids = [user.id for user in users]
+    all_permissions = UserPermission.objects.filter(
+        user_id__in=user_ids, namespace__startswith=org.grainy_namespace
+    ).select_related("user")
+
+    # Group permissions by user_id for faster lookup
+    permissions_by_user = {}
+    for perm in all_permissions:
+        if perm.user_id not in permissions_by_user:
+            permissions_by_user[perm.user_id] = {}
+        permissions_by_user[perm.user_id][perm.namespace] = perm.permission
+
+    # Pre-load org entities to avoid repeated queries
+    org_entities = {
+        "networks": list(org.net_set_active),
+        "exchanges": list(org.ix_set_active),
+        "facilities": list(org.fac_set_active),
+        "carriers": list(org.carrier_set_active),
+    }
+
     rv = {}
-    for user in org.usergroup.user_set.all():
-        uperms, perms = load_entity_permissions(org, user)
+    for user in users:
+        user_perms = permissions_by_user.get(user.id, {})
+        _, perms = load_entity_permissions(org, user, user_perms, org_entities)
         rv[user.id] = {
             "id": user.id,
             "perms": perms,
@@ -115,48 +147,61 @@ def load_user_permissions(org, user):
     return load_entity_permissions(org, user)
 
 
-def load_entity_permissions(org, entity):
+def load_entity_permissions(org, entity, entity_perms=None, org_entities=None):
     """
     Return entity's permissions for the specified org.
+    Supports bulk mode when entity_perms and org_entities are provided.
     """
 
-    # load all of the entity's permissions related to this org
-    entity_perms = {
-        p.namespace: p.permission
-        for p in entity.grainy_permissions.filter(
-            namespace__startswith=org.grainy_namespace
-        )
-    }
+    # If bulk data not provided, load individually (original behavior)
+    if entity_perms is None:
+        entity_perms = {
+            p.namespace: p.permission
+            for p in entity.grainy_permissions.filter(
+                namespace__startswith=org.grainy_namespace
+            )
+        }
 
     perms = {}
 
     extract_permission_id(entity_perms, perms, org, org)
-    # extract user management permissions
     extract_permission_id(entity_perms, perms, "org.users", org)
-    # extract session for any network
     extract_permission_id(entity_perms, perms, "sessions", org)
 
-    # extract entity's permissioning ids from grainy_namespaces targeting
-    # organization's entities
+    # Extract permissions for entity types
     for model in [Network, InternetExchange, Facility, Carrier]:
         extract_permission_id(entity_perms, perms, model, org)
 
-    # extract entity's permissioning ids from grainy_namespaces targeting
-    # organization's entities by their id (eg entity has perms only
-    # to THAT specific network)
-    for net in org.net_set_active:
-        extract_permission_id(entity_perms, perms, net, org)
-        # extract session per network
-        extract_permission_id(entity_perms, perms, net, org, True)
+    # Use pre-loaded entities if available (bulk mode), otherwise query individually
+    if org_entities:
+        # Bulk mode - use pre-loaded entities
+        for net in org_entities["networks"]:
+            extract_permission_id(entity_perms, perms, net, org)
+            extract_permission_id(entity_perms, perms, net, org, True)
 
-    for ix in org.ix_set_active:
-        extract_permission_id(entity_perms, perms, ix, org)
+        for ix in org_entities["exchanges"]:
+            extract_permission_id(entity_perms, perms, ix, org)
 
-    for fac in org.fac_set_active:
-        extract_permission_id(entity_perms, perms, fac, org)
+        for fac in org_entities["facilities"]:
+            extract_permission_id(entity_perms, perms, fac, org)
 
-    for carrier in org.carrier_set_active:
-        extract_permission_id(entity_perms, perms, carrier, org)
+        for carrier in org_entities["carriers"]:
+            extract_permission_id(entity_perms, perms, carrier, org)
+    else:
+        # Individual mode - query entities (original behavior)
+        for net in org.net_set_active:
+            extract_permission_id(entity_perms, perms, net, org)
+            extract_permission_id(entity_perms, perms, net, org, True)
+
+        for ix in org.ix_set_active:
+            extract_permission_id(entity_perms, perms, ix, org)
+
+        for fac in org.fac_set_active:
+            extract_permission_id(entity_perms, perms, fac, org)
+
+        for carrier in org.carrier_set_active:
+            extract_permission_id(entity_perms, perms, carrier, org)
+
     return entity_perms, perms
 
 
@@ -167,8 +212,8 @@ def permission_ids(org):
     """
 
     perms = {
-        "org.%d" % org.id: _("Organization and all Entities it owns"),
-        "org.%d" % org.id + ".users": _("User Management Privileges"),
+        f"org.{org.id}": _("Organization and all Entities it owns"),
+        f"org.{org.id}.users": _("User Management Privileges"),
         "net": _("Any Network"),
         "fac": _("Any Facility"),
         "ix": _("Any Exchange"),
@@ -178,7 +223,7 @@ def permission_ids(org):
 
     perms.update(
         {
-            "sessions.%d" % net.id: _("Manage peering sessions - %(net_name)s")
+            f"sessions.{net.id}": _("Manage peering sessions - %(net_name)s")
             % {"net_name": net.name}
             for net in org.net_set_active
         }
@@ -186,28 +231,28 @@ def permission_ids(org):
 
     perms.update(
         {
-            "net.%d" % net.id: _("Network - %(net_name)s") % {"net_name": net.name}
+            f"net.{net.id}": _("Network - %(net_name)s") % {"net_name": net.name}
             for net in org.net_set_active
         }
     )
 
     perms.update(
         {
-            "ix.%d" % ix.id: _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
+            f"ix.{ix.id}": _("Exchange - %(ix_name)s") % {"ix_name": ix.name}
             for ix in org.ix_set_active
         }
     )
 
     perms.update(
         {
-            "fac.%d" % fac.id: _("Facility - %(fac_name)s") % {"fac_name": fac.name}
+            f"fac.{fac.id}": _("Facility - %(fac_name)s") % {"fac_name": fac.name}
             for fac in org.fac_set_active
         }
     )
 
     perms.update(
         {
-            "carrier.%d" % carrier.id: _("Carrier - %(carrier_name)s")
+            f"carrier.{carrier.id}": _("Carrier - %(carrier_name)s")
             % {"carrier_name": carrier.name}
             for carrier in org.carrier_set_active
         }
@@ -239,15 +284,15 @@ def extract_permission_id(source, dest, entity, org, is_session=False):
         if not is_session:
             # instance
             entity_namespace = entity.grainy_namespace
-            permission_key = "%s.%d" % (entity.ref_tag, entity.id)
+            permission_key = f"{entity.ref_tag}.{entity.id}"
         else:
-            permission_key = "sessions.%d" % (entity.id)
+            permission_key = f"sessions.{entity.id}"
             entity_namespace = f"{entity.grainy_namespace}.sessions"
     elif entity == "sessions":
         permission_key = "sessions"
         entity_namespace = f"{org.grainy_namespace}.network.*.sessions"
     elif entity == "org.users":
-        permission_key = "org.%d.users" % org.id
+        permission_key = f"org.{org.id}.users"
         entity_namespace = f"{org.grainy_namespace}.users"
     else:
         # class
@@ -424,10 +469,10 @@ def user_permissions(request, **kwargs):
     """
 
     org = kwargs.get("org")
-    perms_rv = {}
-    for user in org.usergroup.user_set.all():
-        uperms, perms = load_user_permissions(org, user)
-        perms_rv[user.id] = perms
+
+    # Use optimized bulk loading
+    all_user_perms = load_all_user_permissions(org)
+    perms_rv = {user_id: data["perms"] for user_id, data in all_user_perms.items()}
 
     return JsonResponse({"status": "ok", "user_permissions": perms_rv})
 

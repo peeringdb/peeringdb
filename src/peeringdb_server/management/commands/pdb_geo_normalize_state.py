@@ -4,7 +4,7 @@ from pprint import pprint
 import pycountry
 import reversion
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server import models
