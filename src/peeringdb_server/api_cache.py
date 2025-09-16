@@ -36,11 +36,12 @@ class APICacheLoader:
     and if it does allows you to provide the cached result.
     """
 
-    def __init__(self, viewset, qset, filters):
+    def __init__(self, viewset, qset, filters, query_adjusted=False):
         request = viewset.request
         self.request = request
         self.qset = qset
         self.filters = filters
+        self.query_adjusted = query_adjusted
         self.model = viewset.model
         self.viewset = viewset
         self.depth = min(int(request.query_params.get("depth", 0)), 3)
@@ -73,8 +74,8 @@ class APICacheLoader:
         ):
             return False
 
-        # filters have been specified, no
-        if self.filters or self.since:
+        # filters have been specified or query was adjusted by serializer, no
+        if self.filters or self.since or self.query_adjusted:
             return False
         # spatial search, no
         if getattr(self.qset, "spatial", False):

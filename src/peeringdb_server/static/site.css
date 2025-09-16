@@ -1973,3 +1973,11 @@ input.input-block-level {
 div.advanced-search-view div.results div.row.row-hilight {
   background-color: var(--alert-info-bg);
 }
+
+.nav-link {
+  color: var(--hyperlink-color-2);
+}
+
+.page-link {
+  background-color: var(--form-bg-color);
+}

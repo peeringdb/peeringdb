@@ -23,6 +23,7 @@ from peeringdb_server.autocomplete_views import (
     FacilityAutocompleteForNetwork,
     FacilityAutocompleteForOrganization,
     FacilityAutocompleteJSON,
+    FacilityNameAutocomplete,
     InternetExchangeFacilityAutoComplete,
     IXLanAutocomplete,
     NetworkAutocomplete,
@@ -55,7 +56,7 @@ from peeringdb_server.verified_update.views import (
     view_verified_update_accept,
 )
 from peeringdb_server.views import (
-    OrganizationLogoUpload,
+    ObjectsLogoUpload,
     cancel_affiliation_request,
     handle_2fa,
     network_dismiss_ixf_proposal,
@@ -71,6 +72,7 @@ from peeringdb_server.views import (
     resend_confirmation_mail,
     search_elasticsearch,
     unwatch_network,
+    update_map_visualization,
     update_ui_versions,
     update_user_options,
     validator_result_cache,
@@ -157,6 +159,11 @@ urlpatterns = [
         name="profile-set-primary-email",
     ),
     re_path(r"^profile/options$", update_user_options, name="user-update-options"),
+    re_path(
+        r"^profile/map-visualization$",
+        update_map_visualization,
+        name="update-map-visualization",
+    ),
     re_path(r"^profile/ui-versions$", update_ui_versions, name="update-ui-versions"),
     re_path(r"^resend_email_confirmation$", resend_confirmation_mail),
     re_path(r"^sponsors$", view_sponsorships, name="sponsors"),
@@ -165,9 +172,9 @@ urlpatterns = [
     re_path(r"^about$", view_about, name="about"),
     re_path(r"^affiliate-to-org$", view_affiliate_to_org),
     path(
-        "org/<str:id>/upload-logo",
-        OrganizationLogoUpload.as_view(),
-        name="org-logo-upload",
+        "<str:object_type>/<int:id>/upload-logo",
+        ObjectsLogoUpload.as_view(),
+        name="object-logo-upload",
     ),
     re_path(
         r"^cancel-affiliation-request/(?P<uoar_id>\d+)/$",
@@ -434,6 +441,11 @@ urlpatterns += [
     ),
     re_path(
         r"^autocomplete/fac$", FacilityAutocomplete.as_view(), name="autocomplete-fac"
+    ),
+    re_path(
+        r"^autocomplete/facility-name-suggestions$",
+        FacilityNameAutocomplete.as_view(),
+        name="autocomplete-facility-name-suggestions",
     ),
     re_path(
         r"^autocomplete/net$", NetworkAutocomplete.as_view(), name="autocomplete-net"

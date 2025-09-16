@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: PeeringDB API
-  version: 2.29.0
+  version: 2.71.0
   description: PeeringDB REST API
 paths:
   /api/org/{org_id}/users/:
@@ -1407,6 +1407,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -1804,6 +1810,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -2182,6 +2194,12 @@ paths:
                     state:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                   required:
                   - org_id
                   - name
@@ -2316,6 +2334,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -2808,6 +2832,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -3205,6 +3235,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -3583,6 +3619,12 @@ paths:
                     state:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                   required:
                   - org_id
                   - name
@@ -3714,6 +3756,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -4158,6 +4206,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -4555,6 +4609,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -4933,6 +4993,12 @@ paths:
                     state:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                   required:
                   - org_id
                   - name
@@ -5067,6 +5133,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -6080,6 +6152,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -6436,6 +6514,12 @@ paths:
                 fac_count:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -6625,6 +6709,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -6981,6 +7071,12 @@ paths:
                 fac_count:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -7123,6 +7219,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -7479,6 +7581,12 @@ paths:
                 fac_count:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -8362,6 +8470,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -8718,6 +8832,12 @@ paths:
                     fac_count:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -8835,6 +8955,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -9234,6 +9360,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -9612,6 +9744,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -9746,6 +9884,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -10241,6 +10385,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -10597,6 +10747,12 @@ paths:
                     fac_count:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -10714,6 +10870,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -11113,6 +11275,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -11491,6 +11659,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -11625,6 +11799,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -12073,6 +12253,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -12429,6 +12615,12 @@ paths:
                     fac_count:
                       type: string
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -12546,6 +12738,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -12945,6 +13143,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -13323,6 +13527,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -13457,6 +13667,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -15015,6 +15231,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -15742,6 +15964,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -15957,6 +16185,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -16681,6 +16915,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -16846,6 +17086,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -17573,6 +17819,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -18772,6 +19024,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -19499,6 +19757,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -19620,6 +19884,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -20019,6 +20289,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -20397,6 +20673,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -20531,6 +20813,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -21050,6 +21338,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -21777,6 +22071,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -21898,6 +22198,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -22297,6 +22603,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -22675,6 +22987,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -22809,6 +23127,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -23280,6 +23604,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -24007,6 +24337,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -24128,6 +24464,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -24527,6 +24869,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -24905,6 +25253,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -25039,6 +25393,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -26253,6 +26613,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -26980,6 +27346,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -27650,6 +28022,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -28378,6 +28756,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -28700,6 +29084,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -29428,6 +29818,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -29702,6 +30098,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -30430,6 +30832,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -31660,6 +32068,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -32217,6 +32631,12 @@ paths:
                   type: string
                   format: date-time
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -32430,6 +32850,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -32984,6 +33410,12 @@ paths:
                   type: string
                   format: date-time
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -33148,6 +33580,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -33705,6 +34143,12 @@ paths:
                   type: string
                   format: date-time
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -34583,6 +35027,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -35140,6 +35590,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -35411,6 +35867,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -35968,6 +36430,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -36191,6 +36659,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -36748,6 +37222,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -38079,6 +38559,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -38636,6 +39122,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -38754,6 +39246,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -39153,6 +39651,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -39531,6 +40035,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -39665,6 +40175,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -40187,6 +40703,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -40744,6 +41266,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -40862,6 +41390,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -41261,6 +41795,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -41639,6 +42179,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -41773,6 +42319,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -42247,6 +42799,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -42804,6 +43362,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -42922,6 +43486,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -43321,6 +43891,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -43699,6 +44275,12 @@ paths:
                         state:
                           type: string
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                       required:
                       - org_id
                       - name
@@ -43833,6 +44415,12 @@ paths:
                         -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
                         .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                         .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -45987,6 +46575,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -46544,6 +47138,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -46675,6 +47275,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -47403,6 +48009,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -47738,6 +48350,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -48295,6 +48913,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -48426,6 +49050,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -49154,6 +49784,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -49440,6 +50076,12 @@ paths:
                           items:
                             type: integer
                           readOnly: true
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this organization
                         address1:
                           type: string
                           maxLength: 255
@@ -49997,6 +50639,12 @@ paths:
                       type: string
                       format: date-time
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this object.
                     created:
                       type: string
                       format: date-time
@@ -50128,6 +50776,12 @@ paths:
                               items:
                                 type: integer
                               readOnly: true
+                            logo:
+                              type: string
+                              format: binary
+                              nullable: true
+                              description: Allows you to upload and set a logo image
+                                file for this organization
                             address1:
                               type: string
                               maxLength: 255
@@ -50856,6 +51510,12 @@ paths:
                             0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
                             0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
                             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+                        logo:
+                          type: string
+                          format: binary
+                          nullable: true
+                          description: Allows you to upload and set a logo image file
+                            for this object.
                         created:
                           type: string
                           format: date-time
@@ -51652,6 +52312,12 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -52137,6 +52803,12 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -52573,6 +53245,12 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -53590,6 +54268,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -53968,6 +54652,12 @@ paths:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -54146,6 +54836,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -54524,6 +55220,12 @@ paths:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -54655,6 +55357,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -55033,6 +55741,12 @@ paths:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -57138,6 +57852,12 @@ paths:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -57865,6 +58585,12 @@ paths:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -58276,6 +59002,12 @@ components:
               items:
                 type: integer
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                organization
             address1:
               type: string
               maxLength: 255
@@ -58672,6 +59404,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -59050,6 +59788,12 @@ components:
             state:
               type: string
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
           required:
           - org_id
           - name
@@ -59182,6 +59926,11 @@ components:
             ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
             .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -59618,6 +60367,11 @@ components:
             ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
             .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -60011,6 +60765,12 @@ components:
               items:
                 type: integer
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                organization
             address1:
               type: string
               maxLength: 255
@@ -60366,6 +61126,11 @@ components:
         fac_count:
           type: string
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -60452,6 +61217,11 @@ components:
         fac_count:
           type: string
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -60576,6 +61346,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -60932,6 +61708,12 @@ components:
             fac_count:
               type: string
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -61048,6 +61830,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -61445,6 +62233,12 @@ components:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -61823,6 +62617,12 @@ components:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -61957,6 +62757,12 @@ components:
                 0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                 -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                 s]*)?\\z"
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -62389,6 +63195,12 @@ components:
               items:
                 type: integer
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                organization
             address1:
               type: string
               maxLength: 255
@@ -63113,6 +63925,11 @@ components:
             ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
             .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -63569,6 +64386,11 @@ components:
             ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
             .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
             .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -63700,6 +64522,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -64427,6 +65255,12 @@ components:
                 0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                 -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                 s]*)?\\z"
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -64547,6 +65381,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -64944,6 +65784,12 @@ components:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -65322,6 +66168,12 @@ components:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -65456,6 +66308,12 @@ components:
                 0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                 -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                 s]*)?\\z"
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -65902,6 +66760,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -66629,6 +67493,12 @@ components:
                 0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                 -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                 s]*)?\\z"
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -66897,6 +67767,12 @@ components:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -67624,6 +68500,12 @@ components:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -67866,6 +68748,12 @@ components:
               items:
                 type: integer
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                organization
             address1:
               type: string
               maxLength: 255
@@ -68418,6 +69306,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -68699,6 +69592,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
         created:
           type: string
           format: date-time
@@ -68818,6 +69716,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -69375,6 +70279,12 @@ components:
               type: string
               format: date-time
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -69616,6 +70526,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -70173,6 +71089,12 @@ components:
               type: string
               format: date-time
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -70290,6 +71212,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -70687,6 +71615,12 @@ components:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -71065,6 +71999,12 @@ components:
                 state:
                   type: string
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
               required:
               - org_id
               - name
@@ -71199,6 +72139,12 @@ components:
                 0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                 -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                 s]*)?\\z"
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -71651,6 +72597,12 @@ components:
                   items:
                     type: integer
                   readOnly: true
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this organization
                 address1:
                   type: string
                   maxLength: 255
@@ -72208,6 +73160,12 @@ components:
               type: string
               format: date-time
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                object.
             created:
               type: string
               format: date-time
@@ -72337,6 +73295,12 @@ components:
                       items:
                         type: integer
                       readOnly: true
+                    logo:
+                      type: string
+                      format: binary
+                      nullable: true
+                      description: Allows you to upload and set a logo image file
+                        for this organization
                     address1:
                       type: string
                       maxLength: 255
@@ -73064,6 +74028,12 @@ components:
                     0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
                     -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
                     s]*)?\\z"
+                logo:
+                  type: string
+                  format: binary
+                  nullable: true
+                  description: Allows you to upload and set a logo image file for
+                    this object.
                 created:
                   type: string
                   format: date-time
@@ -73347,6 +74317,11 @@ components:
           items:
             type: integer
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this organization
         address1:
           type: string
           maxLength: 255
@@ -73739,6 +74714,12 @@ components:
               items:
                 type: integer
               readOnly: true
+            logo:
+              type: string
+              format: binary
+              nullable: true
+              description: Allows you to upload and set a logo image file for this
+                organization
             address1:
               type: string
               maxLength: 255
@@ -74116,6 +75097,11 @@ components:
         state:
           type: string
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
       required:
       - org_id
       - name
@@ -74213,6 +75199,11 @@ components:
         state:
           type: string
           readOnly: true
+        logo:
+          type: string
+          format: binary
+          nullable: true
+          description: Allows you to upload and set a logo image file for this object.
       required:
       - org_id
       - name

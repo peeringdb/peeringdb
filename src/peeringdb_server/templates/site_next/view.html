@@ -615,7 +615,9 @@
               data-edit-max-size="{{ row.max_size }}"
               {% endif %}
               data-edit-value="{{ row.value }}"
-              data-edit-name="{{ row.name }}">
+              data-edit-name="{{ row.name }}"
+              data-edit-not-org-logo="{{ row.is_not_org_logo }}"
+              data-edit-object-type="{{ row.object_type }}">
                 <img class="img-fluid" src="{{ row.value }}" alt="{{ row.label }}" style="{% if row.max_height %}max-height: {{ row.max_height }}px;{% endif %} {% if not row.value %}display:none;{% endif %}">
               </div>
 

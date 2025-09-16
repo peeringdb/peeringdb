@@ -14,6 +14,19 @@
           </label>
         </div>
       </div>
+  </form>
+
+  <form id="user-map-visualization" method="post" action="{% url 'update-map-visualization' %}">
+      {% csrf_token %}
+      <div class="form-group mb-2">
+        <div>
+          <input type="checkbox" id="map_visualization" name="map_visualization"
+          {% if request.user.map_visualization_enabled %}checked{% endif %}>
+          <label class="map_visualization-label" for="map_visualization">
+            {% trans "Always show map on Advanced Search (Facilities)" %}
+          </label>
+        </div>
+      </div>
       <button type="submit" class="btn btn-primary btn-sm">{% trans "Save Options" %}</button>
   </form>
 </div>

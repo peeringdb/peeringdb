@@ -246,11 +246,10 @@ class UserOrgForm(forms.Form):
         fields = "primary_org"
 
 
-class OrganizationLogoUploadForm(forms.ModelForm):
+class ObjectLogoUploadForm(forms.ModelForm):
     logo = forms.FileField()
 
     class Meta:
-        model = Organization
         fields = ["logo"]
 
     def clean_logo(self):
@@ -260,7 +259,8 @@ class OrganizationLogoUploadForm(forms.ModelForm):
         # normalize the file name
         ext = os.path.splitext(logo.name)[1].lower()
         randomize = str(uuid.uuid4())[:8]
-        logo.name = f"org-{self.instance.id}-{randomize}{ext}"
+        model_name = self.instance.__class__.__name__.lower()
+        logo.name = f"{model_name}-{self.instance.id}-{randomize}{ext}"
 
         # validate file type
         if ext not in dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE.split(","):

@@ -833,7 +833,16 @@ set_option(
         "'self'",
     ],
 )
-set_option("CSP_STYLE_SRC", ["'self'", "fonts.googleapis.com", "'unsafe-inline'"])
+set_option(
+    "CSP_STYLE_SRC",
+    [
+        "'self'",
+        "fonts.googleapis.com",
+        "'unsafe-inline'",
+        # Google Maps stylesheets
+        "maps.gstatic.com",
+    ],
+)
 set_option(
     "CSP_SCRIPT_SRC",
     [
@@ -843,17 +852,31 @@ set_option(
         "www.gstatic.com",
         "cdn.redoc.ly",
         "'unsafe-inline'",
+        # Google Maps API
+        "maps.googleapis.com",
     ],
 )
 set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
 set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
-set_option("CSP_IMG_SRC", ["'self'", "cdn.redoc.ly", "data:"])
+set_option(
+    "CSP_IMG_SRC",
+    [
+        "'self'",
+        "cdn.redoc.ly",
+        "data:",
+        # Google Maps tiles and images
+        "maps.googleapis.com",
+        "maps.gstatic.com",
+    ],
+)
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
 set_option(
     "CSP_CONNECT_SRC",
     [
         "*.google-analytics.com",
         "'self'",
+        # Google Maps API endpoints used by JS SDK
+        "maps.googleapis.com",
     ],
 )
 
@@ -1521,6 +1544,10 @@ set_option("USER_OPT_FLAG_UI_NEXT", 0x02)
 
 # User option flag to enable UI NEXT
 set_option("USER_OPT_FLAG_UI_NEXT_REJECTED", 0x04)
+
+# Map visualization (Advanced Search) user preference
+set_option("DEFAULT_MAP_VISUALIZATION_ENABLED", False)
+set_option("USER_OPT_FLAG_MAP_VISUALIZATION", 0x20)
 
 # User option flag to mfa notification
 set_option("USER_OPT_FLAG_NOTIFIED_MFA", 0x08)

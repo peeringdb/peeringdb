@@ -1,4 +1,4 @@
-Generated from views.py on 2025-08-19 14:17:58.294002
+Generated from views.py on 2025-09-16 15:00:08.206614
 
 # peeringdb_server.views
 
@@ -255,6 +255,12 @@ Returns:
 
 Triggered by typing something in the main peeringdb search bar
 without hitting enter (quasi autocomplete).
+
+---
+## update_map_visualization
+`def update_map_visualization(request)`
+
+Toggle user preference for Advanced Search map visualization.
 
 ---
 ## validator_result_cache
@@ -676,29 +682,14 @@ process need to be rate limited.
 
 ---
 
-## OrganizationLogoUpload
+## ObjectsLogoUpload
 
 ```
-OrganizationLogoUpload(django.views.generic.base.View)
+ObjectsLogoUpload(django.views.generic.base.View)
 ```
 
-Handles public upload and setting of organization logo (#346)
+Handles upload and deletion of logos for multiple object types.
 
-
-### Methods
-
-#### delete
-`def delete(self, request, id)`
-
-delete the logo
-
----
-#### post
-`def post(self, request, id)`
-
-upload and set a new logo
-
----
 
 ## TwoFactorSetupView
 

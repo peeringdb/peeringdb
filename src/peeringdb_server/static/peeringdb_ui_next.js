@@ -2182,7 +2182,7 @@ PeeringDB = {
         }
 
 
-        if(parseInt(data.distance) > 0) {
+        if(parseFloat(data.distance) > 0) {
           if(data.country__in && data.country__in.split(",").length > 1) {
             return $(this).trigger("error", {"type": "ValidationError", "field": "country__in", "info": "Please only select one country when filtering by distance."});
           }
@@ -2216,7 +2216,7 @@ PeeringDB = {
           }
         }
 
-        if(parseInt(data.distance) > 0) {
+        if(parseFloat(data.distance) > 0) {
           data.country = data.country__in;
           delete data.country__in;
         } else if(typeof(data.distance) != "undefined"){
@@ -3560,19 +3560,23 @@ PeeringDB = {
         }
       ],
       convert : function(value, unit) {
+        if(!value && value !== 0) return "";
+        let v = parseFloat(value);
+        if(isNaN(v)) return "";
         if ( unit == "km"){
-          return parseInt(value)
+          return v;
         } else {
-          return parseInt(value / 0.621371);
+          return v / 0.621371;
         }
       },
 
       format_units: function(value) {
-        if(!value)
+        if(value === null || typeof value === "undefined" || value === "")
           return "";
-
-        return value;
-
+        let v = parseFloat(value);
+        if(isNaN(v)) return "";
+        // Preserve decimal places for better precision
+        return v.toString();
       }
     },
     "unit_input"
@@ -3766,7 +3770,11 @@ PeeringDB = {
 
         // if current image exists show the "Remove" button
 
-        if(this.source.data("edit-value")) {
+        const hasValue = this.source.data("edit-value");
+        const isOrg = this.source.data("edit-object-type") === "org";
+        const notOrgLogo = String(this.source.data("edit-not-org-logo")).toLowerCase() === "true";
+
+        if (hasValue && hasValue !== "None" && (isOrg || notOrgLogo)) {
           buttonClear.show();
         }
 

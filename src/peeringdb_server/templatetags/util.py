@@ -450,3 +450,11 @@ def autocomplete_preload_asn(value):
             result.append(f"{asn};AS{asn}")
 
     return ",".join(result)
+
+
+@register.filter
+def get_item(dictionary, key):
+    try:
+        return dictionary.get(key, "")
+    except Exception:
+        return ""

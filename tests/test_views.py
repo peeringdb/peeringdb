@@ -3,6 +3,7 @@ import re
 import pytest
 from allauth.account.models import EmailAddress
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
 from django_grainy.models import Group
@@ -11,6 +12,8 @@ from rest_framework.test import APIClient
 
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.models import (
+    Campus,
+    Carrier,
     EnvironmentSetting,
     Facility,
     InternetExchange,
@@ -50,6 +53,33 @@ def org():
 def network(org):
     net = Network.objects.create(name="test network", org=org, asn=123, status="ok")
     return net
+
+
+@pytest.fixture
+def net(org):
+    return Network.objects.create(name="Test Net", org=org, asn=123, status="ok")
+
+
+@pytest.fixture
+def ix(org):
+    return InternetExchange.objects.create(name="Test IX", org=org, status="ok")
+
+
+@pytest.fixture
+def carrier(org):
+    return Carrier.objects.create(name="Test Carrier", org=org, status="ok")
+
+
+@pytest.fixture
+def campus(org):
+    return Campus.objects.create(name="Test Campus", org=org, status="ok")
+
+
+@pytest.fixture
+def fac(org):
+    return Facility.objects.create(
+        name="Test Fac", org=org, country="US", city="New York", status="ok"
+    )
 
 
 def assert_passing_affiliation_request(data, client):
@@ -525,3 +555,69 @@ def test_post_select_ui_next():
 
     assert user.ui_next_enabled is False
     assert user.ui_next_rejected is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "obj_type, model_class, create_kwargs",
+    [
+        ("org", Organization, {}),
+        ("net", Network, {"asn": 12345, "status": "ok"}),
+        ("ix", InternetExchange, {"status": "ok"}),
+        ("carrier", Carrier, {"status": "ok"}),
+        ("campus", Campus, {"status": "ok"}),
+        ("fac", Facility, {"status": "ok"}),
+    ],
+)
+def test_upload_delete_logo_with_inheritance(
+    client, obj_type, model_class, create_kwargs
+):
+    """
+    Test upload and delete logo for all objects, including inheritance fallback via `effective_logo`.
+    """
+    user = User.objects.create_user(username="tester", password="pass")
+    client.login(username="tester", password="pass")
+
+    # Create org and give user admin permissions
+    org = Organization.objects.create(name="Test Org")
+    org.admin_usergroup.user_set.add(user)
+
+    # Upload logo to org (for fallback testing)
+    org_logo_file = SimpleUploadedFile(
+        "org_logo.png", b"org image data", content_type="image/png"
+    )
+    org.logo.save("org_logo.png", org_logo_file)
+    org.refresh_from_db()
+
+    # Create target object
+    if model_class is Organization:
+        obj = org
+    else:
+        obj = model_class.objects.create(
+            name=f"Test {model_class.__name__}", org=org, **create_kwargs
+        )
+
+    # Step 1: Child has no logo → effective_logo should be from org
+    if model_class is not Organization:
+        assert obj.logo.name is None  # no direct logo
+        assert obj.effective_logo == org.logo.url
+
+    # Step 2: Upload child logo → effective_logo should be child logo
+    child_logo_file = SimpleUploadedFile(
+        "child_logo.png", b"child image data", content_type="image/png"
+    )
+    url = reverse("object-logo-upload", args=[obj_type, obj.id])
+    res = client.post(url, {"logo": child_logo_file})
+    assert res.status_code == 200
+    obj.refresh_from_db()
+    assert obj.logo
+    if model_class is not Organization:
+        assert obj.effective_logo == obj.logo.url
+
+    # Step 3: Delete child logo → effective_logo should fallback to org logo again
+    res = client.delete(url)
+    assert res.status_code == 200
+    obj.refresh_from_db()
+    if model_class is not Organization:
+        assert obj.logo.name == ""  # no direct logo
+        assert obj.effective_logo == org.logo.url

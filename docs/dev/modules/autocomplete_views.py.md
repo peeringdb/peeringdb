@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2025-08-19 14:17:58.294002
+Generated from autocomplete_views.py on 2025-09-16 15:00:08.206614
 
 # peeringdb_server.autocomplete_views
 
@@ -266,6 +266,30 @@ List options for a Select2 widget.
 `def get_queryset(self)`
 
 Filter the queryset with GET['q'].
+
+---
+
+## FacilityNameAutocomplete
+
+```
+FacilityNameAutocomplete(peeringdb_server.autocomplete_views.AutocompleteHTMLResponse)
+```
+
+Autocomplete for the Facility Name field in Advanced Search.
+
+
+### Methods
+
+#### get_queryset
+`def get_queryset(self)`
+
+Filter the queryset with GET['q'].
+
+---
+#### get_result_label
+`def get_result_label(self, item)`
+
+Return the label of a result.
 
 ---
 

@@ -14,8 +14,10 @@ method.
 import datetime
 import ipaddress
 import json
+import logging
 import re
 
+import elasticsearch
 import structlog
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -92,6 +94,7 @@ from peeringdb_server.permissions import (
     get_user_from_request,
     validate_rdap_user_or_key,
 )
+from peeringdb_server.search_v2 import elasticsearch_proximity_entity
 from peeringdb_server.validators import (
     validate_address_space,
     validate_asn_prefix,
@@ -1776,6 +1779,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "property",
                 "region_continent",
                 "status_dashboard",
+                "logo",
             ]
             + HandleRefSerializer.Meta.fields
             + AddressSerializer.Meta.fields
@@ -1898,6 +1902,72 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             )
 
         return qset, filters
+
+    @classmethod
+    def prepare_spatial_search(cls, qset, filters, distance=50):
+        """
+        Override spatial search for facilities to allow activating spatial search
+        with only `name_search` by deriving city/country (and coordinates) from ES.
+        """
+        logger = logging.getLogger(__name__)
+
+        try:
+            if distance > 0:
+                has_coords = "latitude" in filters and "longitude" in filters
+
+                # Normalize country__in → country
+                if not filters.get("country") and filters.get("country__in"):
+                    filters["country"] = filters.pop("country__in")
+
+                # Resolve from name_search if no coords and no location
+                if (
+                    not has_coords
+                    and not (filters.get("city") and filters.get("country"))
+                    and filters.get("name_search")
+                ):
+                    name_search = filters["name_search"]
+                    if isinstance(name_search, list | tuple):
+                        name_search = name_search[0] if name_search else ""
+
+                    if not isinstance(name_search, str | bytes):
+                        hit = None
+                    else:
+                        name_search = str(name_search).strip()
+
+                    try:
+                        hit = elasticsearch_proximity_entity(name_search)
+                    except elasticsearch.BadRequestError as e:
+                        logger.warning("ES BadRequest for %r: %s", name_search, e)
+                        hit = None
+                    except elasticsearch.ConnectionError as e:
+                        logger.warning(
+                            "ES connection failed for %r: %s", name_search, e
+                        )
+                        hit = None
+                    except Exception as e:
+                        logger.exception(
+                            "Unexpected ES error for %r: %s", name_search, e
+                        )
+                        hit = None
+
+                    if hit:
+                        # Ensure all are lists and only add if not present
+                        for key in ("city", "state", "country"):
+                            val = hit.get(key)
+                            if val:
+                                if key not in filters:
+                                    filters[key] = []
+                                elif not isinstance(filters[key], list):
+                                    # Preserve existing string value
+                                    filters[key] = [filters[key]]
+
+                                if val not in filters[key]:
+                                    filters[key].append(val)
+
+        except Exception as e:
+            logger.exception("Spatial search pre-processing failed: %s", e)
+
+        return super().prepare_spatial_search(qset, filters, distance)
 
     def to_internal_value(self, data):
         # if `suggest` keyword is provided, hard-set the org to
@@ -2122,6 +2192,7 @@ class CarrierSerializer(ModelSerializer):
             "notes",
             "carrierfac_set",
             "fac_count",
+            "logo",
         ] + HandleRefSerializer.Meta.fields
 
         related_fields = ["org", "carrierfac_set"]
@@ -2798,6 +2869,7 @@ class NetworkSerializer(ModelSerializer):
             "status_dashboard",
             "rir_status",
             "rir_status_updated",
+            "logo",
         ] + HandleRefSerializer.Meta.fields
         default_fields = ["id", "name", "asn"]
         related_fields = [
@@ -2880,6 +2952,7 @@ class NetworkSerializer(ModelSerializer):
         # we do this by creating an annotation based on the info_types split by ','
 
         update_params = {}
+        query_adjusted = False
 
         from django.db.models import Q
 
@@ -2896,6 +2969,7 @@ class NetworkSerializer(ModelSerializer):
                     | Q(info_types__iendswith=f",{value}")
                 )
                 qset = qset.filter(query)
+                query_adjusted = True
 
             elif key == "info_type__contains":
                 # info_type__contains filter can simply be converted to info_types
@@ -2909,6 +2983,7 @@ class NetworkSerializer(ModelSerializer):
                 for _value in value.split(","):
                     query |= Q(info_types__icontains=_value.strip())
                 qset = qset.filter(query)
+                query_adjusted = True
 
             elif key == "info_type__startswith" or key == "info_types__startswith":
                 # info_type__startswith filter can simply be converted to info_types
@@ -2917,10 +2992,11 @@ class NetworkSerializer(ModelSerializer):
                     info_types__icontains=f",{value}"
                 )
                 qset = qset.filter(query)
+                query_adjusted = True
             else:
                 update_params[key] = value
 
-        return (qset, update_params)
+        return (qset, update_params, query_adjusted)
 
     @classmethod
     def is_unique_query(cls, request):
@@ -3482,6 +3558,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "service_level",
             "terms",
             "status_dashboard",
+            "logo",
         ] + HandleRefSerializer.Meta.fields
         _ref_tag = model.handleref.tag
         related_fields = ["org", "fac_set", "ixlan_set"]
@@ -3789,6 +3866,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
             "city",
             "zipcode",
             "state",
+            "logo",
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["fac_set", "org"]
         list_exclude = ["org"]
@@ -3897,6 +3975,7 @@ class OrganizationSerializer(
                 "ix_set",
                 "carrier_set",
                 "campus_set",
+                "logo",
             ]
             + AddressSerializer.Meta.fields
             + HandleRefSerializer.Meta.fields

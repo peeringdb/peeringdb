@@ -11,6 +11,8 @@ from peeringdb_server.rest import search_api_view
 from peeringdb_server.search_v2 import (
     add_and_between_keywords,
     build_geo_filter,
+    construct_ipv4_query,
+    construct_ipv6_query,
     construct_query_body,
     elasticsearch_proximity_entity,
     escape_query_string,
@@ -438,7 +440,12 @@ class SearchV2TestCase(TestCase):
         }
 
         result = construct_query_body(
-            "*fac*", valid_geo, self.indexes, ipv6_construct=False, user=None
+            "*fac*",
+            valid_geo,
+            self.indexes,
+            ipv4_construct=False,
+            ipv6_construct=False,
+            user=None,
         )
         expected = {
             "query": {
@@ -466,7 +473,12 @@ class SearchV2TestCase(TestCase):
 
         # test exception handling
         result = construct_query_body(
-            "not indexes", valid_geo, self.indexes, ipv6_construct=False, user=None
+            "not indexes",
+            valid_geo,
+            self.indexes,
+            ipv4_construct=False,
+            ipv6_construct=False,
+            user=None,
         )
         expected = {
             "query": {
@@ -525,7 +537,12 @@ class SearchV2TestCase(TestCase):
 
         # test location only
         result = construct_query_body(
-            "", valid_geo, self.indexes, ipv6_construct=False, user=None
+            "",
+            valid_geo,
+            self.indexes,
+            ipv4_construct=False,
+            ipv6_construct=False,
+            user=None,
         )
         expected = {
             "query": {
@@ -761,6 +778,266 @@ class SearchV2TestCase(TestCase):
         }
 
         result = search_v2(["2001:db8:85a3::8a2e:370:7334"])
+        self.assertEqual(result, expected_result)
+
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_search_v2_ipv4(self, mock_elasticsearch):
+        expected_result = {
+            "fac": [],
+            "ix": [
+                {
+                    "id": "1",
+                    "name": "Test IX",
+                    "org_id": 100,
+                    "sub_name": None,
+                    "extra": {"_score": 10, "_score_explanation": {}},
+                }
+            ],
+            "net": [],
+            "org": [],
+            "campus": [],
+            "carrier": [],
+        }
+
+        mock_es = mock_elasticsearch.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "ix",
+                        "_id": "1",
+                        "_score": 10,
+                        "_source": {
+                            "name": "Test IX",
+                            "org": {"id": 100, "name": "Test Organization"},
+                            "ipaddr4": "192.168.1.1",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
+
+        result = search_v2(["192.168.1.1"])
+        self.assertEqual(result, expected_result)
+
+    def test_construct_ipv4_query(self):
+        """Test that IPv4 query construction works correctly."""
+        result = construct_ipv4_query("192.168.1.1")
+        expected = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "prefix": {
+                                            "ipaddr4.raw": {
+                                                "value": "192.168.1.1",
+                                                "boost": 10.0,
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "prefix": {
+                                            "ipaddr4": {
+                                                "value": "192.168.1.1",
+                                                "boost": 5.0,
+                                            }
+                                        }
+                                    },
+                                ],
+                                "minimum_should_match": 1,
+                            }
+                        }
+                    ]
+                }
+            },
+            "explain": True,
+            "_source": True,
+            "sort": ["_score"],
+        }
+        self.assertEqual(result, expected)
+
+    def test_construct_ipv6_query(self):
+        """Test that IPv6 query construction works correctly."""
+        result = construct_ipv6_query("2001:db8:85a3")
+        expected = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "bool": {
+                                "should": [
+                                    {
+                                        "match_phrase": {
+                                            "ipaddr6": {
+                                                "query": "2001:db8:85a3",
+                                                "boost": 10.0,
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "prefix": {
+                                            "ipaddr6.raw": {
+                                                "value": "2001:db8:85a3",
+                                                "boost": 5.0,
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "match_phrase_prefix": {
+                                            "ipaddr6": {
+                                                "query": "2001:db8:85a3",
+                                                "boost": 2.0,
+                                            }
+                                        }
+                                    },
+                                ],
+                                "minimum_should_match": 1,
+                            }
+                        }
+                    ]
+                }
+            },
+            "explain": True,
+            "_source": True,
+            "sort": ["_score"],
+        }
+        self.assertEqual(result, expected)
+
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_search_v2_partial_ipv4(self, mock_elasticsearch):
+        """Test that partial IPv4 addresses work with prefix matching."""
+        expected_result = {
+            "fac": [],
+            "ix": [],
+            "net": [
+                {
+                    "id": "1",
+                    "name": "Test Network",
+                    "org_id": 100,
+                    "sub_name": None,
+                    "extra": {"asn": 12345, "_score": 10, "_score_explanation": {}},
+                }
+            ],
+            "org": [],
+            "campus": [],
+            "carrier": [],
+        }
+
+        mock_es = mock_elasticsearch.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "net",
+                        "_id": "1",
+                        "_score": 10,
+                        "_source": {
+                            "name": "Test Network",
+                            "asn": 12345,
+                            "org": {"id": 100, "name": "Test Organization"},
+                            "ipaddr4": "206.108.35.210",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
+
+        result = search_v2(["206.108.35"])
+        self.assertEqual(result, expected_result)
+
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_search_v2_partial_ipv6(self, mock_elasticsearch):
+        """Test that partial IPv6 addresses work with prefix matching."""
+        expected_result = {
+            "fac": [],
+            "ix": [],
+            "net": [
+                {
+                    "id": "1",
+                    "name": "Test Network",
+                    "org_id": 100,
+                    "sub_name": None,
+                    "extra": {"asn": 12345, "_score": 10, "_score_explanation": {}},
+                }
+            ],
+            "org": [],
+            "campus": [],
+            "carrier": [],
+        }
+
+        mock_es = mock_elasticsearch.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "net",
+                        "_id": "1",
+                        "_score": 10,
+                        "_source": {
+                            "name": "Test Network",
+                            "asn": 12345,
+                            "org": {"id": 100, "name": "Test Organization"},
+                            "ipaddr6": "2a0e:b107:2888::1",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
+
+        result = search_v2(["2a0e:b107:2888"])
+        self.assertEqual(result, expected_result)
+
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    def test_search_v2_ipv6_trailing_colon(self, mock_elasticsearch):
+        """Test that IPv6 addresses with trailing colons work by normalizing to without colon."""
+        expected_result = {
+            "fac": [],
+            "ix": [],
+            "net": [
+                {
+                    "id": "1",
+                    "name": "Test Network",
+                    "org_id": 100,
+                    "sub_name": None,
+                    "extra": {"asn": 12345, "_score": 10, "_score_explanation": {}},
+                }
+            ],
+            "org": [],
+            "campus": [],
+            "carrier": [],
+        }
+
+        mock_es = mock_elasticsearch.return_value
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "net",
+                        "_id": "1",
+                        "_score": 10,
+                        "_source": {
+                            "name": "Test Network",
+                            "asn": 12345,
+                            "org": {"id": 100, "name": "Test Organization"},
+                            "ipaddr6": "2a0e:b107:2888::1",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+        }
+
+        result = search_v2(["2a0e:b107:"])
         self.assertEqual(result, expected_result)
 
     @patch("peeringdb_server.search_v2.new_elasticsearch")
