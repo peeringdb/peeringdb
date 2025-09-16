@@ -268,6 +268,14 @@ class Melissa:
 
             if key == "address1":
                 pdb_data["address1"] = faddr[0]
+            elif key == "state":
+                # For countries with states (US, CA), use AdministrativeArea
+                # For other countries, use SubNationalArea
+                country = pdb_data.get("country")
+                if country in settings.GEO_COUNTRIES_WITH_STATES:
+                    pdb_data[key] = melissa_data["AdministrativeArea"]
+                else:
+                    pdb_data[key] = melissa_data["SubNationalArea"]
             else:
                 pdb_data[key] = melissa_data[self.field_map[key]]
 

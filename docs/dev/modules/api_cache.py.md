@@ -1,4 +1,4 @@
-Generated from api_cache.py on 2025-08-19 14:17:58.294002
+Generated from api_cache.py on 2025-09-16 15:00:08.206614
 
 # peeringdb_server.api_cache
 
@@ -20,7 +20,7 @@ and if it does allows you to provide the cached result.
 ### Methods
 
 #### \__init__
-`def __init__(self, viewset, qset, filters)`
+`def __init__(self, viewset, qset, filters, query_adjusted=False)`
 
 Initialize self.  See help(type(self)) for accurate signature.
 

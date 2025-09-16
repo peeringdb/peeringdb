@@ -526,9 +526,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         filters = {}
         query_params = self.request.query_params
 
+        query_adjusted = False
         if hasattr(self.serializer_class, "finalize_query_params"):
-            qset, query_params = self.serializer_class.finalize_query_params(
-                qset, query_params
+            qset, query_params, query_adjusted = (
+                self.serializer_class.finalize_query_params(qset, query_params)
             )
 
         for k, v in list(query_params.items()):
@@ -664,7 +665,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         # check if request qualifies for a cache load
         filters.update(p_filters)
-        api_cache = APICacheLoader(self, qset, filters)
+        api_cache = APICacheLoader(self, qset, filters, query_adjusted)
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
 

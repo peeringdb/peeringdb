@@ -239,3 +239,15 @@ class TestAutocomplete(ClientCase):
         asn3000_pos = rsp.find("AS3000")
 
         assert asn1000_pos < asn2000_pos < asn3000_pos
+
+    def test_facility_name_autocomplete(self):
+        org = Organization.objects.create(name="Test Org", status="ok")
+        _ = Facility.objects.create(name="Test Facility", status="ok", org=org)
+
+        url = reverse("autocomplete-facility-name-suggestions")
+        req = self.factory.get(f"{url}?q=Test")
+        rsp = autocomplete_views.FacilityNameAutocomplete.as_view()(req).content.decode(
+            "utf-8"
+        )
+
+        assert "Test Facility" in rsp

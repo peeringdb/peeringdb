@@ -1,4 +1,4 @@
-Generated from serializers.py on 2025-08-19 14:17:58.294002
+Generated from serializers.py on 2025-09-16 15:00:08.206614
 
 # peeringdb_server.serializers
 
@@ -176,6 +176,16 @@ Possible relationship queries:
   - org_id, handled by serializer
   - org_name, hndled by prepare_query
 
+
+### Class Methods
+
+#### prepare_spatial_search
+`def prepare_spatial_search(cls, qset, filters, distance=50)`
+
+Override spatial search for facilities to allow activating spatial search
+with only `name_search` by deriving city/country (and coordinates) from ES.
+
+---
 
 ### Methods
 
