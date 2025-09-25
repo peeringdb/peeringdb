@@ -91,7 +91,7 @@ services:
       #
       # expects a https://github.com/peeringdb/django-peeringdb source checkout in the parent
       # directory
-      # - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.12/site-packages/django_peeringdb:Z
+      - ../../../django-peeringdb/src/django_peeringdb:/srv/www.peeringdb.com/venv/lib/python3.12/site-packages/django_peeringdb:Z
 
     networks:
       - peeringdb_network
