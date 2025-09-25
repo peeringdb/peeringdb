@@ -1785,7 +1785,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             + AddressSerializer.Meta.fields
         )
 
-        read_only_fields = ["rencode", "region_continent"]
+        read_only_fields = ["rencode", "region_continent", "logo"]
 
         related_fields = ["org", "campus"]
 
@@ -2197,6 +2197,7 @@ class CarrierSerializer(ModelSerializer):
 
         related_fields = ["org", "carrierfac_set"]
         list_exclude = ["org"]
+        read_only_fields = ["logo"]
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -2884,6 +2885,7 @@ class NetworkSerializer(ModelSerializer):
             "poc_updated",
             "rir_status",
             "rir_status_updated",
+            "logo",
         ]
         list_exclude = ["org"]
 
@@ -3564,7 +3566,7 @@ class InternetExchangeSerializer(ModelSerializer):
         related_fields = ["org", "fac_set", "ixlan_set"]
         list_exclude = ["org"]
 
-        read_only_fields = ["proto_multicast", "media"]
+        read_only_fields = ["proto_multicast", "media", "logo"]
 
     def get_media(self, inst):
         # as per #1555 this should always return "Ethernet" as the field
@@ -3870,6 +3872,7 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
         ] + HandleRefSerializer.Meta.fields
         related_fields = ["fac_set", "org"]
         list_exclude = ["org"]
+        read_only_fields = ["logo"]
 
         _ref_tag = model.handleref.tag
 
@@ -3987,7 +3990,7 @@ class OrganizationSerializer(
             "carrier_set",
             "campus_set",
         ]
-
+        read_only_fields = ["logo"]
         _ref_tag = model.handleref.tag
 
     @classmethod
