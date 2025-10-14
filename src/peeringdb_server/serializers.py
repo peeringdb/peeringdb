@@ -11,11 +11,15 @@ Special api filtering implementation should be done through the `prepare_query`
 method.
 """
 
+import base64
 import datetime
+import imghdr
+import io
 import ipaddress
 import json
 import logging
 import re
+import uuid
 
 import elasticsearch
 import structlog
@@ -23,6 +27,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import caches
 from django.core.exceptions import FieldError, ValidationError
+from django.core.files.base import ContentFile
 from django.core.validators import URLValidator
 from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
@@ -45,7 +50,10 @@ from django_peeringdb.const import (
     SOCIAL_MEDIA_SERVICES,
 )
 from django_peeringdb.models.abstract import AddressModel
+from grainy.const import PERM_DELETE, PERM_UPDATE
+from PIL import Image
 from rest_framework import serializers, validators
+from rest_framework.exceptions import NotFound
 from rest_framework.exceptions import ValidationError as RestValidationError
 
 from peeringdb_server import settings as pdb_settings
@@ -66,6 +74,7 @@ from peeringdb_server.inet import (
     rir_status_is_ok,
 )
 from peeringdb_server.models import (
+    ASSET_REFTAG_MAP,
     QUEUE_ENABLED,
     Campus,
     Carrier,
@@ -4022,6 +4031,266 @@ class OrganizationSerializer(
         social_media = data.get("social_media")
         validate_social_media(social_media)
         return data
+
+
+def validate_asset_lookup(ref_tag, ref_id, asset_type):
+    """
+    Validate asset lookup parameters and return the entity.
+
+    Args:
+        ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+        ref_id: Entity ID
+        asset_type: Asset type (currently only 'logo')
+
+    Returns:
+        Entity instance if validation passes
+
+    Raises:
+        RestValidationError: If validation fails
+    """
+    if asset_type != "logo":
+        raise RestValidationError(
+            {
+                "asset_type": f"Invalid asset_type: {asset_type}. Only 'logo' is supported"
+            }
+        )
+
+    entity_model = ASSET_REFTAG_MAP.get(ref_tag)
+    if not entity_model:
+        raise RestValidationError(
+            {
+                "ref_tag": f"Invalid ref_tag: {ref_tag}. Must be one of: {', '.join(ASSET_REFTAG_MAP.keys())}"
+            }
+        )
+
+    try:
+        entity = entity_model.objects.get(id=ref_id, status="ok")
+    except entity_model.DoesNotExist:
+        raise RestValidationError(
+            {"ref_id": f"{entity_model.__name__} with id {ref_id} not found"}
+        )
+
+    return entity
+
+
+class AssetLookupSerializer(serializers.Serializer):
+    """
+    Base serializer for validating asset lookup parameters.
+    Used by retrieve operations.
+    """
+
+    ref_tag = serializers.ChoiceField(
+        choices=["org", "fac", "net", "ix", "carrier", "campus"],
+        required=True,
+        help_text="Entity type: org, fac, net, ix, carrier, or campus",
+    )
+    ref_id = serializers.IntegerField(
+        required=True, help_text="ID of the entity to associate the asset with"
+    )
+    asset_type = serializers.ChoiceField(
+        choices=["logo"],
+        default="logo",
+        help_text="Type of asset (currently only 'logo' is supported)",
+    )
+
+    def validate(self, data):
+        """Validate entity reference"""
+        ref_tag = data.get("ref_tag")
+        ref_id = data.get("ref_id")
+        asset_type = data.get("asset_type", "logo")
+
+        entity = validate_asset_lookup(ref_tag, ref_id, asset_type)
+        data["_entity"] = entity
+
+        return data
+
+
+class AssetDeleteSerializer(AssetLookupSerializer):
+    """
+    Serializer for delete operations.
+    Validates lookup parameters and checks that logo exists.
+    """
+
+    def validate(self, data):
+        """Validate entity reference and check logo exists"""
+        data = super().validate(data)
+        entity = data["_entity"]
+
+        if not entity.logo:
+            raise NotFound("Asset does not exist")
+
+        return data
+
+
+class AssetWriteSerializer(serializers.Serializer):
+    """
+    Write serializer for creating/updating assets across all entity.
+    """
+
+    ref_tag = serializers.ChoiceField(
+        choices=["org", "fac", "net", "ix", "carrier", "campus"],
+        required=True,
+        help_text="Entity type: org, fac, net, ix, carrier, or campus",
+    )
+    ref_id = serializers.IntegerField(
+        required=True, help_text="ID of the entity to associate the asset with"
+    )
+    asset_type = serializers.ChoiceField(
+        choices=["logo"],
+        default="logo",
+        help_text="Type of asset (currently only 'logo' is supported)",
+    )
+    file_type = serializers.ChoiceField(
+        choices=["image/png", "image/jpeg"],
+        required=True,
+        help_text="MIME type of the asset file",
+    )
+    file_data = serializers.CharField(
+        required=True,
+        write_only=True,
+        help_text="Base64 encoded file data",
+    )
+
+    def validate(self, data):
+        """Validate entity reference and file data"""
+        ref_tag = data.get("ref_tag")
+        ref_id = data.get("ref_id")
+        asset_type = data.get("asset_type", "logo")
+
+        entity = validate_asset_lookup(ref_tag, ref_id, asset_type)
+        data["_entity"] = entity
+
+        self._validate_file_data(data)
+        return data
+
+    def _validate_file_data(self, data):
+        """Validate and decode base64 file data"""
+        try:
+            file_content = base64.b64decode(data["file_data"])
+        except Exception:
+            raise RestValidationError({"file_data": "Invalid base64 encoded data"})
+
+        detected_type = imghdr.what(None, h=file_content)
+        if detected_type not in ["png", "jpeg"]:
+            raise RestValidationError(
+                {"file_data": "Unsupported file type. Only PNG and JPEG are allowed"}
+            )
+
+        ext_map = {"png": ".png", "jpeg": ".jpg"}
+        ext = ext_map[detected_type]
+
+        allowed_types = [
+            t.lower() for t in settings.ORG_LOGO_ALLOWED_FILE_TYPE.split(",")
+        ]
+        if ext.lower() not in allowed_types:
+            raise RestValidationError({"file_data": f"File type {ext} not allowed"})
+
+        mime_map = {"png": "image/png", "jpeg": "image/jpeg"}
+        expected_mime = mime_map[detected_type]
+        if data.get("file_type") != expected_mime:
+            raise RestValidationError(
+                {
+                    "file_type": f"Declared file_type does not match actual file type. Expected: {expected_mime}"
+                }
+            )
+
+        max_size = settings.ORG_LOGO_MAX_SIZE
+        if len(file_content) > max_size:
+            raise RestValidationError(
+                {"file_data": f"File size too big, max. {max_size / 1024:.0f} kb"}
+            )
+
+        try:
+            img = Image.open(io.BytesIO(file_content))
+            max_height = settings.ORG_LOGO_MAX_VIEW_HEIGHT
+            if img.height > max_height:
+                raise RestValidationError(
+                    {
+                        "file_data": f"Image height too large. Maximum allowed: {max_height} pixels"
+                    }
+                )
+        except RestValidationError:
+            raise
+        except Exception as exc:
+            log.error("Unable to process image", exc=exc)
+            raise RestValidationError({"file_data": "Unable to process image"})
+
+        data["_file_content"] = file_content
+        data["_detected_type"] = detected_type
+
+    def create(self, validated_data):
+        """Create/update logo for entity"""
+        entity = validated_data["_entity"]
+        file_content = validated_data["_file_content"]
+        detected_type = validated_data["_detected_type"]
+
+        entity_type = entity.__class__.__name__.lower()
+        randomize = str(uuid.uuid4())[:8]
+        ext_map = {"png": ".png", "jpeg": ".jpg"}
+        ext = ext_map[detected_type]
+        filename = f"{entity_type}-{entity.id}-{randomize}{ext}"
+
+        file_obj = ContentFile(file_content, name=filename)
+        entity.logo = file_obj
+        entity.save(update_fields=["logo"])
+
+        return entity
+
+    def update(self, instance, validated_data):
+        """Update logo for entity"""
+        return self.create(validated_data)
+
+
+class AssetReadSerializer(serializers.Serializer):
+    """
+    Read serializer for retrieving asset information.
+    """
+
+    ref_tag = serializers.CharField(read_only=True)
+    ref_id = serializers.IntegerField(read_only=True)
+    asset_type = serializers.CharField(read_only=True, default="logo")
+    file_type = serializers.CharField(read_only=True)
+    file_data = serializers.CharField(read_only=True)
+    created = serializers.DateTimeField(read_only=True)
+    updated = serializers.DateTimeField(read_only=True)
+
+    def to_representation(self, instance):
+        """Convert entity logo to response format with base64 data"""
+        supported_entities = tuple(ASSET_REFTAG_MAP.values())
+        if not isinstance(instance, supported_entities):
+            raise ValueError(
+                f"Unsupported entity type: {type(instance).__name__}. "
+                f"Only entities with asset support are allowed: {', '.join(ASSET_REFTAG_MAP.keys())}"
+            )
+
+        ref_tag = instance._handleref.tag
+
+        file_type = None
+        if instance.logo:
+            logo_name = instance.logo.name.lower()
+            if logo_name.endswith(".png"):
+                file_type = "image/png"
+            elif logo_name.endswith((".jpg", ".jpeg")):
+                file_type = "image/jpeg"
+
+        file_data = None
+        if instance.logo:
+            try:
+                with instance.logo.open("rb") as f:
+                    file_content = f.read()
+                    file_data = base64.b64encode(file_content).decode("utf-8")
+            except Exception:
+                file_data = None
+
+        return {
+            "ref_tag": ref_tag,
+            "ref_id": instance.id,
+            "asset_type": "logo",
+            "file_type": file_type,
+            "file_data": file_data,
+            "created": instance.created,
+            "updated": instance.updated,
+        }
 
 
 class UserSerializer(ModelSerializer):

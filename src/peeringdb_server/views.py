@@ -224,6 +224,11 @@ def export_permissions(user, entity):
     else:
         perms["can_manage"] = False
 
+    if hasattr(entity, "grainy_namespace_oauth"):
+        perms["can_manage_oauth"] = check_permissions(
+            user, entity.grainy_namespace_oauth, PERM_CREATE
+        )
+
     return perms
 
 
@@ -251,6 +256,12 @@ def export_permissions_campus(user, entity):
         )
     else:
         perms["can_manage"] = False
+
+    # Check OAuth management permission
+    if hasattr(entity, "grainy_namespace_oauth"):
+        perms["can_manage_oauth"] = check_permissions(
+            user, entity.grainy_namespace_oauth, PERM_CREATE
+        )
 
     return perms
 
@@ -1832,7 +1843,11 @@ def view_organization(request, id):
 
     # if user has rights to create sub entties or manage users, allow them
     # to view the tools
-    if perms.get("can_manage") or perms.get("can_create"):
+    if (
+        perms.get("can_manage")
+        or perms.get("can_create")
+        or perms.get("can_manage_oauth")
+    ):
         perms["can_use_tools"] = True
 
     active_tab = None
@@ -1849,6 +1864,11 @@ def view_organization(request, id):
 
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
+
+    if perms.get("can_manage_oauth") and not perms.get("can_manage"):
+        # only oauth management is allowed for limited access organizations
+        # so activate the oauth tab
+        tab_init = {"oauth": "active"}
 
     if request.GET.get("tab"):
         tab_init = {request.GET.get("tab"): "active"}
