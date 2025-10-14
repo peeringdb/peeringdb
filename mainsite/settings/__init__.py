@@ -1,5 +1,6 @@
 # Django settings
 
+import ast
 import os
 import sys
 from datetime import datetime
@@ -9,6 +10,7 @@ import django.conf.locale
 import redis
 import structlog
 import urllib3
+from redis.sentinel import Sentinel
 
 from mainsite.oauth2.scopes import SupportedScopes
 
@@ -243,6 +245,47 @@ def can_ping_redis(host, port, password):
         return False
 
 
+def can_ping_redis_sentinel(sentinels, master_name, password, sentinel_password=None):
+    """
+    Check if Redis Sentinel is available by attempting to connect
+    and discover the master.
+    """
+    try:
+        sentinel_nodes = []
+        for sentinel in sentinels:
+            if isinstance(sentinel, str):
+                # Format: "host:port"
+                host, port = sentinel.split(":")
+                sentinel_nodes.append((host, int(port)))
+            else:
+                # Format: ("host", port) or {"host": "...", "port": ...}
+                if isinstance(sentinel, dict):
+                    sentinel_nodes.append((sentinel["host"], int(sentinel["port"])))
+                else:
+                    sentinel_nodes.append(sentinel)
+
+        sentinel_kwargs = {}
+        if sentinel_password:
+            sentinel_kwargs["password"] = sentinel_password
+
+        sentinel = Sentinel(
+            sentinel_nodes,
+            socket_timeout=0.5,
+            sentinel_kwargs=sentinel_kwargs,
+        )
+
+        master = sentinel.master_for(
+            master_name,
+            socket_timeout=0.5,
+            password=password,
+        )
+        return master.ping()
+
+    except Exception as e:
+        print_debug(f"Redis Sentinel connection error: {e}")
+        return False
+
+
 def get_cache_backend(cache_name):
     """
     Function to get cache backend based on environment variable.
@@ -259,7 +302,41 @@ def get_cache_backend(cache_name):
 
     if cache_backend == "RedisCache":
         print_debug(f"Checking if Redis is available for {cache_name}")
-        if can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
+
+        if REDIS_SENTINEL_ENABLED:
+            if can_ping_redis_sentinel(
+                REDIS_SENTINEL_NODES,
+                REDIS_HOST,
+                REDIS_PASSWORD,
+                REDIS_SENTINEL_PASSWORD,
+            ):
+                print_debug(
+                    "Was able to ping Redis Sentinel, using django-redis with Sentinel"
+                )
+                return {
+                    "BACKEND": "django_redis.cache.RedisCache",
+                    "LOCATION": f"redis://{REDIS_HOST}/0",
+                    "OPTIONS": {
+                        "CLIENT_CLASS": "django_redis.client.SentinelClient",
+                        "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
+                        "SENTINELS": REDIS_SENTINEL_NODES,
+                        "PASSWORD": REDIS_PASSWORD,
+                        "SENTINEL_KWARGS": {"password": REDIS_SENTINEL_PASSWORD}
+                        if REDIS_SENTINEL_PASSWORD
+                        else {},
+                        "CONNECTION_POOL_KWARGS": {
+                            "socket_timeout": REDIS_SOCKET_TIMEOUT,
+                            "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
+                            "socket_keepalive": True,
+                            "retry_on_timeout": REDIS_RETRY_ON_TIMEOUT,
+                        },
+                    },
+                }
+            else:
+                print_debug(
+                    f"Was not able to ping Redis Sentinel for {cache_name}, falling back to single Redis or DatabaseCache"
+                )
+        elif can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
             print_debug("Was able to ping Redis, using RedisCache")
             return {
                 "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -350,6 +427,23 @@ set_option("DATABASE_PASSWORD", "")
 set_option("REDIS_HOST", "127.0.0.1")
 set_option("REDIS_PORT", "6379")
 set_from_env("REDIS_PASSWORD", "")
+
+# redis sentinel configuration
+set_option("REDIS_SENTINEL_NODES", [])
+
+# if REDIS_SENTINEL_NODES is not set, disable sentinel
+set_bool("REDIS_SENTINEL_ENABLED", bool(REDIS_SENTINEL_NODES))
+
+set_from_env("REDIS_SENTINEL_PASSWORD", "")
+set_option("REDIS_SOCKET_TIMEOUT", 0.5)
+set_option("REDIS_SOCKET_CONNECT_TIMEOUT", 0.5)
+set_option("REDIS_RETRY_ON_TIMEOUT", True)
+
+if "REDIS_SENTINEL_NODES" in os.environ:
+    try:
+        REDIS_SENTINEL_NODES = ast.literal_eval(os.environ["REDIS_SENTINEL_NODES"])
+    except (ValueError, SyntaxError):
+        print_debug("Failed to parse REDIS_SENTINEL_NODES from environment")
 
 # API Cache
 set_option("API_CACHE_ENABLED", True)
