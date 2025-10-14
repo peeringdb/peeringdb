@@ -4211,10 +4211,9 @@ class AssetWriteSerializer(serializers.Serializer):
                 )
         except RestValidationError:
             raise
-        except Exception as e:
-            raise RestValidationError(
-                {"file_data": f"Unable to process image: {str(e)}"}
-            )
+        except Exception as exc:
+            log.error("Unable to process image", exc=exc)
+            raise RestValidationError({"file_data": "Unable to process image"})
 
         data["_file_content"] = file_content
         data["_detected_type"] = detected_type
