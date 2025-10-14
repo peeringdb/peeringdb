@@ -69,6 +69,7 @@ from django_otp.plugins.otp_email.models import EmailDevice
 from django_peeringdb.const import (
     CAMPUS_HELP_TEXT,
     CARRIER_HELP_TEXT,
+    POC_ROLE_HELP_TEXT,
     WEBSITE_OVERRIDE_HELP_TEXT,
 )
 from django_ratelimit.decorators import ratelimit
@@ -91,7 +92,7 @@ from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
     AffiliateToOrgForm,
     NameChangeForm,
-    OrganizationLogoUploadForm,
+    ObjectLogoUploadForm,
     PasswordChangeForm,
     PasswordResetForm,
     UserCreationForm,
@@ -223,6 +224,11 @@ def export_permissions(user, entity):
     else:
         perms["can_manage"] = False
 
+    if hasattr(entity, "grainy_namespace_oauth"):
+        perms["can_manage_oauth"] = check_permissions(
+            user, entity.grainy_namespace_oauth, PERM_CREATE
+        )
+
     return perms
 
 
@@ -250,6 +256,12 @@ def export_permissions_campus(user, entity):
         )
     else:
         perms["can_manage"] = False
+
+    # Check OAuth management permission
+    if hasattr(entity, "grainy_namespace_oauth"):
+        perms["can_manage_oauth"] = check_permissions(
+            user, entity.grainy_namespace_oauth, PERM_CREATE
+        )
 
     return perms
 
@@ -663,6 +675,23 @@ def update_ui_versions(request):
                 user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT, False)
                 user.set_opt_flag(dj_settings.USER_OPT_FLAG_UI_NEXT_REJECTED, False)
 
+        user.save()
+    return redirect("user-profile")
+
+
+@login_required
+@ensure_csrf_cookie
+def update_map_visualization(request):
+    """Toggle user preference for Advanced Search map visualization."""
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("login")
+        mv_val = request.POST.get("map_visualization")
+        enable = mv_val in ("on", "enable", "true", "1")
+        user.set_opt_flag(
+            getattr(dj_settings, "USER_OPT_FLAG_MAP_VISUALIZATION", 0x20), enable
+        )
         user.save()
     return redirect("user-profile")
 
@@ -1547,53 +1576,77 @@ def view_component(
     return HttpResponse(template.render(env, request))
 
 
-class OrganizationLogoUpload(View):
+class ObjectsLogoUpload(View):
     """
-    Handles public upload and setting of organization logo (#346)
+    Handles upload and deletion of logos for multiple object types.
     """
+
+    MODEL_MAP = {
+        "org": Organization,
+        "net": Network,
+        "ix": InternetExchange,
+        "carrier": Carrier,
+        "campus": Campus,
+        "fac": Facility,
+    }
+
+    def get_model(self, object_type):
+        Model = self.MODEL_MAP.get(object_type)
+        if not Model:
+            raise ValueError("Invalid object type")
+        return Model
 
     @transaction.atomic
-    def post(self, request, id):
-        """upload and set a new logo"""
+    def post(self, request, object_type, id):
+        Model = self.get_model(object_type)
 
-        org = Organization.objects.get(pk=id)
+        try:
+            instance = Model.objects.get(pk=id)
+        except ObjectDoesNotExist:
+            return JsonResponse({}, status=404)
 
-        # keep reference to current logo as we will need
-        # to remove it after the new logo has been uploaded
-        if org.logo:
-            old_file = org.logo.path
-        else:
-            old_file = None
-
-        # require update permissions to the org
-        if not check_permissions(request.user, org, "u"):
+        # check update permissions
+        if not check_permissions(request.user, instance, "u"):
             return JsonResponse({}, status=403)
 
-        form = OrganizationLogoUploadForm(request.POST, request.FILES, instance=org)
+        # keep old logo file path
+        old_file = instance.logo.path if instance.logo else None
+
+        # create dynamic form subclass
+        DynamicForm = type(
+            f"{Model.__name__}LogoUploadForm",
+            (ObjectLogoUploadForm,),
+            {"Meta": type("Meta", (), {"model": Model, "fields": ["logo"]})},
+        )
+
+        form = DynamicForm(request.POST, request.FILES, instance=instance)
 
         if form.is_valid():
             form.save()
-            org.refresh_from_db()
+            instance.refresh_from_db()
 
-            # remove old file if it exists
+            # remove old file if exists
             if old_file and os.path.exists(old_file):
                 os.remove(old_file)
 
-            return JsonResponse({"status": "ok", "url": org.logo.url})
+            return JsonResponse({"status": "ok", "url": instance.logo.url})
         else:
             return JsonResponse(form.errors, status=400)
 
     @transaction.atomic
-    def delete(self, request, id):
-        """delete the logo"""
+    def delete(self, request, object_type, id):
+        Model = self.get_model(object_type)
 
-        org = Organization.objects.get(pk=id)
+        try:
+            instance = Model.objects.get(pk=id)
+        except ObjectDoesNotExist:
+            return JsonResponse({}, status=404)
 
-        # require update permissions to the org
-        if not check_permissions(request.user, org, "u"):
+        # check update permissions
+        if not check_permissions(request.user, instance, "u"):
             return JsonResponse({}, status=403)
 
-        org.logo.delete()
+        instance.logo.delete()
 
         return JsonResponse({"status": "ok"})
 
@@ -1775,6 +1828,7 @@ def view_organization(request, id):
                 "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
                 "upload_handler": f"/org/{org.id}/upload-logo",
                 "value": logo_url,
+                "object_type": "org",
             },
         ],
     }
@@ -1789,7 +1843,11 @@ def view_organization(request, id):
 
     # if user has rights to create sub entties or manage users, allow them
     # to view the tools
-    if perms.get("can_manage") or perms.get("can_create"):
+    if (
+        perms.get("can_manage")
+        or perms.get("can_create")
+        or perms.get("can_manage_oauth")
+    ):
         perms["can_use_tools"] = True
 
     active_tab = None
@@ -1806,6 +1864,11 @@ def view_organization(request, id):
 
     if perms.get("can_manage") and org.pending_affiliations.count() > 0:
         tab_init = {"users": "active"}
+
+    if perms.get("can_manage_oauth") and not perms.get("can_manage"):
+        # only oauth management is allowed for limited access organizations
+        # so activate the oauth tab
+        tab_init = {"oauth": "active"}
 
     if request.GET.get("tab"):
         tab_init = {request.GET.get("tab"): "active"}
@@ -2012,12 +2075,18 @@ def view_facility(request, id):
                 "value": data.get("notes", dismiss),
             },
             {
-                "name": "org_logo",
-                "label": "",
-                "value": org.get("logo", dismiss),
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Facility, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
-                "readonly": True,
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
+                "upload_handler": f"/fac/{facility.id}/upload-logo",
+                "value": facility.effective_logo,
+                "is_not_org_logo": bool(not facility.is_org_logo),
             },
             {
                 "type": "email",
@@ -2231,12 +2300,18 @@ def view_carrier(request, id):
                 "value": data.get("notes", dismiss),
             },
             {
-                "name": "org_logo",
-                "label": "",
-                "value": org.get("logo", dismiss),
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Carrier, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
-                "readonly": True,
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
+                "upload_handler": f"/carrier/{carrier.id}/upload-logo",
+                "value": carrier.effective_logo,
+                "is_not_org_logo": bool(not carrier.is_org_logo),
             },
         ],
     }
@@ -2363,12 +2438,18 @@ def view_campus(request, id):
                 "value": data.get("notes", dismiss),
             },
             {
-                "name": "org_logo",
-                "label": "",
-                "value": org.get("logo", dismiss),
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Campus, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
-                "readonly": True,
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
+                "upload_handler": f"/campus/{campus.id}/upload-logo",
+                "value": campus.effective_logo,
+                "is_not_org_logo": bool(not campus.is_org_logo),
             },
         ],
     }
@@ -2498,12 +2579,18 @@ def view_exchange(request, id):
                 "value": data.get("notes", dismiss),
             },
             {
-                "name": "org_logo",
-                "label": "",
-                "value": org.get("logo", dismiss),
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(InternetExchange, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
-                "readonly": True,
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
+                "upload_handler": f"/ix/{exchange.id}/upload-logo",
+                "value": exchange.effective_logo,
+                "is_not_org_logo": bool(not exchange.is_org_logo),
             },
             {"type": "sub", "label": _("Contact Information")},
             {
@@ -3023,12 +3110,18 @@ def view_network(request, id):
                 "value": format_last_updated_time(network_d.get("rir_status_updated")),
             },
             {
-                "name": "org_logo",
-                "label": "",
-                "value": org.get("logo", dismiss),
+                "name": "logo",
+                "label": _("Logo"),
+                "help_text": field_help(Network, "logo")
+                + " - "
+                + _("Max size: {}kb").format(int(dj_settings.ORG_LOGO_MAX_SIZE / 1024)),
                 "type": "image",
-                "readonly": True,
+                "accept": dj_settings.ORG_LOGO_ALLOWED_FILE_TYPE,
                 "max_height": dj_settings.ORG_LOGO_MAX_VIEW_HEIGHT,
+                "max_size": dj_settings.ORG_LOGO_MAX_SIZE,
+                "upload_handler": f"/net/{network.id}/upload-logo",
+                "value": network.effective_logo,
+                "is_not_org_logo": bool(not network.is_org_logo),
             },
             {"type": "sub", "admin": True, "label": _("PeeringDB Configuration")},
             {
@@ -3115,6 +3208,7 @@ def view_network(request, id):
 
     # Add POC data to dataset
     data["poc_set"] = network_d.get("poc_set")
+    data["poc_role_help_text"] = POC_ROLE_HELP_TEXT
 
     # For tooltip
     data["phone_help_text"] = field_help(NetworkContact, "phone")
@@ -3219,6 +3313,16 @@ def view_advanced_search(request):
 
     template = get_template(request, "site/advanced-search.html")
     env = make_env(row_limit=getattr(dj_settings, "API_DEPTH_ROW_LIMIT", 250))
+
+    env["google_maps_api_key"] = getattr(dj_settings, "GOOGLE_GEOLOC_API_KEY", "")
+
+    # Expose map visualization preference
+    default_map_vis = getattr(dj_settings, "DEFAULT_MAP_VISUALIZATION_ENABLED", False)
+    env["map_visualization_enabled"] = (
+        getattr(request.user, "map_visualization_enabled", default_map_vis)
+        if request.user.is_authenticated
+        else default_map_vis
+    )
 
     reftag = request.GET.get("reftag")
 

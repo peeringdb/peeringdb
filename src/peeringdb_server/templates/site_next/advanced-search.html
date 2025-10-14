@@ -1,4 +1,4 @@
-{% extends "site/base.html" %}
+{% extends "site_next/base.html" %}
 {% load i18n util static %}
 
 {% block header %}
@@ -230,10 +230,24 @@
               });
             }
 
+            // expose results for other components (e.g., map)
+            try {
+              if (!window.PeeringDB) window.PeeringDB = {};
+              if (!window.PeeringDB.advanced_search_result) window.PeeringDB.advanced_search_result = {};
+              if (!window.PeeringDB.advanced_search_result[reftag]) window.PeeringDB.advanced_search_result[reftag] = {};
+              window.PeeringDB.advanced_search_result[reftag].data = data.data || [];
+            } catch (e) {}
+
             updatePagination(data.meta.pagination, reftag);
 
             var searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
             searchForm.editable("loading-shim", "hide");
+
+            // refresh map markers if map is visible
+            const mapContainer = document.querySelector(`#${reftag} #map-${reftag}`);
+            if (mapContainer && mapContainer.style.display !== 'none') {
+              renderResultsMap(reftag);
+            }
           })
           .catch((error) => {
             console.error('Error fetching data:', error);
@@ -784,6 +798,8 @@
                   );
                 });
               updateResults(reftag, 1);
+              // ensure map controls are present for this tab (facilities)
+              ensureMapControls(reftag);
             });
           }
         };
@@ -816,6 +832,149 @@
         });
 
       });
+      // Map utilities
+
+      function ensureMapControls(reftag) {
+        if (reftag !== 'fac') return; // start with facilities only
+
+        const section = document.getElementById(reftag);
+        if (!section) return;
+
+        // Only show map controls if user opted-in via profile option
+        const mapPrefEnabled = "{{ map_visualization_enabled|yesno:'true,false' }}" === 'true';
+        if (!mapPrefEnabled) return;
+
+        let controls = section.querySelector('.map-controls');
+        if (!controls) {
+          controls = document.createElement('div');
+          controls.className = 'map-controls d-flex align-items-center gap-2 mt-2';
+          controls.innerHTML = `
+            <button type="button" class="btn btn-default btn-sm" data-map-toggle="${reftag}">Show Map</button>
+          `;
+          section.appendChild(controls);
+
+          controls.querySelector('[data-map-toggle]').addEventListener('click', function() {
+            toggleResultsMap(reftag);
+          });
+        }
+
+        let mapContainer = section.querySelector(`#map-${reftag}`);
+        if (!mapContainer) {
+          mapContainer = document.createElement('div');
+          mapContainer.id = `map-${reftag}`;
+          mapContainer.style.cssText = 'width:100%;height:450px;margin-top:10px;display:none;border:1px solid #444;border-radius:6px;';
+          section.appendChild(mapContainer);
+        }
+      }
+
+      function toggleResultsMap(reftag) {
+        const section = document.getElementById(reftag);
+        if (!section) return;
+        const container = section.querySelector(`#map-${reftag}`);
+        const btn = section.querySelector('[data-map-toggle]');
+        if (!container || !btn) return;
+
+        if (container.style.display === 'none') {
+          container.style.display = 'block';
+          btn.textContent = 'Hide Map';
+          // enable google maps (option 2) if desired
+          window.PDB_USE_GOOGLE_MAPS = true;
+          renderResultsMap(reftag);
+          // give layout a moment, then fix leaflet sizing
+          setTimeout(function() {
+            if (container._leaflet_map) {
+              container._leaflet_map.invalidateSize();
+            }
+          }, 100);
+        } else {
+          container.style.display = 'none';
+          btn.textContent = 'Show Map';
+        }
+      }
+
+      function renderResultsMap(reftag) {
+        if (reftag !== 'fac') return;
+
+        // If Google Maps is requested and API is available, render via Google Maps
+        if (window.PDB_USE_GOOGLE_MAPS) {
+          var sectionG = document.getElementById(reftag);
+          var containerG = sectionG && sectionG.querySelector('#map-' + reftag);
+          const resultsG = (window.PeeringDB && PeeringDB.advanced_search_result && PeeringDB.advanced_search_result[reftag] && PeeringDB.advanced_search_result[reftag].data) || [];
+
+          if (typeof google !== 'undefined' && google.maps) {
+            // Render Google map
+            try {
+              // clean container
+              containerG.innerHTML = '';
+              var gmap = new google.maps.Map(containerG, {
+                center: {lat: 20, lng: 0},
+                zoom: 2,
+                mapTypeId: 'roadmap'
+              });
+              var bounds = new google.maps.LatLngBounds();
+              var info = new google.maps.InfoWindow();
+              var any = false;
+              resultsG.forEach(function(item) {
+                var lat = item.latitude;
+                var lon = item.longitude;
+                if (typeof lat !== 'number' || typeof lon !== 'number') return;
+                any = true;
+                var pos = {lat: lat, lng: lon};
+              // Use AdvancedMarkerElement if available (Google Maps deprecation notice)
+              var marker;
+              try {
+                if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
+                  marker = new google.maps.marker.AdvancedMarkerElement({
+                    map: gmap,
+                    position: pos,
+                  });
+                } else {
+                  marker = new google.maps.Marker({position: pos, map: gmap});
+                }
+              } catch (e) {
+                marker = new google.maps.Marker({position: pos, map: gmap});
+              }
+                var name = item.name || '';
+                var org = item.org_name || (item.org && item.org.name) || '';
+                var city = item.city || '';
+                var country = item.country || '';
+                var html = '<div style="min-width:220px">'
+                  + '<div style="font-weight:600;font-size:14px;margin-bottom:4px"><a href="/fac/' + item.id + '">' + name + '</a></div>'
+                  + '<div style="color:#555">' + org + '</div>'
+                  + '<div style="margin-top:6px">' + (city ? city + ', ' : '') + country + '</div>'
+                  + '<div style="margin-top:6px;display:flex;gap:10px;color:#666">'
+                  + '</div>'
+                  + '</div>';
+                marker.addListener('click', function() {
+                  info.setContent(html);
+                  info.open(gmap, marker);
+                });
+                bounds.extend(pos);
+              });
+              if (any) {
+                gmap.fitBounds(bounds);
+              }
+            } catch (e) {
+              console.error('Google Maps render failed', e);
+            }
+            return;
+          } else {
+            // Attempt to load Google Maps API and retry
+            (function loadG() {
+              if (window._googleMapsLoading) return;
+              window._googleMapsLoading = true;
+              var apiKey = '{{ google_maps_api_key|default:"" }}';
+              var s = document.createElement('script');
+              s.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey;
+              s.async = true;
+              s.onload = function() { renderResultsMap(reftag); };
+              document.body.appendChild(s);
+            })();
+            return;
+          }
+        }
+      }
+      // END Map utilities
     </script>
 </div>
 

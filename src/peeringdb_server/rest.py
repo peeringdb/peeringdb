@@ -53,6 +53,7 @@ from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
+    ASSET_REFTAG_MAP,
     UTC,
     CarrierFacility,
     Facility,
@@ -76,10 +77,18 @@ from peeringdb_server.permissions import (
     get_user_from_request,
     get_user_key_from_request,
 )
-from peeringdb_server.rest_throttles import IXFImportThrottle, OrganizationUsersThrottle
+from peeringdb_server.rest_throttles import (
+    IXFImportThrottle,
+    OrganizationUsersThrottle,
+    WriteRateThrottle,
+)
 from peeringdb_server.search_v2 import search_v2
 from peeringdb_server.serializers import (
+    AssetDeleteSerializer,
+    AssetLookupSerializer,
+    AssetReadSerializer,
     ASSetSerializer,
+    AssetWriteSerializer,
     FacilitySerializer,
     NetworkIXLanSerializer,
     UserSerializer,
@@ -526,9 +535,10 @@ class ModelViewSet(viewsets.ModelViewSet):
         filters = {}
         query_params = self.request.query_params
 
+        query_adjusted = False
         if hasattr(self.serializer_class, "finalize_query_params"):
-            qset, query_params = self.serializer_class.finalize_query_params(
-                qset, query_params
+            qset, query_params, query_adjusted = (
+                self.serializer_class.finalize_query_params(qset, query_params)
             )
 
         for k, v in list(query_params.items()):
@@ -664,7 +674,7 @@ class ModelViewSet(viewsets.ModelViewSet):
 
         # check if request qualifies for a cache load
         filters.update(p_filters)
-        api_cache = APICacheLoader(self, qset, filters)
+        api_cache = APICacheLoader(self, qset, filters, query_adjusted)
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
 
@@ -1384,6 +1394,178 @@ class ASSetViewSet(ReadOnlyMixin, viewsets.ModelViewSet):
         return Response({network.asn: network.irr_as_set})
 
 
+class AssetViewSet(viewsets.ViewSet):
+    """
+    Unified API endpoint for managing logos across all entity types.
+
+    Supports GET, POST, PUT, DELETE operations for logos on:
+    - Organizations (ref_tag="org")
+    - Facilities (ref_tag="fac")
+    - Networks (ref_tag="net")
+    - Internet Exchanges (ref_tag="ix")
+    - Carriers (ref_tag="carrier")
+    - Campuses (ref_tag="campus")
+    """
+
+    serializer_class = AssetReadSerializer
+
+    permission_classes = [
+        ModelViewSetPermissions,
+        BasicAuthMFABlockWrite,
+        InactiveKeyBlock,
+    ]
+
+    throttle_classes = [WriteRateThrottle]
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action in ["create", "update"]:
+            return AssetWriteSerializer
+        return AssetReadSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        """
+        Return the serializer instance for schema generation and validation.
+        """
+        serializer_class = self.get_serializer_class()
+        kwargs.setdefault(
+            "context", {"request": getattr(self, "request", None), "view": self}
+        )
+        return serializer_class(*args, **kwargs)
+
+    def retrieve(self, request, ref_tag=None, ref_id=None, asset_type=None):
+        """
+        Retrieve an asset (logo) for an entity.
+
+        Path parameters:
+        - ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+        - ref_id: Entity ID
+        - asset_type: Type of asset (currently only "logo")
+        """
+        data = {"ref_tag": ref_tag, "ref_id": ref_id, "asset_type": asset_type}
+        lookup_serializer = AssetLookupSerializer(
+            data=data, context={"request": request}
+        )
+        if not lookup_serializer.is_valid():
+            return Response(
+                lookup_serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        entity = lookup_serializer.validated_data["_entity"]
+
+        if not check_permissions_from_request(request, entity, "r"):
+            return Response(
+                {"detail": "No read permissions to this entity"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = AssetReadSerializer(entity, context={"request": request})
+        return Response(serializer.data)
+
+    @transaction.atomic
+    def create(self, request, ref_tag=None, ref_id=None, asset_type=None):
+        """
+        Create/upload a new asset (logo) for an entity.
+
+        Path parameters:
+        - ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+        - ref_id: Entity ID
+        - asset_type: Type of asset (currently only "logo")
+
+        Body fields:
+        - file_type: MIME type (image/png or image/jpeg)
+        - file_data: Base64 encoded file data
+        """
+        data = {
+            **request.data,
+            "ref_tag": ref_tag,
+            "ref_id": ref_id,
+            "asset_type": asset_type,
+        }
+        serializer = AssetWriteSerializer(data=data, context={"request": request})
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        entity = serializer.validated_data["_entity"]
+        if not check_permissions_from_request(request, entity, "cu"):
+            return Response(
+                {"detail": "No write permissions to this entity"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        entity = serializer.save()
+
+        response_serializer = AssetReadSerializer(entity, context={"request": request})
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @transaction.atomic
+    def update(self, request, ref_tag=None, ref_id=None, asset_type=None):
+        """
+        Update an existing asset (logo) for an entity.
+
+        Path parameters:
+        - ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+        - ref_id: Entity ID
+        - asset_type: Type of asset (currently only "logo")
+
+        Body fields:
+        - file_type: MIME type (image/png or image/jpeg)
+        - file_data: Base64 encoded file data
+        """
+        data = {
+            **request.data,
+            "ref_tag": ref_tag,
+            "ref_id": ref_id,
+            "asset_type": asset_type,
+        }
+        serializer = AssetWriteSerializer(data=data, context={"request": request})
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        entity = serializer.validated_data["_entity"]
+        if not check_permissions_from_request(request, entity, "cu"):
+            return Response(
+                {"detail": "No write permissions to this entity"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        entity = serializer.save()
+
+        response_serializer = AssetReadSerializer(entity, context={"request": request})
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @transaction.atomic
+    def destroy(self, request, ref_tag=None, ref_id=None, asset_type=None):
+        """
+        Delete an asset (logo) for an entity.
+
+        Path parameters:
+        - ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+        - ref_id: Entity ID
+        - asset_type: Type of asset (currently only "logo")
+        """
+        data = {"ref_tag": ref_tag, "ref_id": ref_id, "asset_type": asset_type}
+        serializer = AssetDeleteSerializer(data=data, context={"request": request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        entity = serializer.validated_data["_entity"]
+
+        if not check_permissions_from_request(request, entity, "d"):
+            return Response(
+                {"detail": "No delete permissions to this entity"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        entity.logo.delete(save=False)
+        entity.logo = None
+        entity.save(update_fields=["logo"])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 router.register("as_set", ASSetViewSet, basename="as_set")
 
 
@@ -1830,6 +2012,18 @@ urlpatterns = [
         r"^org/(?P<org_id>\d+)/users/remove/?$",
         OrganizationUsersViewSet.as_view({"delete": "remove_organization_user"}),
         name="organization-users-remove",
+    ),
+    re_path(
+        r"^asset/(?P<ref_tag>[^/]+)/(?P<ref_id>\d+)/(?P<asset_type>[^/]+)/?$",
+        AssetViewSet.as_view(
+            {
+                "get": "retrieve",
+                "post": "create",
+                "put": "update",
+                "delete": "destroy",
+            }
+        ),
+        name="asset-logo",
     ),
     re_path("search", search_api_view),
 ]

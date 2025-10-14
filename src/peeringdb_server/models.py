@@ -425,6 +425,46 @@ class SocialMediaMixin(models.Model):
         abstract = True
 
 
+class LogoMixin(models.Model):
+    """
+    Mixin providing common logo helpers for models that have a `logo` field and
+    belong to an `org` that may also have a `logo`.
+    """
+
+    class Meta:
+        abstract = True
+
+    logo = models.FileField(
+        upload_to="logos_user_supplied/",
+        null=True,
+        blank=True,
+        help_text=_("Allows you to upload and set a logo image file for this object."),
+    )
+
+    @property
+    def effective_logo(self):
+        """Return the logo for this object, falling back to the parent org's logo if not set."""
+        return (
+            self.logo.url if self.logo else self.org.logo.url if self.org.logo else None
+        )
+
+    @property
+    def is_org_logo(self):
+        """
+        Returns True if the current effective logo is the organization's logo.
+        """
+        if not self.org or not self.org.logo:
+            return False
+
+        if not self.logo:
+            return True
+
+        try:
+            return self.logo.name == self.org.logo.name
+        except ValueError:
+            return False
+
+
 class GeocodeBaseMixin(models.Model):
     """
     Mixin to use for geocode enabled entities.
@@ -1251,6 +1291,14 @@ class Organization(
         return f"peeringdb.manage_organization.{self.id}"
 
     @property
+    def grainy_namespace_oauth(self):
+        """
+        Org administrators need CRUD to this namespace in order
+        to manage OAuth applications for the organization.
+        """
+        return f"peeringdb.manage_organization.{self.id}.oauth"
+
+    @property
     def pending_affiliations(self):
         """
         Returns queryset holding pending affiliations to this
@@ -1826,6 +1874,7 @@ class Campus(
     ProtectedMixin,
     pdb_models.CampusBase,
     SocialMediaMixin,
+    LogoMixin,
     StripFieldMixin,
 ):
     """
@@ -1933,6 +1982,13 @@ class Campus(
             settings.BASE_URL, django.urls.reverse("campus-view", args=(self.id,))
         )
 
+    @property
+    def sponsorship(self):
+        """
+        Returns sponsorship object for this campus (through owning org).
+        """
+        return self.org.sponsorship
+
 
 @grainy_model(namespace="facility", parent="org")
 @reversion.register
@@ -1942,6 +1998,7 @@ class Facility(
     GeocodeBaseMixin,
     ParentStatusCheckMixin,
     SocialMediaMixin,
+    LogoMixin,
     StripFieldMixin,
 ):
     """
@@ -2260,6 +2317,7 @@ class InternetExchange(
     pdb_models.InternetExchangeBase,
     ParentStatusCheckMixin,
     SocialMediaMixin,
+    LogoMixin,
     StripFieldMixin,
 ):
     """
@@ -4828,6 +4886,7 @@ class Network(
     pdb_models.NetworkBase,
     ParentStatusCheckMixin,
     SocialMediaMixin,
+    LogoMixin,
     StripFieldMixin,
 ):
     """
@@ -5821,7 +5880,7 @@ class NetworkIXLan(
 @grainy_model(namespace="carrier", parent="org")
 @reversion.register
 class Carrier(
-    ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin, StripFieldMixin
+    ProtectedMixin, pdb_models.CarrierBase, SocialMediaMixin, LogoMixin, StripFieldMixin
 ):
     """
     Describes a carrier object.
@@ -6185,6 +6244,22 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     @property
     def ui_next_rejected(self):
         return bool(self.opt_flags & settings.USER_OPT_FLAG_UI_NEXT_REJECTED)
+
+    @property
+    def map_visualization_enabled(self):
+        """User-level opt-in for advanced search map visualization."""
+        # default comes from settings.DEFAULT_MAP_VISUALIZATION_ENABLED
+        default_enabled = getattr(settings, "DEFAULT_MAP_VISUALIZATION_ENABLED", False)
+        flag = getattr(settings, "USER_OPT_FLAG_MAP_VISUALIZATION", 0x20)
+        # if user not authenticated use default
+        if not getattr(self, "id", None):
+            return default_enabled
+        # If flag is present it's enabled, else default
+        return (
+            bool(self.opt_flags & flag)
+            if self.opt_flags is not None
+            else default_enabled
+        )
 
     @property
     def was_notified_mfa(self):
@@ -7461,6 +7536,15 @@ REFTAG_MAP = {
         IXLanPrefix,
         Campus,
     ]
+}
+
+ASSET_REFTAG_MAP = {
+    Organization.handleref.tag: Organization,
+    Facility.handleref.tag: Facility,
+    Network.handleref.tag: Network,
+    InternetExchange.handleref.tag: InternetExchange,
+    Carrier.handleref.tag: Carrier,
+    Campus.handleref.tag: Campus,
 }
 
 

@@ -11,10 +11,13 @@
       <div class="row">
         <div class="col-4 col-sm-5 col-md-4">{% trans "Name" %}</div>
         <div class="col-8 col-sm-7 col-md-8">
-          <div data-edit-type="string"
+          <div data-edit-type="autocomplete"
+               data-edit-autocomplete="facility-name-suggestions"
                data-edit-value="{{ request.GET.name_search }}"
                data-edit-reset-value=""
-               data-edit-name="name_search"></div>
+               data-edit-name="name_search"
+               data-edit-autocomplete-text="{{ request.GET.name_search }}"
+               data-edit-autocomplete-allow-nonexistent="yes"></div>
         </div>
       </div>
 

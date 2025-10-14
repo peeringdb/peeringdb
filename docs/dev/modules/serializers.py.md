@@ -1,4 +1,4 @@
-Generated from serializers.py on 2025-08-19 14:17:58.294002
+Generated from serializers.py on 2025-10-14 13:37:42.797475
 
 # peeringdb_server.serializers
 
@@ -30,6 +30,23 @@ Translate <fld>_id into <fld> and also translate fac and net queries into "facil
 and "network" queries.
 
 FIXME: should be renamed on model schema.
+
+---
+## validate_asset_lookup
+`def validate_asset_lookup(ref_tag, ref_id, asset_type)`
+
+Validate asset lookup parameters and return the entity.
+
+Args:
+    ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+    ref_id: Entity ID
+    asset_type: Asset type (currently only 'logo')
+
+Returns:
+    Entity instance if validation passes
+
+Raises:
+    RestValidationError: If validation fails
 
 ---
 # Classes
@@ -94,6 +111,98 @@ Call self as a function.
 `def __init__(self, field=asn, message=None, methods=None)`
 
 Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
+## AssetDeleteSerializer
+
+```
+AssetDeleteSerializer(peeringdb_server.serializers.AssetLookupSerializer)
+```
+
+Serializer for delete operations.
+Validates lookup parameters and checks that logo exists.
+
+
+### Methods
+
+#### validate
+`def validate(self, data)`
+
+Validate entity reference and check logo exists
+
+---
+
+## AssetLookupSerializer
+
+```
+AssetLookupSerializer(rest_framework.serializers.Serializer)
+```
+
+Base serializer for validating asset lookup parameters.
+Used by retrieve operations.
+
+
+### Methods
+
+#### validate
+`def validate(self, data)`
+
+Validate entity reference
+
+---
+
+## AssetReadSerializer
+
+```
+AssetReadSerializer(rest_framework.serializers.Serializer)
+```
+
+Read serializer for retrieving asset information.
+
+
+### Methods
+
+#### to_representation
+`def to_representation(self, instance)`
+
+Convert entity logo to response format with base64 data
+
+---
+
+## AssetWriteSerializer
+
+```
+AssetWriteSerializer(rest_framework.serializers.Serializer)
+```
+
+Write serializer for creating/updating assets across all entity.
+
+
+### Methods
+
+#### _validate_file_data
+`def _validate_file_data(self, data)`
+
+Validate and decode base64 file data
+
+---
+#### create
+`def create(self, validated_data)`
+
+Create/update logo for entity
+
+---
+#### update
+`def update(self, instance, validated_data)`
+
+Update logo for entity
+
+---
+#### validate
+`def validate(self, data)`
+
+Validate entity reference and file data
 
 ---
 
@@ -176,6 +285,16 @@ Possible relationship queries:
   - org_id, handled by serializer
   - org_name, hndled by prepare_query
 
+
+### Class Methods
+
+#### prepare_spatial_search
+`def prepare_spatial_search(cls, qset, filters, distance=50)`
+
+Override spatial search for facilities to allow activating spatial search
+with only `name_search` by deriving city/country (and coordinates) from ES.
+
+---
 
 ### Methods
 

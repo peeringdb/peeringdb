@@ -21,6 +21,7 @@ class MockMelissa(geo.Melissa):
                     "Results": "AV25",
                     "FormattedAddress": "address 1;address 2;city",
                     "AdministrativeArea": "state",
+                    "SubNationalArea": "subnational",
                     "AddressLine1": "address 1",
                     "AddressLine2": "address 2",
                     "Locality": "city",
@@ -207,11 +208,13 @@ def test_melissa_apply_global_address():
             "address1": "address1 old",
             "city": "city old",
             "zipcode": "zipcode old",
+            "country": "US",
         },
         {
             "Results": "AV25",
             "FormattedAddress": "address1 new;address2 new",
             "AdministrativeArea": "state new",
+            "SubNationalArea": "subnational new",
             "AddressLine1": "address1 new",
             "AddressLine2": "address2 new",
             "Latitude": 1.234567,
@@ -225,10 +228,50 @@ def test_melissa_apply_global_address():
         "address1": "address1 new",
         "address2": "address2 new",
         "city": "city new",
+        "country": "US",
         "zipcode": "zipcode new",
         "longitude": 1.234567,
         "latitude": 1.234567,
         "state": "state new",
+    }
+
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_melissa_apply_global_address_subnational():
+    client = geo.Melissa("")
+
+    data = client.apply_global_address(
+        {
+            "address1": "address1 old",
+            "city": "city old",
+            "zipcode": "zipcode old",
+            "country": "IS",
+        },
+        {
+            "Results": "AV25",
+            "FormattedAddress": "address1 new;address2 new",
+            "AdministrativeArea": "administrative new",
+            "SubNationalArea": "subnational new",
+            "AddressLine1": "address1 new",
+            "AddressLine2": "address2 new",
+            "Latitude": 1.234567,
+            "Longitude": 1.234567,
+            "PostalCode": "zipcode new",
+            "Locality": "city new",
+        },
+    )
+
+    expected = {
+        "address1": "address1 new",
+        "address2": "address2 new",
+        "city": "city new",
+        "country": "IS",
+        "zipcode": "zipcode new",
+        "longitude": 1.234567,
+        "latitude": 1.234567,
+        "state": "subnational new",
     }
 
     assert data == expected

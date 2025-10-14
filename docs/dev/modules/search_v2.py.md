@@ -1,4 +1,4 @@
-Generated from search_v2.py on 2025-08-19 14:17:58.294002
+Generated from search_v2.py on 2025-10-14 13:37:42.797475
 
 # peeringdb_server.search_v2
 
@@ -61,6 +61,17 @@ Returns:
     dict: Elasticsearch query body for ASN search
 
 ---
+## construct_ipv4_query
+`def construct_ipv4_query(term)`
+
+Constructs Elasticsearch query specifically for IPv4 addresses.
+
+Args:
+    term (str): The IPv4 address or partial address
+Returns:
+    dict: Elasticsearch query body for IPv4 search
+
+---
 ## construct_ipv6_query
 `def construct_ipv6_query(term)`
 
@@ -84,7 +95,7 @@ Returns:
 
 ---
 ## construct_query_body
-`def construct_query_body(term, geo, indexes, ipv6_construct, user)`
+`def construct_query_body(term, geo, indexes, ipv4_construct, ipv6_construct, user)`
 
 Constructs the Elasticsearch query body based on the search term and geo filter.
 

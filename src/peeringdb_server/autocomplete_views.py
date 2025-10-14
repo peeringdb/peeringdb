@@ -14,6 +14,7 @@ from dal import autocomplete
 from django import http
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import IntegerField, Q, Value
+from django.db.models.functions import Lower
 from django.utils import html
 from django.utils.encoding import smart_str
 from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
@@ -485,6 +486,37 @@ class CommandLineToolHistoryAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, item):
         return item.description or self.tool
+
+
+class FacilityNameAutocomplete(AutocompleteHTMLResponse):
+    """
+    Autocomplete for the Facility Name field in Advanced Search.
+    """
+
+    def get_queryset(self):
+        qs = Facility.objects.filter(status="ok")
+
+        query = self.q
+        name_search = self.request.GET.get("name_search")
+
+        if query:
+            qs = qs.filter(
+                Q(name__icontains=query)
+                | Q(address1__icontains=query)
+                | Q(city__icontains=query)
+            )
+
+        if name_search:
+            qs = qs.annotate(
+                name_match=Lower("name").contains(name_search.lower())
+            ).order_by("-name_match", "name")
+        else:
+            qs = qs.order_by("name")
+
+        return qs
+
+    def get_result_label(self, item):
+        return f'<span data-value="{html.escape(item.name)}"><div class="main">{html.escape(item.name)}</div></span>'
 
 
 clt_history = {}

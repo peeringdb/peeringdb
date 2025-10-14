@@ -1572,7 +1572,7 @@ div.oauth img {
 
 
 .nav-tabs a.campus-tab {
-  color: #000 !important;;
+  color: var(--button-text-color-3) !important;;
   padding: 2rem 1rem;
   font-size: 16px;
   border: 2px !important;
@@ -2536,4 +2536,12 @@ input.input-block-level {
 /* Highlight rows that contain two or more ASNs in ASN Connectivity table */
 div.advanced-search-view div.results div.row.row-hilight {
   background-color: var(--alert-info-bg);
+}
+
+.nav-link {
+  color: var(--hyperlink-color-2);
+}
+
+.page-link {
+  background-color: var(--form-bg-color);
 }

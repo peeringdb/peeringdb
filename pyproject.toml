@@ -1,6 +1,6 @@
 [project]
 name = "peeringdb_server"
-version = "2.70.0"
+version = "2.72.1"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
@@ -16,7 +16,8 @@ dependencies = [
     "django-peeringdb>=3.4.0",
     "djangorestframework>=3.14.0",
     "mysqlclient>=2.1.1",
-    "redis>=5.0.0",
+    "redis>=6.0.0",
+    "django-redis>=5.4.0",
     "hiredis>=2.2.3",
     "peeringdb>=2.0.0",
     "uwsgi>=2.0.14",
@@ -121,7 +122,7 @@ dev-dependencies = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202507" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202508" }
 # from branch until passkey support is released
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202507-modernize" }
 # modernization fixes alignment (until 2.4.0 is tagged)

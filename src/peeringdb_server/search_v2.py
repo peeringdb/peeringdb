@@ -17,7 +17,12 @@ from django.contrib.auth.models import AnonymousUser
 from elasticsearch import Elasticsearch
 
 from mainsite.settings import ELASTIC_PASSWORD, ELASTICSEARCH_URL
-from peeringdb_server.search import PARTIAL_IPV6_ADDRESS, append_result
+from peeringdb_server.search import (
+    PARTIAL_IPV4_ADDRESS,
+    PARTIAL_IPV6_ADDRESS,
+    append_result,
+    valid_partial_ipv4_address,
+)
 
 
 def new_elasticsearch() -> Elasticsearch:
@@ -271,6 +276,51 @@ def construct_asn_query(term: str) -> dict:
     }
 
 
+def construct_ipv4_query(term: str) -> dict:
+    """
+    Constructs Elasticsearch query specifically for IPv4 addresses.
+
+    Args:
+        term (str): The IPv4 address or partial address
+    Returns:
+        dict: Elasticsearch query body for IPv4 search
+    """
+    return {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "bool": {
+                            "should": [
+                                {
+                                    "prefix": {
+                                        "ipaddr4.raw": {
+                                            "value": term,
+                                            "boost": settings.ES_MATCH_PHRASE_BOOST,
+                                        }
+                                    }
+                                },
+                                {
+                                    "prefix": {
+                                        "ipaddr4": {
+                                            "value": term,
+                                            "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
+                                        }
+                                    }
+                                },
+                            ],
+                            "minimum_should_match": 1,
+                        }
+                    }
+                ]
+            }
+        },
+        "explain": True,
+        "_source": True,
+        "sort": ["_score"],
+    }
+
+
 def construct_ipv6_query(term: str) -> dict:
     """
     Constructs Elasticsearch query specifically for IPv6 addresses.
@@ -300,6 +350,14 @@ def construct_ipv6_query(term: str) -> dict:
                                         "ipaddr6.raw": {
                                             "value": term,
                                             "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
+                                        }
+                                    }
+                                },
+                                {
+                                    "match_phrase_prefix": {
+                                        "ipaddr6": {
+                                            "query": term,
+                                            "boost": settings.ES_QUERY_STRING_BOOST,
                                         }
                                     }
                                 },
@@ -372,6 +430,7 @@ def construct_query_body(
     term: str,
     geo: dict[str, str | float],
     indexes: list[str],
+    ipv4_construct: bool,
     ipv6_construct: bool,
     user,
 ) -> dict:
@@ -389,6 +448,8 @@ def construct_query_body(
     clean_term = term.replace("*", "").replace("AND", "").strip()
     if clean_term.isdigit():
         body = construct_asn_query(clean_term)
+    elif ipv4_construct:
+        body = construct_ipv4_query(clean_term)
     elif ipv6_construct:
         body = construct_ipv6_query(clean_term)
     else:
@@ -633,11 +694,18 @@ def search_v2(
     # Escape special characters for Elasticsearch
     safe_qs = escape_query_string(qs)
     look_for_exact_matches = []
+    ipv4_construct = False
     ipv6_construct = False
 
-    if PARTIAL_IPV6_ADDRESS.match(" ".join(qs.split())):
-        ipv6 = "\\:".join(qs.split(":"))
-        term = f"*{ipv6}*"
+    if PARTIAL_IPV4_ADDRESS.match(" ".join(qs.split())):
+        if valid_partial_ipv4_address(" ".join(qs.split())):
+            term = " ".join(qs.split())
+            ipv4_construct = True
+    elif PARTIAL_IPV6_ADDRESS.match(" ".join(qs.split())):
+        ipv6_term = " ".join(qs.split())
+        if ipv6_term.endswith(":") and not ipv6_term.endswith("::"):
+            ipv6_term = ipv6_term.rstrip(":")
+        term = ipv6_term
         ipv6_construct = True
     else:
         keywords = safe_qs.split()
@@ -654,7 +722,9 @@ def search_v2(
 
     indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
 
-    body = construct_query_body(term, geo, indexes, ipv6_construct, user)
+    body = construct_query_body(
+        term, geo, indexes, ipv4_construct, ipv6_construct, user
+    )
 
     total_limit = settings.SEARCH_RESULTS_LIMIT
     if geo and not term.strip():

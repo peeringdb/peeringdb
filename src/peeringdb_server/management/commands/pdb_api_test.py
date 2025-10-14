@@ -13,6 +13,7 @@ import unittest
 import uuid
 from unittest.mock import Mock, patch
 
+import elasticsearch
 import pytest
 import reversion
 from django.conf import settings
@@ -1344,6 +1345,110 @@ class TestJSON(unittest.TestCase):
         data = response.json()
         self.assertIn(organization.name, [f["name"] for f in data["data"]])
         self.assertIn(organization.address1, [f["address1"] for f in data["data"]])
+
+    ##########################################################################
+
+    @override_settings(API_CACHE_ENABLED=False)
+    @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
+    def test_user_001_GET_fac_spatial_search_with_name_search(self, mock_es):
+        """Test facility API spatial search with name_search parameter that triggers ES lookup."""
+        mock_es.return_value = {
+            "city": "Chicago",
+            "state": "IL",
+            "country": "US",
+            "latitude": 41.8781,
+            "longitude": -87.6298,
+        }
+
+        fac_data = self.make_data_fac(
+            city="Chicago",
+            state="IL",
+            country="US",
+            latitude=41.8781,
+            longitude=-87.6298,
+        )
+        facility = Facility.objects.create(status="ok", **fac_data)
+
+        response = self.db_user._request(
+            "fac?name_search=Test Facility&distance=50", method="GET"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        mock_es.assert_called_once_with("Test Facility")
+
+        data = response.json()
+        facility_names = [f["name"] for f in data["data"]]
+        self.assertIn(facility.name, facility_names)
+
+    ##########################################################################
+
+    @override_settings(API_CACHE_ENABLED=False)
+    @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
+    def test_user_001_GET_fac_spatial_search_es_error_fallback(self, mock_es):
+        """Test facility API spatial search gracefully handles ES errors."""
+        mock_es.side_effect = elasticsearch.ConnectionError("ES connection failed")
+
+        fac_data = self.make_data_fac(city="Seattle", country="US")
+        Facility.objects.create(status="ok", **fac_data)
+
+        response = self.db_user._request(
+            "fac?name_search=Test&distance=50", method="GET"
+        )
+        self.assertEqual(response.status_code, 200)
+
+        mock_es.assert_called_once_with("Test")
+
+        data = response.json()
+        self.assertIn("data", data)
+
+    ##########################################################################
+
+    @override_settings(API_CACHE_ENABLED=False)
+    def test_user_001_GET_fac_spatial_search_with_coordinates(self):
+        """Test facility API spatial search with direct coordinates (should skip ES)."""
+        fac_data = self.make_data_fac(
+            city="New York",
+            state="NY",
+            country="US",
+            latitude=40.7128,
+            longitude=-74.0060,
+        )
+        facility = Facility.objects.create(status="ok", **fac_data)
+
+        with patch(
+            "peeringdb_server.serializers.elasticsearch_proximity_entity"
+        ) as mock_es:
+            response = self.db_user._request(
+                "fac?latitude=40.7128&longitude=-74.0060&distance=50", method="GET"
+            )
+            self.assertEqual(response.status_code, 200)
+
+            mock_es.assert_not_called()
+
+            data = response.json()
+            facility_names = [f["name"] for f in data["data"]]
+            self.assertIn(facility.name, facility_names)
+
+    ##########################################################################
+
+    @override_settings(API_CACHE_ENABLED=False)
+    def test_user_001_GET_fac_spatial_search_with_city_country(self):
+        """Test facility API spatial search with city/country (should skip ES)."""
+        fac_data = self.make_data_fac(city="London", country="GB")
+        Facility.objects.create(status="ok", **fac_data)
+
+        with patch(
+            "peeringdb_server.serializers.elasticsearch_proximity_entity"
+        ) as mock_es:
+            response = self.db_user._request(
+                "fac?city=London&country=GB&distance=50", method="GET"
+            )
+            self.assertEqual(response.status_code, 200)
+
+            mock_es.assert_not_called()
+
+            data = response.json()
+            self.assertIn("data", data)
 
     ##########################################################################
 

@@ -176,6 +176,9 @@ class BaseSchema(AutoSchema):
         serializer, model = self.get_classes(path, method)
         op_type = self.get_operation_type(path, method)
 
+        if "asset" in path:
+            return f"{op_type} asset"
+
         if model:
             # Overrides for duplicate operations ids
 
@@ -227,7 +230,9 @@ class BaseSchema(AutoSchema):
             return {}
 
         # Override the the requestBody with components instead of using reference
-        components = super().get_components(*args).get(model.__name__)
+        components = None
+        if model:
+            components = super().get_components(*args).get(model.__name__)
 
         content_types = [
             "application/json",
@@ -295,11 +300,16 @@ class BaseSchema(AutoSchema):
         if not isinstance(serializer, serializers.Serializer):
             item_schema = {}
         else:
-            item_schema = self.get_reference(serializer)
+            if not hasattr(serializer, "Meta") or not hasattr(serializer.Meta, "model"):
+                item_schema = self.map_serializer(serializer)
+            else:
+                item_schema = self.get_reference(serializer)
 
             # Check if list view with list_exclude - use the List variant
-            if is_list_view(path, method, self.view) and hasattr(
-                serializer.__class__.Meta, "list_exclude"
+            if (
+                is_list_view(path, method, self.view)
+                and hasattr(serializer.__class__, "Meta")
+                and hasattr(serializer.__class__.Meta, "list_exclude")
             ):
                 ref = item_schema.get("$ref", "")
                 if ref and ref.startswith("#/components/schemas/"):

@@ -1,4 +1,4 @@
-Generated from models.py on 2025-08-19 14:17:58.294002
+Generated from models.py on 2025-10-14 13:37:42.797475
 
 # peeringdb_server.models
 
@@ -82,7 +82,7 @@ if any fail the permission check False is returned.
 ## Campus
 
 ```
-Campus(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.CampusBase, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+Campus(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.CampusBase, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.LogoMixin, peeringdb_server.models.StripFieldMixin)
 ```
 
 Describes a peeringdb campus
@@ -99,6 +99,7 @@ These attributes / properties will be available on instances of the class
 - longitude (`@property`): Return longitude of related facility object
 - search_result_name (`@property`): This will be the name displayed for quick search matches
 of this entity.
+- sponsorship (`@property`): Returns sponsorship object for this campus (through owning org).
 - state (`@property`): Return state of related facility object
 - view_url (`@property`): Return the URL to this campus's web view.
 - zipcode (`@property`): Return zipcode of related facility object
@@ -127,7 +128,7 @@ Save the current instance
 ## Carrier
 
 ```
-Carrier(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.CarrierBase, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+Carrier(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.CarrierBase, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.LogoMixin, peeringdb_server.models.StripFieldMixin)
 ```
 
 Describes a carrier object.
@@ -406,7 +407,7 @@ Update the value for this setting.
 ## Facility
 
 ```
-Facility(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.FacilityBase, peeringdb_server.models.GeocodeBaseMixin, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+Facility(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.FacilityBase, peeringdb_server.models.GeocodeBaseMixin, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.LogoMixin, peeringdb_server.models.StripFieldMixin)
 ```
 
 Describes a peeringdb facility.
@@ -1132,7 +1133,7 @@ Returns:
 ## InternetExchange
 
 ```
-InternetExchange(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.InternetExchangeBase, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+InternetExchange(peeringdb_server.models.ProtectedMixin, django_peeringdb.models.abstract.InternetExchangeBase, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.LogoMixin, peeringdb_server.models.StripFieldMixin)
 ```
 
 Describes a peeringdb exchange.
@@ -1384,10 +1385,27 @@ Save the current instance
 
 ---
 
+## LogoMixin
+
+```
+LogoMixin(django.db.models.base.Model)
+```
+
+Mixin providing common logo helpers for models that have a `logo` field and
+belong to an `org` that may also have a `logo`.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- effective_logo (`@property`): Return the logo for this object, falling back to the parent org's logo if not set.
+- is_org_logo (`@property`): Returns True if the current effective logo is the organization's logo.
+
 ## Network
 
 ```
-Network(django_peeringdb.models.abstract.NetworkBase, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.StripFieldMixin)
+Network(django_peeringdb.models.abstract.NetworkBase, peeringdb_server.models.ParentStatusCheckMixin, peeringdb_server.models.SocialMediaMixin, peeringdb_server.models.LogoMixin, peeringdb_server.models.StripFieldMixin)
 ```
 
 Describes a peeringdb network.
@@ -1858,6 +1876,8 @@ of the following is True:
 - grainy_namespace_manage (`@property`): Org administrators need CRUD to this namespace in order
 to execute administrative actions (user management, user permission
 management).
+- grainy_namespace_oauth (`@property`): Org administrators need CRUD to this namespace in order
+to manage OAuth applications for the organization.
 - group_name (`@property`): Returns usergroup name for this organization.
 - is_empty (`@property`): Returns whether or not the organization is empty
 
@@ -2305,6 +2325,7 @@ by PDB staff).
 
 Currently this is accomplished by checking if the user
 has been added to the 'user' user group.
+- map_visualization_enabled (`@property`): User-level opt-in for advanced search map visualization.
 - networks (`@property`): Returns all networks this user is a member of.
 - organizations (`@property`): Returns all organizations this user is a member or admin of.
 - pending_affiliation_requests (`@property`): Returns the currently pending user -> org affiliation

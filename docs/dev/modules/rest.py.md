@@ -1,4 +1,4 @@
-Generated from rest.py on 2025-08-19 14:17:58.294002
+Generated from rest.py on 2025-10-14 13:37:42.797475
 
 # peeringdb_server.rest
 
@@ -75,6 +75,90 @@ You may want to override this if you need to provide different
 querysets depending on the incoming request.
 
 (Eg. return a list of items that is specific to the user)
+
+---
+
+## AssetViewSet
+
+```
+AssetViewSet(rest_framework.viewsets.ViewSet)
+```
+
+Unified API endpoint for managing logos across all entity types.
+
+Supports GET, POST, PUT, DELETE operations for logos on:
+- Organizations (ref_tag="org")
+- Facilities (ref_tag="fac")
+- Networks (ref_tag="net")
+- Internet Exchanges (ref_tag="ix")
+- Carriers (ref_tag="carrier")
+- Campuses (ref_tag="campus")
+
+
+### Methods
+
+#### create
+`def create(self, request, ref_tag=None, ref_id=None, asset_type=None)`
+
+Create/upload a new asset (logo) for an entity.
+
+Path parameters:
+- ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+- ref_id: Entity ID
+- asset_type: Type of asset (currently only "logo")
+
+Body fields:
+- file_type: MIME type (image/png or image/jpeg)
+- file_data: Base64 encoded file data
+
+---
+#### destroy
+`def destroy(self, request, ref_tag=None, ref_id=None, asset_type=None)`
+
+Delete an asset (logo) for an entity.
+
+Path parameters:
+- ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+- ref_id: Entity ID
+- asset_type: Type of asset (currently only "logo")
+
+---
+#### get_serializer
+`def get_serializer(self, *args, **kwargs)`
+
+Return the serializer instance for schema generation and validation.
+
+---
+#### get_serializer_class
+`def get_serializer_class(self)`
+
+Return appropriate serializer based on action
+
+---
+#### retrieve
+`def retrieve(self, request, ref_tag=None, ref_id=None, asset_type=None)`
+
+Retrieve an asset (logo) for an entity.
+
+Path parameters:
+- ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+- ref_id: Entity ID
+- asset_type: Type of asset (currently only "logo")
+
+---
+#### update
+`def update(self, request, ref_tag=None, ref_id=None, asset_type=None)`
+
+Update an existing asset (logo) for an entity.
+
+Path parameters:
+- ref_tag: Entity type (org, fac, net, ix, carrier, campus)
+- ref_id: Entity ID
+- asset_type: Type of asset (currently only "logo")
+
+Body fields:
+- file_type: MIME type (image/png or image/jpeg)
+- file_data: Base64 encoded file data
 
 ---
 
