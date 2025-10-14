@@ -1,4 +1,4 @@
-Generated from models.py on 2025-09-16 15:00:08.206614
+Generated from models.py on 2025-10-14 13:37:42.797475
 
 # peeringdb_server.models
 
@@ -1876,6 +1876,8 @@ of the following is True:
 - grainy_namespace_manage (`@property`): Org administrators need CRUD to this namespace in order
 to execute administrative actions (user management, user permission
 management).
+- grainy_namespace_oauth (`@property`): Org administrators need CRUD to this namespace in order
+to manage OAuth applications for the organization.
 - group_name (`@property`): Returns usergroup name for this organization.
 - is_empty (`@property`): Returns whether or not the organization is empty
 
@@ -2346,13 +2348,13 @@ Warning: users that are status == "pending" are hard-deleted
 
 ---
 #### email_user
-`def email_user(self, subject, message, from_email=pdb@localhost, email=None)`
+`def email_user(self, subject, message, from_email=stefan@20c.com, email=None)`
 
 Sends an email to this User.
 
 ---
 #### email_user_all_addresses
-`def email_user_all_addresses(self, subject, message, from_email=pdb@localhost, exclude=None)`
+`def email_user_all_addresses(self, subject, message, from_email=stefan@20c.com, exclude=None)`
 
 Sends email to all email addresses for the user
 

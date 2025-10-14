@@ -45,6 +45,84 @@ services:
     volumes:
       - peeringdb_redis_data:/data:Z
 
+  redis-sentinel-1:
+    image: "docker.io/redis:7"
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        cat > /tmp/sentinel.conf <<EOF
+        port 26379
+        sentinel monitor peeringdb-redis redis 6379 2
+        sentinel auth-pass peeringdb-redis $${REDIS_PASSWORD}
+        sentinel down-after-milliseconds peeringdb-redis 5000
+        sentinel parallel-syncs peeringdb-redis 1
+        sentinel failover-timeout peeringdb-redis 10000
+        sentinel resolve-hostnames yes
+        requirepass $${REDIS_PASSWORD}
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    env_file: .env
+    ports:
+      - "127.0.0.1:26379:26379"
+    networks:
+      - peeringdb_network
+    depends_on:
+      - redis
+
+  redis-sentinel-2:
+    image: "docker.io/redis:7"
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        cat > /tmp/sentinel.conf <<EOF
+        port 26379
+        sentinel monitor peeringdb-redis redis 6379 2
+        sentinel auth-pass peeringdb-redis $${REDIS_PASSWORD}
+        sentinel down-after-milliseconds peeringdb-redis 5000
+        sentinel parallel-syncs peeringdb-redis 1
+        sentinel failover-timeout peeringdb-redis 10000
+        requirepass $${REDIS_PASSWORD}
+        sentinel resolve-hostnames yes
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    env_file: .env
+    ports:
+      - "127.0.0.1:26380:26379"
+    networks:
+      - peeringdb_network
+    depends_on:
+      - redis
+
+  redis-sentinel-3:
+    image: "docker.io/redis:7"
+    restart: always
+    command:
+      - sh
+      - -c
+      - |
+        cat > /tmp/sentinel.conf <<EOF
+        port 26379
+        sentinel monitor peeringdb-redis redis 6379 2
+        sentinel auth-pass peeringdb-redis $${REDIS_PASSWORD}
+        sentinel down-after-milliseconds peeringdb-redis 5000
+        sentinel parallel-syncs peeringdb-redis 1
+        sentinel failover-timeout peeringdb-redis 10000
+        requirepass $${REDIS_PASSWORD}
+        sentinel resolve-hostnames yes
+        EOF
+        redis-sentinel /tmp/sentinel.conf
+    env_file: .env
+    ports:
+      - "127.0.0.1:26381:26379"
+    networks:
+      - peeringdb_network
+    depends_on:
+      - redis
+
   peeringdb:
     user: "0:0"
     build:
@@ -57,6 +135,10 @@ services:
     depends_on:
       - database
       - elasticsearch
+      - redis
+      - redis-sentinel-1
+      - redis-sentinel-2
+      - redis-sentinel-3
     environment:
       DATABASE_USER: peeringdb
       DATABASE_PASSWORD: devPASSWORD
@@ -64,6 +146,9 @@ services:
       REDIS_HOST: redis
       REDIS_PASSWORD: devPASSWORD
       ELASTICSEARCH_URL: http://elasticsearch:9200
+      #REDIS_HOST: peeringdb-redis
+      #REDIS_SENTINEL_NODES: '[("redis-sentinel-1", 26379), ("redis-sentinel-2", 26379), ("redis-sentinel-3", 26379)]'
+      #REDIS_SENTINEL_PASSWORD: devPASSWORD
     ports:
       # this needs to be set in the shell, compose env vars aren't read yet
       - "${DJANGO_PORT:-8000}:8000"

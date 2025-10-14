@@ -1291,6 +1291,14 @@ class Organization(
         return f"peeringdb.manage_organization.{self.id}"
 
     @property
+    def grainy_namespace_oauth(self):
+        """
+        Org administrators need CRUD to this namespace in order
+        to manage OAuth applications for the organization.
+        """
+        return f"peeringdb.manage_organization.{self.id}.oauth"
+
+    @property
     def pending_affiliations(self):
         """
         Returns queryset holding pending affiliations to this
@@ -7528,6 +7536,15 @@ REFTAG_MAP = {
         IXLanPrefix,
         Campus,
     ]
+}
+
+ASSET_REFTAG_MAP = {
+    Organization.handleref.tag: Organization,
+    Facility.handleref.tag: Facility,
+    Network.handleref.tag: Network,
+    InternetExchange.handleref.tag: InternetExchange,
+    Carrier.handleref.tag: Carrier,
+    Campus.handleref.tag: Campus,
 }
 
 
