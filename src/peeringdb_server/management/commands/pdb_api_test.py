@@ -1315,7 +1315,11 @@ class TestJSON(unittest.TestCase):
 
         # create geocode cache entry
         GeoCoordinateCache.objects.create(
-            country="US", city="Chicago", state="IL", latitude=41.8781, longitude=-87.6298
+            country="US",
+            city="Chicago",
+            state="IL",
+            latitude=41.8781,
+            longitude=-87.6298,
         )
 
         mock_es_instance = mock_new_es.return_value
