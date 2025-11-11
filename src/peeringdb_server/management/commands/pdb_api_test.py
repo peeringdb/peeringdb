@@ -1313,6 +1313,11 @@ class TestJSON(unittest.TestCase):
         )
         facility = Facility.objects.create(status="ok", **fac_data)
 
+        # Ensure spatial search can resolve coordinates from cache in CI (no external geocode)
+        GeoCoordinateCache.objects.create(
+            country="US", city="Chicago", state="IL", latitude=41.8781, longitude=-87.6298
+        )
+
         mock_es_instance = mock_new_es.return_value
         mock_es_instance.search.return_value = {
             "hits": {
