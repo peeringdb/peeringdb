@@ -1313,7 +1313,7 @@ class TestJSON(unittest.TestCase):
         )
         facility = Facility.objects.create(status="ok", **fac_data)
 
-        # Ensure spatial search can resolve coordinates from cache in CI (no external geocode)
+        # create geocode cache entry
         GeoCoordinateCache.objects.create(
             country="US", city="Chicago", state="IL", latitude=41.8781, longitude=-87.6298
         )
