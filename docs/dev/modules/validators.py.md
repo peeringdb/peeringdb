@@ -1,4 +1,4 @@
-Generated from validators.py on 2025-10-14 13:37:42.797475
+Generated from validators.py on 2025-11-11 15:33:21.384068
 
 # peeringdb_server.validators
 
@@ -176,6 +176,26 @@ Arguments:
 Returns:
 
 - validated value (`dict`)
+
+---
+## validate_status
+`def validate_status(value)`
+
+Validate that the status field only accepts allowed values.
+
+Valid status values are: 'ok', 'pending', 'deleted'
+
+This prevents the API from accepting arbitrary status values that
+can lead to data being inaccessible or cause unexpected behavior.
+
+Arguments:
+    - value (str): The status value to validate
+
+Raises:
+    - RestValidationError: If the status value is not in the allowed list
+
+Returns:
+    - str: The validated status value
 
 ---
 ## validate_verified_update_data

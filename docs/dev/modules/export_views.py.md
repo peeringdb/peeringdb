@@ -1,4 +1,4 @@
-Generated from export_views.py on 2025-10-14 13:37:43.606317
+Generated from export_views.py on 2025-11-11 15:33:22.232583
 
 # peeringdb_server.export_views
 
@@ -30,6 +30,50 @@ Allow exporting of advanced search result data.
 
 ### Methods
 
+#### _generate_exchange_connectivity
+`def _generate_exchange_connectivity(self, asn_list, match_filter, hide_unmatched)`
+
+Generate exchange connectivity matrix for given ASN list.
+
+Arguments:
+    - asn_list: List of ASN integers to check connectivity for
+    - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+    - hide_unmatched: Whether to hide rows with no matches
+
+Returns:
+    - list: Matrix rows with exchange connectivity data
+
+---
+#### _generate_facility_connectivity
+`def _generate_facility_connectivity(self, asn_list, match_filter, hide_unmatched)`
+
+Generate facility connectivity matrix for given ASN list.
+
+Arguments:
+    - asn_list: List of ASN integers to check connectivity for
+    - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+    - hide_unmatched: Whether to hide rows with no matches
+
+Returns:
+    - list: Matrix rows with facility connectivity data
+
+---
+#### _row_filters_asn_connectivity
+`def _row_filters_asn_connectivity(self, asn_count, total_asns, match_filter, hide_unmatched)`
+
+Determine if a row should be included based on filter settings.
+This matches the frontend filtering logic.
+
+Arguments:
+    - asn_count: Number of ASNs present at this location
+    - total_asns: Total number of ASNs being queried
+    - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+    - hide_unmatched: Whether to hide rows with no matches
+
+Returns:
+    - bool: True if row should be included
+
+---
 #### fetch
 `def fetch(self, request)`
 
@@ -59,7 +103,12 @@ Returns:
 #### generate_asn_connectivity
 `def generate_asn_connectivity(self, request)`
 
-Export ASN connectivity as a matrix: Facility vs ASN (✔/✗ or true/false)
+Export ASN connectivity as a matrix: Facility/Exchange vs ASN (true/false)
+Supports filter parameters:
+- match_filter: 'show-all', 'any-match', or 'all-match'
+- hide_unmatched: '1' or 'true' to hide facilities/exchanges with no matches
+
+This export matches the filtered view shown in the frontend table.
 
 ---
 #### generate_campus

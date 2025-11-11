@@ -21,7 +21,6 @@ def override_mfa_settings(settings):
     settings.MFA_FORCE_HARD_START = datetime.datetime.now() + timedelta(days=1)
 
 
-@pytest.mark.django_db
 @pytest.fixture
 def reauth_objects():
     reset_group_ids()

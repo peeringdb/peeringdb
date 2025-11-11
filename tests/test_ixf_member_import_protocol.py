@@ -2943,6 +2943,65 @@ def test_vlan_null_vlan_list_and_if_list(entities, save):
 
 
 @pytest.mark.django_db
+def test_if_list_null_if_speed_and_pdb_facility_id(entities, save):
+    """
+    The IX-F data contains if_list entries with null values for if_speed and pdb_facility_id
+    Importer should treat them the same as if they werent set at all
+
+    Tests issue #1602 - handles null values for optional properties in if_list entries
+    (if_speed, pdb_facility_id) by treating them the same as missing properties.
+
+    Test data includes:
+    - One entry with if_speed: null and pdb_facility_id: null
+    - One entry with if_speed: 10000 and pdb_facility_id: 123
+    """
+
+    data = setup_test_data("ixf.member.null.if_speed")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    importer = ixf.Importer()
+    importer.sanitize(data)
+
+    # Verify that pdb_facility_id with null and non-null values is present in test data
+    member = data["member_list"][0]
+    connection = member["connection_list"][0]
+    if_list = connection.get("if_list", [])
+    assert len(if_list) == 2, "Test data should have 2 if_list entries"
+
+    # Check that we have both null and non-null pdb_facility_id values in test data
+    has_pdb_facility_id = any("pdb_facility_id" in if_entry for if_entry in if_list)
+    assert has_pdb_facility_id, "Test data should contain pdb_facility_id"
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(network, ixlan.ix)
+
+    # Verify the speed was correctly parsed from the non-null entry
+    netixlan = NetworkIXLan.objects.filter(asn=2906, status="ok").first()
+    assert netixlan is not None
+    assert netixlan.speed == 10000  # Only the non-null if_speed should be counted
+
+    # Confirm pdb_facility_id (both null and non-null) doesn't cause errors
+    # pdb_facility_id is not used in IXF import, so it should be ignored
+    assert importer.ixlan.ixf_ixp_import_error is None
+
+    # Assert idempotent / lock
+    importer.sanitize(data)
+    importer.update(ixlan, data=data)
+
+    assert importer.ixlan.ixf_ixp_import_error_notified is None
+    assert importer.ixlan.ixf_ixp_import_error is None
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
 def test_vlan_list_empty(entities, save):
     """
     VLAN list is empty. Per issue 882, this shouldn't raise any errors.
@@ -4019,3 +4078,501 @@ def assert_idempotent(importer, ixlan, data, save=True):
     importer.update(ixlan, data=data, asn=12345, save=save)
     importer.notify_proposals()
     assert_no_changes()
+
+
+@pytest.mark.django_db
+def test_net_count_single_network_multiple_ips(entities):
+    """
+    Test that net_count counts unique networks (ASNs), not total connections.
+    Same network with multiple IPs should count as 1.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+    network = entities["net"]["UPDATE_ENABLED"]
+
+    # Create 2 connections for the same network (different IPs)
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            ipaddr4="195.69.147.250",
+            speed=10000,
+            status="ok",
+        )
+
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            ipaddr4="195.69.147.251",
+            speed=10000,
+            status="ok",
+        )
+
+    # net_count should be 1 (one unique network with 2 IPs)
+    ix.refresh_from_db()
+    assert ix.net_count == 1
+
+
+@pytest.mark.django_db
+def test_net_count_multiple_networks(entities):
+    """
+    Test net_count correctly counts multiple unique networks.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+    net1 = entities["net"]["UPDATE_ENABLED"]
+    net2 = entities["net"]["UPDATE_DISABLED"]
+
+    # Create connections for 2 different networks
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=net1,
+            ixlan=ixlan,
+            asn=net1.asn,
+            ipaddr4="195.69.147.250",
+            speed=10000,
+            status="ok",
+        )
+
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=net2,
+            ixlan=ixlan,
+            asn=net2.asn,
+            ipaddr4="195.69.147.251",
+            speed=10000,
+            status="ok",
+        )
+
+    # net_count should be 2 (two unique networks)
+    ix.refresh_from_db()
+    assert ix.net_count == 2
+
+
+@pytest.mark.django_db
+def test_net_count_excludes_deleted(entities):
+    """
+    Test net_count only counts connections with status='ok'.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+    net1 = entities["net"]["UPDATE_ENABLED"]
+    net2 = entities["net"]["UPDATE_DISABLED"]
+
+    # Create 2 connections
+    with reversion.create_revision():
+        netixlan1 = NetworkIXLan.objects.create(
+            network=net1,
+            ixlan=ixlan,
+            asn=net1.asn,
+            ipaddr4="195.69.147.250",
+            speed=10000,
+            status="ok",
+        )
+
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=net2,
+            ixlan=ixlan,
+            asn=net2.asn,
+            ipaddr4="195.69.147.251",
+            speed=10000,
+            status="ok",
+        )
+
+    ix.refresh_from_db()
+    assert ix.net_count == 2
+
+    # Delete one connection
+    with reversion.create_revision():
+        netixlan1.status = "deleted"
+        netixlan1.save()
+
+    # net_count should be 1 now
+    ix.refresh_from_db()
+    assert ix.net_count == 1
+
+
+@pytest.mark.django_db
+def test_ixf_net_count_unique_asns(entities):
+    """
+    Test ixf_net_count counts unique ASNs from IX-F data
+    """
+    # IX-F data with 2 ASNs, where AS2906 has 2 connections (multiple IPs)
+    data = setup_test_data("ixf.member.0")
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # Parse the data to count unique ASNs manually
+    parsed_data = json.loads(data) if isinstance(data, str) else data
+    unique_asns = set()
+    for member in parsed_data.get("member_list", []):
+        unique_asns.add(member.get("asnum"))
+
+    # ixf_net_count should equal unique ASNs, not total connections
+    assert ix.ixf_net_count == len(unique_asns)
+
+
+@pytest.mark.django_db
+def test_ixf_net_count_same_asn_multiple_connections(entities):
+    """
+    Test that same ASN with multiple connections is counted as 1 network.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Create network for testing
+    with reversion.create_revision():
+        Network.objects.create(
+            name="Test Network",
+            org=entities["org"][0],
+            asn=65001,
+            allow_ixp_update=True,
+            status="ok",
+        )
+
+    # Create IX-F data with one ASN having 3 connections
+    data = {
+        "member_list": [
+            {
+                "asnum": 65001,
+                "name": "Test Network",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.1"}},
+                        ],
+                    },
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.2"}},
+                        ],
+                    },
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.3"}},
+                        ],
+                    },
+                ],
+            }
+        ]
+    }
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # ixf_net_count should be 1, not 3
+    # Before fix: would be 3 (counted all connections)
+    # After fix: should be 1 (counts unique ASNs)
+    assert ix.ixf_net_count == 1
+
+
+@pytest.mark.django_db
+def test_ixf_net_count_multiple_unique_networks(entities):
+    """
+    Test ixf_net_count with multiple different networks.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Create networks for testing
+    with reversion.create_revision():
+        for asn in [65001, 65002, 65003]:
+            Network.objects.create(
+                name=f"Network {asn}",
+                org=entities["org"][0],
+                asn=asn,
+                allow_ixp_update=True,
+                status="ok",
+            )
+
+    # IX-F data with 3 different ASNs
+    data = {
+        "member_list": [
+            {
+                "asnum": 65001,
+                "name": "Network 1",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.1"}},
+                        ],
+                    }
+                ],
+            },
+            {
+                "asnum": 65002,
+                "name": "Network 2",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.2"}},
+                        ],
+                    }
+                ],
+            },
+            {
+                "asnum": 65003,
+                "name": "Network 3",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.3"}},
+                        ],
+                    }
+                ],
+            },
+        ]
+    }
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # ixf_net_count should be 3 (three unique ASNs)
+    assert ix.ixf_net_count == 3
+
+
+@pytest.mark.django_db
+def test_net_count_updated_by_ixf_import_add(entities):
+    """
+    Test that net_count is correctly updated when IX-F import adds networks.
+    This tests the bug scenario from #1607 where net_count wasn't updated during import.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Create networks for testing
+    with reversion.create_revision():
+        for asn in [65001, 65002]:
+            Network.objects.create(
+                name=f"Network {asn}",
+                org=entities["org"][0],
+                asn=asn,
+                allow_ixp_update=True,
+                status="ok",
+            )
+
+    # Initially no networks
+    ix.refresh_from_db()
+    initial_net_count = ix.net_count
+
+    # IX-F data adds 2 new networks
+    data = {
+        "member_list": [
+            {
+                "asnum": 65001,
+                "name": "Network 1",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.1"}},
+                        ],
+                    }
+                ],
+            },
+            {
+                "asnum": 65002,
+                "name": "Network 2",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.2"}},
+                        ],
+                    }
+                ],
+            },
+        ]
+    }
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # net_count should be updated to reflect the new networks
+    assert ix.net_count == initial_net_count + 2
+
+
+@pytest.mark.django_db
+def test_net_count_updated_by_ixf_import_same_asn_multiple_ips(entities):
+    """
+    Test that net_count counts unique ASNs, not IPs, during IX-F import.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Create network for testing
+    with reversion.create_revision():
+        Network.objects.create(
+            name="Network 65001",
+            org=entities["org"][0],
+            asn=65001,
+            allow_ixp_update=True,
+            status="ok",
+        )
+
+    # IX-F data: one ASN with 2 different IP addresses
+    data = {
+        "member_list": [
+            {
+                "asnum": 65001,
+                "name": "Network 1",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.1"}},
+                        ],
+                    },
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.2"}},
+                        ],
+                    },
+                ],
+            }
+        ]
+    }
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # net_count should be 1 (one unique ASN with 2 IPs)
+    created_netixlans = NetworkIXLan.objects.filter(
+        ixlan=ixlan, asn=65001, status="ok"
+    ).count()
+    assert created_netixlans == 2  # 2 NetworkIXLan objects created
+    assert ix.net_count == 1  # But only 1 unique network
+
+
+@pytest.mark.django_db
+def test_net_count_and_ixf_net_count_consistency(entities):
+    """
+    Test that both net_count and ixf_net_count are correctly updated
+    during IX-F import and reflect unique ASNs.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+
+    # Create networks for testing
+    with reversion.create_revision():
+        for asn in [65001, 65002]:
+            Network.objects.create(
+                name=f"Network {asn}",
+                org=entities["org"][0],
+                asn=asn,
+                allow_ixp_update=True,
+                status="ok",
+            )
+
+    # IX-F data with 2 ASNs, one with multiple connections
+    data = {
+        "member_list": [
+            {
+                "asnum": 65001,
+                "name": "Network 1",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.1"}},
+                        ],
+                    },
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.2"}},
+                        ],
+                    },
+                ],
+            },
+            {
+                "asnum": 65002,
+                "name": "Network 2",
+                "connection_list": [
+                    {
+                        "state": "active",
+                        "vlan_list": [
+                            {"vlan_id": 0, "ipv4": {"address": "195.69.147.3"}},
+                        ],
+                    }
+                ],
+            },
+        ]
+    }
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # Both counts should be 2 (two unique ASNs)
+    assert ix.net_count == 2
+    assert ix.ixf_net_count == 2
+
+    # Verify we have 3 NetworkIXLan objects but only 2 unique networks
+    netixlan_count = NetworkIXLan.objects.filter(ixlan=ixlan, status="ok").count()
+    assert netixlan_count == 3  # Total connections
+
+
+@pytest.mark.django_db
+def test_net_count_after_ixf_import_removes_network(entities):
+    """
+    Test that net_count is correctly updated when IX-F import removes networks.
+    """
+    ixlan = entities["ixlan"][0]
+    ix = ixlan.ix
+    network = entities["net"]["UPDATE_ENABLED"]
+
+    # First, create a network manually
+    with reversion.create_revision():
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            ipaddr4="195.69.147.250",
+            speed=10000,
+            status="ok",
+        )
+
+    ix.refresh_from_db()
+    assert ix.net_count == 1
+
+    # Now import IX-F data that doesn't include this network
+    # (empty member list means all networks should be removed)
+    data = {"member_list": []}
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data, save=True)
+
+    ix.refresh_from_db()
+
+    # net_count should be updated after removal
+    # The network should be marked for deletion
+    assert (
+        ix.net_count == 0
+        or NetworkIXLan.objects.filter(ixlan=ixlan, status="ok").count() == 0
+    )

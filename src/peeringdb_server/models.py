@@ -83,11 +83,20 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
+    validate_status,
 )
 
 API_KEY_STATUS = (
     ("active", _("Active")),
     ("inactive", _("Inactive")),
+)
+
+# Valid status values for HandleRef models
+# These are the only allowed values for the status field
+HANDLEREF_STATUS = (
+    ("ok", _("Ok")),
+    ("pending", _("Pending")),
+    ("deleted", _("Deleted")),
 )
 
 SPONSORSHIP_LEVELS = (
@@ -344,6 +353,29 @@ class ParentStatusCheckMixin:
                     getattr(self, field_name), self.HandleRef.tag
                 )
 
+    def validate_status_value(self):
+        """
+        Validate that the status field only accepts allowed values.
+
+        Valid status values are: 'ok', 'pending', 'deleted'
+
+        This prevents invalid status values from being set at the model level.
+        Will raise ValidationError on invalid status.
+
+        Uses the validate_status function from validators.py to ensure
+        consistent validation across API and model layers.
+
+        :return:
+        """
+        if hasattr(self, "status"):
+            try:
+                validate_status(self.status)
+            except Exception as e:
+                # Convert RestValidationError to Django ValidationError
+                if hasattr(e, "detail") and isinstance(e.detail, dict):
+                    raise ValidationError(e.detail.get("status", [str(e)])[0])
+                raise ValidationError(str(e))
+
     def validate_status_change(self):
         """
         Validate status changes:
@@ -357,6 +389,7 @@ class ParentStatusCheckMixin:
             raise ValidationError("Cannot change status from 'ok' to 'pending'")
 
     def clean(self):
+        self.validate_status_value()
         self.validate_status_change()
         super().clean()
 

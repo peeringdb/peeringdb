@@ -7,6 +7,8 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.test import RequestFactory, override_settings
 from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.geo as geo
 from peeringdb_server.context import current_request
@@ -18,6 +20,12 @@ from peeringdb_server.models import (
     NetworkContact,
     NetworkIXLan,
     Organization,
+)
+from peeringdb_server.serializers import (
+    FacilitySerializer,
+    InternetExchangeSerializer,
+    NetworkIXLanSerializer,
+    NetworkSerializer,
 )
 from peeringdb_server.validators import (
     validate_address_space,
@@ -31,6 +39,7 @@ from peeringdb_server.validators import (
     validate_phonenumber,
     validate_prefix_overlap,
     validate_social_media,
+    validate_status,
     validate_website_override,
 )
 from tests.test_ixf_member_import_protocol import setup_test_data
@@ -456,8 +465,8 @@ def test_bypass_validation():
         validate_address_space("2001:504:0:2::/64")
         validate_info_prefixes4(500001)
         validate_info_prefixes6(500001)
-        NetworkIXLan(speed=1, network=net, ixlan=ix.ixlan).clean()
-        NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan).clean()
+        NetworkIXLan(speed=1, network=net, ixlan=ix.ixlan, status="ok").clean()
+        NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan, status="ok").clean()
         validate_irr_as_set("ripe::as-foo:as123:as345:as678")
 
     # user should NOT bypass validation
@@ -1225,3 +1234,173 @@ def test_validate_status_change():
     with pytest.raises(ValidationError):
         net.clean()
         net.save()
+
+
+@pytest.mark.django_db
+def test_validate_status_value_model():
+    """
+    Ensure invalid `status` values are rejected by model-level validation.
+
+    This verifies that `ParentStatusCheckMixin.validate_status_value`
+    correctly enforces allowed status values via the validators in `validators.py`.
+    """
+
+    # Setup base objects
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(name="Test exchange", status="ok", org=org)
+    net = Network.objects.create(name="Test network", status="ok", org=org, asn=101)
+    ixlan = ix.ixlan
+
+    # Ensure IP validation passes
+    IXLanPrefix.objects.create(
+        ixlan=ixlan, protocol="IPv4", prefix="192.0.2.0/24", status="ok"
+    )
+
+    # Helper to assert ValidationError with specific message
+    def assert_invalid_status(instance, expected_msg="Invalid status value"):
+        with pytest.raises(ValidationError) as excinfo:
+            instance.full_clean()
+        assert expected_msg in str(excinfo.value)
+
+    # --- Invalid status tests ---
+    invalid_cases = [
+        NetworkIXLan(
+            network=net,
+            ixlan=ixlan,
+            asn=net.asn,
+            speed=1000,
+            ipaddr4="192.0.2.1",
+            status="Testing",  # Invalid
+        ),
+        Network(
+            name="Test network 2",
+            org=org,
+            asn=102,
+            status="active",  # Invalid
+        ),
+        InternetExchange(
+            name="Test IX 2",
+            org=org,
+            city="Test City",
+            country="US",
+            region_continent="North America",
+            status="approved",  # Invalid
+        ),
+    ]
+
+    for instance in invalid_cases:
+        assert_invalid_status(instance)
+
+    # --- Valid status test ---
+    valid_netixlan = NetworkIXLan(
+        network=net,
+        ixlan=ixlan,
+        asn=net.asn,
+        speed=1000,
+        ipaddr4="192.0.2.10",
+        status="ok",  # Valid
+    )
+    # Should not raise
+    valid_netixlan.full_clean()
+
+
+def test_validate_status():
+    """
+    Test the validate_status validator function directly.
+
+    This validates that only 'ok', 'pending', 'deleted' status values are accepted.
+    This validator is used at the model level (ParentStatusCheckMixin.validate_status_value).
+    """
+    # Test valid status values
+    assert validate_status("ok") == "ok"
+    assert validate_status("pending") == "pending"
+    assert validate_status("deleted") == "deleted"
+
+    # Test invalid status values
+    with pytest.raises(RestValidationError) as exc:
+        validate_status("Testing")
+    assert "Invalid status value" in str(exc.value)
+    assert "ok, pending, deleted" in str(exc.value)
+
+    with pytest.raises(RestValidationError) as exc:
+        validate_status("active")
+    assert "Invalid status value" in str(exc.value)
+
+    with pytest.raises(RestValidationError) as exc:
+        validate_status("approved")
+    assert "Invalid status value" in str(exc.value)
+
+    with pytest.raises(RestValidationError) as exc:
+        validate_status("verified")
+    assert "Invalid status value" in str(exc.value)
+
+
+@pytest.mark.django_db
+def test_validate_status_field_serializer():
+    """
+    Ensure the `status` field is read-only in serializers and cannot be set via API.
+
+    This prevents the API from accepting arbitrary status values (see issue #1562).
+    The status field is declared as ReadOnlyField, so any status value provided
+    in the input data should be ignored.
+    """
+
+    # --- Setup ---
+    factory = APIRequestFactory()
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(
+        name="Test exchange",
+        org=org,
+        status="ok",
+        city="Test City",
+        country="US",
+        region_continent="North America",
+    )
+    net = Network.objects.create(name="Test network", status="ok", org=org, asn=101)
+    ixlan = ix.ixlan
+
+    # Add IP prefix so NetworkIXLan can be created
+    IXLanPrefix.objects.create(
+        ixlan=ixlan, protocol="IPv4", prefix="192.0.2.0/24", status="ok"
+    )
+
+    # --- Test that status field is ignored in input data ---
+    # Even if we try to set status to an invalid value, it should be ignored
+    # and the object should be created with the default status
+    django_request = factory.post("/api/netixlan")
+    request = Request(django_request)
+
+    test_cases = [
+        {
+            "name": "NetworkIXLan with invalid status",
+            "serializer_class": NetworkIXLanSerializer,
+            "data": {
+                "net_id": net.id,
+                "ixlan_id": ixlan.id,
+                "asn": net.asn,
+                "speed": 1000,
+                "ipaddr4": "192.0.2.1",
+                "status": "Testing",  # This should be ignored
+            },
+        },
+    ]
+
+    for test_case in test_cases:
+        serializer = test_case["serializer_class"](
+            data=test_case["data"], context={"request": request}
+        )
+
+        # The serializer should be valid because status is read-only and ignored
+        # (though it may fail validation for other reasons like permissions)
+        # The key assertion is that status should NOT be in the errors
+        if not serializer.is_valid():
+            assert "status" not in serializer.errors, (
+                f"{test_case['name']}: status field should be read-only and ignored, "
+                f"but got error: {serializer.errors.get('status')}"
+            )
+
+    # --- Verify status field is marked as read-only ---
+    serializer = NetworkIXLanSerializer()
+    assert serializer.fields[
+        "status"
+    ].read_only, "status field should be marked as read_only"

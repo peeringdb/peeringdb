@@ -119,7 +119,9 @@ def test_strip_fields_model_clean_validation():
     assert org.name == "Test"
     fac_list = []
     for i in range(1, 6):
-        fac = Facility(id=i, org=org, city=f"city-{i}", name=f"   fac-{i}   ")
+        fac = Facility(
+            id=i, org=org, city=f"city-{i}", name=f"   fac-{i}   ", status="ok"
+        )
         fac.full_clean()
         fac_list.append(fac)
     Facility.objects.bulk_create(fac_list)

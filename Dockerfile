@@ -28,6 +28,8 @@ ARG run_deps=" \
     graphviz \
     libmariadb3 \
     libgcc-s1 \
+    default-jre-headless \
+    curl \
     "
 
 FROM ubuntu:24.04 AS base
@@ -139,9 +141,23 @@ COPY --from=builder /usr/local/bin/uv /usr/bin/uv
 COPY --from=builder /srv/www.peeringdb.com/uv.lock uv.lock
 COPY --from=builder /srv/www.peeringdb.com/pyproject.toml pyproject.toml
 
-RUN SECRET_KEY=no manage collectstatic --no-input
 
 RUN chown -R pdb:pdb api-cache locale media var/log coverage
+
+# Download Google Closure Compiler and compile JavaScript files
+RUN curl -L https://repo1.maven.org/maven2/com/google/javascript/closure-compiler/v20231112/closure-compiler-v20231112.jar \
+    -o /tmp/closure-compiler.jar && \
+    echo "Looking for JavaScript files to compile..." && \
+    find peeringdb_server -type f \( -name "twentyc.*.js" -o -name "peeringdb.js" -o -name "peeringdb.*.js" \) -print | while read file; do \
+        echo "Compiling $file"; \
+        java -jar /tmp/closure-compiler.jar --js "$file" --js_output_file "$file.tmp" && \
+        mv "$file.tmp" "$file" && \
+        echo "Successfully compiled $file"; \
+    done && \
+    echo "Finished compiling JavaScript files" && \
+    rm /tmp/closure-compiler.jar
+
+RUN SECRET_KEY=no manage collectstatic --no-input
 
 USER pdb
 ENTRYPOINT ["/entrypoint"]

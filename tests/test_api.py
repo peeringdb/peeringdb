@@ -1,7 +1,19 @@
+"""
+API Tests with Basic Authentication
+
+MFA (Multi-Factor Authentication) Configuration:
+When MFA is enforced in production, basic authentication is blocked with 403 responses.
+This test file uses basic auth (via DummyRestClient), so all tests are skipped when MFA is active.
+The same API tests are run with API keys in test_api_keys.py, which work with MFA.
+Basic auth + MFA 403 behavior is tested separately in test_middleware.py.
+"""
+
 import base64
+import datetime
 import json
 import os
 
+import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.test import TestCase
@@ -14,6 +26,11 @@ import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 
 from .util import reset_group_ids
+
+DATETIME = datetime.datetime.now()
+MFA_FORCE_HARD_START = (
+    settings.MFA_FORCE_HARD_START is None or DATETIME >= settings.MFA_FORCE_HARD_START
+)
 
 RdapLookup_get_asn = pdbinet.RdapLookup.get_asn
 RdapLookup_get_ip = pdbinet.RdapLookup.get_ip
@@ -143,6 +160,9 @@ class DummyRestClient(RestClient):
         return DummyResponse(res.status_code, res.content)
 
 
+@pytest.mark.skipif(
+    MFA_FORCE_HARD_START, reason="Basic auth API tests skipped when MFA is enforced."
+)
 class APITests(TestCase, api_test.TestJSON, api_test.Command):
     """
     API tests

@@ -1,3 +1,12 @@
+"""
+API Cache Tests with Basic Authentication
+
+MFA (Multi-Factor Authentication) Configuration:
+When MFA is enforced in production, basic authentication is blocked with 403 responses.
+This test file uses basic auth (via DummyRestClient), so all tests are skipped when MFA is active.
+The same API cache tests are run with API keys in test_api_cache_keys.py, which work with MFA.
+"""
+
 import datetime
 import json
 import os
@@ -17,6 +26,11 @@ from peeringdb_server.api_cache import APICacheLoader
 from . import test_api as api_tests
 from .util import reset_group_ids
 
+DATETIME = datetime.datetime.now()
+MFA_FORCE_HARD_START = (
+    settings.MFA_FORCE_HARD_START is None or DATETIME >= settings.MFA_FORCE_HARD_START
+)
+
 
 def setup_module(module):
     api_tests.setup_module(module)
@@ -26,6 +40,9 @@ def teardown_module(module):
     api_tests.teardown_module(module)
 
 
+@pytest.mark.skipif(
+    MFA_FORCE_HARD_START, reason="Basic auth API tests skipped when MFA is enforced."
+)
 class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
     """
     Runs the api test after generating cache files and enabling

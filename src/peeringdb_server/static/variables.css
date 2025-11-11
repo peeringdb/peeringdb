@@ -27,6 +27,11 @@
   --placeholder: gray;
   --pagination-color: #000000;
   --pagination-color-hover: #0a58ca;
+
+  /* ASN Connectivity colors */
+  --asn-match-any-bg: #d1ecf1;
+  --asn-match-all-bg: #c3e6cb;
+  --text-muted: #6c757d;
 }
 
 [data-theme="dark"] {
@@ -58,6 +63,11 @@
   --placeholder: #DEE4EA;
   --pagination-color: #fbfbfb;
   --pagination-color-hover: #9cc2a8;
+
+  /* ASN Connectivity colors - Dark theme */
+  --asn-match-any-bg: #3a4e52;
+  --asn-match-all-bg: #3a4d3e;
+  --text-muted: #999999;
 }
 
 [data-theme="light-ui-next"] {
@@ -87,4 +97,9 @@
   --placeholder: gray;
   --pagination-color: #000000;
   --pagination-color-hover: #0a58ca;
+
+  /* ASN Connectivity colors - UI Next */
+  --asn-match-any-bg: #d1ecf1;
+  --asn-match-all-bg: #c3e6cb;
+  --text-muted: #6c757d;
 }

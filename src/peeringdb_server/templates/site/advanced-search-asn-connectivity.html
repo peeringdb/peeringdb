@@ -1,4 +1,4 @@
-{% load util i18n %}
+{% load util i18n static %}
 <div class="editable always auto-toggled filter-form"
     data-edit-target="advanced_search:asn_connectivity"
     data-edit-enter-action="submit"
@@ -6,6 +6,39 @@
     data-sort-row=".row">
     <div class="row">
         <div class="col-12">
+            <div class="row mb-3">
+                <div class="col-12 col-md-6">
+                    <div class="btn-group" role="group" aria-label="Connectivity Type Options">
+                        <button type="button" id="asn-connectivity-facility" class="btn btn-sm btn-outline-dark active" data-connectivity-type="facilities">
+                        {% trans "Facilities" %}
+                        </button>
+                        <button type="button" id="asn-connectivity-exchange" class="btn btn-sm btn-outline-dark" data-connectivity-type="exchanges">
+                        {% trans "Exchanges" %}
+                        </button>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 mt-2 mt-md-0 text-md-end">
+                    <div class="d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
+                        <div class="btn-group" role="group" aria-label="Match Filter Options">
+                            <button type="button" id="match-filter-show-all" class="btn btn-sm btn-outline-dark active" data-match-filter="show-all">
+                            {% trans "Show All" %}
+                            </button>
+                            <button type="button" id="match-filter-any-match" class="btn btn-sm btn-outline-dark" data-match-filter="any-match">
+                            {% trans "Any Matches" %}
+                            </button>
+                            <button type="button" id="match-filter-all-match" class="btn btn-sm btn-outline-dark" data-match-filter="all-match">
+                            {% trans "All Matches" %}
+                            </button>
+                        </div>
+                        <div class="form-check" style="margin-left: 10px;">
+                            <input class="form-check-input" type="checkbox" id="hide-unmatched" style="cursor: pointer;">
+                            <label class="form-check-label" for="hide-unmatched" style="cursor: pointer; font-size: 13px; user-select: none;">
+                                <span id="hide-unmatched-label">{% trans "Hide unmatched facilities" %}</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-4 col-sm-3 col-md-2">{% trans "ASNs" %}</div>
                 <div class="col-8 col-sm-9 col-md-10">
@@ -44,7 +77,7 @@
 <div class="editable-templates" style="display: none;">
     <div id="advanced-search-asn-connectivity-item" class="row">
         <div class="col-6">
-            <a href="/fac/$facility_id" data-edit-name="facility_name" class="facility-name"></a>
+            <a href="#" data-edit-name="entity_name" class="entity-name"></a>
         </div>
 <!-- ASN columns will be dynamically added here by JavaScript -->
     </div>
@@ -56,12 +89,42 @@
 </nav>
 {% endif %}
 
+<div class="connectivity-legend" style="display: none; margin-bottom: 15px; padding: 10px 0; border-bottom: 1px solid var(--border-color, #e0e0e0);">
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; font-size: 12px; color: var(--text-muted, #6c757d);">
+        <span style="display: flex; align-items: center; gap: 6px;"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="{% trans "ASN is present at this facility/exchange" %}">
+            <img src="{% static "checkmark.png" %}" alt="Present" style="width: 12px; opacity: 0.8;">
+            {% trans "Present" %}
+        </span>
+        <span style="display: flex; align-items: center; gap: 6px;"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="{% trans "ASN is not present at this facility/exchange" %}">
+            <img src="{% static "checkmark-off.png" %}" alt="Not Present" style="width: 12px; opacity: 0.8;">
+            {% trans "Not Present" %}
+        </span>
+        <span style="display: flex; align-items: center; gap: 6px;"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="{% trans "2 or more ASNs present, but not all searched ASNs" %}">
+            <span style="display: inline-block; width: 16px; height: 16px; background-color: var(--asn-match-any-bg); border-radius: 2px;"></span>
+            {% trans "Any Matches" %}
+        </span>
+        <span style="display: flex; align-items: center; gap: 6px;"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="{% trans "All searched ASNs are present at this facility/exchange" %}">
+            <span style="display: inline-block; width: 16px; height: 16px; background-color: var(--asn-match-all-bg); border-radius: 2px;"></span>
+            {% trans "All Matches" %}
+        </span>
+    </div>
+</div>
+
 <div class="headers marg-top-15">
     <div class="row">
     <!-- Headers will be dynamically populated by JavaScript -->
-        <div class="col-6" data-sort-target=".facility-name" data-sort-initial="asc">
-            {% trans "Facility" %}
-        </div>
     </div>
 </div>
 

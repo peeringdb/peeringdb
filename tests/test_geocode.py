@@ -309,7 +309,6 @@ def google_maps_mock():
         yield mock
 
 
-@pytest.mark.django_db
 @pytest.fixture(autouse=True)
 def clear_cache():
     caches["geo"].clear()

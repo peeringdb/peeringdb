@@ -27,6 +27,7 @@ from peeringdb_server.models import (
     IXLan,
     Network,
     NetworkFacility,
+    NetworkIXLan,
 )
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
@@ -571,19 +572,119 @@ class AdvancedSearchExportView(ExportView):
             )
         return download_data
 
-    def generate_asn_connectivity(self, request):
+    def _row_filters_asn_connectivity(
+        self, asn_count, total_asns, match_filter, hide_unmatched
+    ):
         """
-        Export ASN connectivity as a matrix: Facility vs ASN (✔/✗ or true/false)
-        """
-        asn_list_str = request.GET.get("asn_list", "")
-        asn_list = [
-            asn.strip() for asn in asn_list_str.split(",") if asn.strip().isdigit()
-        ]
-        if not asn_list:
-            return []
-        asn_list = [int(asn) for asn in asn_list]
+        Determine if a row should be included based on filter settings.
+        This matches the frontend filtering logic.
 
-        # Query all netfac for these ASNs (fix: use network__asn__in)
+        Arguments:
+            - asn_count: Number of ASNs present at this location
+            - total_asns: Total number of ASNs being queried
+            - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+            - hide_unmatched: Whether to hide rows with no matches
+
+        Returns:
+            - bool: True if row should be included
+        """
+        # Determine match type (matches frontend logic)
+        has_any_match = asn_count >= 2 and asn_count < total_asns
+        has_all_match = asn_count == total_asns
+        has_no_match = not has_any_match and not has_all_match
+
+        show_row = True
+
+        # Apply match_filter first
+        if match_filter == "any-match" and not has_any_match:
+            show_row = False
+        elif match_filter == "all-match" and not has_all_match:
+            show_row = False
+
+        # Apply hide_unmatched filter (independent of match_filter)
+        if hide_unmatched and has_no_match:
+            show_row = False
+
+        return show_row
+
+    def _generate_exchange_connectivity(self, asn_list, match_filter, hide_unmatched):
+        """
+        Generate exchange connectivity matrix for given ASN list.
+
+        Arguments:
+            - asn_list: List of ASN integers to check connectivity for
+            - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+            - hide_unmatched: Whether to hide rows with no matches
+
+        Returns:
+            - list: Matrix rows with exchange connectivity data
+        """
+        # Query all netixlan for these ASNs
+        netixlan_qs = NetworkIXLan.objects.filter(
+            network__asn__in=asn_list, status="ok"
+        )
+        ix_ids = set(netixlan_qs.values_list("ixlan__ix_id", flat=True))
+        ix_qs = InternetExchange.objects.filter(id__in=ix_ids, status="ok")
+        ix_map = {ix.id: ix for ix in ix_qs}
+
+        # Group netixlan by ix_id
+        ix_groups = {}
+        for netixlan in netixlan_qs:
+            ix_id = netixlan.ixlan.ix_id
+            ix_groups.setdefault(ix_id, []).append(netixlan)
+
+        # Build matrix rows
+        matrix = []
+        for ix_id, netixlans in ix_groups.items():
+            ix = ix_map.get(ix_id)
+            if not ix:
+                continue
+
+            row = collections.OrderedDict()
+            row["Exchange ID"] = ix_id
+            row["Exchange Name"] = ix.name
+            row["City"] = ix.city
+
+            # Init all asn columns as False
+            for asn in asn_list:
+                row[f"AS{asn}"] = False
+
+            # Mark present ASNs
+            present_asns = set()
+            for netixlan in netixlans:
+                asn = netixlan.network.asn
+                if asn in asn_list:
+                    row[f"AS{asn}"] = True
+                    present_asns.add(asn)
+
+            # Apply filters
+            asn_count = len(present_asns)
+            total_asns = len(asn_list)
+
+            if not self._row_filters_asn_connectivity(
+                asn_count, total_asns, match_filter, hide_unmatched
+            ):
+                continue
+
+            matrix.append(row)
+
+        # Sort by exchange name
+        matrix.sort(key=lambda r: r["Exchange Name"].lower())
+        return matrix
+
+    def _generate_facility_connectivity(self, asn_list, match_filter, hide_unmatched):
+        """
+        Generate facility connectivity matrix for given ASN list.
+
+        Arguments:
+            - asn_list: List of ASN integers to check connectivity for
+            - match_filter: Filter type ('show-all', 'any-match', 'all-match')
+            - hide_unmatched: Whether to hide rows with no matches
+
+        Returns:
+            - list: Matrix rows with facility connectivity data
+        """
+        # Query all netfac for these ASNs
         netfac_qs = NetworkFacility.objects.filter(
             network__asn__in=asn_list, status="ok"
         )
@@ -602,24 +703,72 @@ class AdvancedSearchExportView(ExportView):
             fac = fac_map.get(facility_id)
             if not fac:
                 continue
+
             row = collections.OrderedDict()
             row["Facility ID"] = facility_id
             row["Facility Name"] = fac.name
             row["City"] = fac.city
             row["Country"] = fac.country
+
             # Init all asn columns as False
             for asn in asn_list:
                 row[f"AS{asn}"] = False
+
             # Mark present ASNs
+            present_asns = set()
             for netfac in netfacs:
                 asn = netfac.network.asn
                 if asn in asn_list:
                     row[f"AS{asn}"] = True
+                    present_asns.add(asn)
+
+            # Apply filters
+            asn_count = len(present_asns)
+            total_asns = len(asn_list)
+
+            if not self._row_filters_asn_connectivity(
+                asn_count, total_asns, match_filter, hide_unmatched
+            ):
+                continue
+
             matrix.append(row)
 
         # Sort by facility name
         matrix.sort(key=lambda r: r["Facility Name"].lower())
         return matrix
+
+    def generate_asn_connectivity(self, request):
+        """
+        Export ASN connectivity as a matrix: Facility/Exchange vs ASN (true/false)
+        Supports filter parameters:
+        - match_filter: 'show-all', 'any-match', or 'all-match'
+        - hide_unmatched: '1' or 'true' to hide facilities/exchanges with no matches
+
+        This export matches the filtered view shown in the frontend table.
+        """
+        # Parse and validate ASN list
+        asn_list_str = request.GET.get("asn_list", "")
+        asn_list = [
+            asn.strip() for asn in asn_list_str.split(",") if asn.strip().isdigit()
+        ]
+        if not asn_list:
+            return []
+        asn_list = [int(asn) for asn in asn_list]
+
+        # Get request parameters
+        connectivity_type = request.GET.get("connectivity_type", "facilities")
+        match_filter = request.GET.get("match_filter", "show-all")
+        hide_unmatched = request.GET.get("hide_unmatched", "").lower() in ["1", "true"]
+
+        # Generate appropriate connectivity matrix
+        if connectivity_type == "exchanges":
+            return self._generate_exchange_connectivity(
+                asn_list, match_filter, hide_unmatched
+            )
+        else:
+            return self._generate_facility_connectivity(
+                asn_list, match_filter, hide_unmatched
+            )
 
 
 def kmz_download(request):

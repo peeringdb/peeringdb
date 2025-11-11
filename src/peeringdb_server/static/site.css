@@ -573,9 +573,29 @@ div.view_info .theme-container h3{
 
 div.view_info .theme-container .btn-outline-dark.active,
 #ui-next-rejected.btn-outline-dark.active,
-#ui-next-enabled.btn-outline-dark.active
+#ui-next-enabled.btn-outline-dark.active,
+#asn-connectivity-facility.btn-outline-dark.active,
+#asn-connectivity-exchange.btn-outline-dark.active,
+#match-filter-show-all.btn-outline-dark.active,
+#match-filter-any-match.btn-outline-dark.active,
+#match-filter-all-match.btn-outline-dark.active
 {
   background-color: var(--button-hover-color) !important;
+}
+
+#match-filter-any-match.btn-outline-dark:disabled,
+#match-filter-all-match.btn-outline-dark:disabled
+{
+  color: #fff !important;
+  background-color: var(--button-regular-color) !important;
+  border-color: var(--border-color) !important;
+  opacity: 0.5 !important;
+}
+
+#match-filter-any-match.btn:disabled,
+#match-filter-all-match.btn:disabled
+{
+  pointer-events: visible;
 }
 
 div.view_info .modal-content,
@@ -1972,6 +1992,16 @@ input.input-block-level {
 /* Highlight rows that contain two or more ASNs in ASN Connectivity table */
 div.advanced-search-view div.results div.row.row-hilight {
   background-color: var(--alert-info-bg);
+}
+
+/* Highlight rows with any ASN matches in ASN Connectivity table */
+div.advanced-search-view div.results div.row.row-hilight-any {
+  background-color: var(--asn-match-any-bg);
+}
+
+/* Highlight rows with all ASN matches in ASN Connectivity table */
+div.advanced-search-view div.results div.row.row-hilight-all {
+  background-color: var(--asn-match-all-bg);
 }
 
 .nav-link {

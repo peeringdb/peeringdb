@@ -478,6 +478,12 @@ class Importer:
                 if conn.get("if_list", []) is None:
                     conn.pop("if_list")
 
+                # handle case where optional properties in if_list entries are set to `null` (#1602)
+                # treat same as if they weren't set at all
+                for if_entry in conn.get("if_list", []):
+                    if "if_speed" in if_entry and if_entry.get("if_speed") is None:
+                        del if_entry["if_speed"]
+
             asn = member.get("asnum")
 
             connection_list = self.match_vlans_across_connections(
@@ -649,18 +655,14 @@ class Importer:
         """
 
         ix = self.ixlan.ix
-
-        # ixf_member_data_changed = IXFMemberData.objects.filter(
-        #    updated__gte=self.now, ixlan=self.ixlan
-        # ).exists()
-
-        # netixlan_data_changed = NetworkIXLan.objects.filter(
-        #    updated__gte=self.now, ixlan=self.ixlan
-        # ).exists()
+        # Refresh only net_count from database to get any updates made by signals
+        # without affecting other fields like 'updated'
+        ix.refresh_from_db(fields=["net_count"])
 
         ix.ixf_last_import = self.now
 
-        ixf_net_count = len(self.pending_save)
+        # Count unique ASNs in pending_save instead of total entries
+        ixf_net_count = len(set(ixf_member.asn for ixf_member in self.pending_save))
         if ixf_net_count != ix.ixf_net_count:
             ix.ixf_net_count = ixf_net_count
 
