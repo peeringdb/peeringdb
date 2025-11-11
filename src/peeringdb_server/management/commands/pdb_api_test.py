@@ -1290,10 +1290,10 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @override_settings(API_CACHE_ENABLED=False)
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    @patch("peeringdb_server.rest.search_v2")
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
     def test_user_001_GET_fac_spatial_search_with_name_search(
-        self, mock_proximity_es, mock_new_es
+        self, mock_proximity_es, mock_search_v2
     ):
         """Test facility API spatial search with name_search parameter that triggers ES lookup."""
         mock_proximity_es.return_value = {
@@ -1313,23 +1313,15 @@ class TestJSON(unittest.TestCase):
         )
         facility = Facility.objects.create(status="ok", **fac_data)
 
-        mock_es_instance = mock_new_es.return_value
-        mock_es_instance.search.return_value = {
-            "hits": {
-                "total": {"value": 1, "relation": "eq"},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": str(facility.id),
-                        "_score": 10,
-                        "_source": {
-                            "name": facility.name,
-                            "status": "ok",
-                            "org": {"id": facility.org_id, "name": facility.org.name},
-                        },
-                    }
-                ],
-            }
+        # Mock search_v2 to return the facility ID
+        mock_search_v2.return_value = {
+            "fac": [
+                {
+                    "id": facility.id,
+                    "name": facility.name,
+                    "org_id": facility.org_id,
+                }
+            ]
         }
 
         response = self.db_user._request(
@@ -1338,6 +1330,7 @@ class TestJSON(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         mock_proximity_es.assert_called_once_with("Test Facility")
+        mock_search_v2.assert_called_once_with(["Test Facility"])
 
         data = response.json()
         facility_names = [f["name"] for f in data["data"]]
@@ -1346,18 +1339,18 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @override_settings(API_CACHE_ENABLED=False)
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
+    @patch("peeringdb_server.rest.search_v2")
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
     def test_user_001_GET_fac_spatial_search_es_error_fallback(
-        self, mock_proximity_es, mock_new_es
+        self, mock_proximity_es, mock_search_v2
     ):
         """Test facility API spatial search gracefully handles ES errors."""
         mock_proximity_es.side_effect = elasticsearch.ConnectionError(
             "ES connection failed"
         )
 
-        mock_es_instance = mock_new_es.return_value
-        mock_es_instance.search.return_value = {"hits": {"hits": []}}
+        # Mock search_v2 to return empty results (simulating ES error fallback)
+        mock_search_v2.return_value = {}
 
         fac_data = self.make_data_fac(city="Seattle", country="US")
         Facility.objects.create(status="ok", **fac_data)
