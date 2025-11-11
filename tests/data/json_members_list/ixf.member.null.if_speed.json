@@ -1,0 +1,57 @@
+{
+    "timestamp": "2020-07-13T09:23:47Z",
+    "version": "1.0",
+    "ixp_list": [
+        {
+          "shortname": "Test Exchange",
+          "ixp_id": 1,
+          "ixf_id": 1
+        }
+    ],
+    "member_list": [
+        {
+            "asnum": 2906,
+            "member_type": "peering",
+            "name": "Netflix",
+            "url": "http://netflix.com/",
+            "contact_email": [
+                "peering@netflix.com"
+            ],
+            "peering_policy": "open",
+            "member_since": "2009-02-04T00:00:00Z",
+            "connection_list": [
+                {
+                    "ixp_id": 42,
+                    "connected_since": "2009-02-04T00:00:00Z",
+                    "state": "connected",
+                    "if_list": [
+                        {
+                            "switch_id": 1,
+                            "if_speed": null,
+                            "if_type": "LR4",
+                            "pdb_facility_id": null
+                        },
+                        {
+                            "switch_id": 2,
+                            "if_speed": 10000,
+                            "pdb_facility_id": 123
+                        }
+                    ],
+                    "vlan_list": [
+                        {
+                            "vlan_id": 0,
+                            "ipv4": {
+                                "address": "195.69.147.250",
+                                "routeserver": true
+                            },
+                            "ipv6": {
+                                "address": "2001:7f8:1::a500:2906:1",
+                                "routeserver": true
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

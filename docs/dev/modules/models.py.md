@@ -1,4 +1,4 @@
-Generated from models.py on 2025-10-14 13:37:42.797475
+Generated from models.py on 2025-11-11 15:33:21.384068
 
 # peeringdb_server.models
 
@@ -2049,6 +2049,22 @@ Can be disabled by setting `DATA_QUALITY_VALIDATE_PARENT_STATUS` to False
 
 Validate status changes:
 - Prevent changing from 'ok' to 'pending'
+
+---
+#### validate_status_value
+`def validate_status_value(self)`
+
+Validate that the status field only accepts allowed values.
+
+Valid status values are: 'ok', 'pending', 'deleted'
+
+This prevents invalid status values from being set at the model level.
+Will raise ValidationError on invalid status.
+
+Uses the validate_status function from validators.py to ensure
+consistent validation across API and model layers.
+
+:return:
 
 ---
 

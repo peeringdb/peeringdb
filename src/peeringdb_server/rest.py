@@ -559,8 +559,18 @@ class ModelViewSet(viewsets.ModelViewSet):
                 ]:
                     continue
             else:
-                if k in ["address1", "city", "country", "state"]:
+                if k in ["address1", "city", "state"] and k in field_names:
                     filters[f"{k}__icontains"] = v
+                    continue
+                elif k == "country" and "country" in field_names:
+                    # Special handling for country field (django-countries):
+                    # Only applies when country is a direct field on the model (not a related filter)
+                    # If length is 2, assume it's a country code - use exact match on code
+                    # If length > 2, assume it's a country name - use contains match on name
+                    if len(v) == 2:
+                        filters[f"{k}__iexact"] = v
+                    else:
+                        filters[f"{k}__icontains"] = v
                     continue
 
             v = unidecode.unidecode(v)

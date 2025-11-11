@@ -878,6 +878,17 @@ STATICFILES_FINDERS = (
     #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
+# WhiteNoise configuration for serving static files
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+
 # List of callables that know how to import templates from various sources.
 _TEMPLATE_LOADERS = (
     "django.template.loaders.filesystem.Loader",
@@ -975,9 +986,10 @@ set_option(
 )
 
 MIDDLEWARE = (
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.security.SecurityMiddleware",
     "peeringdb_server.middleware.RedisNegativeCacheMiddleware",
     "csp.middleware.CSPMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",

@@ -695,6 +695,7 @@ class ModelSerializer(serializers.ModelSerializer):
     nested_exclude = []
 
     id = serializers.IntegerField(read_only=True)
+    status = serializers.ReadOnlyField()
 
     def __init__(self, *args, **kwargs):
         # args[0] is either a queryset or a model
@@ -1649,6 +1650,13 @@ class SpatialSearchMixin:
             else:
                 # no coords found, return empty queryset
                 return qset.none()
+        else:
+            # latitude/longitude already provided in filters
+            if "latitude" in filters and "longitude" in filters:
+                coords = {
+                    "latitude": filters["latitude"],
+                    "longitude": filters["longitude"],
+                }
 
         # spatial distance calculation
 
@@ -1972,6 +1980,10 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
                                 if val not in filters[key]:
                                     filters[key].append(val)
+                    else:
+                        # ES failed to resolve name_search to location
+                        # Return empty queryset
+                        return qset.none()
 
         except Exception as e:
             logger.exception("Spatial search pre-processing failed: %s", e)

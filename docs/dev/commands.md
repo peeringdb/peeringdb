@@ -1,4 +1,4 @@
-Generated on 2025-10-14 13:37:42.797475
+Generated on 2025-11-11 15:33:21.384068
 
 ## _db_command.py
 
@@ -73,6 +73,16 @@ Will fetch api cache files from PEERINGDB_SYNC_CACHE_URL to API_CACHE_ROOT
 
 Fix users affected by being both in the org admin
 and org user group when it should be one or the other.
+
+## pdb_fix_net_counts.py
+
+Fix incorrect net_count and ixf_net_count values for InternetExchange objects.
+
+This command recalculates net_count and ixf_net_count for all exchanges
+to fix any inconsistencies caused by issue #1607.
+
+net_count: Number of unique networks actually peering at the exchange
+ixf_net_count: Number of unique networks in the IX-F export data
 
 ## pdb_generate_test_data.py
 

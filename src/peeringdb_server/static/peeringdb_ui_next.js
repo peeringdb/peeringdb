@@ -2336,6 +2336,821 @@ PeeringDB = {
   );
 
   /**
+   * ASN Connectivity Module
+   * Handles filtering and UI interactions for the ASN connectivity matrix
+   */
+  PeeringDB.AsnConnectivity = {
+
+    // Connectivity type labels for facilities and exchanges
+    CONNECTIVITY_LABELS: {
+      facilities: {
+        header: gettext('Facility'),
+        noun: gettext('facility')
+      },
+      exchanges: {
+        header: gettext('Exchange'),
+        noun: gettext('exchange')
+      }
+    },
+
+    /**
+     * Initialize ASN connectivity UI handlers
+     */
+    init: function() {
+      // Initialize tooltips for legend
+      const tooltipTriggerList = document.querySelectorAll('.connectivity-legend [data-bs-toggle="tooltip"]');
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+      // Connectivity type toggle handler (Facilities/Exchanges)
+      $('.btn-group [data-connectivity-type]').on('click', function () {
+        const $clickedBtn = $(this);
+
+        $clickedBtn.closest('.btn-group').find('button').removeClass('active');
+        $clickedBtn.addClass('active');
+
+        // Update the checkbox label based on connectivity type
+        const connectivityType = $clickedBtn.data('connectivity-type');
+        const $label = $('#hide-unmatched-label');
+        if (connectivityType === 'facilities') {
+          $label.text(gettext('Hide unmatched facilities'));
+        } else if (connectivityType === 'exchanges') {
+          $label.text(gettext('Hide unmatched exchanges'));
+        }
+
+        // Trigger search with new connectivity type
+        PeeringDB.AsnConnectivity.handleAsnConnectivity();
+      });
+
+      // Match filter toggle handler (Show All/Any Matches/All Matches)
+      $('.btn-group [data-match-filter]').on('click', function () {
+        const $clickedBtn = $(this);
+
+        // Update active state
+        $clickedBtn.closest('.btn-group').find('button').removeClass('active');
+        $clickedBtn.addClass('active');
+
+        // Apply all filters
+        PeeringDB.AsnConnectivity.applyFilters();
+
+        // Update export URLs
+        PeeringDB.AsnConnectivity.updateExportUrls();
+      });
+
+      // Hide unmatched checkbox handler
+      $('#hide-unmatched').on('change', function() {
+        PeeringDB.AsnConnectivity.applyFilters();
+        PeeringDB.AsnConnectivity.updateExportUrls();
+      });
+    },
+
+    /**
+     * Initialize connectivity sorting
+     */
+    initializeConnectivitySorting: function() {
+      if (!window.jQuery || !$.fn.sortable) {
+        return;
+      }
+
+      const sortableList = $('[data-edit-target="advanced_search:asn_connectivity"]');
+      if (!sortableList.length) {
+        return;
+      }
+
+      sortableList.sortable();
+      sortableList.sortable('sortInitial');
+    },
+
+    /**
+     * Handles ASN connectivity search - fetches network facility data and builds connectivity matrix
+     * @async
+     */
+    handleAsnConnectivity: async function() {
+      const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+      searchForm.editable("loading-shim", "show");
+
+      try {
+        // Get and validate ASN list
+        const asnArray = PeeringDB.AsnConnectivity.getValidatedAsnArray();
+        if (!asnArray) {
+          PeeringDB.AsnConnectivity.displayNoResults('asn_connectivity');
+          searchForm.editable("loading-shim", "hide");
+          return;
+        }
+
+        // Get connectivity type (facilities or exchanges)
+        const connectivityType = PeeringDB.AsnConnectivity.getConnectivityType();
+
+        // Fetch data based on connectivity type
+        const { primaryData, secondaryData } = await PeeringDB.AsnConnectivity.fetchConnectivityData(
+          asnArray.join(','),
+          connectivityType
+        );
+
+        if (!primaryData || !primaryData.length) {
+          PeeringDB.AsnConnectivity.displayNoResults('asn_connectivity');
+          searchForm.editable("loading-shim", "hide");
+          return;
+        }
+
+        // Update UI and build matrix
+        PeeringDB.AsnConnectivity.updateConnectivityHeaders(asnArray, connectivityType);
+        const templateRow = document.querySelector('#advanced-search-asn-connectivity-item');
+        if (templateRow) {
+          PeeringDB.AsnConnectivity.updateTemplateRowStructure(templateRow, asnArray, connectivityType);
+        }
+
+        PeeringDB.AsnConnectivity.buildConnectivityMatrix(primaryData, secondaryData, asnArray, connectivityType);
+
+        // Apply current filter state to the new results
+        if (typeof window.applyFilters === 'function') {
+          window.applyFilters();
+        }
+
+        // Update export URLs with current filter state
+        if (typeof window.updateExportUrls === 'function') {
+          window.updateExportUrls();
+        }
+
+        searchForm.editable("loading-shim", "hide");
+
+      } catch (error) {
+        console.error('Error fetching ASN connectivity:', error);
+        PeeringDB.AsnConnectivity.displayNoResults('asn_connectivity');
+        searchForm.editable("loading-shim", "hide");
+      }
+    },
+
+    /**
+     * Gets and validates ASN array from search parameters
+     * @returns {Array|null} Array of ASN numbers or null if invalid
+     */
+    getValidatedAsnArray: function() {
+      const searchParams = window.getSearchParameters ? window.getSearchParameters('asn_connectivity') : '';
+      const urlParams = new URLSearchParams(searchParams);
+      const asnList = urlParams.get('asn_list');
+
+      if (!asnList) {
+        console.error('No ASN list provided');
+        return null;
+      }
+
+      const asnArray = asnList.split(',').filter(asn => asn.trim() !== '');
+      const asnLimit = window.ASN_CONNECTIVITY_LIMIT || 9;
+
+      if (asnArray.length === 0) {
+        return null;
+      }
+
+      if (asnArray.length > asnLimit) {
+        alert(`Maximum ${asnLimit} ASNs allowed. You have selected ${asnArray.length} ASNs.`);
+        return null;
+      }
+
+      return asnArray;
+    },
+
+    /**
+     * Gets the active connectivity type
+     * @returns {string} Either "facilities" or "exchanges"
+     */
+    getConnectivityType: function() {
+      const activeButton = document.querySelector('.btn-group [data-connectivity-type].active');
+      return activeButton ? activeButton.getAttribute('data-connectivity-type') : 'facilities';
+    },
+
+    /**
+     * Fetches connectivity data based on type
+     * @param {string} asnList - Comma-separated ASN list
+     * @param {string} connectivityType - Either "facilities" or "exchanges"
+     * @returns {Promise<Object>} Object with primaryData and secondaryData
+     */
+    fetchConnectivityData: async function(asnList, connectivityType) {
+      const config = {
+        facilities: {
+          primaryEndpoint: `/api/netfac?net__asn__in=${asnList}`,
+          secondaryEndpoint: '/api/fac',
+          idKey: 'fac_id'
+        },
+        exchanges: {
+          primaryEndpoint: `/api/netixlan?net__asn__in=${asnList}`,
+          secondaryEndpoint: '/api/ix',
+          idKey: 'ix_id'
+        }
+      };
+
+      const typeConfig = config[connectivityType];
+
+      // Fetch primary data (netfac or netixlan)
+      const primaryResponse = await fetch(typeConfig.primaryEndpoint);
+      const primaryData = await primaryResponse.json();
+
+      if (!primaryData.data || primaryData.data.length === 0) {
+        return { primaryData: null, secondaryData: null };
+      }
+
+      // Extract unique entity IDs
+      const entityIds = [...new Set(primaryData.data.map(item => item[typeConfig.idKey]))];
+
+      // Fetch secondary data (fac or ix)
+      const secondaryUrl = `${typeConfig.secondaryEndpoint}?id__in=${entityIds.join(',')}`;
+      const secondaryResponse = await fetch(secondaryUrl);
+      const secondaryData = await secondaryResponse.json();
+
+      return {
+        primaryData: primaryData.data,
+        secondaryData: secondaryData.data
+      };
+    },
+
+    /**
+     * Updates filter button states based on ASN count
+     * @param {number} asnCount - Number of ASNs in the search
+     */
+    updateFilterButtonStates: function(asnCount) {
+      const filterButtons = document.querySelectorAll('#asn_connectivity [data-match-filter]');
+      const hideUnmatchedCheckbox = document.querySelector('#hide-unmatched');
+      const label = document.querySelector('label[for="hide-unmatched"]');
+
+      const shouldDisableFilters = asnCount < 2;
+
+      filterButtons.forEach(btn => {
+        if (btn.getAttribute('data-match-filter') === 'show-all') return; // Skip "Show All" button
+
+        if (shouldDisableFilters) {
+          btn.disabled = true;
+          btn.setAttribute('data-bs-toggle', 'tooltip');
+          btn.setAttribute('data-bs-placement', 'top');
+          btn.setAttribute('title', 'Filter requires 2 or more ASNs');
+          btn.style.cursor = 'not-allowed';
+          btn.style.opacity = '0.5';
+          new bootstrap.Tooltip(btn);
+        } else {
+          btn.disabled = false;
+          btn.removeAttribute('data-bs-toggle');
+          btn.removeAttribute('data-bs-placement');
+          btn.removeAttribute('title');
+          btn.style.cursor = '';
+          btn.style.opacity = '';
+
+          const tooltip = bootstrap.Tooltip.getInstance(btn);
+          if (tooltip) tooltip.dispose();
+        }
+      });
+
+      if (hideUnmatchedCheckbox && label) {
+        if (shouldDisableFilters) {
+          label.style.opacity = '0.5';
+          label.style.cursor = 'not-allowed';
+          label.setAttribute('data-bs-toggle', 'tooltip');
+          label.setAttribute('data-bs-placement', 'top');
+          label.setAttribute('title', 'Filter requires 2 or more ASNs');
+          hideUnmatchedCheckbox.disabled = true;
+          hideUnmatchedCheckbox.checked = false;
+        } else {
+          label.style.opacity = '';
+          label.style.cursor = '';
+          label.removeAttribute('data-bs-toggle');
+          label.removeAttribute('data-bs-placement');
+          label.removeAttribute('title');
+          hideUnmatchedCheckbox.disabled = false;
+        }
+      }
+    },
+
+    /**
+     * Builds connectivity matrix showing which ASNs are present at each facility or exchange
+     * @param {Array} primaryData - Network presence data from API (netfac or netixlan)
+     * @param {Array} secondaryData - Facility or exchange details
+     * @param {Array} asnList - List of ASN numbers
+     * @param {string} connectivityType - Either "facilities" or "exchanges"
+     */
+    buildConnectivityMatrix: function(primaryData, secondaryData, asnList, connectivityType) {
+      const resultsContainer = document.querySelector('#asn_connectivity .results');
+      resultsContainer.innerHTML = '';
+
+      const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+      searchForm.find('.results-empty').hide();
+      searchForm.find('.results-cutoff').hide();
+
+      // Show the legend when results are displayed
+      const legend = document.querySelector('#asn_connectivity .connectivity-legend');
+      if (legend) {
+        legend.style.display = 'block';
+      }
+
+      // Update filter button states based on ASN count
+      PeeringDB.AsnConnectivity.updateFilterButtonStates(asnList.length);
+
+      const typeConfig = PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS[connectivityType] || PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS.facilities;
+      const groupKey = connectivityType === 'exchanges' ? 'ix_id' : 'fac_id';
+      const asnKeyField = connectivityType === 'exchanges' ? 'asn' : 'local_asn';
+      const entityPath = connectivityType === 'exchanges' ? 'ix' : 'fac';
+
+      const entityMap = {};
+      secondaryData.forEach(entity => {
+        if (entity && entity.id !== undefined && entity.id !== null) {
+          entityMap[entity.id] = entity;
+        }
+      });
+
+      const entityGroups = {};
+      primaryData.forEach(item => {
+        const entityId = item[groupKey];
+        if (!entityId) {
+          return;
+        }
+        if (!entityGroups[entityId]) {
+          entityGroups[entityId] = [];
+        }
+        entityGroups[entityId].push(item);
+      });
+
+      const connectivityData = [];
+      Object.keys(entityGroups).forEach(entityId => {
+        const entity = entityMap[entityId];
+        if (!entity) return;
+
+        const row = {
+          id: entity.id,
+          entity_name: entity.name,
+          entity_city: entity.city,
+          entity_country: entity.country,
+          connectivity_type: connectivityType,
+          asn_presence: {}
+        };
+
+        asnList.forEach(asn => {
+          row.asn_presence[asn] = false;
+        });
+
+        entityGroups[entityId].forEach(presenceItem => {
+          const asnValue = presenceItem[asnKeyField];
+          if (asnValue === undefined || asnValue === null) {
+            return;
+          }
+          const asnStr = asnValue.toString();
+          if (row.asn_presence.hasOwnProperty(asnStr)) {
+            row.asn_presence[asnStr] = true;
+          }
+        });
+
+        connectivityData.push(row);
+      });
+
+      connectivityData.sort((a, b) => a.entity_name.localeCompare(b.entity_name));
+
+      const templateRow = document.querySelector('#advanced-search-asn-connectivity-item');
+
+      if (templateRow) {
+        PeeringDB.AsnConnectivity.updateTemplateRowStructure(templateRow, asnList, connectivityType);
+
+        if (asnList.length > 9) {
+          const entityWidthPercent = 25;
+          const minAsnWidth = 60;
+          const totalMinWidth = 300 + (minAsnWidth * asnList.length);
+          resultsContainer.style.minWidth = `${totalMinWidth}px`;
+          resultsContainer.style.width = '100%';
+        } else {
+          resultsContainer.style.minWidth = '';
+          resultsContainer.style.width = '';
+        }
+
+        connectivityData.forEach(item => {
+          const rowElement = templateRow.cloneNode(true);
+          rowElement.id = '';
+
+          const entityLink = rowElement.querySelector('[data-edit-name="entity_name"]');
+          if (entityLink) {
+            const linkText = item.entity_name || '';
+            entityLink.textContent = linkText;
+            entityLink.href = `/${entityPath}/${item.id}`;
+            entityLink.setAttribute('data-connectivity-type', connectivityType);
+            const entitySortValue = linkText.toLowerCase();
+            entityLink.setAttribute('data-sort-value', entitySortValue);
+            $(entityLink).data('sort-value', entitySortValue);
+          }
+
+          // Populate country field for facilities
+          if (connectivityType === 'facilities') {
+            const countrySpan = rowElement.querySelector('[data-edit-name="entity_country"]');
+            if (countrySpan) {
+              const countryText = item.entity_country || '';
+              countrySpan.textContent = countryText;
+              const countryCol = countrySpan.closest('.entity-country');
+              if (countryCol) {
+                const countrySortValue = countryText.toLowerCase();
+                countryCol.setAttribute('data-sort-value', countrySortValue);
+                $(countryCol).data('sort-value', countrySortValue);
+              }
+            }
+          }
+
+          asnList.forEach(asn => {
+            const asnElement = rowElement.querySelector(`[data-edit-name="asn_${asn}"]`);
+            if (asnElement) {
+              const isPresent = item.asn_presence[asn];
+              const checkmarkImg = asnElement.querySelector('img.checkmark');
+              if (checkmarkImg) {
+                const checkmarkSrc = isPresent ?
+                  STATIC_URL + "checkmark.png" :
+                  STATIC_URL + "checkmark-off.png";
+                checkmarkImg.src = checkmarkSrc;
+                checkmarkImg.alt = isPresent ? 'Present' : 'Not Present';
+                checkmarkImg.title = `AS${asn} ${isPresent ? 'present' : 'not present'} at this ${typeConfig.noun}`;
+              }
+              const asnCol = asnElement.closest(`.asn-${asn}`);
+              if (asnCol) {
+                const sortValue = isPresent ? 1 : 0;
+                asnCol.setAttribute('data-sort-value', sortValue);
+                $(asnCol).data('sort-value', sortValue);
+              }
+            }
+          });
+
+          const asnCount = asnList.reduce((cnt, asn) => cnt + (item.asn_presence[asn] ? 1 : 0), 0);
+          const totalAsns = asnList.length;
+
+          if (asnCount >= 2) {
+            if (asnCount === totalAsns) {
+              // All ASNs are present
+              rowElement.classList.add('row-hilight-all');
+            } else {
+              // Some ASNs are present (but not all)
+              rowElement.classList.add('row-hilight-any');
+            }
+          }
+
+          resultsContainer.appendChild(rowElement);
+        });
+      }
+
+      // Set up export buttons with connectivity data
+      // Get current filter states
+      const activeMatchFilter = document.querySelector('#asn_connectivity [data-match-filter].active');
+      const matchFilter = activeMatchFilter ? activeMatchFilter.getAttribute('data-match-filter') : 'show-all';
+      const hideUnmatched = document.querySelector('#hide-unmatched')?.checked ? '1' : '0';
+
+      // Build query string with filters
+      let queryString = `asn_list=${encodeURIComponent(asnList.join(','))}&connectivity_type=${encodeURIComponent(connectivityType)}`;
+      queryString += `&match_filter=${encodeURIComponent(matchFilter)}`;
+      queryString += `&hide_unmatched=${hideUnmatched}`;
+
+      PeeringDB.advanced_search_result['asn_connectivity'] = {
+        param: queryString,
+        data: connectivityData,
+        connectivity_type: connectivityType,
+        match_filter: matchFilter,
+        hide_unmatched: hideUnmatched
+      };
+
+      searchForm.parent().find("[data-export-format]").each(function () {
+        $(this).removeClass("d-none");
+        const format = $(this).data("export-format");
+        $(this).attr(
+          "href",
+          `/export/advanced-search/asn_connectivity/${format}?${queryString}`
+        );
+      });
+    },
+
+    /**
+     * Updates column headers for connectivity matrix
+     * @param {Array} asnList - List of ASN numbers
+     * @param {string} connectivityType - Either "facilities" or "exchanges"
+     */
+    updateConnectivityHeaders: function(asnList, connectivityType) {
+      const typeConfig = PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS[connectivityType] || PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS.facilities;
+      const headersContainer = document.querySelector('#asn_connectivity .headers .row');
+      if (headersContainer) {
+        headersContainer.classList.add('header');
+        if (asnList.length > 9) {
+          const facilityWidthPercent = connectivityType === 'facilities' ? 20 : 25;
+          const countryWidthPercent = connectivityType === 'facilities' ? 10 : 0;
+          const asnTotalWidth = 100 - facilityWidthPercent - countryWidthPercent;
+          const asnWidthPercent = asnTotalWidth / asnList.length;
+          const minAsnWidth = 60;
+          const totalMinWidth = 300 + (minAsnWidth * asnList.length) + (connectivityType === 'facilities' ? 100 : 0);
+
+          headersContainer.style.minWidth = `${totalMinWidth}px`;
+          headersContainer.style.display = 'flex';
+          headersContainer.style.width = '100%';
+
+          let headersHTML = `
+            <div style="width: ${facilityWidthPercent}%; min-width: 200px; flex-shrink: 0;" data-sort-target=".entity-name" data-sort-initial="asc">
+              ${typeConfig.header}
+            </div>
+          `;
+
+          if (connectivityType === 'facilities') {
+            headersHTML += `
+              <div style="width: ${countryWidthPercent}%; min-width: 100px; flex-shrink: 0;" data-sort-target=".entity-country">
+                Country
+              </div>
+            `;
+          }
+
+          asnList.forEach(asn => {
+            headersHTML += `
+              <div class="numeric text-center" style="width: ${asnWidthPercent}%; min-width: ${minAsnWidth}px; flex-shrink: 0;" data-sort-target=".asn-${asn}">
+                AS${asn}
+              </div>
+            `;
+          });
+
+          // Sanitize the generated HTML before injecting it into the DOM to avoid XSS
+          headersContainer.innerHTML = DOMPurify.sanitize(headersHTML, {SAFE_FOR_JQUERY: true});
+        } else {
+          const facilityColWidth = Math.max(3, Math.min(6, 12 - asnList.length - (connectivityType === 'facilities' ? 2 : 0)));
+          const countryColWidth = connectivityType === 'facilities' ? 2 : 0;
+          const remainingWidth = 12 - facilityColWidth - countryColWidth;
+          const asnColWidth = Math.max(1, Math.floor(remainingWidth / asnList.length));
+
+          headersContainer.style.minWidth = '';
+          headersContainer.style.display = '';
+          headersContainer.style.width = '';
+
+          let headersHTML = `
+            <div class="col-${facilityColWidth}" data-sort-target=".entity-name" data-sort-initial="asc">
+              ${typeConfig.header}
+            </div>
+          `;
+
+          if (connectivityType === 'facilities') {
+            headersHTML += `
+              <div class="col-${countryColWidth}" data-sort-target=".entity-country">
+                Country
+              </div>
+            `;
+          }
+
+          asnList.forEach(asn => {
+            headersHTML += `
+              <div class="col-${asnColWidth} text-center numeric" data-sort-target=".asn-${asn}">
+                AS${asn}
+              </div>
+            `;
+          });
+
+          // Sanitize the generated HTML before injecting it into the DOM to avoid XSS
+          headersContainer.innerHTML = DOMPurify.sanitize(headersHTML, {SAFE_FOR_JQUERY: true});
+        }
+
+        PeeringDB.AsnConnectivity.initializeConnectivitySorting();
+      }
+    },
+
+    /**
+     * Updates template row structure for dynamic ASN columns
+     * @param {HTMLElement} templateRow - Template DOM element
+     * @param {Array} asnList - List of ASN numbers
+     * @param {string} connectivityType - Either "facilities" or "exchanges"
+     */
+    updateTemplateRowStructure: function(templateRow, asnList, connectivityType) {
+      const entityLink = templateRow.querySelector('[data-edit-name="entity_name"]');
+      if (!entityLink) {
+        return;
+      }
+
+      const entityCol = entityLink.closest('[class*="col-"]');
+      if (!entityCol) {
+        return;
+      }
+
+      const typeConfig = PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS[connectivityType] || PeeringDB.AsnConnectivity.CONNECTIVITY_LABELS.facilities;
+      entityLink.textContent = typeConfig.header;
+      entityLink.removeAttribute('href');
+      entityLink.classList.add('entity-name');
+
+      // Remove old connectivity column
+      const oldConnectivityCol = templateRow.querySelector('[data-edit-name="connectivity_info"]');
+      if (oldConnectivityCol) {
+        oldConnectivityCol.closest('[class*="col-"]').remove();
+      }
+
+      // Clear existing country column
+      const existingCountryCol = templateRow.querySelector('[data-edit-name="entity_country"]');
+      if (existingCountryCol) {
+        existingCountryCol.closest('[class*="col-"]')?.remove();
+      }
+
+      // Clear existing ASN columns
+      const existingAsnCols = templateRow.querySelectorAll('[class*="asn-"]');
+      existingAsnCols.forEach(col => col.remove());
+
+      if (asnList.length > 9) {
+        const facilityWidthPercent = connectivityType === 'facilities' ? 20 : 25;
+        const countryWidthPercent = connectivityType === 'facilities' ? 10 : 0;
+        const asnTotalWidth = 100 - facilityWidthPercent - countryWidthPercent;
+        const asnWidthPercent = asnTotalWidth / asnList.length;
+        const minAsnWidth = 60;
+        const totalMinWidth = 300 + (minAsnWidth * asnList.length) + (connectivityType === 'facilities' ? 100 : 0);
+
+        templateRow.style.display = 'flex';
+        templateRow.style.minWidth = `${totalMinWidth}px`;
+        templateRow.style.width = '100%';
+
+        entityCol.className = '';
+        entityCol.style.width = `${facilityWidthPercent}%`;
+        entityCol.style.minWidth = '200px';
+        entityCol.style.flexShrink = '0';
+
+        let lastInsertedCol = entityCol;
+
+        // Add country column for facilities
+        if (connectivityType === 'facilities') {
+          const countryCol = document.createElement('div');
+          countryCol.className = 'entity-country';
+          countryCol.style.width = `${countryWidthPercent}%`;
+          countryCol.style.minWidth = '100px';
+          countryCol.style.flexShrink = '0';
+
+          const countrySpan = document.createElement('span');
+          countrySpan.setAttribute('data-edit-name', 'entity_country');
+          countryCol.appendChild(countrySpan);
+
+          entityCol.parentNode.insertBefore(countryCol, lastInsertedCol.nextSibling);
+          lastInsertedCol = countryCol;
+        }
+
+        asnList.forEach(asn => {
+          const asnCol = document.createElement('div');
+          asnCol.className = `asn-${asn} numeric text-center`;
+          asnCol.style.width = `${asnWidthPercent}%`;
+          asnCol.style.minWidth = `${minAsnWidth}px`;
+          asnCol.style.textAlign = 'center';
+          asnCol.style.flexShrink = '0';
+
+          const asnContainer = document.createElement('div');
+          asnContainer.setAttribute('data-edit-name', `asn_${asn}`);
+          const checkmarkImg = document.createElement('img');
+          checkmarkImg.className = 'checkmark';
+          checkmarkImg.src = STATIC_URL + 'checkmark-off.png';
+
+          asnContainer.appendChild(checkmarkImg);
+          asnCol.appendChild(asnContainer);
+
+          entityCol.parentNode.insertBefore(asnCol, lastInsertedCol.nextSibling);
+          lastInsertedCol = asnCol;
+        });
+      } else {
+        const facilityColWidth = Math.max(3, Math.min(6, 12 - asnList.length - (connectivityType === 'facilities' ? 2 : 0)));
+        const countryColWidth = connectivityType === 'facilities' ? 2 : 0;
+        const remainingWidth = 12 - facilityColWidth - countryColWidth;
+        const asnColWidth = Math.max(1, Math.floor(remainingWidth / asnList.length));
+
+        templateRow.style.display = '';
+        templateRow.style.minWidth = '';
+        templateRow.style.width = '';
+
+        entityCol.className = `col-${facilityColWidth}`;
+        entityCol.style.width = '';
+        entityCol.style.minWidth = '';
+        entityCol.style.flexShrink = '';
+
+        let lastInsertedCol = entityCol;
+
+        // Add country column for facilities
+        if (connectivityType === 'facilities') {
+          const countryCol = document.createElement('div');
+          countryCol.className = `col-${countryColWidth} entity-country`;
+
+          const countrySpan = document.createElement('span');
+          countrySpan.setAttribute('data-edit-name', 'entity_country');
+          countryCol.appendChild(countrySpan);
+
+          entityCol.parentNode.insertBefore(countryCol, lastInsertedCol.nextSibling);
+          lastInsertedCol = countryCol;
+        }
+
+        // Create ASN columns
+        asnList.forEach(asn => {
+          const asnCol = document.createElement('div');
+          asnCol.className = `col-${asnColWidth} text-center numeric asn-${asn}`;
+
+          const asnContainer = document.createElement('div');
+          asnContainer.setAttribute('data-edit-name', `asn_${asn}`);
+          const checkmarkImg = document.createElement('img');
+          checkmarkImg.className = 'checkmark';
+          checkmarkImg.src = STATIC_URL + 'checkmark-off.png';
+
+          asnContainer.appendChild(checkmarkImg);
+          asnCol.appendChild(asnContainer);
+
+          entityCol.parentNode.insertBefore(asnCol, lastInsertedCol.nextSibling);
+          lastInsertedCol = asnCol;
+        });
+      }
+    },
+
+    /**
+     * Displays "no results" message for ASN connectivity search
+     * @param {string} reftag - Search reference tag
+     */
+    displayNoResults: function(reftag) {
+      const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
+      searchForm.find('.results-empty').show();
+      searchForm.find('.results').empty();
+      searchForm.parent().find('[data-export-format]').each(function () {
+        $(this).addClass('d-none');
+        $(this).removeAttr('href');
+      });
+
+      // Hide legend when no results
+      if (reftag === 'asn_connectivity') {
+        const legend = document.querySelector('#asn_connectivity .connectivity-legend');
+        if (legend) {
+          legend.style.display = 'none';
+        }
+      }
+    },
+
+    /**
+     * Apply all filters to the connectivity matrix rows
+     */
+    applyFilters: function() {
+      const filterType = $('.btn-group [data-match-filter].active').data('match-filter');
+      const hideUnmatched = $('#hide-unmatched').is(':checked');
+      const $results = $('#asn_connectivity .results .row');
+
+      $results.each(function() {
+        const $row = $(this);
+        const hasAnyMatch = $row.hasClass('row-hilight-any');
+        const hasAllMatch = $row.hasClass('row-hilight-all');
+        const hasNoMatch = !hasAnyMatch && !hasAllMatch;
+
+        let showRow = true;
+
+        // Apply match filter
+        if (filterType === 'any-match' && !hasAnyMatch) {
+          showRow = false;
+        } else if (filterType === 'all-match' && !hasAllMatch) {
+          showRow = false;
+        }
+
+        // Apply hide unmatched filter
+        if (hideUnmatched && hasNoMatch) {
+          showRow = false;
+        }
+
+        if (showRow) {
+          $row.show();
+        } else {
+          $row.hide();
+        }
+      });
+    },
+
+    /**
+     * Update export URLs with current filter state
+     */
+    updateExportUrls: function() {
+      const activeMatchFilter = document.querySelector('#asn_connectivity [data-match-filter].active');
+      const matchFilter = activeMatchFilter ? activeMatchFilter.getAttribute('data-match-filter') : 'show-all';
+      const hideUnmatched = $('#hide-unmatched').is(':checked') ? '1' : '0';
+
+      // Update export button URLs
+      $('[data-export-tag="asn_connectivity"]').each(function() {
+        const currentHref = $(this).attr('href');
+        if (currentHref && currentHref !== '#') {
+          // Parse existing URL
+          const url = new URL(currentHref, window.location.origin);
+
+          // Update filter parameters
+          url.searchParams.set('match_filter', matchFilter);
+          url.searchParams.set('hide_unmatched', hideUnmatched);
+
+          // Set new href
+          $(this).attr('href', url.pathname + url.search);
+        }
+      });
+    }
+  };
+
+  // Make functions globally accessible for backward compatibility
+  window.applyFilters = function() {
+    PeeringDB.AsnConnectivity.applyFilters();
+  };
+
+  window.updateExportUrls = function() {
+    PeeringDB.AsnConnectivity.updateExportUrls();
+  };
+
+  window.handleAsnConnectivity = function() {
+    return PeeringDB.AsnConnectivity.handleAsnConnectivity();
+  };
+
+  window.initializeConnectivitySorting = function() {
+    return PeeringDB.AsnConnectivity.initializeConnectivitySorting();
+  };
+
+  // Initialize on document ready
+  $(document).ready(function() {
+    if ($('#asn_connectivity').length > 0) {
+      PeeringDB.AsnConnectivity.init();
+    }
+  });
+
+  /**
    * editable api endpoint
    */
 

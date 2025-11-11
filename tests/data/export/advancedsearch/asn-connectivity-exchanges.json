@@ -1,0 +1,22 @@
+{
+  "results": [
+    {
+      "Exchange ID": 1,
+      "Exchange Name": "Equinix Ashburn",
+      "City": "Ashburn",
+      "AS394749": true
+    },
+    {
+      "Exchange ID": 9,
+      "Exchange Name": "Equinix Atlanta",
+      "City": "Atlanta",
+      "AS394749": true
+    },
+    {
+      "Exchange ID": 2,
+      "Exchange Name": "Equinix Chicago",
+      "City": "Chicago",
+      "AS394749": true
+    }
+  ]
+}

@@ -810,3 +810,39 @@ def validate_distance_geocode(current_geocode, new_geocode, current_city, new_ci
             raise ValidationError({"latitude": message, "longitude": message})
 
     return new_geocode
+
+
+def validate_status(value):
+    """
+    Validate that the status field only accepts allowed values.
+
+    Valid status values are: 'ok', 'pending', 'deleted'
+
+    This prevents the API from accepting arbitrary status values that
+    can lead to data being inaccessible or cause unexpected behavior.
+
+    Arguments:
+        - value (str): The status value to validate
+
+    Raises:
+        - RestValidationError: If the status value is not in the allowed list
+
+    Returns:
+        - str: The validated status value
+    """
+
+    # Extract status values from HANDLEREF_STATUS tuple
+    # HANDLEREF_STATUS is a tuple of (value, display) tuples
+    allowed_statuses = [
+        status[0] for status in peeringdb_server.models.HANDLEREF_STATUS
+    ]
+
+    if value not in allowed_statuses:
+        raise RestValidationError(
+            {
+                "status": [
+                    f"Invalid status value '{value}'. Allowed values are: {', '.join(allowed_statuses)}"
+                ]
+            }
+        )
+    return value

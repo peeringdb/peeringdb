@@ -706,7 +706,7 @@ class AdvancedSearchExportTest(ClientCase):
     @patch(
         "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
     )
-    def test_export_asn_connectivity_json(self, mock_generate):
+    def test_export_asn_connectivity_facilities_json(self, mock_generate):
         """test JSON export of ASN connectivity"""
         expected_results = [
             {
@@ -742,13 +742,13 @@ class AdvancedSearchExportTest(ClientCase):
             "/export/advanced-search/asn_connectivity/json?asn_list=932,1024"
         )
         assert json.loads(response.content) == json.loads(
-            self.expected_data("asn-connectivity", "json")
+            self.expected_data("asn-connectivity-facilities", "json")
         )
 
     @patch(
         "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
     )
-    def test_export_asn_connectivity_csv(self, mock_generate):
+    def test_export_asn_connectivity_facilities_csv(self, mock_generate):
         """test CSV export of ASN connectivity"""
         expected_results = [
             {
@@ -785,4 +785,358 @@ class AdvancedSearchExportTest(ClientCase):
         )
         assert response.content.decode("utf-8").replace(
             "\r\n", "\n"
-        ).rstrip() == self.expected_data("asn-connectivity", "csv")
+        ).rstrip() == self.expected_data("asn-connectivity-facilities", "csv")
+
+    @patch(
+        "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
+    )
+    def test_export_asn_connectivity_exchanges_json(self, mock_generate):
+        """test JSON export of ASN connectivity"""
+        expected_results = [
+            {
+                "Exchange ID": 1,
+                "Exchange Name": "Equinix Ashburn",
+                "City": "Ashburn",
+                "AS394749": True,
+            },
+            {
+                "Exchange ID": 9,
+                "Exchange Name": "Equinix Atlanta",
+                "City": "Atlanta",
+                "AS394749": True,
+            },
+            {
+                "Exchange ID": 2,
+                "Exchange Name": "Equinix Chicago",
+                "City": "Chicago",
+                "AS394749": True,
+            },
+        ]
+
+        mock_generate.return_value = expected_results
+
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=394749"
+        )
+        assert json.loads(response.content) == json.loads(
+            self.expected_data("asn-connectivity-exchanges", "json")
+        )
+
+    @patch(
+        "peeringdb_server.export_views.AdvancedSearchExportView.generate_asn_connectivity"
+    )
+    def test_export_asn_connectivity_exchanges_csv(self, mock_generate):
+        """test CSV export of ASN connectivity"""
+        expected_results = [
+            {
+                "Exchange ID": 1,
+                "Exchange Name": "Equinix Ashburn",
+                "City": "Ashburn",
+                "AS394749": True,
+            },
+            {
+                "Exchange ID": 9,
+                "Exchange Name": "Equinix Atlanta",
+                "City": "Atlanta",
+                "AS394749": True,
+            },
+            {
+                "Exchange ID": 2,
+                "Exchange Name": "Equinix Chicago",
+                "City": "Chicago",
+                "AS394749": True,
+            },
+        ]
+
+        mock_generate.return_value = expected_results
+
+        client = Client()
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/csv?asn_list=394749"
+        )
+        assert response.content.decode("utf-8").replace(
+            "\r\n", "\n"
+        ).rstrip() == self.expected_data("asn-connectivity-exchanges", "csv")
+
+    def test_export_asn_connectivity_facilities_filter_any_json(self):
+        """test JSON export of ASN connectivity with match_filter=any-match"""
+        # Create additional facilities and network relationships to test filtering
+        # Facility 1 has ASN 1 and 2 (partial match - "any") - ASN 1 from original setup
+        # Facility 2 has all ASNs: 1, 2, 3 (all match - "all") - ASN 2 from original setup
+        # Facility 3 has only ASN 3 (no match - less than 2) - ASN 3 from original setup
+
+        # Add ASN 2 to facility 1 (now has 1 and 2)
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[1], facility=self.fac[0], status="ok"
+            )
+
+        # Add ASN 1 and 3 to facility 2 (now has 2 (from setup), 1, and 3)
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[0], facility=self.fac[1], status="ok"
+            )
+
+            NetworkFacility.objects.create(
+                network=self.net[2], facility=self.fac[1], status="ok"
+            )
+
+        client = Client()
+        # Test with match_filter=any-match - should only return facilities with partial matches (2+ but not all ASNs)
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=facilities&match_filter=any-match"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        # Should only include facilities with partial matches
+        # Facility 1 has ASN 1 and 2 (2 out of 3) - partial match, should be included
+        facility_names = [r["Facility Name"] for r in results]
+        self.assertIn("Facility 1", facility_names)
+
+        # Facility 2 has all ASNs (3 out of 3) - all match, should be excluded
+        self.assertNotIn("Facility 2", facility_names)
+
+        # Facility 3 has only ASN 3 (1 out of 3) - not a partial match, should be excluded
+        self.assertNotIn("Facility 3", facility_names)
+
+    def test_export_asn_connectivity_facilities_filter_all_match_json(self):
+        """test JSON export of ASN connectivity with match_filter=all-match"""
+        # Create a scenario where one facility has all ASNs and others don't
+
+        # Add all ASNs to facility 1
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[1], facility=self.fac[0], status="ok"
+            )
+            NetworkFacility.objects.create(
+                network=self.net[2], facility=self.fac[0], status="ok"
+            )
+
+        client = Client()
+        # Test with match_filter=all-match - should only return facilities with all ASNs
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=facilities&match_filter=all-match"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        # Should only include facilities with all 3 ASNs
+        facility_names = [r["Facility Name"] for r in results]
+        self.assertIn("Facility 1", facility_names)
+
+        # Facility 2 and 3 don't have all ASNs, should be excluded
+        self.assertNotIn("Facility 2", facility_names)
+        self.assertNotIn("Facility 3", facility_names)
+
+    def test_export_asn_connectivity_facilities_hide_unmatched_json(self):
+        """test JSON export of ASN connectivity with hide_unmatched=1"""
+        # Create a scenario with facilities having different match levels
+
+        # Facility 1 already has ASN 1
+        # Add ASN 2 to facility 1 (now has 1 and 4 - partial match)
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[1], facility=self.fac[0], status="ok"
+            )
+
+        # Facility 2 and 3 remain with only their original ASN (no match - single ASN)
+
+        client = Client()
+        # Test with hide_unmatched=1 - should exclude facilities with no matches
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=facilities&hide_unmatched=1"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        # Facility 1 has ASN 1 and 4 - should be included
+        facility_names = [r["Facility Name"] for r in results]
+        self.assertIn("Facility 1", facility_names)
+
+        # Facility 2 has only ASN 2 (not in list) and Facility 3 has only ASN 3 (not in list)
+        # These are "no match" cases and should be excluded
+        self.assertNotIn("Facility 2", facility_names)
+        self.assertNotIn("Facility 3", facility_names)
+
+    def test_export_asn_connectivity_facilities_combined_filters_json(self):
+        """test JSON export of ASN connectivity with both match_filter=any-match and hide_unmatched=1"""
+        # Create a comprehensive test scenario
+
+        # Facility 1: ASN 1, 2 (partial match - 2 out of 3)
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[1], facility=self.fac[0], status="ok"
+            )
+
+        # Facility 2: Add ASN 1 and 3 to facility 2 (now has 2, 1, 3 - all match - all 3)
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[0], facility=self.fac[1], status="ok"
+            )
+            NetworkFacility.objects.create(
+                network=self.net[2], facility=self.fac[1], status="ok"
+            )
+
+        # Facility 3 remains with only ASN 3 (no match)
+
+        client = Client()
+        # Test with match_filter=any-match AND hide_unmatched=1
+        # Should only return facilities with partial matches (not all, not no match)
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=facilities&match_filter=any-match&hide_unmatched=1"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        # Facility 1 has partial match (2 out of 3: ASN 1, 2) - should be included
+        facility_names = [r["Facility Name"] for r in results]
+        self.assertIn("Facility 1", facility_names)
+
+        # Facility 2 has all match (all 3: ASN 1, 2, 3) - excluded by match_filter=any
+        self.assertNotIn("Facility 2", facility_names)
+
+        # Facility 3 has no match - excluded by hide_unmatched=1
+        self.assertNotIn("Facility 3", facility_names)
+
+    def test_export_asn_connectivity_exchanges_filter_any_json(self):
+        """test JSON export of ASN connectivity for exchanges with match_filter=any-match"""
+        # Create additional networks and exchange relationships
+
+        # Add ASN 2 to exchange 1 (now has ASN 1 and 2 - partial match)
+        with reversion.create_revision():
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[0],
+                network=self.net[1],
+                asn=2,
+                speed=0,
+                status="ok",
+            )
+
+        # Add ASN 1 and 3 to exchange 2 (now has ASN 2, 1, 3 - all match)
+        with reversion.create_revision():
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[1],
+                network=self.net[0],
+                asn=1,
+                speed=0,
+                status="ok",
+            )
+
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[1],
+                network=self.net[2],
+                asn=3,
+                speed=0,
+                status="ok",
+            )
+
+        client = Client()
+        # Test with match_filter=any-match - should only return exchanges with partial matches
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=exchanges&match_filter=any-match"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        exchange_names = [r["Exchange Name"] for r in results]
+
+        # Exchange 1 has ASN 1 and 2 (2 out of 3) - partial match, should be included
+        self.assertIn("Exchange 1", exchange_names)
+
+        # Exchange 2 has all ASNs (3 out of 3) - all match, should be excluded
+        self.assertNotIn("Exchange 2", exchange_names)
+
+        # Exchange 3 has only ASN 3 (1 out of 3) - not a partial match, should be excluded
+        self.assertNotIn("Exchange 3", exchange_names)
+
+    def test_export_asn_connectivity_exchanges_hide_unmatched_json(self):
+        """test JSON export of ASN connectivity for exchanges with hide_unmatched=1"""
+        # Create a scenario with exchanges having different match levels
+
+        # Exchange 1 already has ASN 1
+        # Add ASN 2 to exchange 1 (now has 1 and 2 - partial match)
+        with reversion.create_revision():
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[0],
+                network=self.net[1],
+                asn=2,
+                speed=0,
+                status="ok",
+            )
+
+        # Exchange 2 and 3 remain with only their original ASN (no match - single ASN)
+
+        client = Client()
+        # Test with hide_unmatched=1 - should exclude exchanges with no matches
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/json?asn_list=1,2,3&connectivity_type=exchanges&hide_unmatched=1"
+        )
+
+        data = json.loads(response.content)
+        results = data.get("results", [])
+
+        # Exchange 1 has ASN 1 and 2 - should be included
+        exchange_names = [r["Exchange Name"] for r in results]
+        self.assertIn("Exchange 1", exchange_names)
+
+        # Exchange 2 has only ASN 2 (not in list) and Exchange 3 has only ASN 3 (not in list)
+        # These are "no match" cases and should be excluded
+        self.assertNotIn("Exchange 2", exchange_names)
+        self.assertNotIn("Exchange 3", exchange_names)
+
+    def test_export_asn_connectivity_exchanges_combined_filters_csv(self):
+        """test CSV export of ASN connectivity for exchanges with both filters"""
+        # Create a comprehensive test scenario
+
+        # Exchange 1: ASN 1, 2 (partial match - 2 out of 3)
+        with reversion.create_revision():
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[0],
+                network=self.net[1],
+                asn=2,
+                speed=0,
+                status="ok",
+            )
+
+        # Exchange 2: ASN 1, 2, 3 (all match - all 3)
+        with reversion.create_revision():
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[1],
+                network=self.net[0],
+                asn=1,
+                speed=0,
+                status="ok",
+            )
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[1],
+                network=self.net[2],
+                asn=3,
+                speed=0,
+                status="ok",
+            )
+
+        # Exchange 3 remains with only ASN 3 (no match)
+
+        client = Client()
+        # Test with match_filter=all-match AND hide_unmatched=1
+        response = client.get(
+            "/export/advanced-search/asn_connectivity/csv?asn_list=1,2,3&connectivity_type=exchanges&match_filter=all-match&hide_unmatched=1"
+        )
+
+        csv_content = response.content.decode("utf-8")
+
+        # Exchange 2 has all match (all 3) - should be included
+        self.assertIn("Exchange 2", csv_content)
+
+        # Exchange 1 has partial match - excluded by match_filter=all-match
+        self.assertNotIn("Exchange 1", csv_content)
+
+        # Exchange 3 has no match - excluded by hide_unmatched=1
+        self.assertNotIn("Exchange 3", csv_content)

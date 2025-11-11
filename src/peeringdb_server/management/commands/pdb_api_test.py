@@ -160,65 +160,6 @@ def clear_negative_cache():
     caches["negative"].clear()
 
 
-def enforce_mfa(test_func):
-    """
-    Decorator to enforce Multi-Factor Authentication (MFA) policy in test methods.
-
-    When the global setting MFA_FORCE_HARD_START is active (non-null and in the past),
-    this decorator modifies the behavior of the decorated test method to:
-
-    - Perform a representative API request using basic authentication via a guest test client.
-    - Assert that the response returns HTTP 403 Forbidden, indicating that basic authentication
-      is correctly blocked by the MFA enforcement middleware.
-    - Skip the actual test logic when MFA enforcement is in effect, as the rejection of basic
-      auth becomes the expected outcome.
-
-    If MFA_FORCE_HARD_START is not active, the test method runs normally.
-
-    This is useful for retrofitting existing tests to comply with an enforced MFA policy
-    without needing to rewrite or disable them.
-    """
-
-    def wrapper(self, *args, **kwargs):
-        if MFA_FORCE_HARD_START:
-            response = self.db_guest._request(
-                "org", method="GET"
-            )  # example request if enforce MFA mandatory
-            self.assert_basic_auth_403(response)
-            return
-        return test_func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def mfa_guard_class(cls):
-    """
-    Class decorator that automatically applies MFA enforcement to all test methods.
-
-    This decorator iterates over all methods in the given test class whose names
-    start with 'test_' (standard unittest convention) and wraps them with the
-    `enforce_mfa` decorator.
-
-    This ensures that every test method will honor the MFA_FORCE_HARD_START policy,
-    enforcing that API requests using basic authentication are blocked as expected
-    once MFA becomes mandatory.
-
-    By applying this decorator at the class level, developers can ensure consistency
-    and avoid manually decorating each individual test method with `@enforce_mfa`.
-
-    Intended for use in integration or API tests where MFA enforcement may affect
-    authentication behavior and test outcomes.
-    """
-
-    for attr in dir(cls):
-        if attr.startswith("test_"):
-            method = getattr(cls, attr)
-            if callable(method):
-                setattr(cls, attr, enforce_mfa(method))
-    return cls
-
-
-@mfa_guard_class
 class TestJSON(unittest.TestCase):
     rest_client = RestClient
 
@@ -1349,10 +1290,13 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @override_settings(API_CACHE_ENABLED=False)
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
-    def test_user_001_GET_fac_spatial_search_with_name_search(self, mock_es):
+    def test_user_001_GET_fac_spatial_search_with_name_search(
+        self, mock_proximity_es, mock_new_es
+    ):
         """Test facility API spatial search with name_search parameter that triggers ES lookup."""
-        mock_es.return_value = {
+        mock_proximity_es.return_value = {
             "city": "Chicago",
             "state": "IL",
             "country": "US",
@@ -1369,12 +1313,31 @@ class TestJSON(unittest.TestCase):
         )
         facility = Facility.objects.create(status="ok", **fac_data)
 
+        mock_es_instance = mock_new_es.return_value
+        mock_es_instance.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "fac",
+                        "_id": str(facility.id),
+                        "_score": 10,
+                        "_source": {
+                            "name": facility.name,
+                            "status": "ok",
+                            "org": {"id": facility.org_id, "name": facility.org.name},
+                        },
+                    }
+                ],
+            }
+        }
+
         response = self.db_user._request(
             "fac?name_search=Test Facility&distance=50", method="GET"
         )
         self.assertEqual(response.status_code, 200)
 
-        mock_es.assert_called_once_with("Test Facility")
+        mock_proximity_es.assert_called_once_with("Test Facility")
 
         data = response.json()
         facility_names = [f["name"] for f in data["data"]]
@@ -1383,10 +1346,18 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @override_settings(API_CACHE_ENABLED=False)
+    @patch("peeringdb_server.search_v2.new_elasticsearch")
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
-    def test_user_001_GET_fac_spatial_search_es_error_fallback(self, mock_es):
+    def test_user_001_GET_fac_spatial_search_es_error_fallback(
+        self, mock_proximity_es, mock_new_es
+    ):
         """Test facility API spatial search gracefully handles ES errors."""
-        mock_es.side_effect = elasticsearch.ConnectionError("ES connection failed")
+        mock_proximity_es.side_effect = elasticsearch.ConnectionError(
+            "ES connection failed"
+        )
+
+        mock_es_instance = mock_new_es.return_value
+        mock_es_instance.search.return_value = {"hits": {"hits": []}}
 
         fac_data = self.make_data_fac(city="Seattle", country="US")
         Facility.objects.create(status="ok", **fac_data)
@@ -1396,7 +1367,7 @@ class TestJSON(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        mock_es.assert_called_once_with("Test")
+        mock_proximity_es.assert_called_once_with("Test")
 
         data = response.json()
         self.assertIn("data", data)
@@ -1547,6 +1518,33 @@ class TestJSON(unittest.TestCase):
 
         self.assertEqual(len(data), 1)
         self.assertNotIn("ixf_ixp_member_list_url_visible", data)
+
+        ##########################################################################
+
+    def test_user_001_GET_list_filter_country_exact(self):
+        ix_li = InternetExchange.objects.create(
+            status="ok", **self.make_data_ix(country="LI", name="Test IX Liechtenstein")
+        )
+        ix_be = InternetExchange.objects.create(
+            status="ok", **self.make_data_ix(country="BE", name="Test IX Belgium")
+        )
+        ix_bo = InternetExchange.objects.create(
+            status="ok", **self.make_data_ix(country="BO", name="Test IX Bolivia")
+        )
+
+        data = self.db_user.all("ix", country="LI")
+        countries = [item["country"] for item in data]
+
+        self.assertIn("LI", countries)
+        self.assertNotIn("BE", countries)
+        self.assertNotIn("BO", countries)
+
+        for item in data:
+            self.assertEqual(item["country"], "LI")
+
+        ix_li.delete()
+        ix_be.delete()
+        ix_bo.delete()
 
     ##########################################################################
     # TESTS WITH USER THAT IS ORGANIZATION MEMBER
@@ -3296,17 +3294,18 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_ixpfx_renumber_validation_001(self):
+        # Using 206.126.236.0/24 (valid public IP space instead of TEST-NET)
         prefix = IXLanPrefix.objects.create(
             ixlan=SHARED["ixlan_rw_ok"],
             protocol="IPv4",
-            prefix="203.0.113.0/24",
+            prefix="206.126.236.0/24",
             status="ok",
         )
 
         netixlan = NetworkIXLan.objects.create(
             network=SHARED["net_rw_ok"],
             ixlan=SHARED["ixlan_rw_ok"],
-            ipaddr4="203.0.113.10",
+            ipaddr4="206.126.236.10",
             status="ok",
             asn=SHARED["net_rw_ok"].asn,
             speed=1000,
@@ -3321,9 +3320,9 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "ixpfx",
             prefix.id,
-            {"prefix": "203.0.113.0/25", "protocol": "IPv4"},
+            {"prefix": "206.126.236.0/25", "protocol": "IPv4"},
             test_failures={
-                "invalid": {"prefix": "203.0.114.0/25"},
+                "invalid": {"prefix": "206.126.237.0/25"},
             },
         )
 
@@ -3334,7 +3333,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "ixpfx",
             prefix.id,
-            {"prefix": "203.0.113.0/24", "protocol": "IPv4"},
+            {"prefix": "206.126.236.0/24", "protocol": "IPv4"},
         )
 
     def test_ixpfx_renumber_validation_002(self):
@@ -3361,6 +3360,7 @@ class TestJSON(unittest.TestCase):
             self.db_org_admin,
             "ixpfx",
             prefix.id,
+            {},
             test_failures={
                 "invalid": {"prefix": "203.0.113.0/25", "protocol": "IPv4"},
             },

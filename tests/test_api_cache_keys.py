@@ -1,96 +1,21 @@
-import base64
-import json
+import datetime
+import os
+import tempfile
 
-import pytest
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.core.management import call_command
 from django.test import TestCase
 from django_grainy.models import GroupPermission
-from rest_framework.test import APIClient, APIRequestFactory
-from twentyc.rpc.client import PermissionDeniedException, RestClient
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
-
-from .test_api import setup_module, teardown_module
-from .util import reset_group_ids
-
-
-class DummyResponse:
-    """
-    Simulate requests response object
-    """
-
-    def __init__(self, status_code, content, headers={}):
-        self.status_code = status_code
-        self.content = content
-        self.headers = headers
-
-    @property
-    def data(self):
-        return json.loads(self.content)
-
-    def read(self, *args, **kwargs):
-        return self.content
-
-    def getheader(self, name):
-        return self.headers.get(name)
-
-    def json(self):
-        return self.data
-
-
-class DummyRestClientWithKeyAuth(RestClient):
-    """
-    An extension of the twentyc.rpc RestClient that goes to the
-    django rest framework testing api instead
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.factory = APIRequestFactory()
-        self.api_client = APIClient()
-        self.useragent = kwargs.get("useragent")
-
-        # Set up with users
-        if self.user:
-            self.user_inst = models.User.objects.get(username=self.user)
-        elif kwargs.get("anon"):
-            self.user_inst = None
-        else:
-            self.user_inst = models.User.objects.get(username="guest")
-
-        # But auth with the Key if it's provided
-        if kwargs.get("key") is not None:
-            self.key = kwargs.get("key")
-            self.api_client.credentials(HTTP_AUTHORIZATION="Api-Key " + self.key)
-        elif self.user_inst:
-            self.api_client.credentials(
-                HTTP_AUTHORIZATION="Basic "
-                + base64.b64encode(
-                    f"{self.user_inst.username}:{self.user_inst.username}".encode()
-                ).decode("utf-8")
-            )
-
-    def _request(self, typ, id=0, method="GET", params=None, data=None, url=None):
-        if not url:
-            if id:
-                url = f"/api/{typ}/{id}"
-            else:
-                url = f"/api/{typ}"
-
-        fnc = getattr(self.api_client, method.lower())
-        if not data:
-            data = {}
-        if params:
-            data.update(**params)
-
-        res = fnc(url, data, format="json", **self.api_client._credentials)
-
-        assert res.charset == "utf-8"
-
-        return DummyResponse(res.status_code, res.content)
-
+from tests.test_api_keys import (
+    DummyRestClientWithKeyAuth,
+    setup_module,
+    teardown_module,
+)
+from tests.util import reset_group_ids
 
 URL = settings.API_URL
 VERBOSE = False
@@ -108,16 +33,15 @@ USER_CRUD = {
 }
 
 
-class APITests(TestCase, api_test.TestJSON, api_test.Command):
+class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
     """
-    API tests
+    API cache tests with API key authentication
+
+    Runs the API test suite after generating cache files and enabling API cache.
+    All db clients use API keys to ensure compatibility with MFA enforcement.
 
     You can find the logic / definition of those tests in
     peeringdb_server.manangement.commands.pdb_api_test
-
-    This simply extends the command and testcase defined for it
-    but uses a special RestClient that sends requests to the
-    rest_framework testing api instead of a live server.
     """
 
     # we want to use this rest-client for our requests
@@ -182,7 +106,23 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         # prepare api test data
         cls.prepare()
 
+        settings.API_CACHE_ROOT = tempfile.mkdtemp()
+        settings.API_CACHE_LOG = os.path.join(settings.API_CACHE_ROOT, "log.log")
+        super_user = models.User.objects.create_user(
+            "admin", "admin@localhost", "admin"
+        )
+        super_user.is_superuser = True
+        super_user.is_staff = True
+        super_user.save()
+
+        # generate cache files
+        now = datetime.datetime.now() + datetime.timedelta(days=1)
+        call_command("pdb_api_cache", date=now.strftime("%Y%m%d"))
+        settings.GENERATING_API_CACHE = False
+
     def setUp(self):
+        settings.API_CACHE_ALL_LIMITS = True
+        settings.API_CACHE_ENABLED = True
         super().setUp()
         setup_module(self.__class__)
 
@@ -244,12 +184,12 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
             )
 
     def tearDown(self):
-        teardown_module(
-            self.__class__
-        )  # Call the teardown_module function from your setup file
+        settings.API_CACHE_ALL_LIMITS = False
+        settings.API_CACHE_ENABLED = False
+        teardown_module(self.__class__)
         super().tearDown()
 
-    # TESTS WE SKIP OR REWRITE IN API KEY CONTEXT
+    # TESTS SKIPPED OR REWRITTEN IN API KEY CONTEXT
     def test_org_member_001_POST_ix_with_perms(self):
         """
         We skip this test because there isn't an org admin key equivalent
@@ -284,6 +224,9 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         The as-set endpoint is readonly, so all of these should
         fail
         """
+        import pytest
+        from twentyc.rpc.client import PermissionDeniedException
+
         data = self.make_data_net(asn=9000900)
 
         with pytest.raises(PermissionDeniedException) as excinfo:
@@ -299,73 +242,3 @@ class APITests(TestCase, api_test.TestJSON, api_test.Command):
         with pytest.raises(PermissionDeniedException) as excinfo:
             self.db_org_admin.rm("as_set", net.asn)
         assert "401 Authentication credentials were not provided" in str(excinfo.value)
-
-    # TESTS WE ADD FOR ORGANIZATION API KEY
-    def test_org_key_admin_002_GET_as_set(self):
-        """
-        GET requests on the "as_set" endpoint should work with
-        any org api key
-        """
-
-        data = self.db_org_admin.all("as_set")
-        networks = models.Network.objects.filter(status="ok")
-        for net in networks:
-            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
-
-    def test_org_key_member_002_GET_as_set(self):
-        """
-        GET requests on the "as_set" endpoint should work with
-        any org api key
-        """
-
-        data = self.db_org_member.all("as_set")
-        networks = models.Network.objects.filter(status="ok")
-        for net in networks:
-            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
-
-    def test_org_key_002_inactive(self):
-        """
-        Test that inactive org keys are blocked
-        """
-
-        self.org_key.status = "inactive"
-        self.org_key.save()
-
-        with pytest.raises(PermissionDeniedException) as excinfo:
-            self.db_org_admin.all("net")
-        assert "Inactive API key" in str(excinfo.value)
-
-    # TESTS WE ADD FOR USER API KEY
-    def test_user_key_002_GET_as_set(self):
-        """
-        GET requests on the "as_set" endpoint should work with
-        any user api key
-        """
-
-        data = self.db_user.all("as_set")
-        networks = models.Network.objects.filter(status="ok")
-        for net in networks:
-            self.assertEqual(data[0].get(f"{net.asn}"), net.irr_as_set)
-
-    def test_user_key_002_inactive_key(self):
-        """
-        Test that inactive user keys are blocked
-        """
-
-        self.user_key.status = "inactive"
-        self.user_key.save()
-
-        with pytest.raises(PermissionDeniedException) as excinfo:
-            self.db_user.all("net")
-        assert "Inactive API key" in str(excinfo.value)
-
-    def test_user_key_002_inactive_user(self):
-        """
-        Test that keys of inactive users are blocked
-        """
-        self.user_key.user.is_active = False
-        self.user_key.user.save()
-
-        with pytest.raises(PermissionDeniedException) as excinfo:
-            self.db_user.all("net")
-        assert "Inactive API key" in str(excinfo.value)
