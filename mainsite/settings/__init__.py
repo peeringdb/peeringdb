@@ -805,9 +805,9 @@ LOGGING = {
     "loggers": {
         # Django log
         "django": {
-            "handlers": ["mail_admins", "logfile", "console_debug"],
+            "handlers": ["mail_admins", "logfile", "console_json"],
             "level": DJANGO_LOG_LEVEL,
-            "propagate": True,
+            "propagate": False,
         },
         # geo normalization / geo-coding
         "peeringdb_server.geo": {
