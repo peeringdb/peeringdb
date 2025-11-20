@@ -884,7 +884,9 @@ STATICFILES_FINDERS = (
 )
 
 # WhiteNoise configuration for serving static files
-set_option("WHITENOISE_STATICFILES_BACKEND", "whitenoise.storage.CompressedStaticFilesStorage")
+set_option(
+    "WHITENOISE_STATICFILES_BACKEND", "whitenoise.storage.CompressedStaticFilesStorage"
+)
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
