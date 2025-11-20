@@ -805,18 +805,23 @@ LOGGING = {
     "loggers": {
         # Django log
         "django": {
-            "handlers": ["mail_admins", "logfile", "console_debug"],
+            "handlers": ["mail_admins", "logfile", "console_json"],
             "level": DJANGO_LOG_LEVEL,
             "propagate": True,
         },
         # geo normalization / geo-coding
         "peeringdb_server.geo": {
-            "handlers": ["logfile"],
+            "handlers": ["logfile", "console_json"],
             "level": "INFO",
             "propagate": False,
         },
         # django-structlog specific
         "django_structlog": {
+            "handlers": ["logfile", "console_json"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.server": {
             "handlers": ["logfile"],
             "level": "DEBUG",
         },
@@ -879,12 +884,15 @@ STATICFILES_FINDERS = (
 )
 
 # WhiteNoise configuration for serving static files
+set_option(
+    "WHITENOISE_STATICFILES_BACKEND", "whitenoise.storage.CompressedStaticFilesStorage"
+)
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": WHITENOISE_STATICFILES_BACKEND,
     },
 }
 
