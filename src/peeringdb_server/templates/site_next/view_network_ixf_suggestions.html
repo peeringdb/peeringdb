@@ -349,11 +349,11 @@
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "RS Peer" %}</span>:
           <span class="old-value">
-            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.from %}-off{% endif %}.png" />
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.changes.is_rs_peer.from %}-off{% endif %}.png" />
           </span>
           <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">
-            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.is_rs_peer.to %}-off{% endif %}.png" />
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.changes.is_rs_peer.to %}-off{% endif %}.png" />
           </span>
         </div>
         {% endif %}
@@ -362,11 +362,11 @@
         <div class="ixf-suggested-change">
           <span class="field_name">{% trans "Operational" %}</span>:
           <span class="old-value">
-            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.from %}-off{% endif %}.png" />
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.changes.operational.from %}-off{% endif %}.png" />
           </span>
           <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">
-            <img class="checkmark" src="{% static "checkmark" %}{% if not x.changes.operational.to %}-off{% endif %}.png" />
+            <img class="checkmark" src="{{ STATIC_URL }}checkmark{% if not x.changes.operational.to %}-off{% endif %}.png" />
           </span>
         </div>
         {% endif %}
