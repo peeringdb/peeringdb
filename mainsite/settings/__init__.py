@@ -807,16 +807,21 @@ LOGGING = {
         "django": {
             "handlers": ["mail_admins", "logfile", "console_json"],
             "level": DJANGO_LOG_LEVEL,
-            "propagate": False,
+            "propagate": True,
         },
         # geo normalization / geo-coding
         "peeringdb_server.geo": {
-            "handlers": ["logfile"],
+            "handlers": ["logfile", "console_json"],
             "level": "INFO",
             "propagate": False,
         },
         # django-structlog specific
         "django_structlog": {
+            "handlers": ["logfile", "console_json"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.server": {
             "handlers": ["logfile"],
             "level": "DEBUG",
         },
