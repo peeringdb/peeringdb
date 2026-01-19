@@ -316,6 +316,9 @@ class Mock:
     def net_count(self, data, reftag=None):
         return 0
 
+    def carrier_count(self, data, reftag=None):
+        return 0
+
     def role(self, data, reftag=None):
         return "Abuse"
 

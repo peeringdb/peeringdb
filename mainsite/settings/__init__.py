@@ -668,7 +668,7 @@ ADMINS = [
 MANAGERS = ADMINS
 
 set_option("MEDIA_ROOT", os.path.abspath(os.path.join(BASE_DIR, "media")))
-MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
+MEDIA_URL = "/m/"
 
 set_option("STATIC_ROOT", os.path.abspath(os.path.join(BASE_DIR, "static")))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
@@ -1180,6 +1180,8 @@ else:
 set_option("ES_MATCH_PHRASE_BOOST", 10.0)
 set_option("ES_MATCH_PHRASE_PREFIX_BOOST", 5.0)
 set_option("ES_QUERY_STRING_BOOST", 2.0)
+# Boost score for exact ASN matches in numeric searches (higher than name matches to prioritize ASN results)
+set_option("ES_MATCH_ASN_BOOST", 20.0)
 
 # Set Elasticsearch request timeout
 set_option("ES_REQUEST_TIMEOUT", 30.0)

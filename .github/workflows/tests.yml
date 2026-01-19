@@ -22,6 +22,19 @@ jobs:
         run: touch ./Ctl/dev/.env
       - name: Start the DB
         run: ./Ctl/dev/compose.sh up -d database elasticsearch redis
+      - name: Wait for Elasticsearch to be ready
+        run: |
+          echo "Waiting for Elasticsearch..."
+          for i in {1..30}; do
+            if docker exec $(docker ps -qf "name=elasticsearch") curl -s http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'; then
+              echo "Elasticsearch is ready!"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "Elasticsearch failed to start within 60 seconds"
+          exit 1
       - name: build PeeringDB
         run: ./Ctl/dev/compose.sh build --pull peeringdb
       - name: run tests with optimizations

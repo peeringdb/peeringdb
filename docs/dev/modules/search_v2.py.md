@@ -1,4 +1,4 @@
-Generated from search_v2.py on 2025-11-11 15:33:21.384068
+Generated from search_v2.py on 2026-01-19 15:52:26.218953
 
 # peeringdb_server.search_v2
 
@@ -50,15 +50,22 @@ Returns:
     A dictionary representing the geo filter or None if geo is invalid.
 
 ---
-## construct_asn_query
-`def construct_asn_query(term)`
+## construct_asn_number_query
+`def construct_asn_number_query(term)`
 
-Constructs Elasticsearch query for ASN searches.
+Constructs Elasticsearch query for numeric search terms.
+
+When a search term contains only digits, this searches both:
+- ASN fields (asn, asn.raw) - for ASN number searches
+- Name fields (name, name_long, aka) - for networks with numeric names
+
+This ensures networks with all-digit names are discoverable.
+Fixes: https://github.com/peeringdb/peeringdb/issues/1850
 
 Args:
-    term (str): The ASN number as string
+    term (str): The numeric search term as a string
 Returns:
-    dict: Elasticsearch query body for ASN search
+    dict: Elasticsearch query body for numeric search
 
 ---
 ## construct_ipv4_query
@@ -87,6 +94,10 @@ Returns:
 `def construct_name_query(clean_term, term)`
 
 Constructs Elasticsearch query for name-based searches.
+
+Fixes issue #1787 and #1774 where fields name_long and city were not included in the search.
+https://github.com/peeringdb/peeringdb/issues/1787
+https://github.com/peeringdb/peeringdb/issues/1774
 
 Args:
     term (str): The search term

@@ -886,6 +886,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -2670,6 +2682,12 @@ paths:
                   format: int64
                   description: number of exchanges at this facility
                   minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
+                  minimum: 0
                 suggest:
                   type: boolean
                   writeOnly: true
@@ -4099,6 +4117,12 @@ paths:
                   format: int64
                   description: number of exchanges at this facility
                   minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
+                  minimum: 0
                 sales_email:
                   type: string
                   format: email
@@ -5476,6 +5500,12 @@ paths:
                   maximum: 4294967295
                   format: int64
                   description: number of exchanges at this facility
+                  minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
                   minimum: 0
                 suggest:
                   type: boolean
@@ -8252,6 +8282,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -10240,6 +10282,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -12161,6 +12209,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -14034,6 +14088,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -18443,6 +18503,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -21193,6 +21265,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -23513,6 +23591,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -25784,6 +25868,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -37975,6 +38065,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -40593,6 +40695,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -42743,6 +42851,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -44845,6 +44959,12 @@ paths:
                       format: int64
                       description: number of exchanges at this facility
                       minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
+                      minimum: 0
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -45444,6 +45564,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: ix_side__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: ix_side__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46416,6 +46548,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: net_side__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: net_side__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -60411,6 +60555,12 @@ components:
           format: int64
           description: number of exchanges at this facility
           minimum: 0
+        carrier_count:
+          type: integer
+          maximum: 4294967295
+          format: int64
+          description: number of carriers at this facility
+          minimum: 0
         suggest:
           type: boolean
           writeOnly: true
@@ -60852,6 +61002,12 @@ components:
           maximum: 4294967295
           format: int64
           description: number of exchanges at this facility
+          minimum: 0
+        carrier_count:
+          type: integer
+          maximum: 4294967295
+          format: int64
+          description: number of carriers at this facility
           minimum: 0
         suggest:
           type: boolean
@@ -63250,6 +63406,12 @@ components:
               maximum: 4294967295
               format: int64
               description: number of exchanges at this facility
+              minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
               minimum: 0
             suggest:
               type: boolean
@@ -66810,6 +66972,12 @@ components:
               maximum: 4294967295
               format: int64
               description: number of exchanges at this facility
+              minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
               minimum: 0
             suggest:
               type: boolean
@@ -72656,6 +72824,12 @@ components:
               maximum: 4294967295
               format: int64
               description: number of exchanges at this facility
+              minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
               minimum: 0
             suggest:
               type: boolean

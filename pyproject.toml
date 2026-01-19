@@ -10,7 +10,7 @@ requires-python = ">= 3.10"
 
 dependencies = [
     # core requirements
-    "django>=5.2",
+    "django>=5.2,<6",
     "django-inet>=1.1.1",
     "django-handleref>=2",
     "django-peeringdb>=3.4.0",
@@ -88,7 +88,8 @@ dependencies = [
     # deprecated from drf -- used by rest swagger
     "coreapi>=2.3.1",
 
-
+    # needed for pkg_resources used by some dependencies
+    "setuptools>=80.9.0",
 ]
 
 [project.urls]
@@ -105,15 +106,12 @@ dev-dependencies = [
     "pytest-xdist>=3.0.0",
     "pytest-benchmark>=4.0.0",
     "freezegun>=1.5.1",
-
     # selenium testing
     "selenium>=4.4.3",
     "webdriver-manager>=3.8.3",
-
     # linting
     "ruff>=0.6",
     "pre-commit>=2.13",
-
     # docs
     "pymdgen>=1.1.0",
     "mkdocs>=1.1.2",
@@ -125,7 +123,7 @@ dev-dependencies = [
 # until released
 django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202508" }
 # from branch until passkey support is released
-django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202507-modernize" }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202601-fixes" }
 # modernization fixes alignment (until 2.4.0 is tagged)
 peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202507" }
 

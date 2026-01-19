@@ -53,6 +53,8 @@ def save_key_permissions(org, key, perms):
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
             grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
+        elif id == "carrier":
+            grainy_perms[f"{org.grainy_namespace}.carrier"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
@@ -66,6 +68,8 @@ def save_key_permissions(org, key, perms):
                 )
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
+            elif id[0] == "carrier":
+                grainy_perms[f"{org.grainy_namespace}.carrier.{id[1]}"] = permissions
 
     # save
     for ns, p in list(grainy_perms.items()):

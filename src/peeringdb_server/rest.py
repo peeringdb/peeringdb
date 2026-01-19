@@ -1053,8 +1053,9 @@ class CarrierFacilityMixin:
         if not check_permissions_from_request(request, carrierfac.facility, "c"):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        carrierfac.status = "ok"
-        carrierfac.save()
+        with reversion.create_revision():
+            carrierfac.status = "ok"
+            carrierfac.save()
 
         return Response(self.serializer_class(carrierfac).data)
 
@@ -1072,7 +1073,8 @@ class CarrierFacilityMixin:
 
         response = Response(self.serializer_class(carrierfac).data)
 
-        carrierfac.delete()
+        with reversion.create_revision():
+            carrierfac.delete()
 
         return response
 

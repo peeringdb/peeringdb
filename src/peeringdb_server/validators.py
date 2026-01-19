@@ -21,6 +21,14 @@ from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.verified_update import const
 
+# Characters that could be used for URL building or injection attacks
+# This blocklist approach allows native character sets while blocking dangerous characters
+DANGEROUS_NAME_CHARS = re.compile(
+    r'[<>{}[\]\\;|$`"~^@#%&=?!/:\d]'  # injection/URL chars and digits
+    r"|"
+    r"[\x00-\x1f\x7f]"  # control characters
+)
+
 
 def validate_email_domains(text):
     if not text:
@@ -107,6 +115,31 @@ def validate_zipcode(zipcode, country):
             raise ValidationError(_("Input required"))
         else:
             return zipcode
+
+
+def validate_account_name(value):
+    """
+    Validate account name (first name or last name).
+
+    Allows native character sets while blocking characters that could be
+    used for URL building or injection attacks.
+    """
+    if value is None:
+        return ""
+
+    value = value.strip()
+
+    if not value:
+        return ""
+
+    if DANGEROUS_NAME_CHARS.search(value):
+        raise ValidationError(
+            _(
+                'Names cannot contain special characters such as < > { } [ ] \\ ; | $ ` " ~ ^ @ # % & = ? ! / : or numbers.'
+            )
+        )
+
+    return value
 
 
 def validate_prefix(prefix):
