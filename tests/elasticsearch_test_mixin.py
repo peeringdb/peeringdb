@@ -23,7 +23,7 @@ class ElasticsearchAPIMixin:
     """
 
     @pytest.mark.xdist_group(name="elasticsearch_tests")
-    def test_user_001_GET_fac_spatial_search_with_name_search_requires_es(self):
+    def test_user_001_GET_fac_spatial_search_with_name_search(self):
         """Test facility API spatial search with name_search parameter that triggers ES lookup."""
         fac_data = self.make_data_fac(
             name="Chicago Data Center",

@@ -1303,6 +1303,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     @pytest.mark.xdist_group(name="elasticsearch_tests")
+    @pytest.mark.usefixtures("elasticsearch_index")
     @override_settings(API_CACHE_ENABLED=False)
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
     def test_user_001_GET_fac_spatial_search_es_error_fallback(self, mock_proximity_es):
