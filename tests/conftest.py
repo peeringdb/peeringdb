@@ -69,3 +69,22 @@ def cleanup(request):
 
     for name in caches:
         caches[name].clear()
+
+
+def pytest_collection_modifyitems(items):
+    """
+    Reorder tests so that tests ending with _requires_es run last.
+
+    This ensures Elasticsearch indexes exist (created by test_search_v2.py)
+    before these tests run.
+    """
+    deferred_tests = []
+    other_tests = []
+
+    for item in items:
+        if item.name.endswith("_requires_es"):
+            deferred_tests.append(item)
+        else:
+            other_tests.append(item)
+
+    items[:] = other_tests + deferred_tests
