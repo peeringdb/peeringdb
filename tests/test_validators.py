@@ -28,6 +28,7 @@ from peeringdb_server.serializers import (
     NetworkSerializer,
 )
 from peeringdb_server.validators import (
+    validate_account_name,
     validate_address_space,
     validate_asn_prefix,
     validate_distance_geocode,
@@ -110,6 +111,66 @@ def test_validate_address_space(prefix):
     """
     with pytest.raises(ValidationError):
         validate_address_space(ipaddress.ip_network(str(prefix)))
+
+
+def test_validate_account_name_allows_expected_characters():
+    # Basic Latin names
+    assert validate_account_name("Alice") == "Alice"
+    assert validate_account_name("Jean-Luc") == "Jean-Luc"
+    assert validate_account_name("Mary Ann") == "Mary Ann"
+    assert validate_account_name("O'Connor") == "O'Connor"
+    assert validate_account_name("") == ""
+    assert validate_account_name("X") == "X"
+    assert validate_account_name(" John") == "John"
+    assert validate_account_name("John ") == "John"
+    assert validate_account_name("  Mary Ann  ") == "Mary Ann"
+
+    # Native character sets - now allowed
+    assert validate_account_name("田中") == "田中"  # Japanese
+    assert validate_account_name("김철수") == "김철수"  # Korean
+    assert validate_account_name("Müller") == "Müller"  # German
+    assert validate_account_name("José") == "José"  # Spanish
+    assert validate_account_name("Александр") == "Александр"  # Russian
+    assert validate_account_name("محمد") == "محمد"  # Arabic
+    assert validate_account_name("王伟") == "王伟"  # Chinese
+
+    # Names with underscores and double spaces are now allowed
+    assert validate_account_name("foo_bar") == "foo_bar"
+    assert validate_account_name("John  Doe") == "John  Doe"
+    assert validate_account_name("- -") == "- -"
+    assert validate_account_name("' '") == "' '"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://www.bing.com/",  # URL
+        "Name123",  # digits
+        "<script>alert(1)</script>",  # XSS attempt
+        "test@example.com",  # email-like
+        "path/to/file",  # path
+        "hello;world",  # semicolon
+        "test|pipe",  # pipe
+        "$(command)",  # command injection
+        "`backtick`",  # backtick
+        'name"quote',  # double quote
+        "name{brace}",  # braces
+        "name[bracket]",  # brackets
+        "hello\\world",  # backslash
+        "100%",  # percent
+        "a=b",  # equals
+        "foo?bar",  # question mark
+        "test#hash",  # hash
+        "a&b",  # ampersand
+        "hello!",  # exclamation
+        "a^b",  # caret
+        "a~b",  # tilde
+        "http://example.com",  # URL with protocol
+    ],
+)
+def test_validate_account_name_rejects_invalid_characters(value):
+    with pytest.raises(ValidationError):
+        validate_account_name(value)
 
 
 @override_settings(DATA_QUALITY_MAX_PREFIX_V4_LIMIT=500000)

@@ -20,6 +20,7 @@ import re
 
 import django.urls
 import reversion
+from allauth.account.models import EmailAddress
 from django import forms as baseForms
 from django.conf import settings
 from django.contrib import admin, messages
@@ -93,6 +94,7 @@ from peeringdb_server.models import (
     OrganizationAPIKey,
     OrganizationMerge,
     OrganizationMergeEntity,
+    ParentStatusException,
     Partnership,
     ProtectedAction,
     SearchLog,
@@ -105,6 +107,7 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
+from peeringdb_server.validators import validate_account_name
 
 from . import forms
 
@@ -385,6 +388,9 @@ class StatusForm(baseForms.ModelForm):
         Catches and raises validation errors where an object
         is to be soft-deleted but cannot be because it is currently
         protected.
+
+        Also validates parent status when trying to undelete or activate
+        an object whose parent is deleted.
         """
 
         if self.cleaned_data.get("DELETE"):
@@ -392,6 +398,21 @@ class StatusForm(baseForms.ModelForm):
                 if not self.instance.deletable:
                     self.cleaned_data["DELETE"] = False
                     raise ValidationError(self.instance.not_deletable_reason)
+
+        if self.instance and hasattr(self.instance, "validate_parent_status"):
+            new_status = self.cleaned_data.get("status")
+            old_status = self.instance.status
+
+            # If changing from deleted to ok/pending, check if parent allows it
+            if old_status == "deleted" and new_status in ["ok", "pending"]:
+                try:
+                    original_status = self.instance.status
+                    self.instance.status = new_status
+                    self.instance.validate_parent_status()
+                    self.instance.status = original_status
+                except ParentStatusException as exc:
+                    self.instance.status = old_status
+                    raise ValidationError(str(exc))
 
 
 class ModelAdminWithUrlActions(admin.ModelAdmin):
@@ -1997,6 +2018,18 @@ class UserCreationForm(forms.UserCreationForm):
         fields = ("username", "password", "email")
 
 
+class UserAdminChangeForm(UserChangeForm):
+    """Form for editing users in the main UserAdmin"""
+
+    def clean_first_name(self):
+        value = self.cleaned_data.get("first_name", "")
+        return validate_account_name(value)
+
+    def clean_last_name(self):
+        value = self.cleaned_data.get("last_name", "")
+        return validate_account_name(value)
+
+
 class UserGroupForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2009,6 +2042,7 @@ class UserGroupForm(UserChangeForm):
 
 
 class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
+    form = UserAdminChangeForm
     inlines = (
         UserOrgAffiliationRequestInline,
         UserDeviceInline,
@@ -2076,6 +2110,22 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
         )
         if name == "Permissions":
             grp["fields"] += ("view_permissions",)
+
+    def save_model(self, request, obj, form, change):
+        """
+        Ensure EmailAddress (allauth) is created for new users created from admin page.
+        Prevents orphaned User.email values (issue #1852).
+        """
+        super().save_model(request, obj, form, change)
+        if not change and obj.email:
+            EmailAddress.objects.get_or_create(
+                user=obj,
+                email=obj.email,
+                defaults={
+                    "verified": False,
+                    "primary": True,
+                },
+            )
 
     def version(self, obj):
         """
@@ -2225,7 +2275,9 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         "created",
         "status",
     )
-    change_list_template = "admin/peeringdb_server/commandlinetool/change_list.html"
+    import_export_change_list_template = (
+        "admin/peeringdb_server/commandlinetool/change_list.html"
+    )
     search_fields = ("tool", "description")
 
     def has_delete_permission(self, request, obj=None):
@@ -2404,7 +2456,7 @@ class IXFImportEmailAdmin(
         "ix",
     )
     search_fields = ("subject", "ix__name", "net__name")
-    change_list_template = "admin/change_list_with_regex_search.html"
+    import_export_change_list_template = "admin/change_list_with_regex_search.html"
 
     def stale_info(self, obj):
         not_sent = obj.sent is None
@@ -2461,7 +2513,7 @@ class DeskProTicketAdmin(
         "deskpro_id",
     )
     search_fields = ("subject",)
-    change_list_template = "admin/change_list_with_regex_search.html"
+    import_export_change_list_template = "admin/change_list_with_regex_search.html"
     inlines = (DeskProTicketCCInline,)
     raw_id_fields = ("user",)
 

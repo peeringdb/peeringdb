@@ -16,6 +16,7 @@ from django_peeringdb.const import SOCIAL_MEDIA_URL_FORMATS
 from peeringdb_server.inet import RdapException
 from peeringdb_server.models import (
     PARTNERSHIP_LEVELS,
+    Carrier,
     EnvironmentSetting,
     Facility,
     InternetExchange,
@@ -190,6 +191,8 @@ def ref_tag(value):
         return Facility.handleref.tag
     elif value == "Organization":
         return Organization.handleref.tag
+    elif value == "Carrier":
+        return Carrier.handleref.tag
     return "unknown"
 
 

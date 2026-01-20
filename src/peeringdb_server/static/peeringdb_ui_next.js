@@ -1428,7 +1428,7 @@ PeeringDB = {
         }
       }
 
-      if(!this.searchContainer.is(":visible") && $('#search').val().length > 2) {
+      if(!this.searchContainer.is(":visible") && $('#search-ui-next').val().length > 2) {
         this.searchContainer.show();
         this.contentContainer.hide();
       }
@@ -1909,13 +1909,25 @@ PeeringDB = {
       },
 
       execute_register : function(trigger, container) {
+        // Export form data including password from editable framework
+        this.components.add.editable("export", this.target.data);
+        var password = this.target.data.password;
+
+        if (!password) {
+          $("#errors-alert").html(`<div class="alert alert-danger">${gettext("Please enter your current password to add a security key.")}</div>`);
+          container.editable("loading-shim", "hide");
+          return;
+        }
+
         SecurityKeys.request_registration(
+          password,
           (credential_json) => {
-            this.components.add.editable("export", this.target.data);
             this.target.data.credential = credential_json;
             var data = this.target.data;
             this.target.execute("add", this.components.add, (response) => {
               this.add(data.entity, trigger, container, response);
+
+              $("#errors-alert").html('');
 
               // refresh to pick up django-two-factor page changes
               // from new registration
@@ -1924,7 +1936,7 @@ PeeringDB = {
             });
           },
           (exc) => {
-            $("#errors-alert").html(`<div class="alert alert-danger">${exc.message}</div>`)
+            $("#errors-alert").html(`<div class="alert alert-danger">${$('<div>').text(exc.message).html()}</div>`)
             container.editable("loading-shim", "hide");
             console.error(exc);
           }
@@ -1985,18 +1997,39 @@ PeeringDB = {
           container.editable("loading-shim", "hide")
           return
         }
-        this.components.add.editable("export", this.target.data);
-        var data = this.target.data;
-        var id = data.id = row.data("edit-id")
-        this.target.execute("remove", trigger, function(response) {
-          this.listing_remove(id, row, trigger, container);
 
-          // refresh to pick up django-two-factor page changes
-          // from removal
-          document.location.href = document.location.href;
+        // Request 2FA verification via security key before removal
+        var me = this;
+        alert(gettext("For security, please verify with your security key to remove this key."));
 
+        SecurityKeys.request_authenticate(
+          "",
+          false,
+          (payload) => {
+            me.components.add.editable("export", me.target.data);
+            var data = me.target.data;
+            var id = data.id = row.data("edit-id");
+            data.credential = payload.credential;
 
-        }.bind(this));
+            me.target.execute("remove", trigger, function(response) {
+              me.listing_remove(id, row, trigger, container);
+
+              // refresh to pick up django-two-factor page changes
+              // from removal
+              document.location.href = document.location.href;
+            }.bind(me));
+          },
+          () => {
+            $("#errors-alert").html(`<div class="alert alert-danger">${gettext("No security key credentials provided")}</div>`);
+            container.editable("loading-shim", "hide");
+          },
+          (exc) => {
+            $("#errors-alert").html(`<div class="alert alert-danger">${gettext("Security key authentication failed")}: ${$('<div>').text(exc.message).html()}</div>`);
+            container.editable("loading-shim", "hide");
+            console.error(exc);
+          },
+          true  // ignore_credential_filter - accept all security keys for 2FA verification
+        );
       }
 
     },
@@ -2037,7 +2070,7 @@ PeeringDB = {
             });
           },
           (exc) => {
-            $("#errors-alert").html(`<div class="alert alert-danger">${exc.message}</div>`)
+            $("#errors-alert").html(`<div class="alert alert-danger">${$('<div>').text(exc.message).html()}</div>`)
             container.editable("loading-shim", "hide");
             console.error(exc);
           }

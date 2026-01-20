@@ -24,6 +24,7 @@ import peeringdb_server.models as models
 from peeringdb_server.api_cache import APICacheLoader
 
 from . import test_api as api_tests
+from .elasticsearch_test_mixin import ElasticsearchAPIMixin
 from .util import reset_group_ids
 
 DATETIME = datetime.datetime.now()
@@ -43,7 +44,9 @@ def teardown_module(module):
 @pytest.mark.skipif(
     MFA_FORCE_HARD_START, reason="Basic auth API tests skipped when MFA is enforced."
 )
-class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
+class APICacheTests(
+    ElasticsearchAPIMixin, TestCase, api_test.TestJSON, api_test.Command
+):
     """
     Runs the api test after generating cache files and enabling
     api cache

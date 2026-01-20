@@ -1,4 +1,4 @@
-Generated from forms.py on 2025-11-11 15:33:21.384068
+Generated from forms.py on 2026-01-19 15:52:26.218953
 
 # peeringdb_server.forms
 
@@ -162,10 +162,10 @@ These attributes / properties will be available on instances of the class
 #### clean
 `def clean(self)`
 
-Hook for doing any extra form-wide cleaning after Field.clean() has been
-called on every field. Any ValidationError raised by this method will
-not be associated with a particular field; it will have a special-case
-association with the field named '__all__'.
+Hook for doing any extra form-wide cleaning after Field.clean() has
+been called on every field. Any ValidationError raised by this method
+will not be associated with a particular field; it will have a
+special-case association with the field named '__all__'.
 
 ---
 
@@ -249,9 +249,9 @@ These attributes / properties will be available on instances of the class
 #### clean
 `def clean(self)`
 
-Hook for doing any extra form-wide cleaning after Field.clean() has been
-called on every field. Any ValidationError raised by this method will
-not be associated with a particular field; it will have a special-case
-association with the field named '__all__'.
+Hook for doing any extra form-wide cleaning after Field.clean() has
+been called on every field. Any ValidationError raised by this method
+will not be associated with a particular field; it will have a
+special-case association with the field named '__all__'.
 
 ---

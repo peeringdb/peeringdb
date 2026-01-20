@@ -147,6 +147,16 @@ def update_counts_for_ixfac(ixfac):
         disable_auto_now_and_save(facility)
 
 
+def update_counts_for_carrierfac(carrierfac):
+    """
+    Whenever a carrierfac is saved, update carrier_count for the related Facility.
+    """
+    if getattr(carrierfac, "id"):
+        facility = carrierfac.facility
+        facility.carrier_count = facility.carrierfac_set_active.count()
+        disable_auto_now_and_save(facility)
+
+
 def connector_objects_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
         # ignore objects that don't have the HandleRef meta class
@@ -159,6 +169,8 @@ def connector_objects_post_revision_commit(**kwargs):
             update_counts_for_netfac(vs.object)
         if vs.object.HandleRef.tag == "ixfac":
             update_counts_for_ixfac(vs.object)
+        if vs.object.HandleRef.tag == "carrierfac":
+            update_counts_for_carrierfac(vs.object)
 
 
 reversion.signals.post_revision_commit.connect(connector_objects_post_revision_commit)

@@ -1,4 +1,4 @@
-Generated on 2025-11-11 15:33:21.384068
+Generated on 2026-01-19 15:52:26.218953
 
 ## _db_command.py
 
@@ -11,10 +11,6 @@ DEPRECATED
 ## pdb_api_cache.py
 
 Regen the api cache files.
-
-## pdb_api_test.py
-
-Series of integration/unit tests for the PDB API.
 
 ## pdb_base_command.py
 
@@ -55,6 +51,29 @@ Reset a deskpro ticket and requeue for publishing.
 ## pdb_export_address_info.py
 
 # Classes
+
+## pdb_fac_fix_carrier_count_values.py
+
+Management command to check and fix carrier_count field on Facility objects.
+
+This command verifies and updates the carrier_count field for facilities
+based on their active CarrierFacility relationships.
+
+Usage:
+    # Check all facilities for wrong carrier_count values (read-only)
+    python manage.py pdb_fac_fix_carrier_count_values
+
+    # Check specific facility for wrong carrier_count value
+    python manage.py pdb_fac_fix_carrier_count_values --facility-id 2148
+
+    # Fix all facilities with wrong carrier_count values (dry run)
+    python manage.py pdb_fac_fix_carrier_count_values --fix-all
+
+    # Fix all facilities with wrong carrier_count values (apply changes)
+    python manage.py pdb_fac_fix_carrier_count_values --fix-all --commit
+
+    # Fix specific facility's wrong carrier_count value (apply changes)
+    python manage.py pdb_fac_fix_carrier_count_values --facility-id 2148 --commit
 
 ## pdb_fac_merge.py
 
@@ -161,6 +180,17 @@ Post stat breakdown for any given date.
 ## pdb_status.py
 
 Checks entity status integrity (looks for orphaned entities).
+
+## pdb_sync_orphaned_emails.py
+
+Django management command to sync orphaned User.email to EmailAddress table.
+
+This command finds users where User.email is set but doesn't exist in their
+emailaddress_set, and creates the corresponding EmailAddress objects.
+
+Usage:
+    python manage.py pdb_sync_orphaned_emails
+    python manage.py pdb_sync_orphaned_emails --dry-run
 
 ## pdb_ui_opt_flags.py
 

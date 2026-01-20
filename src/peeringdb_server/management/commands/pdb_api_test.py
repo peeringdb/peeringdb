@@ -16,9 +16,11 @@ from unittest.mock import Mock, patch
 import elasticsearch
 import pytest
 import reversion
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.cache import caches
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 from django.test.utils import override_settings
@@ -1204,9 +1206,15 @@ class TestJSON(unittest.TestCase):
             netfac.status = "pending"
             netfac.save()
 
+        with reversion.create_revision():
+            carrierfac = facility.carrierfac_set.first()
+            carrierfac.status = "pending"
+            carrierfac.save()
+
         data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 0)
         self.assertEqual(data.get("ix_count"), 0)
+        self.assertEqual(data.get("carrier_count"), 0)
 
         # Check that counts are updated with new connections
         with reversion.create_revision():
@@ -1218,9 +1226,14 @@ class TestJSON(unittest.TestCase):
             netfac.status = "ok"
             netfac.save()
 
+        with reversion.create_revision():
+            carrierfac.status = "ok"
+            carrierfac.save()
+
         data = self.assert_get_handleref(self.db_user, "fac", SHARED["fac_r_ok"].id)
         self.assertEqual(data.get("net_count"), 1)
         self.assertEqual(data.get("ix_count"), 1)
+        self.assertEqual(data.get("carrier_count"), 1)
 
     ##########################################################################
 
@@ -1289,84 +1302,16 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    @pytest.mark.xdist_group(name="elasticsearch_tests")
+    @pytest.mark.usefixtures("elasticsearch_index")
     @override_settings(API_CACHE_ENABLED=False)
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
     @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
-    def test_user_001_GET_fac_spatial_search_with_name_search(
-        self, mock_proximity_es, mock_new_es
-    ):
-        """Test facility API spatial search with name_search parameter that triggers ES lookup."""
-        mock_proximity_es.return_value = {
-            "city": "Chicago",
-            "state": "IL",
-            "country": "US",
-            "latitude": 41.8781,
-            "longitude": -87.6298,
-        }
-
-        fac_data = self.make_data_fac(
-            city="Chicago",
-            state="IL",
-            country="US",
-            latitude=41.8781,
-            longitude=-87.6298,
-        )
-        facility = Facility.objects.create(status="ok", **fac_data)
-
-        # create geocode cache entry
-        GeoCoordinateCache.objects.create(
-            country="US",
-            city="Chicago",
-            state="IL",
-            latitude=41.8781,
-            longitude=-87.6298,
-        )
-
-        mock_es_instance = mock_new_es.return_value
-        mock_es_instance.search.return_value = {
-            "hits": {
-                "total": {"value": 1, "relation": "eq"},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": str(facility.id),
-                        "_score": 10,
-                        "_source": {
-                            "name": facility.name,
-                            "status": "ok",
-                            "org": {"id": facility.org_id, "name": facility.org.name},
-                        },
-                    }
-                ],
-            }
-        }
-
-        response = self.db_user._request(
-            "fac?name_search=Test Facility&distance=50", method="GET"
-        )
-        self.assertEqual(response.status_code, 200)
-
-        mock_proximity_es.assert_called_once_with("Test Facility")
-
-        data = response.json()
-        facility_names = [f["name"] for f in data["data"]]
-        self.assertIn(facility.name, facility_names)
-
-    ##########################################################################
-
-    @override_settings(API_CACHE_ENABLED=False)
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    @patch("peeringdb_server.serializers.elasticsearch_proximity_entity")
-    def test_user_001_GET_fac_spatial_search_es_error_fallback(
-        self, mock_proximity_es, mock_new_es
-    ):
+    def test_user_001_GET_fac_spatial_search_es_error_fallback(self, mock_proximity_es):
         """Test facility API spatial search gracefully handles ES errors."""
+        # Keep mock for this test - it's specifically testing error handling
         mock_proximity_es.side_effect = elasticsearch.ConnectionError(
             "ES connection failed"
         )
-
-        mock_es_instance = mock_new_es.return_value
-        mock_es_instance.search.return_value = {"hits": {"hits": []}}
 
         fac_data = self.make_data_fac(city="Seattle", country="US")
         Facility.objects.create(status="ok", **fac_data)
@@ -4440,51 +4385,6 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_guest_005_list_filter_ix_name_search(self, mock_search_v2):
-        ix = InternetExchange.objects.create(
-            status="ok",
-            **self.make_data_ix(
-                name="Specific Exchange", name_long="This is a very specific exchange"
-            ),
-        )
-
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 1},
-                "hits": [
-                    {
-                        "_index": "ix",
-                        "_id": ix.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": ix.name,
-                            "org": {
-                                "id": ix.org.id,
-                                "name": ix.org.name,
-                            },
-                            "status": "ok",
-                        },
-                    }
-                ],
-            }
-        }
-
-        data = self.db_guest.all("ix", name_search=ix.name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], ix.id)
-
-        data = self.db_guest.all("ix", name_search=ix.name_long)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], ix.id)
-
-        ix.delete(hard=True)
-
-    ##########################################################################
-
     def test_guest_005_list_filter_ix_asn_overlap(self):
         # create three test networks
         networks = [
@@ -4545,51 +4445,6 @@ class TestJSON(unittest.TestCase):
             net.delete(hard=True)
         for ix in exchanges:
             ix.delete(hard=True)
-
-    ##########################################################################
-
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_guest_005_list_filter_fac_name_search(self, mock_search_v2):
-        fac = Facility.objects.create(
-            status="ok",
-            **self.make_data_fac(
-                name="Specific Facility", name_long="This is a very specific facility"
-            ),
-        )
-
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 1},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                            },
-                            "status": "ok",
-                        },
-                    }
-                ],
-            }
-        }
-
-        data = self.db_guest.all("fac", name_search=fac.name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], fac.id)
-
-        data = self.db_guest.all("fac", name_search=fac.name_long)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], fac.id)
-
-        fac.delete(hard=True)
 
     ##########################################################################
 
@@ -4785,6 +4640,43 @@ class TestJSON(unittest.TestCase):
         for row in data:
             self.assert_data_integrity(row, "fac")
             self.assertGreater(row["ix_count"], 0)
+
+    ##########################################################################
+
+    def test_guest_005_list_filter_fac_carrier_count(self):
+        """
+        Issue 1640: Users should be able to filter Facilities
+        based on the number of Carriers they are linked to.
+        """
+        for facility in Facility.objects.filter(status="ok").all():
+            carrierfac = facility.carrierfac_set.first()
+            if not carrierfac:
+                continue
+            carrierfac.status = "pending"
+            carrierfac.save()
+            with reversion.create_revision():
+                carrierfac.status = "ok"
+                carrierfac.save()
+
+        data = self.db_guest.all("fac", carrier_count=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["carrier_count"], 1)
+
+        data = self.db_guest.all("fac", carrier_count=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["carrier_count"], 0)
+
+        data = self.db_guest.all("fac", carrier_count__lt=1)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertEqual(row["carrier_count"], 0)
+
+        data = self.db_guest.all("fac", carrier_count__gt=0)
+        for row in data:
+            self.assert_data_integrity(row, "fac")
+            self.assertGreater(row["carrier_count"], 0)
 
     ##########################################################################
 
@@ -5222,58 +5114,6 @@ class TestJSON(unittest.TestCase):
             self.assertEqual(len(data), 1)
 
     ##########################################################################
-
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_guest_005_list_filter_carrier_name_search(self, mock_search_v2):
-        carrier = Carrier.objects.create(
-            status="ok",
-            **self.make_data_carrier(
-                name="Specific Exchange", name_long="This is a very specific exchange"
-            ),
-        )
-
-        # add facility to carrier using CarrierFacility
-        CarrierFacility.objects.create(
-            carrier=carrier, facility=SHARED["fac_r_ok"], status="ok"
-        )
-
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 1},
-                "hits": [
-                    {
-                        "_index": "carrier",
-                        "_id": carrier.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": carrier.name,
-                            "org": {
-                                "id": carrier.org.id,
-                                "name": carrier.org.name,
-                            },
-                            "status": "ok",
-                        },
-                    }
-                ],
-            }
-        }
-
-        data = self.db_guest.all("carrier", name_search=carrier.name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], carrier.id)
-            self.assertEqual(row["fac_count"], 1)
-
-        data = self.db_guest.all("carrier", name_search=carrier.name_long)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], carrier.id)
-            self.assertEqual(row["fac_count"], 1)
-
-        carrier.delete(hard=True)
-
-    ##########################################################################
     # READONLY PERMISSION TESTS
     # These tests assert that the readonly users cannot write anything
     ##########################################################################
@@ -5600,51 +5440,6 @@ class TestJSON(unittest.TestCase):
             self.assert_delete(
                 db, "org", test_success=False, test_failure=SHARED["org_r_ok"].id
             )
-
-    ##########################################################################
-
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_readonly_users_004_list_filter_fac_name_search(self, mock_search_v2):
-        fac = Facility.objects.create(
-            status="ok",
-            **self.make_data_fac(
-                name="Specific Facility", name_long="This is a very specific facility"
-            ),
-        )
-
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 1},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                            },
-                            "status": "ok",
-                        },
-                    }
-                ],
-            }
-        }
-
-        data = self.db_guest.all("fac", name_search=fac.name)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], fac.id)
-
-        data = self.db_guest.all("fac", name_search=fac.name_long)
-        self.assertEqual(len(data), 1)
-        for row in data:
-            self.assertEqual(row["id"], fac.id)
-
-        fac.delete(hard=True)
 
     ##########################################################################
     # CRUD PERMISSION TESTS
@@ -6281,6 +6076,23 @@ class Command(BaseCommand):
         print(msg)
 
     @classmethod
+    def reindex_for_search(cls):
+        """
+        Helper to reindex Elasticsearch and refresh indices for immediate search.
+
+        Use this after creating objects dynamically in tests that need to
+        search for them immediately.
+        """
+        call_command("pdb_search_index", "--rebuild", "-f")
+
+        try:
+            es_url = getattr(settings, "ELASTICSEARCH_URL", "http://elasticsearch:9200")
+            es = elasticsearch.Elasticsearch(es_url)
+            es.indices.refresh(index="_all")
+        except Exception:
+            raise
+
+    @classmethod
     def create_entity(
         cls, model, prefix="rw", unset=[], key_suffix=None, name_suffix=None, **kwargs
     ):
@@ -6342,6 +6154,15 @@ class Command(BaseCommand):
             user.set_password(USER.get("password"))
             user.email = USER.get("email")
             user.save()
+            if user.email:
+                EmailAddress.objects.get_or_create(
+                    user=user,
+                    email=user.email,
+                    defaults={
+                        "verified": True,
+                        "primary": True,
+                    },
+                )
             cls.log("USER '%s' created!" % USER.get("user"))
         return user
 

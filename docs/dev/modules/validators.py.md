@@ -1,4 +1,4 @@
-Generated from validators.py on 2025-11-11 15:33:21.384068
+Generated from validators.py on 2026-01-19 15:52:26.218953
 
 # peeringdb_server.validators
 
@@ -7,6 +7,15 @@ peeringdb model / field validators
 # Functions
 ---
 
+## validate_account_name
+`def validate_account_name(value)`
+
+Validate account name (first name or last name).
+
+Allows native character sets while blocking characters that could be
+used for URL building or injection attacks.
+
+---
 ## validate_address_space
 `def validate_address_space(prefix)`
 

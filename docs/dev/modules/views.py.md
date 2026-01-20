@@ -1,4 +1,4 @@
-Generated from views.py on 2025-11-11 15:33:21.384068
+Generated from views.py on 2026-01-19 15:52:26.218953
 
 # peeringdb_server.views
 
@@ -694,18 +694,11 @@ Handles upload and deletion of logos for multiple object types.
 ## TwoFactorSetupView
 
 ```
-TwoFactorSetupView(two_factor.views.core.SetupView)
+TwoFactorSetupView(django_security_keys.ext.two_factor.views.SetupView)
 ```
 
-View for handling OTP setup using a wizard.
-
-The first step of the wizard shows an introduction text, explaining how OTP
-works and why it should be enabled. The user has to select the verification
-method (generator / call / sms) in the second step. Depending on the method
-selected, the third step configures the device. For the generator method, a
-QR code is shown which can be scanned using a mobile phone app and the user
-is asked to provide a generated token. For call and sms methods, the user
-provides the phone number which is then validated in the final step.
+Extended SetupView that requires password confirmation before enabling 2FA.
+This prevents unauthorized 2FA activation by attackers with session access.
 
 
 ### Methods

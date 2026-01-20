@@ -95,14 +95,15 @@ class AsnAutomationTestCase(TestCase):
             ("user_b", "neteng@other.com"),
             ("user_c", "other@20c.com"),
         ]:
-            setattr(
-                cls,
-                username,
-                models.User.objects.create_user(username, email, username),
+            user = models.User.objects.create_user(username, email, username)
+            user.set_password(username)
+            setattr(cls, username, user)
+            cls.base_org.usergroup.user_set.add(user)
+            user_group.user_set.add(user)
+
+            models.EmailAddress.objects.create(
+                user=user, email=email, verified=True, primary=True
             )
-            getattr(cls, username).set_password(username)
-            cls.base_org.usergroup.user_set.add(getattr(cls, username))
-            user_group.user_set.add(getattr(cls, username))
 
     def setUp(self):
         self.factory = RequestFactory()
@@ -140,6 +141,42 @@ class AsnAutomationTestCase(TestCase):
         self.assertEqual(b, False)
         b = self.user_c.validate_rdap_relationship(self.rdap_63311)
         self.assertEqual(b, False)
+
+    def test_validate_rdap_relationship_secondary_email(self):
+        """
+        Test that validation works with verified secondary email addresses.
+
+        Fix for issue #1852 where users should be able to use any verified email
+        address for RDAP validation, not just their primary email.
+        """
+
+        # user_b has primary email "neteng@other.com" which doesn't match RDAP
+        b = self.user_b.validate_rdap_relationship(self.rdap_63311)
+        self.assertEqual(b, False, "Should not validate with primary email alone")
+
+        # Add a verified secondary email that matches RDAP data
+        models.EmailAddress.objects.create(
+            user=self.user_b,
+            email="neteng@20c.com",
+            verified=True,
+        )
+
+        # Now validation should succeed with the verified secondary email
+        b = self.user_b.validate_rdap_relationship(self.rdap_63311)
+        self.assertEqual(b, True, "Should validate with verified secondary email")
+
+        # Test that unverified secondary emails are not checked
+        user_d = models.User.objects.create_user("user_d", "user_d@localhost", "user_d")
+
+        # Add an unverified secondary email that matches RDAP
+        models.EmailAddress.objects.create(
+            user=user_d,
+            email="neteng@20c.com",
+            verified=False,
+        )
+
+        b = user_d.validate_rdap_relationship(self.rdap_63311)
+        self.assertEqual(b, False, "Should not validate with unverified email")
 
     def test_affiliate(self):
         """

@@ -27,14 +27,16 @@ class UserTests(TestCase):
         settings.GUEST_GROUP_ID = cls.guest_group.id
 
         for name in ["user_a", "user_b", "user_c", "user_d"]:
+            # Use valid first/last names without underscores for account name validation
+            display_name = name.replace("_", " ").title()  # "user_a" -> "User A"
             setattr(
                 cls,
                 name,
                 models.User.objects.create_user(
                     name,
                     "%s@localhost" % name,
-                    first_name=name,
-                    last_name=name,
+                    first_name=display_name.split()[0],  # "User"
+                    last_name=display_name.split()[1],  # "A"
                     password=name,
                 ),
             )
@@ -56,7 +58,7 @@ class UserTests(TestCase):
         """
         Test User.full_name
         """
-        self.assertEqual(self.user_a.full_name, "user_a user_a")
+        self.assertEqual(self.user_a.full_name, "User A")
 
     def test_organizations(self):
         """

@@ -1786,6 +1786,7 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
                 "notes",
                 "net_count",
                 "ix_count",
+                "carrier_count",
                 "suggest",
                 "sales_email",
                 "sales_phone",
@@ -1812,7 +1813,16 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     def prepare_query(cls, qset, **kwargs):
         qset = qset.select_related("org")
         filters = get_relation_filters(
-            ["net_id", "net", "ix_id", "ix", "org_name", "ix_count", "net_count"],
+            [
+                "net_id",
+                "net",
+                "ix_id",
+                "ix",
+                "org_name",
+                "ix_count",
+                "net_count",
+                "carrier_count",
+            ],
             cls,
             **kwargs,
         )

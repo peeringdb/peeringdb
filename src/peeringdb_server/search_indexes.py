@@ -131,6 +131,11 @@ class CampusIndex(MainEntity, indexes.Indexable):
 
 
 class CarrierIndex(MainEntity, indexes.Indexable):
+    org_id = indexes.IntegerField(indexed=False, model_attr="org_id")
+
+    class Meta:
+        relations = ["org"]
+
     def get_model(self):
         return Carrier
 

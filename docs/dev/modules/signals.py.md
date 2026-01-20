@@ -1,4 +1,4 @@
-Generated from signals.py on 2025-11-11 15:33:21.384068
+Generated from signals.py on 2026-01-19 15:52:26.218953
 
 # peeringdb_server.signals
 
@@ -93,6 +93,12 @@ Notify the approporiate management entity when a user to organization affiliatio
 
 Attempt to derive the targeted organization
 from the ASN the user provided.
+
+---
+## update_counts_for_carrierfac
+`def update_counts_for_carrierfac(carrierfac)`
+
+Whenever a carrierfac is saved, update carrier_count for the related Facility.
 
 ---
 ## update_counts_for_ixfac

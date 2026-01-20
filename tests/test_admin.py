@@ -1134,3 +1134,85 @@ class AdminTests(TestCase):
         self.assertTrue(
             models.IXLanPrefix.objects.filter(id=prefix.id).filter(status="deleted")
         )
+
+    def test_deleted_org_child_activation(self):
+        """
+        Test that objects under a deleted organization cannot be activated.
+
+        Verifies that when an organization is deleted, child objects
+        (network, ix, facility) cannot be changed from 'deleted' to 'ok' status.
+        Addresses issue #1845.
+        """
+        client = Client()
+        client.force_login(self.admin_user)
+
+        org = self.entities["org"][0]
+        network = self.entities["net"][0]
+
+        # Delete both org and network
+        network.status = "deleted"
+        network.save()
+        org.status = "deleted"
+        org.save()
+
+        url = reverse("admin:peeringdb_server_network_change", args=[network.id])
+        response = client.post(
+            url,
+            {
+                "name": network.name,
+                "asn": network.asn,
+                "status": "ok",
+                "org": org.id,
+                "website": "",
+            },
+            follow=True,
+        )
+
+        # Verify the status change was rejected
+        self.assertEqual(response.status_code, 200)
+
+        # Check that error message is displayed
+        content = response.content.decode("utf-8")
+        self.assertIn("cannot be saved because its parent entity", content.lower())
+        self.assertIn("has been marked as deleted", content.lower())
+
+        # Verify status remains 'deleted'
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
+        # Clean up netixlan entries to avoid foreign key issues
+        for netixlan in self.entities["netixlan"]:
+            netixlan.delete()
+
+        # Test the same for other entity types
+        entity_mappings = [
+            ("internetexchange", "ix"),
+            ("facility", "fac"),
+        ]
+
+        for admin_name, entity_tag in entity_mappings:
+            entity = self.entities[entity_tag][0]
+            entity.status = "deleted"
+            entity.save()
+
+            url = reverse(
+                f"admin:peeringdb_server_{admin_name}_change", args=[entity.id]
+            )
+            response = client.post(
+                url,
+                {
+                    "name": entity.name,
+                    "status": "ok",
+                    "org": org.id,
+                    "website": "",
+                },
+                follow=True,
+            )
+
+            # Verify it failed
+            entity.refresh_from_db()
+            self.assertEqual(
+                entity.status,
+                "deleted",
+                f"{entity_tag} status should remain 'deleted' when org is deleted",
+            )

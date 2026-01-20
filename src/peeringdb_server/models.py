@@ -73,6 +73,7 @@ from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
+    validate_account_name,
     validate_address_space,
     validate_api_rate,
     validate_bool,
@@ -336,6 +337,10 @@ class ParentStatusCheckMixin:
 
         :return:
         """
+
+        # Organizations have no parent, skip validation
+        if self.HandleRef.tag == "org":
+            return
 
         if not settings.DATA_QUALITY_VALIDATE_PARENT_STATUS:
             return
@@ -2065,6 +2070,12 @@ class Facility(
         null=False,
         default=0,
     )
+    carrier_count = models.PositiveIntegerField(
+        _("number of carriers at this facility"),
+        help_text=_("number of carriers at this facility"),
+        null=False,
+        default=0,
+    )
 
     notified_for_geocoords = models.BooleanField(
         default=False,
@@ -2075,7 +2086,7 @@ class Facility(
     # this afterwards
     class HandleRef:
         tag = "fac"
-        delete_cascade = ["ixfac_set", "netfac_set"]
+        delete_cascade = ["ixfac_set", "netfac_set", "carrierfac_set"]
 
     parent_relations = ["org"]
 
@@ -6053,8 +6064,12 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     email = models.EmailField(
         _("email address"), max_length=254, null=True, unique=True
     )
-    first_name = models.CharField(_("first name"), max_length=254, blank=True)
-    last_name = models.CharField(_("last name"), max_length=254, blank=True)
+    first_name = models.CharField(
+        _("first name"), max_length=254, blank=True, validators=[validate_account_name]
+    )
+    last_name = models.CharField(
+        _("last name"), max_length=254, blank=True, validators=[validate_account_name]
+    )
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,
@@ -6549,21 +6564,29 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
 
     def validate_rdap_relationship(self, rdap):
         """
-        #Domain only matching
-        email_domain = self.email.split("@")[1]
-        for email in rdap.emails:
-            try:
-                domain = email.split("@")[1]
-                if email_domain == domain:
-                    return True
-            except IndexError as inst:
-                pass
+        Validates if the user has an email address that matches any email
+        in the RDAP record.
+
+        Checks both the primary email and all verified secondary email addresses.
+
+        Arguments:
+            rdap: RdapAsn instance containing RDAP data
+
+        Returns:
+            bool: True if any user email matches RDAP emails, False otherwise
         """
 
-        # Exact email matching
+        # Check primary email (stored on User model)
         for email in rdap.emails:
             if email and self.email and email.lower() == self.email.lower():
                 return True
+
+        # Check all verified secondary emails (from allauth EmailAddress)
+        for email_address in self.emailaddress_set.filter(verified=True):
+            for rdap_email in rdap.emails:
+                if rdap_email and rdap_email.lower() == email_address.email.lower():
+                    return True
+
         return False
 
     @transaction.atomic()
