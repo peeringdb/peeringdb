@@ -38,4 +38,4 @@ jobs:
       - name: build PeeringDB
         run: ./Ctl/dev/compose.sh build --pull peeringdb
       - name: run tests with optimizations
-        run: ./Ctl/dev/run_tests.sh
+        run: ./Ctl/dev/run.sh run_tests
