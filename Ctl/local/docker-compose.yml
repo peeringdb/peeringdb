@@ -1,25 +1,23 @@
-version: "3.4"
 services:
   database:
+    restart: unless-stopped
     image: "mysql:8"
     environment:
       MYSQL_DATABASE: peeringdb
       MYSQL_USER: peeringdb
       MYSQL_PASSWORD: devPASSWORD
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
-    restart: always
-    ports:
-     - "23306:3306"
     volumes:
       - peeringdb_database:/var/lib/mysql:Z
     networks:
       - peeringdb_local_network
 
   peeringdb:
+    restart: unless-stopped
     user: "0:0"
     image: ghcr.io/peeringdb/peeringdb-server:latest
     container_name: peeringdb
-    command: runserver 0.0.0.0:8000
+    command: "runserver [::]:8000"
     env_file: .env
     depends_on:
       - database
@@ -34,9 +32,9 @@ services:
       - peeringdb_local_network
 
   elasticsearch:
+    restart: unless-stopped
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
-    ports:
-      - "19200:9200"
+    env_file: .env
     environment:
       - discovery.type=single-node
     networks:
@@ -47,3 +45,8 @@ volumes:
 
 networks:
   peeringdb_local_network:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd00:8298:0:1f40::/64
