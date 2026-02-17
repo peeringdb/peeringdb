@@ -1283,18 +1283,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1340,15 +1328,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -1778,10 +1757,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -2182,10 +2157,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -3213,10 +3184,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -3617,10 +3584,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -4597,10 +4560,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -5001,10 +4960,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -6199,18 +6154,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -6256,15 +6199,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -6553,10 +6487,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -7112,10 +7042,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -7624,10 +7550,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -8889,10 +8811,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -9376,10 +9294,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -9782,10 +9696,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -10816,10 +10726,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -11303,10 +11209,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -11709,10 +11611,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -12696,10 +12594,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -13183,10 +13077,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -13589,10 +13479,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -15170,18 +15056,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -15227,15 +15101,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -15686,10 +15551,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -16642,10 +16503,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -17545,10 +17402,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -19497,10 +19350,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -20359,10 +20208,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -20765,10 +20610,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -21823,10 +21664,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -22685,10 +22522,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -23091,10 +22924,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -24101,10 +23930,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -24963,10 +24788,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -25369,10 +25190,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -27122,10 +26939,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -28533,10 +28346,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -29597,10 +29406,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -30613,10 +30418,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -32110,18 +31911,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32167,15 +31956,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -32585,10 +32365,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -33369,10 +33145,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -34101,10 +33873,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -35550,10 +35318,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -36392,10 +36156,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -37186,10 +36946,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -39100,10 +38856,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -39789,10 +39541,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -40195,10 +39943,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -41256,10 +41000,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -41945,10 +41685,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -42351,10 +42087,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -43364,10 +43096,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -44053,10 +43781,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -44459,10 +44183,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -47176,10 +46896,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -47878,10 +47594,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -48955,10 +48667,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -49657,10 +49365,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -50685,10 +50389,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -51387,10 +51087,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -52568,18 +52264,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: latitude
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52662,15 +52346,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -52926,9 +52601,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -53418,9 +53090,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -53861,9 +53530,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -54530,18 +54196,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -54587,15 +54241,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -54884,10 +54529,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -55454,10 +55095,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -55977,10 +55614,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -56995,18 +56628,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57052,15 +56673,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -57861,18 +57473,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57918,15 +57518,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -58474,10 +58065,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -59654,9 +59241,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -60057,9 +59641,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -61434,9 +61015,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -62018,9 +61596,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -62504,9 +62079,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -62907,10 +62479,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -63879,9 +63447,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -65209,9 +64774,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -66070,9 +65632,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -66473,10 +66032,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -67459,9 +67014,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -68467,10 +68019,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -69451,9 +68999,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -70422,9 +69967,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -71234,9 +70776,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -71922,9 +71461,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -72325,10 +71861,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -73317,9 +72849,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -74016,10 +73545,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -75041,9 +74566,6 @@ components:
             - identifier
         notes:
           type: string
-        require_2fa:
-          type: boolean
-          description: Require users in your organization to activate 2FA.
         net_set:
           type: array
           items:
@@ -75439,9 +74961,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:

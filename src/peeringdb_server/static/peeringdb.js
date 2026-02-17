@@ -19,12 +19,21 @@ PeeringDB = {
     return (typeof grecaptcha == "object");
   },
 
-  handle_xhr_json_error : function(response, name) {
+  handle_xhr_json_error : function(response, name, context) {
     if(response.responseJSON && response.responseJSON[name]) {
-      return response.responseJSON[name]
-    } else {
-      return twentyc.editable.error.humanize("Http"+response.status);
+      return response.responseJSON[name];
     }
+
+    if (context === "file-upload" && response.status === 403) {
+      if (response.responseJSON !== undefined) {
+        // Backend returned JSON (even if empty {}) = permission denied
+        return gettext("You do not have permission to perform this action");
+      }
+      // No JSON = WAF/content blocking
+      return gettext("The upload failed - This is not related to the apparent file size or type, but appears to be an issue with the file itself.");
+    }
+
+    return twentyc.editable.error.humanize("Http" + response.status);
   },
 
   escape_html: function(string) {
@@ -1535,6 +1544,15 @@ twentyc.editable.module.register(
     key_prefix : function() {
       return this.container.data("edit-key-prefix");
     },
+    update_readonly_label : function(is_readonly) {
+      var readonlyLabel = this.container.find(".row.header .readonly-label");
+
+      if(is_readonly) {
+        readonlyLabel.text("(" + gettext("read-only") + ")");
+      } else {
+        readonlyLabel.text("(" + gettext("read-write") + ")");
+      }
+    },
     prepare_data : function(extra) {
       var perms = 0;
       if(this.target.data.perm_u)
@@ -1572,6 +1590,9 @@ twentyc.editable.module.register(
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
@@ -1581,14 +1602,20 @@ twentyc.editable.module.register(
       this.prepare_data({perms:0, entity:row.data("edit-id")});
       this.target.execute("remove", trigger, function(response) {
         this.listing_execute_remove(trigger, container);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
     submit : function(rowId, data, row, trigger, container) {
       this.target.data = data;
       this.prepare_data({entity:rowId});
-      this.target.execute("update", row, function() {
+      this.target.execute("update", row, function(response) {
         this.listing_submit(rowId, data, row, trigger, container);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
@@ -1859,8 +1886,11 @@ twentyc.editable.module.register(
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
       this.target.execute("add", this.components.add, function(response) {
-        if(response.readonly)
-          response.name = response.name + " (read-only)";
+        var isReadonly = response.is_readonly || response.readonly;
+        if(isReadonly)
+          response.name = response.name + " (" + gettext("read-only") + ")";
+        else
+          response.name = response.name + " (" + gettext("read-write") + ")";
         this.add(data.entity, trigger, container, response);
         this.api_key_popin(response.key)
       }.bind(this));
@@ -4695,7 +4725,7 @@ twentyc.editable.input.register(
         this.element.find('.loading-shim').hide();
       }).fail((r) => {
         // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
         this.element.find('.loading-shim').hide();
       });
     },
@@ -4741,7 +4771,7 @@ twentyc.editable.input.register(
           }
           this.show_validation_error(gettext("File size too big")+maxSize);
         } else {
-          this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
+          this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name, "file-upload"));
         }
 
         this.element.find('.loading-shim').hide();

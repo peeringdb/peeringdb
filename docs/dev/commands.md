@@ -1,4 +1,4 @@
-Generated on 2026-01-19 15:52:26.218953
+Generated on 2026-02-17 13:29:49.492138
 
 ## _db_command.py
 
@@ -140,10 +140,6 @@ Put peeringdb in or out of maintenance mode.
 
 DEPRECATED
 Used during ixlan migrations for #21.
-
-## pdb_notify_2fa.py
-
-Load initial data from another peeringdb instance using the REST API.
 
 ## pdb_notify_geocoords.py
 

@@ -36,6 +36,7 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor,
 )
 from django.db.models.query import QuerySet
+from django.http import QueryDict
 from django.utils.translation import gettext_lazy as _
 from django_grainy.exceptions import PermissionDenied
 
@@ -2005,6 +2006,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
+        if isinstance(data, QueryDict):
+            data = data.dict()
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
@@ -2594,6 +2597,8 @@ class NetworkIXLanSerializer(ModelSerializer):
         # for now make sure it is always a match to the related
         # network
 
+        if isinstance(data, QueryDict):
+            data = data.dict()
         if data.get("net_id"):
             try:
                 net = Network.objects.get(id=data.get("net_id"))
@@ -3042,6 +3047,8 @@ class NetworkSerializer(ModelSerializer):
         # whichever org is specified in `SUGGEST_ENTITY_ORG`
         #
         # this happens here so it is done before the validators run
+        if isinstance(data, QueryDict):
+            data = data.dict()
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
         asn = validate_asn_prefix(data.get("asn"))
@@ -4003,7 +4010,6 @@ class OrganizationSerializer(
                 "website",
                 "social_media",
                 "notes",
-                "require_2fa",
                 "net_set",
                 "fac_set",
                 "ix_set",

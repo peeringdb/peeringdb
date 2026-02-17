@@ -1,4 +1,4 @@
-Generated from models.py on 2026-01-19 15:52:26.218953
+Generated from models.py on 2026-02-17 13:29:49.492138
 
 # peeringdb_server.models
 
@@ -394,8 +394,7 @@ Return str(self).
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 #### set_value
@@ -987,8 +986,7 @@ Returns:
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 #### related_label
@@ -1296,8 +1294,7 @@ Relationship through netixlan -> ixlan
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 #### peer_exists_in_ixf_data
@@ -1584,8 +1581,7 @@ active netixlans. (#923)
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 #### delete
@@ -1826,8 +1822,7 @@ and adds optional org ownership to it through an `org` relationship
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 
@@ -1943,11 +1938,15 @@ are marked accordingly in the result.
 
 ---
 #### user_meets_email_requirements
-`def user_meets_email_requirements(self, user)`
+`def user_meets_email_requirements(self, user, verified_only=False)`
 
 If organization has `restrict_user_emails` set to true
 this will check the specified user's email addresses against
 the values stored in `email_domains`.
+
+Args:
+    user: User to check
+    verified_only: If True, only check verified email addresses (for affiliation requests)
 
 If the user has no email address that falls within the specified
 domain restrictions this will return `[]` and all associated user's email
@@ -1974,6 +1973,12 @@ OrganizationAPIKey(rest_framework_api_key.models.AbstractAPIKey, peeringdb_serve
 
 An API Key managed by an organization.
 
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- is_readonly (`@property`): Returns True if the API key has no write permissions (CREATE, UPDATE, DELETE).
 
 ## OrganizationAPIPermission
 
@@ -2266,8 +2271,7 @@ Mixin to remove whitespace at the beginning and end of string fields
 Hook for doing any extra model-wide validation after clean() has been
 called on every field by self.clean_fields. Any ValidationError raised
 by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by
-NON_FIELD_ERRORS.
+have a special-case association with the field defined by NON_FIELD_ERRORS.
 
 ---
 #### save

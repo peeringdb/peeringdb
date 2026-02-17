@@ -961,6 +961,10 @@ def profile_add_email(request):
 
     password = request.POST.get("password")
     email = request.POST.get("email")
+
+    if not email or not email.strip():
+        return JsonResponse({"email": _("This field is required.")}, status=400)
+
     make_primary = (
         request.POST.get("primary") == "true" or request.POST.get("primary") is True
     )
@@ -1490,15 +1494,8 @@ def view_index(request, errors=None):
 
     template = get_template(request, "site/index.html")
 
-    if request.user.is_authenticated:
-        organizations_require_2fa = any(
-            org.require_2fa for org in request.user.organizations
-        )
-    else:
-        organizations_require_2fa = False
     carrier_help_text = CARRIER_HELP_TEXT
     recent = {
-        "organizations_require_2fa": organizations_require_2fa,
         "net": Network.handleref.filter(status="ok").order_by("-updated")[:5],
         "fac": Facility.handleref.filter(status="ok").order_by("-updated")[:5],
         "ix": InternetExchange.handleref.filter(status="ok").order_by("-updated")[:5],
@@ -3426,17 +3423,17 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
     # Extract and process the query
     q, geo, original_query = extract_query(request, version)
 
+    # Redirect if no valid query
+    if not q and not geo:
+        return HttpResponseRedirect("/")
+
     SearchLog.objects.create(
-        query=original_query,
+        query=original_query or "",
         authenticated=(
             request.user.is_authenticated if getattr(request, "user", None) else False
         ),
         version=version,
     )
-
-    # Redirect if no valid query
-    if not q and not geo:
-        return HttpResponseRedirect("/")
 
     # Handle direct ASN or AS queries
     asn_redirect = handle_asn_query(q, version)
@@ -4483,58 +4480,6 @@ def view_remove_org_affiliation(request):
 
         response = JsonResponse({"status": "ok"})
         return response
-
-
-@ensure_csrf_cookie
-@login_required
-def handle_2fa(request):
-    if request.user.is_authenticated:
-        user_admin = request.user
-        action = request.GET.get("action")
-        commit = request.GET.get("commit")
-        try:
-            org = Organization.objects.get(id=request.GET.get("org"))
-        except Organization.DoesNotExist:
-            return view_index(request, errors=[_("Invalid organization")])
-        try:
-            member = User.objects.get(id=request.GET.get("member"))
-        except User.DoesNotExist:
-            return view_index(request, errors=[_("Invalid member")])
-        if user_admin.is_org_admin(org) and member.is_org_member(org):
-            confirm_url = f"/org_admin/handle-2fa?&org={org.id}&member={member.id}&action={action}&commit=1"
-            if action == "drop":
-                if commit:
-                    org.usergroup.user_set.remove(member)
-                else:
-                    confirm_message = f"This will completely remove {member} from {org}"
-            elif action == "leave":
-                if commit:
-                    pass
-                else:
-                    confirm_message = f"This will allow {member} to keep all privileges within {org}. This conflicts with your 2FA Policy"
-            elif action == "disable":
-                if commit:
-                    org.require_2fa = False
-                    org.save()
-                else:
-                    confirm_message = f"This will turn off the 2FA requirement for {org}, users will not need to use 2FA to login"
-            else:
-                return view_index(request, errors=[_("Action not provided")])
-            if commit:
-                return redirect("/")
-            return render(
-                request,
-                "site/handle-2fa.html",
-                {"confirm_message": confirm_message, "confirm_url": confirm_url},
-            )
-        else:
-            return view_index(
-                request, errors=[_(f"Only admin of the {org} can perform the action")]
-            )
-    else:
-        return view_index(
-            request, errors=[_("Login as the organization admin to perform the action")]
-        )
 
 
 @login_required
