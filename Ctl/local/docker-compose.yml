@@ -39,6 +39,7 @@ services:
       - "19200:9200"
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
     networks:
       - peeringdb_local_network
 

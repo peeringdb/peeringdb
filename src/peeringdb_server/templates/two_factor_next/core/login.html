@@ -41,6 +41,14 @@
       {% include "two_factor_next/_wizard_actions.html" %}
     </div>
 
+    {% if wizard.steps.current == 'auth' %}
+    <div class="mb-4">
+      <button type="button" id="passkey-login-button" class="btn btn-secondary btn-block" style="width: 100%;">
+        {% trans "Sign in with Passkey (passwordless)" %}
+      </button>
+    </div>
+    {% endif %}
+
     {% if other_devices %}
       <p>{% trans "Or, alternatively, you can request a one time password via one of your recovery options:" %}</p>
       <p>

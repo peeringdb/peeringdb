@@ -17,6 +17,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.deprecation import MiddlewareMixin
+from django_ratelimit.core import get_usage
 
 from peeringdb_server.context import current_request
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
@@ -26,6 +27,16 @@ ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged 
 ERR_BASE64_DECODE = "Corrupt base64 input."
 ERR_UNKNOWN = "Unknown error."
 ERR_VALUE_ERROR = "Invalid Input."
+
+
+def get_client_ident(request):
+    """
+    Get the IP address of the client, taking both
+    X-Forwarded-For and REMOTE_ADDR into account.
+    """
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    remote_addr = request.META.get("REMOTE_ADDR")
+    return "".join(xff.split()) if xff else remote_addr
 
 
 def get_auth_identity(request):
@@ -381,6 +392,14 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         if not settings.NEGATIVE_CACHE_ENABLED:
             return response
 
+        # Skip rate throttling for staff/superuser
+        if (
+            hasattr(request, "user")
+            and request.user.is_authenticated
+            and request.user.is_staff
+        ):
+            return response
+
         # Check if the response is an error response
         if response.status_code in [401, 403, 429]:
             # Generate the cache key
@@ -414,6 +433,14 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         """
 
         if not settings.NEGATIVE_CACHE_ENABLED:
+            return
+
+        # Skip rate throttling for staff/superuser
+        if (
+            hasattr(request, "user")
+            and request.user.is_authenticated
+            and request.user.is_staff
+        ):
             return
 
         # Check if inactive auth cache
@@ -479,23 +506,14 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         response["X-Cached-Response"] = "True"
         return response
 
-    def get_ident(self, request):
-        """
-        Get the IP address of the client, taking both X-Forwarded-For and REMOTE_ADDR into account.
-        """
-
-        xff = request.META.get("HTTP_X_FORWARDED_FOR")
-        remote_addr = request.META.get("REMOTE_ADDR")
-        return "".join(xff.split()) if xff else remote_addr
-
     def generate_ratelimit_key(self, request):
-        return f"negcache__throttle__{self.get_ident(request)}"
+        return f"negcache__throttle__{get_client_ident(request)}"
 
     def generate_cache_key(self, request):
         """
         Generate the cache key using the IP address, HTTP_AUTHORIZATION value or session ID, request path, and URL parameters.
         """
-        ip_address = self.get_ident(request)
+        ip_address = get_client_ident(request)
         request_path = request.path
         url_parameters = request.GET.urlencode()
         identifier = get_auth_identity(request)
@@ -631,6 +649,66 @@ class CacheControlMiddleware(MiddlewareMixin):
         return response
 
 
+class RateLimitWebPageMiddleware(MiddlewareMixin):
+    """
+    Rate limits unauthenticated requests to web pages
+    (non-API, non-static, non-media paths).
+
+    Uses django-ratelimit's core get_usage() for rate tracking,
+    keyed by client IP address.
+
+    Configurable via RATELIMIT_WEB_PAGE_ENABLED and RATELIMIT_WEB_PAGE_RATE settings.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+
+    def process_request(self, request):
+        path = request.path
+
+        # Skip API endpoints
+        if path.startswith("/api/"):
+            return None
+
+        # Skip static files
+        if path.startswith(settings.STATIC_URL):
+            return None
+
+        # Skip media files
+        if path.startswith(settings.MEDIA_URL):
+            return None
+
+        # Skip authenticated users
+        if hasattr(request, "user") and request.user.is_authenticated:
+            return None
+
+        if not settings.RATELIMIT_WEB_PAGE_ENABLED:
+            return None
+
+        rate = settings.RATELIMIT_WEB_PAGE_RATE
+
+        usage = get_usage(
+            request,
+            group="web_page_anon",
+            key=lambda group, request: get_client_ident(request),
+            rate=rate,
+            increment=True,
+        )
+
+        if usage and usage["should_limit"]:
+            response = HttpResponse(
+                "Rate limit exceeded. Please try again later.",
+                status=429,
+                content_type="text/plain",
+            )
+            response["X-RateLimit-Limit"] = str(usage["limit"])
+            response["Retry-After"] = str(usage["time_left"])
+            return response
+
+        return None
+
+
 class ActivateUserLocaleMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         self.get_response = get_response
@@ -655,6 +733,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         reverse("two_factor:backup_tokens"),
         reverse("two_factor:qr"),
         reverse("two_factor:setup_complete"),
+        reverse("javascript-catalog"),
         "/account/",
         "/logout",
         "/security_keys/",

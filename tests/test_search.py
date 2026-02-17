@@ -7,6 +7,7 @@ import datetime
 import re
 
 import unidecode
+from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.test import RequestFactory, TestCase
 
@@ -406,3 +407,42 @@ class SearchTests(TestCase):
         org_2.delete(hard=True)
 
         call_command("rebuild_index", "--noinput")
+
+    def test_search_empty_query_no_integrity_error(self):
+        """
+        Test that hitting /search without a `q` parameter does not
+        cause an IntegrityError from SearchLog (issue #447).
+        """
+        factory = RequestFactory()
+
+        # v1: no q param at all
+        request = factory.get("/search")
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v1: empty q param
+        request = factory.get("/search", {"q": ""})
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v1: only csrf token, no q
+        request = factory.get("/search", {"csrfmiddlewaretoken": "bogus"})
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v2: no q param at all
+        request = factory.get("/search/v2")
+        request.user = AnonymousUser()
+        response = views.request_search_v2(request)
+        assert response.status_code == 302
+
+        # v2: empty q param - getlist returns [""] which is truthy,
+        # so the view does not redirect but proceeds to render results
+        request = factory.get("/search/v2", {"q": ""})
+        request.user = AnonymousUser()
+        response = views.request_search_v2(request)
+        assert response.status_code in (200, 302)
+
+        # No SearchLog entries should have been created for empty queries
+        # (the v2 empty q="" case may create one since [""] is truthy)
+        assert models.SearchLog.objects.count() <= 1

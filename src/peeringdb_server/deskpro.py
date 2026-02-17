@@ -50,6 +50,10 @@ def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
     Queue deskro ticket creation for asn automation action: skip vq.
     """
 
+    # Check if ASNAUTO ticket creation is enabled
+    if not settings.TICKET_CREATION_ASNAUTO:
+        return
+
     if isinstance(net, dict):
         net_name = net.get("name")
     else:
@@ -89,6 +93,10 @@ def ticket_queue_asnauto_affil(user, org, net, rir_data):
     Queue deskro ticket creation for asn automation action: affil.
     """
 
+    # Check if ASNAUTO ticket creation is enabled
+    if not settings.TICKET_CREATION_ASNAUTO:
+        return
+
     ticket_queue(
         "[ASNAUTO] Ownership claim granted to Org '%s' for user '%s'"
         % (org.name, user.username),
@@ -103,6 +111,10 @@ def ticket_queue_prefixauto_approve(user, ix, prefix):
     """
     Queue deskro ticket creation for prefix automation action: create.
     """
+
+    # Check if PREFIXAUTO ticket creation is enabled
+    if not settings.TICKET_CREATION_PREFIXAUTO:
+        return
 
     ticket_queue(
         "[PREFIXAUTO] Approval granted to Internet Exchange '%s' created by user '%s'"
@@ -153,6 +165,10 @@ def ticket_queue_asnauto_create(
     """
     Queue deskro ticket creation for asn automation action: create.
     """
+
+    # Check if ASNAUTO ticket creation is enabled
+    if not settings.TICKET_CREATION_ASNAUTO:
+        return
 
     subject = []
 

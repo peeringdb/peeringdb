@@ -653,6 +653,10 @@ set_option("NEGATIVE_CACHE_REPEATED_RATE_LIMIT", 10)
 # global on / off switch for negative cache
 set_option("NEGATIVE_CACHE_ENABLED", True)
 
+# Rate limit unauthenticated web page requests (non-API) (#1849)
+set_option("RATELIMIT_WEB_PAGE_ENABLED", True)
+set_option("RATELIMIT_WEB_PAGE_RATE", "120/m")
+
 
 # Django config
 
@@ -1106,6 +1110,7 @@ AUTHENTICATION_BACKENDS += (
 
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
+    "peeringdb_server.middleware.RateLimitWebPageMiddleware",
     "peeringdb_server.middleware.CurrentRequestContext",
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
@@ -1370,6 +1375,14 @@ set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 # for IX-F importer conflicts
 set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
 
+# toggle the creation of DeskPRO tickets for ASNAUTO automation
+# when False, tickets will not be created for automated ASNAUTO actions
+set_option("TICKET_CREATION_ASNAUTO", False)
+
+# toggle the creation of DeskPRO tickets for PREFIXAUTO automation
+# when False, tickets will not be created for automated PREFIXAUTO actions
+set_option("TICKET_CREATION_PREFIXAUTO", False)
+
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
@@ -1563,9 +1576,6 @@ set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
 
 # Setting for number of days before deleting pending user to organization affiliation requests
 set_option("AFFILIATION_REQUEST_DELETE_DAYS", 90)
-
-# Notification period to notify organizations of users missing 2FA (days)
-set_option("NOTIFY_MISSING_2FA_DAYS", 30)
 
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)

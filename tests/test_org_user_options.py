@@ -158,6 +158,66 @@ def test_restrict_emails_blocks_affiliations(reauth_objects):
 
 
 @pytest.mark.django_db
+def test_restrict_emails_ignores_unverified_emails(reauth_objects):
+    """
+    Test that affiliation only checks verified emails, not unverified ones.
+    Even if user has an unverified email matching the domain, they should be denied.
+    """
+    org = reauth_objects["org"]
+    user = reauth_objects["user_b"]
+
+    client = Client()
+    client.force_login(user)
+
+    org.restrict_user_emails = True
+    org.email_domains = "xyz.com"
+    org.save()
+
+    # an unverified email that matches the domain
+    EmailAddress.objects.create(user=user, email="user_b@xyz.com", verified=False)
+
+    # User has verified email at domain.com (doesn't match)
+    # and unverified email at xyz.com (matches but not verified)
+    # Should be DENIED because no VERIFIED emails match
+
+    client.post("/affiliate-to-org", data={"asn": 63311})
+
+    assert not user.pending_affiliation_requests.exists()
+    assert user.affiliation_requests.filter(status="denied").count() == 1
+
+
+@pytest.mark.django_db
+def test_restrict_emails_allows_verified_matching_email(reauth_objects):
+    """
+    Test that affiliation succeeds when user has a verified email matching the domain,
+    even if they also have other non-matching emails.
+    """
+    org = reauth_objects["org"]
+    user = reauth_objects["user_b"]
+
+    client = Client()
+    client.force_login(user)
+
+    org.restrict_user_emails = True
+    org.email_domains = "xyz.com"
+    org.save()
+
+    # a verified email that matches the domain
+    EmailAddress.objects.create(user=user, email="user_b@xyz.com", verified=True)
+
+    # User now has:
+    # - user_b@domain.com (verified, doesn't match)
+    # - user_b@xyz.com (verified, matches)
+    # Should be ALLOWED because at least one verified email matches
+
+    client.post("/affiliate-to-org", data={"asn": 63311})
+
+    # Should have a pending request (not denied)
+    assert user.pending_affiliation_requests.exists()
+    assert user.affiliation_requests.filter(status="denied").count() == 0
+
+
+@pytest.mark.django_db
 def test_trigger_reauth(reauth_objects):
     user = reauth_objects["user"]
     org = reauth_objects["org"]
