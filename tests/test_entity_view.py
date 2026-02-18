@@ -269,7 +269,7 @@ class TestNetworkView(ViewTestCase):
         assert "Contact Private" in content
         assert "Contact Users" in content
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=False)
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="")
     def test_search_asn_redirect(self):
         """
         When the user types AS*** or ASN*** and hits enter, if

@@ -406,7 +406,7 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
 @override_settings(
     CSRF_USE_SESSIONS=False,
     NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3,
-    RATELIMIT_WEB_PAGE_ENABLED=False,
+    RATELIMIT_WEB_PAGE_RATE="",
 )
 @patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
@@ -691,7 +691,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
     def setUp(self):
         caches["default"].clear()
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=False)
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="")
     def test_disabled_no_ratelimit(self):
         """When disabled, no rate limiting occurs."""
         client = Client()
@@ -699,7 +699,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
             response = client.get("/")
             assert response.status_code != 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="3/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="3/m")
     def test_anon_rate_limited(self):
         """Unauthenticated requests exceeding the rate get 429."""
         client = Client()
@@ -709,7 +709,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
         response = client.get("/")
         assert response.status_code == 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="3/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="3/m")
     def test_authenticated_not_limited(self):
         """Authenticated users bypass web page rate limiting."""
         user = User.objects.create_user(username="rl_test", password="rl_test")
@@ -719,7 +719,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
             response = client.get("/")
             assert response.status_code != 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="1/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
     def test_api_paths_skipped(self):
         """Requests to /api/ are not affected by this middleware."""
         client = Client()
@@ -727,7 +727,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
             response = client.get("/api/fac")
             assert response.status_code != 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="1/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
     def test_static_paths_skipped(self):
         """Requests to static URLs are not rate limited."""
         client = Client()
@@ -735,7 +735,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
             response = client.get(f"{settings.STATIC_URL}site.css")
             assert response.status_code != 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="1/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
     def test_429_response_headers(self):
         """Rate-limited response includes X-RateLimit-Limit and Retry-After headers."""
         client = Client()
@@ -745,7 +745,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
         assert response["X-RateLimit-Limit"] == "1"
         assert "Retry-After" in response
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="2/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="2/m")
     def test_different_ips_separate(self):
         """Each IP has its own rate limit counter."""
         client = Client()
@@ -758,7 +758,7 @@ class TestRateLimitWebPageMiddleware(TestCase):
         response = client.get("/", REMOTE_ADDR="10.0.0.2")
         assert response.status_code != 429
 
-    @override_settings(RATELIMIT_WEB_PAGE_ENABLED=True, RATELIMIT_WEB_PAGE_RATE="2/m")
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="2/m")
     def test_x_forwarded_for(self):
         """Rate limiting uses X-Forwarded-For when present."""
         client = Client()
