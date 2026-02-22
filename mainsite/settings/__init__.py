@@ -672,7 +672,16 @@ ADMINS = [
 MANAGERS = ADMINS
 
 set_option("MEDIA_ROOT", os.path.abspath(os.path.join(BASE_DIR, "media")))
-MEDIA_URL = "/m/"
+
+# S3 media storage configuration
+set_option("AWS_MEDIA_BUCKET_NAME", "")
+set_option("AWS_S3_REGION_NAME", "us-east-1")
+set_option("AWS_S3_CUSTOM_DOMAIN", "")
+
+if AWS_MEDIA_BUCKET_NAME:
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN or f'{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com'}/media/"
+else:
+    MEDIA_URL = "/m/"
 
 set_option("STATIC_ROOT", os.path.abspath(os.path.join(BASE_DIR, "static")))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
@@ -891,10 +900,27 @@ STATICFILES_FINDERS = (
 set_option(
     "WHITENOISE_STATICFILES_BACKEND", "whitenoise.storage.CompressedStaticFilesStorage"
 )
-STORAGES = {
-    "default": {
+if AWS_MEDIA_BUCKET_NAME:
+    _DEFAULT_STORAGE = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "bucket_name": AWS_MEDIA_BUCKET_NAME,
+            "region_name": AWS_S3_REGION_NAME,
+            "location": "media",
+            "querystring_auth": False,
+            "default_acl": "public-read",
+            "file_overwrite": False,
+        },
+    }
+    if AWS_S3_CUSTOM_DOMAIN:
+        _DEFAULT_STORAGE["OPTIONS"]["custom_domain"] = AWS_S3_CUSTOM_DOMAIN
+else:
+    _DEFAULT_STORAGE = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
+    }
+
+STORAGES = {
+    "default": _DEFAULT_STORAGE,
     "staticfiles": {
         "BACKEND": WHITENOISE_STATICFILES_BACKEND,
     },
