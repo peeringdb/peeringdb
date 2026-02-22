@@ -78,6 +78,7 @@ from peeringdb_server.validators import (
     validate_address_space,
     validate_api_rate,
     validate_bool,
+    validate_django_ratelimit_rate,
     validate_email_domains,
     validate_info_prefixes4,
     validate_info_prefixes6,
@@ -6908,6 +6909,11 @@ class EnvironmentSetting(StripFieldMixin):
                 "API_THROTTLE_ORGANIZATION_USERS",
                 _("API: Request Organization Users API Limiting"),
             ),
+            # web page rate limiting for unauthenticated requests (#1849)
+            (
+                "RATELIMIT_WEB_PAGE_RATE",
+                _("Web: Anonymous web page rate limit"),
+            ),
             # show database last sync
             (
                 "DATABASE_LAST_SYNC",
@@ -6977,6 +6983,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_RATE_USER_MSG": "value_str",
         "API_THROTTLE_RATE_WRITE": "value_str",
         "API_THROTTLE_ORGANIZATION_USERS": "value_str",
+        "RATELIMIT_WEB_PAGE_RATE": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
         "TUTORIAL_MODE_MESSAGE": "value_str",
     }
@@ -7002,6 +7009,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
         "API_THROTTLE_RATE_WRITE": [validate_api_rate],
         "API_THROTTLE_ORGANIZATION_USERS": [validate_api_rate],
+        "RATELIMIT_WEB_PAGE_RATE": [validate_django_ratelimit_rate],
     }
 
     @classmethod

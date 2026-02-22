@@ -32,6 +32,7 @@ from peeringdb_server.validators import (
     validate_address_space,
     validate_asn_prefix,
     validate_distance_geocode,
+    validate_django_ratelimit_rate,
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
@@ -1465,3 +1466,36 @@ def test_validate_status_field_serializer():
     assert serializer.fields[
         "status"
     ].read_only, "status field should be marked as read_only"
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "30/m",
+        "120/m",
+        "10/s",
+        "1000/h",
+        "800/d",
+        "100/5m",
+        "",
+    ],
+)
+def test_validate_django_ratelimit_rate_valid(value):
+    assert validate_django_ratelimit_rate(value) == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "120/minute",
+        "10/second",
+        "100/hour",
+        "abc",
+        "/m",
+        "100/",
+        "100/x",
+    ],
+)
+def test_validate_django_ratelimit_rate_invalid(value):
+    with pytest.raises(ValidationError):
+        validate_django_ratelimit_rate(value)

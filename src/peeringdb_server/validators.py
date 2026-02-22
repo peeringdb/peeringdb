@@ -499,6 +499,36 @@ def validate_api_rate(value):
         )
 
 
+def validate_django_ratelimit_rate(value):
+    """
+    Validates a rate string in django-ratelimit format.
+
+    e.g., 30/m, 100/5m, 1000/h, 10/s, 800/d
+
+    Will raise a ValidationError on failure.
+
+    Arguments:
+
+    - value(`str`)
+
+    Returns:
+
+    - validated value (`str`)
+    """
+
+    value = str(value)
+    if not value or re.match(r"^[\d]+/[\d]*[smhd]$", value):
+        return value
+    else:
+        raise ValidationError(
+            _(
+                "Invalid setting! Acceptable value is a number/period format "
+                "where period is one of: s (second), m (minute), h (hour), "
+                "d (day). eg (30/m, 100/h, 10/5m, 800/d)"
+            )
+        )
+
+
 def validate_identifier(service: str, identifier: str):
     """
     Validates a identifier based on the specific rules of different social media platforms.

@@ -654,7 +654,7 @@ set_option("NEGATIVE_CACHE_REPEATED_RATE_LIMIT", 10)
 set_option("NEGATIVE_CACHE_ENABLED", True)
 
 # Rate limit unauthenticated web page requests (non-API) (#1849)
-set_option("RATELIMIT_WEB_PAGE_ENABLED", True)
+# Set to empty string to disable rate limiting
 set_option("RATELIMIT_WEB_PAGE_RATE", "120/m")
 
 

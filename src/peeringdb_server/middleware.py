@@ -20,7 +20,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django_ratelimit.core import get_usage
 
 from peeringdb_server.context import current_request
-from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
+from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
@@ -657,7 +657,7 @@ class RateLimitWebPageMiddleware(MiddlewareMixin):
     Uses django-ratelimit's core get_usage() for rate tracking,
     keyed by client IP address.
 
-    Configurable via RATELIMIT_WEB_PAGE_ENABLED and RATELIMIT_WEB_PAGE_RATE settings.
+    Configurable via RATELIMIT_WEB_PAGE_RATE EnvironmentSetting. Set to empty string to disable.
     """
 
     def __init__(self, get_response):
@@ -683,10 +683,10 @@ class RateLimitWebPageMiddleware(MiddlewareMixin):
         if hasattr(request, "user") and request.user.is_authenticated:
             return None
 
-        if not settings.RATELIMIT_WEB_PAGE_ENABLED:
-            return None
+        rate = EnvironmentSetting.get_setting_value("RATELIMIT_WEB_PAGE_RATE")
 
-        rate = settings.RATELIMIT_WEB_PAGE_RATE
+        if not rate:
+            return None
 
         usage = get_usage(
             request,
