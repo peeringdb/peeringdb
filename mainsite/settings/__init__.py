@@ -1013,7 +1013,9 @@ set_option(
     ],
 )
 if AWS_MEDIA_BUCKET_NAME:
-    CSP_IMG_SRC.append(AWS_S3_CUSTOM_DOMAIN or f"{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com")
+    CSP_IMG_SRC.append(
+        AWS_S3_CUSTOM_DOMAIN or f"{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com"
+    )
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
 set_option(
     "CSP_CONNECT_SRC",
