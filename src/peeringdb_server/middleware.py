@@ -406,7 +406,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         try:
             self._process_response_cached(request, response)
         except Exception:
-            log.error("RedisNegativeCacheMiddleware.process_response failed", exc_info=True)
+            log.error(
+                "RedisNegativeCacheMiddleware.process_response failed", exc_info=True
+            )
 
         return response
 
@@ -455,7 +457,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         try:
             return self._process_request_cached(request)
         except Exception:
-            log.error("RedisNegativeCacheMiddleware.process_request failed", exc_info=True)
+            log.error(
+                "RedisNegativeCacheMiddleware.process_request failed", exc_info=True
+            )
             return
 
     def _process_request_cached(self, request):
