@@ -715,6 +715,10 @@ for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)
 
+# When enabled, redis cache errors will be silently ignored
+# rather than crashing the request
+set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False)
+
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose
 # it as an environment variable
@@ -1032,9 +1036,9 @@ MIDDLEWARE = (
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.RedisNegativeCacheMiddleware",
     "csp.middleware.CSPMiddleware",
-    "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.CacheControlMiddleware",
     "peeringdb_server.middleware.ActivateUserLocaleMiddleware",
     "django.middleware.locale.LocaleMiddleware",
