@@ -715,6 +715,10 @@ for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)
 
+# When enabled, redis cache errors will be silently ignored
+# rather than crashing the request
+set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False)
+
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose
 # it as an environment variable
