@@ -523,6 +523,17 @@ class BaseSchema(AutoSchema):
                     )
                 )
 
+            # "date-time" is not a type, but instead a formatting of a string
+            if self.type_map.get(typ, "string") == "date-time":
+                schema = {
+                    "type": "string",
+                    "format": "date-time",
+                }
+            else:
+                schema = {
+                    "type": self.type_map.get(typ, "string"),
+                }
+
             parameters.append(
                 {
                     "name": re.sub(
@@ -531,21 +542,12 @@ class BaseSchema(AutoSchema):
                     "in": "query",
                     "description": "\n\n".join(description),
                     "required": False,
-                    "schema": {
-                        "type": self.type_map.get(typ, "string"),
-                    },
+                    "schema": schema,
                 }
             )
 
     def fac_list_filter_fields(self):
-        return [
-            (
-                "net_count",
-                CustomField(
-                    "IntegerField", _("Number of networks present at this facility")
-                ),
-            ),
-        ]
+        return []
 
     def net_list_filter_fields(self):
         return [
@@ -628,12 +630,6 @@ class BaseSchema(AutoSchema):
                 CustomField(
                     "NumberSearchField",
                     _("Find the exchange that contains this ixfac (ixfac id)"),
-                ),
-            ),
-            (
-                "net_count",
-                CustomField(
-                    "IntegerField", _("Number of networks present at this exchange")
                 ),
             ),
             (
