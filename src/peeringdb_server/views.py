@@ -1606,8 +1606,8 @@ class ObjectsLogoUpload(View):
         if not check_permissions(request.user, instance, "u"):
             return JsonResponse({}, status=403)
 
-        # keep old logo file path
-        old_file = instance.logo.path if instance.logo else None
+        # keep old logo file name for cleanup after save
+        old_logo_name = instance.logo.name if instance.logo else None
 
         # create dynamic form subclass
         DynamicForm = type(
@@ -1622,9 +1622,11 @@ class ObjectsLogoUpload(View):
             form.save()
             instance.refresh_from_db()
 
-            # remove old file if exists
-            if old_file and os.path.exists(old_file):
-                os.remove(old_file)
+            # remove old file via storage backend
+            if old_logo_name:
+                storage = instance.logo.storage
+                if storage.exists(old_logo_name):
+                    storage.delete(old_logo_name)
 
             return JsonResponse({"status": "ok", "url": instance.logo.url})
         else:
