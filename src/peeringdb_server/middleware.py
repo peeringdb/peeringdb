@@ -7,6 +7,7 @@ import binascii
 import json
 
 import django_read_only
+import structlog
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -22,6 +23,8 @@ from django_ratelimit.core import get_usage
 from peeringdb_server.context import current_request
 from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
+
+log = structlog.get_logger("django")
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
 ERR_BASE64_DECODE = "Corrupt base64 input."
@@ -400,6 +403,14 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         ):
             return response
 
+        try:
+            self._process_response_cached(request, response)
+        except Exception:
+            log.error("RedisNegativeCacheMiddleware.process_response failed", exc_info=True)
+
+        return response
+
+    def _process_response_cached(self, request, response):
         # Check if the response is an error response
         if response.status_code in [401, 403, 429]:
             # Generate the cache key
@@ -425,8 +436,6 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
                 # cache for 1 minute
                 caches["negative"].set(throttle_key, throttle_count, timeout=60)
 
-        return response
-
     def process_request(self, request):
         """
         Process the request before it's passed to the view.
@@ -443,6 +452,13 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         ):
             return
 
+        try:
+            return self._process_request_cached(request)
+        except Exception:
+            log.error("RedisNegativeCacheMiddleware.process_request failed", exc_info=True)
+            return
+
+    def _process_request_cached(self, request):
         # Check if inactive auth cache
         identifier = get_auth_identity(request)
 
