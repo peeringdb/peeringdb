@@ -15,7 +15,7 @@ from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import resolve, reverse
 from django.utils import timezone, translation
 from django.utils.deprecation import MiddlewareMixin
 from django_ratelimit.core import get_usage
@@ -697,6 +697,10 @@ class RateLimitWebPageMiddleware(MiddlewareMixin):
 
         # Skip media files
         if path.startswith(settings.MEDIA_URL):
+            return None
+
+        # Skip healthcheck endpoint
+        if resolve(path).url_name == "healthcheck":
             return None
 
         # Skip authenticated users
