@@ -728,6 +728,14 @@ class TestRateLimitWebPageMiddleware(TestCase):
             assert response.status_code != 429
 
     @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
+    def test_healthcheck_paths_skipped(self):
+        """Requests to /healthcheck are not affected by this middleware."""
+        client = Client()
+        for _ in range(5):
+            response = client.get("/healthcheck")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
     def test_static_paths_skipped(self):
         """Requests to static URLs are not rate limited."""
         client = Client()
