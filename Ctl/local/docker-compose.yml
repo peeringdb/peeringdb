@@ -37,6 +37,7 @@ services:
     env_file: .env
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
     networks:
       - peeringdb_local_network
 

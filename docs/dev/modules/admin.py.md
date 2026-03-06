@@ -1,4 +1,4 @@
-Generated from admin.py on 2025-11-11 15:33:22.232583
+Generated from admin.py on 2026-02-17 13:29:49.867713
 
 # peeringdb_server.admin
 
@@ -838,6 +838,9 @@ Catches and raises validation errors where an object
 is to be soft-deleted but cannot be because it is currently
 protected.
 
+Also validates parent status when trying to undelete or activate
+an object whose parent is deleted.
+
 ---
 
 ## IXLanPrefixInline
@@ -1587,6 +1590,9 @@ Catches and raises validation errors where an object
 is to be soft-deleted but cannot be because it is currently
 protected.
 
+Also validates parent status when trying to undelete or activate
+an object whose parent is deleted.
+
 ---
 
 ## TOTPDeviceAdminCustom
@@ -1640,6 +1646,13 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### save_model
+`def save_model(self, request, obj, form, change)`
+
+Ensure EmailAddress (allauth) is created for new users created from admin page.
+Prevents orphaned User.email values (issue #1852).
+
+---
 #### version
 `def version(self, obj)`
 
@@ -1648,6 +1661,21 @@ a readonly field called "version." For the sake of completion,
 return a 0 version here.
 
 ---
+
+## UserAdminChangeForm
+
+```
+UserAdminChangeForm(django.contrib.auth.forms.UserChangeForm)
+```
+
+Form for editing users in the main UserAdmin
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## UserCreationForm
 

@@ -7,6 +7,7 @@ import datetime
 import re
 
 import unidecode
+from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.test import RequestFactory, TestCase
 
@@ -46,14 +47,28 @@ class SearchTests(TestCase):
         cls.instances = {}
         cls.instances_accented = {}
         cls.instances_sponsored = {}
+        cls.instances_autocomplete = {}
 
         # create an instance of each searchable model, so we have something
         # to search for
         cls.org = models.Organization.objects.create(name="Parent org")
-        for model in search.autocomplete_models:
+
+        # Create instances for legacy search (main entities only, no secondary results)
+        legacy_models = [
+            m
+            for m in search.searchable_models
+            if m.handleref.tag not in ["netixlan", "ixpfx"]
+        ]
+        for model in legacy_models:
             cls.instances[model.handleref.tag] = cls.create_instance(model, cls.org)
             cls.instances_accented[model.handleref.tag] = cls.create_instance(
                 model, cls.org, asn=2, accented=True
+            )
+
+        # Create instances for autocomplete search (includes carrier)
+        for model in search.autocomplete_models:
+            cls.instances_autocomplete[model.handleref.tag] = cls.create_instance(
+                model, cls.org, asn=4, prefix="AutoTest"
             )
 
         # we also need to test that sponsor ship status comes through
@@ -73,7 +88,7 @@ class SearchTests(TestCase):
             org=cls.org_w_sponsorship, sponsorship=cls.sponsorship
         )
 
-        for model in search.autocomplete_models:
+        for model in legacy_models:
             cls.instances_sponsored[model.handleref.tag] = cls.create_instance(
                 model, cls.org_w_sponsorship, asn=3, prefix="Sponsor"
             )
@@ -166,6 +181,33 @@ class SearchTests(TestCase):
             assert unidecode.unidecode(rv[k][0]["name"]) == unidecode.unidecode(
                 inst.search_result_name
             )
+
+    def test_autocomplete_includes_carrier(self):
+        """
+        Test that carrier appears in autocomplete search results but not in legacy search
+        """
+        # Test autocomplete search includes carrier
+        rv = search.search("AutoTest", autocomplete=True)
+        for k, inst in list(self.instances_autocomplete.items()):
+            assert k in rv
+            assert len(rv[k]) >= 1
+            # Find the AutoTest instance in results
+            matching = [r for r in rv[k] if "AutoTest" in r["name"]]
+            assert len(matching) >= 1
+            assert matching[0]["org_id"] == inst.org_id
+
+        # Specifically verify carrier is in autocomplete
+        assert "carrier" in rv
+        carrier_results = [r for r in rv["carrier"] if "AutoTest" in r["name"]]
+        assert len(carrier_results) == 1
+        assert (
+            carrier_results[0]["name"]
+            == self.instances_autocomplete["carrier"].search_result_name
+        )
+
+        # Test legacy search does NOT include carrier
+        rv = search.search("AutoTest")
+        assert "carrier" not in rv
 
     def test_search_asn_match(self):
         """
@@ -365,3 +407,42 @@ class SearchTests(TestCase):
         org_2.delete(hard=True)
 
         call_command("rebuild_index", "--noinput")
+
+    def test_search_empty_query_no_integrity_error(self):
+        """
+        Test that hitting /search without a `q` parameter does not
+        cause an IntegrityError from SearchLog (issue #447).
+        """
+        factory = RequestFactory()
+
+        # v1: no q param at all
+        request = factory.get("/search")
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v1: empty q param
+        request = factory.get("/search", {"q": ""})
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v1: only csrf token, no q
+        request = factory.get("/search", {"csrfmiddlewaretoken": "bogus"})
+        response = views.request_search(request)
+        assert response.status_code == 302
+
+        # v2: no q param at all
+        request = factory.get("/search/v2")
+        request.user = AnonymousUser()
+        response = views.request_search_v2(request)
+        assert response.status_code == 302
+
+        # v2: empty q param - getlist returns [""] which is truthy,
+        # so the view does not redirect but proceeds to render results
+        request = factory.get("/search/v2", {"q": ""})
+        request.user = AnonymousUser()
+        response = views.request_search_v2(request)
+        assert response.status_code in (200, 302)
+
+        # No SearchLog entries should have been created for empty queries
+        # (the v2 empty q="" case may create one since [""] is truthy)
+        assert models.SearchLog.objects.count() <= 1

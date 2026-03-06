@@ -1,4 +1,4 @@
-Generated from middleware.py on 2025-11-11 15:33:21.384068
+Generated from middleware.py on 2026-02-17 13:29:49.492138
 
 # peeringdb_server.middleware
 
@@ -14,6 +14,13 @@ Returns a string that uniquely identifies the authentication
 method used for the request.
 
 This is used to cache negative authentication responses
+
+---
+## get_client_ident
+`def get_client_ident(request)`
+
+Get the IP address of the client, taking both
+X-Forwarded-For and REMOTE_ADDR into account.
 
 ---
 # Classes
@@ -163,6 +170,30 @@ the session cookie if the session has been emptied.
 
 ---
 
+## RateLimitWebPageMiddleware
+
+```
+RateLimitWebPageMiddleware(django.utils.deprecation.MiddlewareMixin)
+```
+
+Rate limits unauthenticated requests to web pages
+(non-API, non-static, non-media paths).
+
+Uses django-ratelimit's core get_usage() for rate tracking,
+keyed by client IP address.
+
+Configurable via RATELIMIT_WEB_PAGE_ENABLED and RATELIMIT_WEB_PAGE_RATE settings.
+
+
+### Methods
+
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
 ## RedisNegativeCacheMiddleware
 
 ```
@@ -184,12 +215,6 @@ Initialize self.  See help(type(self)) for accurate signature.
 `def generate_cache_key(self, request)`
 
 Generate the cache key using the IP address, HTTP_AUTHORIZATION value or session ID, request path, and URL parameters.
-
----
-#### get_ident
-`def get_ident(self, request)`
-
-Get the IP address of the client, taking both X-Forwarded-For and REMOTE_ADDR into account.
 
 ---
 #### process_request

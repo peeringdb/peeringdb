@@ -26,6 +26,7 @@ from schema import Schema, SchemaError
 
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
+from peeringdb_server.validators import validate_account_name
 
 
 class OrganizationAPIKeyForm(forms.Form):
@@ -128,11 +129,11 @@ class NameChangeForm(forms.Form):
 
     def clean_first_name(self):
         first_name = self.cleaned_data.get("first_name")
-        return first_name
+        return validate_account_name(first_name)
 
     def clean_last_name(self):
         last_name = self.cleaned_data.get("last_name")
-        return last_name
+        return validate_account_name(last_name)
 
 
 class PasswordResetForm(forms.Form):
@@ -285,7 +286,6 @@ class OrgUserOptions(forms.ModelForm):
     class Meta:
         model = Organization
         fields = [
-            "require_2fa",
             "restrict_user_emails",
             "email_domains",
             "periodic_reauth",

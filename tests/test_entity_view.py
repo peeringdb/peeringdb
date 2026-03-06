@@ -1,6 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError
-from django.test import Client, RequestFactory
+from django.test import Client, RequestFactory, override_settings
 
 import peeringdb_server.models as models
 
@@ -269,6 +269,7 @@ class TestNetworkView(ViewTestCase):
         assert "Contact Private" in content
         assert "Contact Users" in content
 
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="")
     def test_search_asn_redirect(self):
         """
         When the user types AS*** or ASN*** and hits enter, if

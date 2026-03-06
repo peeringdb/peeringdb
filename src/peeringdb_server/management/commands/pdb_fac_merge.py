@@ -116,7 +116,6 @@ class Command(BaseCommand):
                 # if it exists but is currently delete, we simply undelete it
                 elif netfac_other.exists():
                     netfac_other = netfac_other.first()
-                    netfac_other.local_asn = netfac.local_asn
                     netfac_other.avail_sonet = netfac.avail_sonet
                     netfac_other.avail_ethernet = netfac.avail_ethernet
                     netfac_other.avail_atm = netfac.avail_atm

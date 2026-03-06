@@ -4,6 +4,7 @@ from unittest.mock import PropertyMock, patch
 
 import pytest
 from django.conf import settings
+from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.test import (
     Client,
@@ -402,7 +403,11 @@ def test_pdb_negative_cache(mock_resolve, http_status_code, expected):
     ),
 )
 @pytest.mark.django_db
-@override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3)
+@override_settings(
+    CSRF_USE_SESSIONS=False,
+    NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3,
+    RATELIMIT_WEB_PAGE_RATE="",
+)
 @patch("django.urls.resolvers.URLResolver.resolve")
 def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
     """
@@ -428,6 +433,39 @@ def test_pdb_negative_cache_ratelimit(mock_resolve, http_status_code, expected):
         else:
             assert response.status_code == 429
             assert response.headers.get("X-Throttled-Response") == "True"
+
+
+@pytest.mark.django_db
+@override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=3)
+@patch("django.urls.resolvers.URLResolver.resolve")
+def test_pdb_negative_cache_ratelimit_staff_exempt(mock_resolve):
+    """
+    Tests that staff users are exempt from negative cache rate limiting
+    """
+
+    client = Client()
+    num_requests = 8
+
+    # Create staff user
+    staff_user = User.objects.create(username="staff_user", is_staff=True)
+    staff_user.set_password("staff_password")
+    staff_user.save()
+
+    def mock_view_repsonse(request):
+        return HttpResponse("Response 403", status=403)
+
+    mock_match = ResolverMatch(mock_view_repsonse, [], {}, "")
+    mock_resolve.return_value = mock_match
+
+    client.force_login(staff_user)
+
+    # Make many requests that would normally trigger rate limiting
+    for i in range(num_requests):
+        response = client.get(f"/?test_status=403&iteration={i}")
+
+        # Staff users should never get throttled
+        assert response.status_code == 403
+        assert response.headers.get("X-Throttled-Response") is None
 
 
 class ActivateUserLocaleMiddlewareTests(APITestCase):
@@ -644,3 +682,99 @@ class TestEnforceMFAMiddleware(TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertNotIn("X-Auth-Warning", response)
+
+
+@pytest.mark.django_db
+class TestRateLimitWebPageMiddleware(TestCase):
+    """Tests for RateLimitWebPageMiddleware (#1849)."""
+
+    def setUp(self):
+        caches["default"].clear()
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="")
+    def test_disabled_no_ratelimit(self):
+        """When disabled, no rate limiting occurs."""
+        client = Client()
+        for _ in range(50):
+            response = client.get("/")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="3/m")
+    def test_anon_rate_limited(self):
+        """Unauthenticated requests exceeding the rate get 429."""
+        client = Client()
+        for _ in range(3):
+            response = client.get("/")
+            assert response.status_code != 429
+        response = client.get("/")
+        assert response.status_code == 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="3/m")
+    def test_authenticated_not_limited(self):
+        """Authenticated users bypass web page rate limiting."""
+        user = User.objects.create_user(username="rl_test", password="rl_test")
+        client = Client()
+        client.force_login(user)
+        for _ in range(10):
+            response = client.get("/")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
+    def test_api_paths_skipped(self):
+        """Requests to /api/ are not affected by this middleware."""
+        client = Client()
+        for _ in range(5):
+            response = client.get("/api/fac")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
+    def test_healthcheck_paths_skipped(self):
+        """Requests to /healthcheck are not affected by this middleware."""
+        client = Client()
+        for _ in range(5):
+            response = client.get("/healthcheck")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
+    def test_static_paths_skipped(self):
+        """Requests to static URLs are not rate limited."""
+        client = Client()
+        for _ in range(5):
+            response = client.get(f"{settings.STATIC_URL}site.css")
+            assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="1/m")
+    def test_429_response_headers(self):
+        """Rate-limited response includes X-RateLimit-Limit and Retry-After headers."""
+        client = Client()
+        client.get("/")
+        response = client.get("/")
+        assert response.status_code == 429
+        assert response["X-RateLimit-Limit"] == "1"
+        assert "Retry-After" in response
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="2/m")
+    def test_different_ips_separate(self):
+        """Each IP has its own rate limit counter."""
+        client = Client()
+        for _ in range(2):
+            response = client.get("/", REMOTE_ADDR="10.0.0.1")
+            assert response.status_code != 429
+        response = client.get("/", REMOTE_ADDR="10.0.0.1")
+        assert response.status_code == 429
+        # Different IP should still work
+        response = client.get("/", REMOTE_ADDR="10.0.0.2")
+        assert response.status_code != 429
+
+    @override_settings(RATELIMIT_WEB_PAGE_RATE="2/m")
+    def test_x_forwarded_for(self):
+        """Rate limiting uses X-Forwarded-For when present."""
+        client = Client()
+        for _ in range(2):
+            response = client.get("/", HTTP_X_FORWARDED_FOR="192.168.1.1")
+            assert response.status_code != 429
+        response = client.get("/", HTTP_X_FORWARDED_FOR="192.168.1.1")
+        assert response.status_code == 429
+        # Different forwarded IP should still work
+        response = client.get("/", HTTP_X_FORWARDED_FOR="192.168.1.2")
+        assert response.status_code != 429

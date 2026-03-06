@@ -80,6 +80,25 @@ def test_add_email_and_make_primary(profile_user):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "post_data",
+    [
+        {"password": "user"},
+        {"email": "", "password": "user"},
+        {"email": "   ", "password": "user"},
+    ],
+)
+def test_add_email_missing_email(profile_user, post_data):
+    client = Client()
+    client.force_login(profile_user)
+
+    response = client.post(reverse("profile-add-email"), post_data)
+
+    assert response.status_code == 400
+    assert "email" in response.json()
+
+
+@pytest.mark.django_db
 def test_remove_email(profile_user):
     user = profile_user
 

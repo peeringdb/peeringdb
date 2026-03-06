@@ -23,6 +23,7 @@ services:
       - "127.0.0.1:9200:9200"
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false # disable for testing
     networks:
       - peeringdb_network
     deploy:

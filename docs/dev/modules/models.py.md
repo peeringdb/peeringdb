@@ -1,4 +1,4 @@
-Generated from models.py on 2025-11-11 15:33:21.384068
+Generated from models.py on 2026-02-17 13:29:49.492138
 
 # peeringdb_server.models
 
@@ -1938,11 +1938,15 @@ are marked accordingly in the result.
 
 ---
 #### user_meets_email_requirements
-`def user_meets_email_requirements(self, user)`
+`def user_meets_email_requirements(self, user, verified_only=False)`
 
 If organization has `restrict_user_emails` set to true
 this will check the specified user's email addresses against
 the values stored in `email_domains`.
+
+Args:
+    user: User to check
+    verified_only: If True, only check verified email addresses (for affiliation requests)
 
 If the user has no email address that falls within the specified
 domain restrictions this will return `[]` and all associated user's email
@@ -1969,6 +1973,12 @@ OrganizationAPIKey(rest_framework_api_key.models.AbstractAPIKey, peeringdb_serve
 
 An API Key managed by an organization.
 
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- is_readonly (`@property`): Returns True if the API key has no write permissions (CREATE, UPDATE, DELETE).
 
 ## OrganizationAPIPermission
 
@@ -2473,15 +2483,16 @@ Remove user from 'guest' group.
 #### validate_rdap_relationship
 `def validate_rdap_relationship(self, rdap)`
 
-#Domain only matching
-email_domain = self.email.split("@")[1]
-for email in rdap.emails:
-    try:
-        domain = email.split("@")[1]
-        if email_domain == domain:
-            return True
-    except IndexError as inst:
-        pass
+Validates if the user has an email address that matches any email
+in the RDAP record.
+
+Checks both the primary email and all verified secondary email addresses.
+
+Arguments:
+    rdap: RdapAsn instance containing RDAP data
+
+Returns:
+    bool: True if any user email matches RDAP emails, False otherwise
 
 ---
 

@@ -51,9 +51,28 @@
   <input placeholder="{% trans "Token" %}" class="form-control" type="number" name="token-otp_token" min="1" max="999999" autofocus="autofocus" id="id_token-otp_token">
 
 {% else %}
-<table>
-  {{ wizard.form }}
-</table>
+
+  {% if wizard.form.non_field_errors %}
+  <div class="alert alert-danger">
+    {{ wizard.form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  {% for field in wizard.form %}
+    <div class="mb-3">
+      {% if field.errors %}
+      <div class="alert alert-danger">
+        {{ field.errors|striptags }}
+      </div>
+      {% endif %}
+      {{ field.label_tag }}
+      {{ field }}
+      {% if field.help_text %}
+      <small class="form-text text-muted">{{ field.help_text }}</small>
+      {% endif %}
+    </div>
+  {% endfor %}
+
 {% endif %}
 
 <script>

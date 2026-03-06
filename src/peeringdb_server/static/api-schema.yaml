@@ -886,6 +886,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1271,18 +1283,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1328,15 +1328,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -1766,10 +1757,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -2170,10 +2157,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -2669,6 +2652,12 @@ paths:
                   maximum: 4294967295
                   format: int64
                   description: number of exchanges at this facility
+                  minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
                   minimum: 0
                 suggest:
                   type: boolean
@@ -3195,10 +3184,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -3599,10 +3584,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -4098,6 +4079,12 @@ paths:
                   maximum: 4294967295
                   format: int64
                   description: number of exchanges at this facility
+                  minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
                   minimum: 0
                 sales_email:
                   type: string
@@ -4573,10 +4560,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -4977,10 +4960,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -5476,6 +5455,12 @@ paths:
                   maximum: 4294967295
                   format: int64
                   description: number of exchanges at this facility
+                  minimum: 0
+                carrier_count:
+                  type: integer
+                  maximum: 4294967295
+                  format: int64
+                  description: number of carriers at this facility
                   minimum: 0
                 suggest:
                   type: boolean
@@ -6169,18 +6154,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -6226,15 +6199,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -6523,10 +6487,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -7082,10 +7042,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -7594,10 +7550,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -8252,6 +8204,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -8847,10 +8811,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -9334,10 +9294,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -9740,10 +9696,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -10239,6 +10191,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -10768,10 +10726,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -11255,10 +11209,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -11661,10 +11611,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -12160,6 +12106,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -12642,10 +12594,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -13129,10 +13077,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -13535,10 +13479,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -14034,6 +13974,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -15110,18 +15056,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -15167,15 +15101,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -15626,10 +15551,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -16582,10 +16503,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -17485,10 +17402,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -18443,6 +18356,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -19425,10 +19350,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -20287,10 +20208,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -20693,10 +20610,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -21192,6 +21105,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -21745,10 +21664,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -22607,10 +22522,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -23013,10 +22924,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -23512,6 +23419,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -24017,10 +23930,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -24879,10 +24788,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -25285,10 +25190,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -25784,6 +25685,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -27032,10 +26939,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -28443,10 +28346,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -29507,10 +29406,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -30523,10 +30418,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -32020,18 +31911,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32077,15 +31956,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -32495,10 +32365,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -33279,10 +33145,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -34011,10 +33873,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -35460,10 +35318,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -36302,10 +36156,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -37096,10 +36946,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -37975,6 +37821,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: fac__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: fac__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38998,10 +38856,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -39687,10 +39541,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -40093,10 +39943,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -40592,6 +40438,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -41148,10 +41000,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -41837,10 +41685,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -42243,10 +42087,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -42742,6 +42582,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -43250,10 +43096,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -43939,10 +43781,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -44345,10 +44183,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -44844,6 +44678,12 @@ paths:
                       maximum: 4294967295
                       format: int64
                       description: number of exchanges at this facility
+                      minimum: 0
+                    carrier_count:
+                      type: integer
+                      maximum: 4294967295
+                      format: int64
+                      description: number of carriers at this facility
                       minimum: 0
                     suggest:
                       type: boolean
@@ -45444,6 +45284,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: ix_side__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: ix_side__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46416,6 +46268,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: net_side__carrier_count
+        in: query
+        description: 'number of carriers at this facility
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: net_side__city
         in: query
         description: 'Filter results by matching a value against this field.
@@ -47032,10 +46896,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -47734,10 +47594,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -48811,10 +48667,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -49513,10 +49365,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -50541,10 +50389,6 @@ paths:
                             - identifier
                         notes:
                           type: string
-                        require_2fa:
-                          type: boolean
-                          description: Require users in your organization to activate
-                            2FA.
                         net_set:
                           type: array
                           items:
@@ -51243,10 +51087,6 @@ paths:
                                 - identifier
                             notes:
                               type: string
-                            require_2fa:
-                              type: boolean
-                              description: Require users in your organization to activate
-                                2FA.
                             net_set:
                               type: array
                               items:
@@ -52424,18 +52264,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: latitude
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52518,15 +52346,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -52782,9 +52601,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -53274,9 +53090,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -53717,9 +53530,6 @@ paths:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -54386,18 +54196,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -54443,15 +54241,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -54740,10 +54529,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -55310,10 +55095,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -55833,10 +55614,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -56851,18 +56628,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56908,15 +56673,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -57717,18 +57473,6 @@ paths:
         required: false
         schema:
           type: integer
-      - name: org__last_notified
-        in: query
-        description: 'Date when the organization admins were notified about 2FA
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: date-time
       - name: org__name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57774,15 +57518,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__require_2fa
-        in: query
-        description: 'Require users in your organization to activate 2FA.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__restrict_user_emails
         in: query
         description: 'Require users in your organization to have email addresses within
@@ -58330,10 +58065,6 @@ paths:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -59510,9 +59241,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -59913,9 +59641,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -60411,6 +60136,12 @@ components:
           format: int64
           description: number of exchanges at this facility
           minimum: 0
+        carrier_count:
+          type: integer
+          maximum: 4294967295
+          format: int64
+          description: number of carriers at this facility
+          minimum: 0
         suggest:
           type: boolean
           writeOnly: true
@@ -60853,6 +60584,12 @@ components:
           format: int64
           description: number of exchanges at this facility
           minimum: 0
+        carrier_count:
+          type: integer
+          maximum: 4294967295
+          format: int64
+          description: number of carriers at this facility
+          minimum: 0
         suggest:
           type: boolean
           writeOnly: true
@@ -61278,9 +61015,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -61862,9 +61596,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -62348,9 +62079,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -62751,10 +62479,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -63251,6 +62975,12 @@ components:
               format: int64
               description: number of exchanges at this facility
               minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
+              minimum: 0
             suggest:
               type: boolean
               writeOnly: true
@@ -63717,9 +63447,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -65047,9 +64774,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -65908,9 +65632,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -66311,10 +66032,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -66811,6 +66528,12 @@ components:
               format: int64
               description: number of exchanges at this facility
               minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
+              minimum: 0
             suggest:
               type: boolean
               writeOnly: true
@@ -67291,9 +67014,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -68299,10 +68019,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -69283,9 +68999,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:
@@ -70254,9 +69967,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -71066,9 +70776,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -71754,9 +71461,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -72157,10 +71861,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -72657,6 +72357,12 @@ components:
               format: int64
               description: number of exchanges at this facility
               minimum: 0
+            carrier_count:
+              type: integer
+              maximum: 4294967295
+              format: int64
+              description: number of carriers at this facility
+              minimum: 0
             suggest:
               type: boolean
               writeOnly: true
@@ -73143,9 +72849,6 @@ components:
                     - identifier
                 notes:
                   type: string
-                require_2fa:
-                  type: boolean
-                  description: Require users in your organization to activate 2FA.
                 net_set:
                   type: array
                   items:
@@ -73842,10 +73545,6 @@ components:
                         - identifier
                     notes:
                       type: string
-                    require_2fa:
-                      type: boolean
-                      description: Require users in your organization to activate
-                        2FA.
                     net_set:
                       type: array
                       items:
@@ -74867,9 +74566,6 @@ components:
             - identifier
         notes:
           type: string
-        require_2fa:
-          type: boolean
-          description: Require users in your organization to activate 2FA.
         net_set:
           type: array
           items:
@@ -75265,9 +74961,6 @@ components:
                 - identifier
             notes:
               type: string
-            require_2fa:
-              type: boolean
-              description: Require users in your organization to activate 2FA.
             net_set:
               type: array
               items:

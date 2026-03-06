@@ -31,7 +31,7 @@
     <div class="col-4 col-sm-5 col-md-4" data-edit-name="prefix">{{ key.prefix }}</div>
     <div class="col-6 col-sm-5 col-md-6">
       <span data-edit-name="name">{{ key.name }}</span>
-      <span>{% if key.readonly %}({% trans "read-only" %}){% endif %}</span>
+      <span>{% if key.readonly %}({% trans "read-only" %}){% else %}({% trans "read-write" %}){% endif %}</span>
     </div>
     <div class="col-2 col-sm-2 col-md-2 right">
       <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>

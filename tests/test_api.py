@@ -25,6 +25,7 @@ import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 
+from .elasticsearch_test_mixin import ElasticsearchAPIMixin
 from .util import reset_group_ids
 
 DATETIME = datetime.datetime.now()
@@ -163,7 +164,7 @@ class DummyRestClient(RestClient):
 @pytest.mark.skipif(
     MFA_FORCE_HARD_START, reason="Basic auth API tests skipped when MFA is enforced."
 )
-class APITests(TestCase, api_test.TestJSON, api_test.Command):
+class APITests(ElasticsearchAPIMixin, TestCase, api_test.TestJSON, api_test.Command):
     """
     API tests
 

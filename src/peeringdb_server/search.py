@@ -18,6 +18,7 @@ from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
 
 from peeringdb_server.models import (
+    Carrier,
     Facility,
     InternetExchange,
     IXLanPrefix,
@@ -33,6 +34,7 @@ autocomplete_models = [
     Network,
     InternetExchange,
     Facility,
+    Carrier,
 ]
 
 # models considered during standard search
@@ -150,11 +152,12 @@ def search(term, autocomplete=False, user=None):
     if autocomplete:
         search_query = make_autocomplete_query(term, user)
         limit = settings.SEARCH_RESULTS_AUTOCOMPLETE_LIMIT
+        categories = ("fac", "ix", "net", "org", "carrier")
     else:
         search_query = make_search_query(term)
         limit = settings.SEARCH_RESULTS_LIMIT
+        categories = ("fac", "ix", "net", "org")
 
-    categories = ("fac", "ix", "net", "org")
     result = {tag: [] for tag in categories}
     pk_map = {tag: {} for tag in categories}
 

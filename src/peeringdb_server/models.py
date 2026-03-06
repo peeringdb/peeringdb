@@ -63,6 +63,7 @@ from django_grainy.models import Permission, PermissionManager
 from django_grainy.util import check_permissions
 from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
+from grainy.const import PERM_CREATE, PERM_DELETE, PERM_UPDATE
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
@@ -73,9 +74,11 @@ from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
+    validate_account_name,
     validate_address_space,
     validate_api_rate,
     validate_bool,
+    validate_django_ratelimit_rate,
     validate_email_domains,
     validate_info_prefixes4,
     validate_info_prefixes6,
@@ -337,6 +340,10 @@ class ParentStatusCheckMixin:
         :return:
         """
 
+        # Organizations have no parent, skip validation
+        if self.HandleRef.tag == "org":
+            return
+
         if not settings.DATA_QUALITY_VALIDATE_PARENT_STATUS:
             return
 
@@ -469,6 +476,7 @@ class LogoMixin(models.Model):
 
     logo = models.FileField(
         upload_to="logos_user_supplied/",
+        max_length=255,
         null=True,
         blank=True,
         help_text=_("Allows you to upload and set a logo image file for this object."),
@@ -1090,6 +1098,7 @@ class Organization(
     # dependencies installedd (libjpeg / Pillow)
     logo = models.FileField(
         upload_to="logos_user_supplied/",
+        max_length=255,
         null=True,
         blank=True,
         help_text=_(
@@ -1149,20 +1158,6 @@ class Organization(
         auto_now=False,
         auto_now_add=False,
         help_text="Date when the organization was flagged",
-    )
-
-    # restrict users in the organization to be required
-    # to always activate 2FA.
-    require_2fa = models.BooleanField(
-        default=False,
-        help_text=_("Require users in your organization to activate 2FA."),
-    )
-    last_notified = models.DateTimeField(
-        null=True,
-        blank=True,
-        auto_now=False,
-        auto_now_add=False,
-        help_text="Date when the organization admins were notified about 2FA",
     )
 
     class Meta(pdb_models.OrganizationBase.Meta):
@@ -1490,11 +1485,17 @@ class Organization(
 
         raise ValueError("Invalid format")
 
-    def user_meets_email_requirements(self, user) -> tuple[list, list]:
+    def user_meets_email_requirements(
+        self, user, verified_only=False
+    ) -> tuple[list, list]:
         """
         If organization has `restrict_user_emails` set to true
         this will check the specified user's email addresses against
         the values stored in `email_domains`.
+
+        Args:
+            user: User to check
+            verified_only: If True, only check verified email addresses (for affiliation requests)
 
         If the user has no email address that falls within the specified
         domain restrictions this will return `[]` and all associated user's email
@@ -1505,12 +1506,22 @@ class Organization(
         and all associated user's email addresses in `List`.
         """
 
-        email_list = list(
-            EmailAddress.objects.filter(user=user)
-            .order_by("-verified")
-            .values_list("email", flat=True)
-        )
+        if verified_only:
+            email_list = list(
+                EmailAddress.objects.filter(user=user, verified=True)
+                .order_by("-verified")
+                .values_list("email", flat=True)
+            )
+        else:
+            email_list = list(
+                EmailAddress.objects.filter(user=user)
+                .order_by("-verified")
+                .values_list("email", flat=True)
+            )
         if not email_list:
+            if verified_only:
+                # For affiliation requests, if no verified emails exist, cannot proceed
+                return ([], [])
             if not user.email:
                 # currently its still possible to null a users email address
                 # via django-admin / db and this is done in some edge cases where
@@ -1636,6 +1647,18 @@ class OrganizationAPIKey(AbstractAPIKey, StripFieldMixin):
     )
 
     status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
+
+    @property
+    def is_readonly(self):
+        """
+        Returns True if the API key has no write permissions (CREATE, UPDATE, DELETE).
+        """
+        WRITE_PERMS = PERM_CREATE | PERM_UPDATE | PERM_DELETE
+
+        for perm in self.grainy_permissions.all():
+            if perm.permission & WRITE_PERMS:
+                return False
+        return True
 
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "Organization API key"
@@ -1771,6 +1794,7 @@ class SponsorshipOrganization(StripFieldMixin):
 
     logo = models.FileField(
         upload_to="logos/",
+        max_length=255,
         null=True,
         blank=True,
         help_text=_(
@@ -1801,6 +1825,7 @@ class Partnership(StripFieldMixin):
 
     logo = models.FileField(
         upload_to="logos/",
+        max_length=255,
         null=True,
         blank=True,
         help_text=_(
@@ -1939,7 +1964,7 @@ class Campus(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         return qset.filter(**make_relation_filter(field, filt, value))
@@ -2065,6 +2090,12 @@ class Facility(
         null=False,
         default=0,
     )
+    carrier_count = models.PositiveIntegerField(
+        _("number of carriers at this facility"),
+        help_text=_("number of carriers at this facility"),
+        null=False,
+        default=0,
+    )
 
     notified_for_geocoords = models.BooleanField(
         default=False,
@@ -2075,7 +2106,7 @@ class Facility(
     # this afterwards
     class HandleRef:
         tag = "fac"
-        delete_cascade = ["ixfac_set", "netfac_set"]
+        delete_cascade = ["ixfac_set", "netfac_set", "carrierfac_set"]
 
     parent_relations = ["org"]
 
@@ -2109,13 +2140,13 @@ class Facility(
         Relationship through netfac -> net
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = NetworkFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[i.facility_id for i in q])
+        return qset.filter(id__in=q.values_list("facility_id", flat=True))
 
     @classmethod
     def not_related_to_net(cls, value=None, filt=None, field="network_id", qset=None):
@@ -2126,13 +2157,13 @@ class Facility(
         Relationship through netfac -> net
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = NetworkFacility.handleref.filter(**filt)
-        return qset.exclude(id__in=[i.facility_id for i in q])
+        return qset.exclude(id__in=q.values_list("facility_id", flat=True))
 
     @classmethod
     def related_to_multiple_networks(
@@ -2149,19 +2180,23 @@ class Facility(
         if not len(value_list):
             raise ValueError("List must contain at least one network id")
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         value = value_list.pop(0)
         filt = make_relation_filter(field, None, value)
         netfac_qset = NetworkFacility.handleref.filter(**filt)
-        final_queryset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+        final_queryset = qset.filter(
+            id__in=netfac_qset.values_list("facility_id", flat=True)
+        )
 
         # Need the intersection of the next networks
         for value in value_list:
             filt = make_relation_filter(field, None, value)
             netfac_qset = NetworkFacility.handleref.filter(**filt)
-            fac_qset = qset.filter(id__in=[nf.facility_id for nf in netfac_qset])
+            fac_qset = qset.filter(
+                id__in=netfac_qset.values_list("facility_id", flat=True)
+            )
             final_queryset = final_queryset & fac_qset
 
         return final_queryset
@@ -2175,13 +2210,13 @@ class Facility(
         Relationship through ixfac -> ix
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = InternetExchangeFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[i.facility_id for i in q])
+        return qset.filter(id__in=q.values_list("facility_id", flat=True))
 
     @classmethod
     def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -2192,13 +2227,13 @@ class Facility(
         Relationship through ixfac -> ix
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = InternetExchangeFacility.handleref.filter(**filt)
-        return qset.exclude(id__in=[i.facility_id for i in q])
+        return qset.exclude(id__in=q.values_list("facility_id", flat=True))
 
     @classmethod
     def overlapping_asns(cls, asns, qset=None):
@@ -2245,7 +2280,7 @@ class Facility(
             if len(list(collected_asns.keys())) == count:
                 shared_facilities.append(fac_id)
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         return qset.filter(id__in=shared_facilities)
@@ -2485,13 +2520,13 @@ class InternetExchange(
         Relationship through ixlan.
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value, prefix="ixlan")
 
         q = IXLan.handleref.filter(**filt)
-        return qset.filter(id__in=[ix.ix_id for ix in q])
+        return qset.filter(id__in=q.values_list("ix_id", flat=True))
 
     @classmethod
     def related_to_ixfac(cls, value=None, filt=None, field="ixfac_id", qset=None):
@@ -2502,13 +2537,13 @@ class InternetExchange(
         Relationship through ixfac.
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value, prefix="ixfac")
 
         q = InternetExchangeFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[ix.ix_id for ix in q])
+        return qset.filter(id__in=q.values_list("ix_id", flat=True))
 
     @classmethod
     def related_to_fac(cls, filt=None, value=None, field="facility_id", qset=None):
@@ -2519,12 +2554,12 @@ class InternetExchange(
         Relationship through ixfac -> fac
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
         q = InternetExchangeFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[ix.ix_id for ix in q])
+        return qset.filter(id__in=q.values_list("ix_id", flat=True))
 
     @classmethod
     def related_to_net(cls, filt=None, value=None, field="network_id", qset=None):
@@ -2535,12 +2570,12 @@ class InternetExchange(
         Relationship through netixlan -> ixlan
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
-        q = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
-        return qset.filter(id__in=[nx.ixlan.ix_id for nx in q])
+        q = NetworkIXLan.handleref.filter(**filt)
+        return qset.filter(id__in=q.values_list("ixlan__ix_id", flat=True))
 
     @classmethod
     def related_to_multiple_networks(
@@ -2557,21 +2592,23 @@ class InternetExchange(
         if not len(value_list):
             raise ValueError("List must contain at least one network id")
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         value = value_list.pop(0)
         filt = make_relation_filter(field, None, value)
-        netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
-        final_queryset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
+        netixlan_qset = NetworkIXLan.handleref.filter(**filt)
+        final_queryset = qset.filter(
+            id__in=netixlan_qset.values_list("ixlan__ix_id", flat=True)
+        )
 
         # Need the intersection of the next networks
         for value in value_list:
             filt = make_relation_filter(field, None, value)
-            netixlan_qset = NetworkIXLan.handleref.filter(**filt).select_related(
-                "ixlan"
+            netixlan_qset = NetworkIXLan.handleref.filter(**filt)
+            ix_qset = qset.filter(
+                id__in=netixlan_qset.values_list("ixlan__ix_id", flat=True)
             )
-            ix_qset = qset.filter(id__in=[nx.ixlan.ix_id for nx in netixlan_qset])
             final_queryset = final_queryset & ix_qset
 
         return final_queryset
@@ -2585,12 +2622,12 @@ class InternetExchange(
         Relationship through netixlan -> ixlan
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
-        q = NetworkIXLan.handleref.filter(**filt).select_related("ixlan")
-        return qset.exclude(id__in=[nx.ixlan.ix_id for nx in q])
+        q = NetworkIXLan.handleref.filter(**filt)
+        return qset.exclude(id__in=q.values_list("ixlan__ix_id", flat=True))
 
     @classmethod
     def related_to_ipblock(cls, ipblock, qset=None):
@@ -2601,14 +2638,12 @@ class InternetExchange(
         Relationship  through ixlan -> ixpfx
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
-        q = IXLanPrefix.objects.select_related("ixlan").filter(
-            prefix__startswith=ipblock
-        )
+        q = IXLanPrefix.objects.filter(prefix__startswith=ipblock)
 
-        return qset.filter(id__in=[pfx.ixlan.ix_id for pfx in q])
+        return qset.filter(id__in=q.values_list("ixlan__ix_id", flat=True))
 
     @classmethod
     def overlapping_asns(cls, asns, qset=None):
@@ -2655,7 +2690,7 @@ class InternetExchange(
             if len(list(collected_asns.keys())) == count:
                 shared_exchanges.append(ix_id)
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         return qset.filter(id__in=shared_exchanges)
@@ -2678,7 +2713,7 @@ class InternetExchange(
           this existing query set
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         # prepar field filters
@@ -3011,7 +3046,7 @@ class InternetExchangeFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -3025,7 +3060,7 @@ class InternetExchangeFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.filter(status="ok")
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -3037,7 +3072,7 @@ class InternetExchangeFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -4785,7 +4820,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
 
         Relationship through ixlan -> ix
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         filt = make_relation_filter(f"ixlan__{field}", filt, value)
         return qset.filter(**filt)
@@ -4797,7 +4832,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         the supplied ipaddress.
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         ids = []
@@ -5010,13 +5045,13 @@ class Network(
 
         Relationship through netfac -> fac
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = NetworkFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[i.network_id for i in q])
+        return qset.filter(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def not_related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
@@ -5026,13 +5061,13 @@ class Network(
 
         Relationship through netfac -> fac
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
         q = NetworkFacility.handleref.filter(**filt)
-        return qset.exclude(id__in=[i.network_id for i in q])
+        return qset.exclude(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def related_to_netfac(cls, value=None, filt=None, field="id", qset=None):
@@ -5042,12 +5077,12 @@ class Network(
 
         Relationship through netfac
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value, prefix="netfac")
         q = NetworkFacility.handleref.filter(**filt)
-        return qset.filter(id__in=[i.network_id for i in q])
+        return qset.filter(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def related_to_netixlan(cls, value=None, filt=None, field="id", qset=None):
@@ -5057,13 +5092,13 @@ class Network(
 
         Relationship through netixlan.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value, prefix="netixlan")
 
         q = NetworkIXLan.handleref.filter(**filt)
-        return qset.filter(id__in=[i.network_id for i in q])
+        return qset.filter(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def related_to_ixlan(cls, value=None, filt=None, field="ixlan_id", qset=None):
@@ -5074,12 +5109,12 @@ class Network(
         Relationship through netixlan -> ixlan
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
         q = NetworkIXLan.handleref.filter(**filt)
-        return qset.filter(id__in=[i.network_id for i in q])
+        return qset.filter(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -5090,13 +5125,13 @@ class Network(
         Relationship through netixlan -> ixlan -> ix
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(f"ixlan__{field}", filt, value)
 
-        q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
-        return qset.filter(id__in=[i.network_id for i in q])
+        q = NetworkIXLan.handleref.filter(**filt)
+        return qset.filter(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def not_related_to_ix(cls, value=None, filt=None, field="ix_id", qset=None):
@@ -5107,19 +5142,19 @@ class Network(
         Relationship through netixlan -> ixlan -> ix
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(f"ixlan__{field}", filt, value)
-        q = NetworkIXLan.handleref.select_related("ixlan").filter(**filt)
-        return qset.exclude(id__in=[i.network_id for i in q])
+        q = NetworkIXLan.handleref.filter(**filt)
+        return qset.exclude(id__in=q.values_list("network_id", flat=True))
 
     @classmethod
     def as_set_map(cls, qset=None):
         """
         Returns a dict mapping asns to their irr_as_set value.
         """
-        if not qset:
+        if qset is None:
             qset = cls.objects.filter(status="ok").order_by("asn")
         return {net.asn: net.irr_as_set for net in qset}
 
@@ -5420,7 +5455,7 @@ class NetworkFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -5434,7 +5469,7 @@ class NetworkFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.filter(status="ok")
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -5446,7 +5481,7 @@ class NetworkFacility(
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -5591,13 +5626,13 @@ class NetworkIXLan(
         Relationship through ixlan -> ix
         """
 
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
 
         filt = make_relation_filter(field, filt, value)
 
-        q = IXLan.handleref.select_related("ix").filter(**filt)
-        return qset.filter(ixlan_id__in=[i.id for i in q])
+        q = IXLan.handleref.filter(**filt)
+        return qset.filter(ixlan_id__in=q.values_list("id", flat=True))
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="ix__name", qset=None):
@@ -5993,7 +6028,7 @@ class CarrierFacility(pdb_models.CarrierFacilityBase, StripFieldMixin):
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -6007,7 +6042,7 @@ class CarrierFacility(pdb_models.CarrierFacilityBase, StripFieldMixin):
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.filter(status="ok")
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -6019,7 +6054,7 @@ class CarrierFacility(pdb_models.CarrierFacilityBase, StripFieldMixin):
 
         Relationship through facility.
         """
-        if not qset:
+        if qset is None:
             qset = cls.handleref.undeleted()
         return qset.filter(**make_relation_filter(field, filt, value))
 
@@ -6053,8 +6088,12 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     email = models.EmailField(
         _("email address"), max_length=254, null=True, unique=True
     )
-    first_name = models.CharField(_("first name"), max_length=254, blank=True)
-    last_name = models.CharField(_("last name"), max_length=254, blank=True)
+    first_name = models.CharField(
+        _("first name"), max_length=254, blank=True, validators=[validate_account_name]
+    )
+    last_name = models.CharField(
+        _("last name"), max_length=254, blank=True, validators=[validate_account_name]
+    )
     is_staff = models.BooleanField(
         _("staff status"),
         default=False,
@@ -6396,7 +6435,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
                 message,
                 from_email,
                 [email],
-                headers={"Auto-Submitted": "auto-generated", "Return-Path": "<>"},
+                headers={"Auto-Submitted": "auto-generated"},
             )
             mail.send(fail_silently=False)
         else:
@@ -6549,21 +6588,29 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
 
     def validate_rdap_relationship(self, rdap):
         """
-        #Domain only matching
-        email_domain = self.email.split("@")[1]
-        for email in rdap.emails:
-            try:
-                domain = email.split("@")[1]
-                if email_domain == domain:
-                    return True
-            except IndexError as inst:
-                pass
+        Validates if the user has an email address that matches any email
+        in the RDAP record.
+
+        Checks both the primary email and all verified secondary email addresses.
+
+        Arguments:
+            rdap: RdapAsn instance containing RDAP data
+
+        Returns:
+            bool: True if any user email matches RDAP emails, False otherwise
         """
 
-        # Exact email matching
+        # Check primary email (stored on User model)
         for email in rdap.emails:
             if email and self.email and email.lower() == self.email.lower():
                 return True
+
+        # Check all verified secondary emails (from allauth EmailAddress)
+        for email_address in self.emailaddress_set.filter(verified=True):
+            for rdap_email in rdap.emails:
+                if rdap_email and rdap_email.lower() == email_address.email.lower():
+                    return True
+
         return False
 
     @transaction.atomic()
@@ -6862,6 +6909,11 @@ class EnvironmentSetting(StripFieldMixin):
                 "API_THROTTLE_ORGANIZATION_USERS",
                 _("API: Request Organization Users API Limiting"),
             ),
+            # web page rate limiting for unauthenticated requests (#1849)
+            (
+                "RATELIMIT_WEB_PAGE_RATE",
+                _("Web: Anonymous web page rate limit"),
+            ),
             # show database last sync
             (
                 "DATABASE_LAST_SYNC",
@@ -6931,6 +6983,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_RATE_USER_MSG": "value_str",
         "API_THROTTLE_RATE_WRITE": "value_str",
         "API_THROTTLE_ORGANIZATION_USERS": "value_str",
+        "RATELIMIT_WEB_PAGE_RATE": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
         "TUTORIAL_MODE_MESSAGE": "value_str",
     }
@@ -6956,6 +7009,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_MELISSA_ENABLED_IP": [validate_bool],
         "API_THROTTLE_RATE_WRITE": [validate_api_rate],
         "API_THROTTLE_ORGANIZATION_USERS": [validate_api_rate],
+        "RATELIMIT_WEB_PAGE_RATE": [validate_django_ratelimit_rate],
     }
 
     @classmethod

@@ -234,14 +234,19 @@ h5 {
 }
 
 .btn-export-ui-next {
-  background-color: transparent;
-  color: #212529;
+  background-color: var(--button-regular-color);
+  color: var(--button-text-color-1);
   display: inline-block;
   text-decoration: none;
   /* font-weight: bold; */
   padding: 5px 10px 5px 10px;
   border-radius: 5px;
   border: none;
+}
+
+#export-field,
+#export-format {
+  border-color: #818181 !important;
 }
 
 .btn-danger {
@@ -618,6 +623,20 @@ div.view_info .theme-container h3{
   text-align: center;
 }
 
+div.view_info .theme-container .btn-outline-dark,
+#ui-next-rejected.btn-outline-dark,
+#ui-next-enabled.btn-outline-dark,
+#asn-connectivity-facility.btn-outline-dark,
+#asn-connectivity-exchange.btn-outline-dark,
+#match-filter-show-all.btn-outline-dark,
+#match-filter-any-match.btn-outline-dark,
+#match-filter-all-match.btn-outline-dark
+{
+  background-color: transparent !important;
+  color: var(--heading-color) !important;
+  border-color: var(--heading-color) !important;
+}
+
 div.view_info .theme-container .btn-outline-dark.active,
 #ui-next-rejected.btn-outline-dark.active,
 #ui-next-enabled.btn-outline-dark.active,
@@ -627,7 +646,9 @@ div.view_info .theme-container .btn-outline-dark.active,
 #match-filter-any-match.btn-outline-dark.active,
 #match-filter-all-match.btn-outline-dark.active
 {
-  background-color: var(--button-hover-color) !important;
+  background-color: var(--button-regular-color) !important;
+  color: var(--button-text-color-1) !important;
+  border-color: var(--button-regular-color) !important;
 }
 
 #match-filter-any-match.btn-outline-dark:disabled,
