@@ -6435,7 +6435,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
                 message,
                 from_email,
                 [email],
-                headers={"Auto-Submitted": "auto-generated", "Return-Path": "<>"},
+                headers={"Auto-Submitted": "auto-generated"},
             )
             mail.send(fail_silently=False)
         else:
