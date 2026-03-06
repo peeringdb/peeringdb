@@ -231,14 +231,21 @@ def order_results_alphabetically(
     return result
 
 
-def construct_asn_query(term: str) -> dict:
+def construct_asn_number_query(term: str) -> dict:
     """
-    Constructs Elasticsearch query for ASN searches.
+    Constructs Elasticsearch query for numeric search terms.
+
+    When a search term contains only digits, this searches both:
+    - ASN fields (asn, asn.raw) - for ASN number searches
+    - Name fields (name, name_long, aka) - for networks with numeric names
+
+    This ensures networks with all-digit names are discoverable.
+    Fixes: https://github.com/peeringdb/peeringdb/issues/1850
 
     Args:
-        term (str): The ASN number as string
+        term (str): The numeric search term as a string
     Returns:
-        dict: Elasticsearch query body for ASN search
+        dict: Elasticsearch query body for numeric search
     """
     return {
         "query": {
@@ -251,7 +258,7 @@ def construct_asn_query(term: str) -> dict:
                                     "term": {
                                         "asn": {
                                             "value": int(term),
-                                            "boost": settings.ES_MATCH_PHRASE_BOOST,
+                                            "boost": settings.ES_MATCH_ASN_BOOST,
                                         }
                                     }
                                 },
@@ -261,6 +268,22 @@ def construct_asn_query(term: str) -> dict:
                                             "value": int(term),
                                             "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                         }
+                                    }
+                                },
+                                {
+                                    "multi_match": {
+                                        "query": term,
+                                        "type": "phrase",
+                                        "fields": ["name", "name_long", "aka"],
+                                        "boost": settings.ES_MATCH_PHRASE_BOOST,
+                                    }
+                                },
+                                {
+                                    "multi_match": {
+                                        "query": term,
+                                        "type": "phrase_prefix",
+                                        "fields": ["name", "name_long", "aka"],
+                                        "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                     }
                                 },
                             ],
@@ -378,6 +401,10 @@ def construct_name_query(clean_term: str, term: str) -> dict:
     """
     Constructs Elasticsearch query for name-based searches.
 
+    Fixes issue #1787 and #1774 where fields name_long and city were not included in the search.
+    https://github.com/peeringdb/peeringdb/issues/1787
+    https://github.com/peeringdb/peeringdb/issues/1774
+
     Args:
         term (str): The search term
     Returns:
@@ -394,7 +421,7 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase",
-                                        "fields": ["name", "aka"],
+                                        "fields": ["name", "name_long", "aka", "city"],
                                         "boost": settings.ES_MATCH_PHRASE_BOOST,
                                     }
                                 },
@@ -402,14 +429,14 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase_prefix",
-                                        "fields": ["name", "aka"],
+                                        "fields": ["name", "name_long", "aka", "city"],
                                         "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                     }
                                 },
                                 {
                                     "query_string": {
                                         "query": term,
-                                        "fields": ["name", "aka"],
+                                        "fields": ["name", "name_long", "aka", "city"],
                                         "boost": settings.ES_QUERY_STRING_BOOST,
                                     }
                                 },
@@ -447,7 +474,7 @@ def construct_query_body(
     """
     clean_term = term.replace("*", "").replace("AND", "").strip()
     if clean_term.isdigit():
-        body = construct_asn_query(clean_term)
+        body = construct_asn_number_query(clean_term)
     elif ipv4_construct:
         body = construct_ipv4_query(clean_term)
     elif ipv6_construct:
@@ -494,6 +521,22 @@ def construct_query_body(
                 if index in indexes:
                     # if found the object index then the search will adjust the elasticsearch index to that object index
                     body["query"]["bool"]["must"] = {"term": {"_index": index}}
+
+                    # https://github.com/peeringdb/peeringdb/issues/1833
+                    # IX objects don't have direct latitude/longitude fields (only via facilities),
+                    # so remove geo_distance filter which would incorrectly exclude all IXs
+                    if index == "ix":
+                        current_filter = body["query"]["bool"].get("filter")
+                        if isinstance(current_filter, list):
+                            body["query"]["bool"]["filter"] = [
+                                f for f in current_filter if "geo_distance" not in f
+                            ]
+                        elif (
+                            isinstance(current_filter, dict)
+                            and "geo_distance" in current_filter
+                        ):
+                            del body["query"]["bool"]["filter"]
+
                     # remove the index name from the query
                     base_query = base_query.replace(f"*{index}*", "")
                     body["query"]["bool"]["must"]["query_string"]["query"] = base_query

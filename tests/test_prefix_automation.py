@@ -63,7 +63,12 @@ class PrefixAutomationTestCase(TestCase):
             "status_dashboard": "",
         }
 
+    @override_settings(TICKET_CREATION_PREFIXAUTO=False)
     def test_ix_create_auto_approved(self):
+        """
+        Test that when IX is auto-approved via prefix automation,
+        NO ticket is created with default setting (False)
+        """
         auth = base64.b64encode(b"user_ok:user_ok").decode("utf-8")
         self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
         request = self.client.post(
@@ -73,11 +78,38 @@ class PrefixAutomationTestCase(TestCase):
         )
         self.assertEqual(request.data["status"], "ok")
         self.assertEqual(request.status_code, 201)
+
+        # No ticket should be created when automation succeeds
+        subject = f"[PREFIXAUTO] Approval granted to Internet Exchange '{self.payload['name']}' created by user 'user_ok'"
+        deskpro = models.DeskProTicket.objects.filter(subject__icontains=subject)
+        self.assertFalse(deskpro.exists())
+
+    @override_settings(TICKET_CREATION_PREFIXAUTO=True)
+    def test_ix_create_auto_approved_with_ticket_enabled(self):
+        """
+        Test that when IX is auto-approved and TICKET_CREATION_PREFIXAUTO=True,
+        a ticket IS created
+        """
+        auth = base64.b64encode(b"user_ok:user_ok").decode("utf-8")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
+        request = self.client.post(
+            "/api/ix",
+            data=self.payload,
+            format="json",
+        )
+        self.assertEqual(request.data["status"], "ok")
+        self.assertEqual(request.status_code, 201)
+
+        # Ticket should be created when setting is enabled
         subject = f"[PREFIXAUTO] Approval granted to Internet Exchange '{self.payload['name']}' created by user 'user_ok'"
         deskpro = models.DeskProTicket.objects.filter(subject__icontains=subject)
         self.assertTrue(deskpro.exists())
 
     def test_ix_create_pending(self):
+        """
+        Test that when IX creation is pending (automation doesn't apply),
+        no PREFIXAUTO ticket is created
+        """
         auth = base64.b64encode(b"user_pending:user_pending").decode("utf-8")
         self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
         request = self.client.post(
@@ -87,6 +119,8 @@ class PrefixAutomationTestCase(TestCase):
         )
         self.assertEqual(request.data["status"], "pending")
         self.assertEqual(request.status_code, 201)
-        subject = f"[PREFIXAUTO] Approval granted to Internet Exchange '{self.payload['name']}' created by user 'user_ok'"
+
+        # No PREFIXAUTO ticket for pending items (automation didn't run)
+        subject = f"[PREFIXAUTO]"
         deskpro = models.DeskProTicket.objects.filter(subject__icontains=subject)
         self.assertFalse(deskpro.exists())

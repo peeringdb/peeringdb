@@ -1,5 +1,6 @@
 import json
 
+from allauth.account.models import EmailAddress
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import REFTAG_MAP, User
@@ -17,6 +18,10 @@ class TestAPIClientCompat(ClientCase):
         super().setUpTestData()
         cls.superuser = User.objects.create_user(
             "su", "neteng@20c.com", "su", is_superuser=True
+        )
+
+        EmailAddress.objects.create(
+            user=cls.superuser, email="neteng@20c.com", verified=True, primary=True
         )
         cls.org = REFTAG_MAP["org"].objects.create(name="Test Org", status="ok")
 

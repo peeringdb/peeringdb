@@ -19,12 +19,21 @@ PeeringDB = {
     return (typeof grecaptcha == "object");
   },
 
-  handle_xhr_json_error : function(response, name) {
+  handle_xhr_json_error : function(response, name, context) {
     if(response.responseJSON && response.responseJSON[name]) {
-      return response.responseJSON[name]
-    } else {
-      return twentyc.editable.error.humanize("Http"+response.status);
+      return response.responseJSON[name];
     }
+
+    if (context === "file-upload" && response.status === 403) {
+      if (response.responseJSON !== undefined) {
+        // Backend returned JSON (even if empty {}) = permission denied
+        return gettext("You do not have permission to perform this action");
+      }
+      // No JSON = WAF/content blocking
+      return gettext("The upload failed - This is not related to the apparent file size or type, but appears to be an issue with the file itself.");
+    }
+
+    return twentyc.editable.error.humanize("Http" + response.status);
   },
 
   escape_html: function(string) {
@@ -1535,6 +1544,15 @@ twentyc.editable.module.register(
     key_prefix : function() {
       return this.container.data("edit-key-prefix");
     },
+    update_readonly_label : function(is_readonly) {
+      var readonlyLabel = this.container.find(".row.header .readonly-label");
+
+      if(is_readonly) {
+        readonlyLabel.text("(" + gettext("read-only") + ")");
+      } else {
+        readonlyLabel.text("(" + gettext("read-write") + ")");
+      }
+    },
     prepare_data : function(extra) {
       var perms = 0;
       if(this.target.data.perm_u)
@@ -1572,6 +1590,9 @@ twentyc.editable.module.register(
       this.prepare_data();
       this.target.execute("update", this.components.add, function(response) {
         this.add(data.entity, trigger, container, data);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
@@ -1581,14 +1602,20 @@ twentyc.editable.module.register(
       this.prepare_data({perms:0, entity:row.data("edit-id")});
       this.target.execute("remove", trigger, function(response) {
         this.listing_execute_remove(trigger, container);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
     submit : function(rowId, data, row, trigger, container) {
       this.target.data = data;
       this.prepare_data({entity:rowId});
-      this.target.execute("update", row, function() {
+      this.target.execute("update", row, function(response) {
         this.listing_submit(rowId, data, row, trigger, container);
+        if(response.is_readonly !== undefined) {
+          this.update_readonly_label(response.is_readonly);
+        }
       }.bind(this));
     },
 
@@ -1859,8 +1886,11 @@ twentyc.editable.module.register(
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
       this.target.execute("add", this.components.add, function(response) {
-        if(response.readonly)
-          response.name = response.name + " (read-only)";
+        var isReadonly = response.is_readonly || response.readonly;
+        if(isReadonly)
+          response.name = response.name + " (" + gettext("read-only") + ")";
+        else
+          response.name = response.name + " (" + gettext("read-write") + ")";
         this.add(data.entity, trigger, container, response);
         this.api_key_popin(response.key)
       }.bind(this));
@@ -1928,13 +1958,25 @@ twentyc.editable.module.register(
     },
 
     execute_register : function(trigger, container) {
+      // Export form data including password from editable framework
+      this.components.add.editable("export", this.target.data);
+      var password = this.target.data.password;
+
+      if (!password) {
+        $("#errors-alert").html(`<div class="alert alert-danger">${gettext("Please enter your current password to add a security key.")}</div>`);
+        container.editable("loading-shim", "hide");
+        return;
+      }
+
       SecurityKeys.request_registration(
+        password,
         (credential_json) => {
-          this.components.add.editable("export", this.target.data);
           this.target.data.credential = credential_json;
           var data = this.target.data;
           this.target.execute("add", this.components.add, (response) => {
             this.add(data.entity, trigger, container, response);
+
+            $("#errors-alert").html('');
 
             // refresh to pick up django-two-factor page changes
             // from new registration
@@ -1943,7 +1985,7 @@ twentyc.editable.module.register(
           });
         },
         (exc) => {
-          $("#errors-alert").html(`<div class="alert alert-danger">${exc.message}</div>`)
+          $("#errors-alert").html(`<div class="alert alert-danger">${$('<div>').text(exc.message).html()}</div>`)
           container.editable("loading-shim", "hide");
           console.error(exc);
         }
@@ -2004,18 +2046,39 @@ twentyc.editable.module.register(
         container.editable("loading-shim", "hide")
         return
       }
-      this.components.add.editable("export", this.target.data);
-      var data = this.target.data;
-      var id = data.id = row.data("edit-id")
-      this.target.execute("remove", trigger, function(response) {
-        this.listing_remove(id, row, trigger, container);
 
-        // refresh to pick up django-two-factor page changes
-        // from removal
-        document.location.href = document.location.href;
+      // Request 2FA verification via security key before removal
+      var me = this;
+      alert(gettext("For security, please verify with your security key to remove this key."));
 
+      SecurityKeys.request_authenticate(
+        "",
+        false,
+        (payload) => {
+          me.components.add.editable("export", me.target.data);
+          var data = me.target.data;
+          var id = data.id = row.data("edit-id");
+          data.credential = payload.credential;
 
-      }.bind(this));
+          me.target.execute("remove", trigger, function(response) {
+            me.listing_remove(id, row, trigger, container);
+
+            // refresh to pick up django-two-factor page changes
+            // from removal
+            document.location.href = document.location.href;
+          }.bind(me));
+        },
+        () => {
+          $("#errors-alert").html(`<div class="alert alert-danger">${gettext("No security key credentials provided")}</div>`);
+          container.editable("loading-shim", "hide");
+        },
+        (exc) => {
+          $("#errors-alert").html(`<div class="alert alert-danger">${gettext("Security key authentication failed")}: ${$('<div>').text(exc.message).html()}</div>`);
+          container.editable("loading-shim", "hide");
+          console.error(exc);
+        },
+        true  // ignore_credential_filter - accept all security keys for 2FA verification
+      );
     }
 
   },
@@ -2056,7 +2119,7 @@ twentyc.editable.module.register(
           });
         },
         (exc) => {
-          $("#errors-alert").html(`<div class="alert alert-danger">${exc.message}</div>`)
+          $("#errors-alert").html(`<div class="alert alert-danger">${$('<div>').text(exc.message).html()}</div>`)
           container.editable("loading-shim", "hide");
           console.error(exc);
         }
@@ -4662,7 +4725,7 @@ twentyc.editable.input.register(
         this.element.find('.loading-shim').hide();
       }).fail((r) => {
         // failure - show validation error
-        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name))
+        this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
         this.element.find('.loading-shim').hide();
       });
     },
@@ -4708,7 +4771,7 @@ twentyc.editable.input.register(
           }
           this.show_validation_error(gettext("File size too big")+maxSize);
         } else {
-          this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name));
+          this.show_validation_error(PeeringDB.handle_xhr_json_error(r, name, "file-upload"));
         }
 
         this.element.find('.loading-shim').hide();

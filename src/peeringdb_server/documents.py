@@ -176,7 +176,7 @@ class GeocodeMixin(StatusMixin):
 
         facilities = self.cached_facilities(instance)
 
-        if facilities is not None:
+        if facilities:
             coordinates = []
             for facility in facilities:
                 if is_valid_latitude(facility.latitude) and is_valid_longitude(
@@ -187,12 +187,15 @@ class GeocodeMixin(StatusMixin):
                     )
             return coordinates
 
-        if instance.latitude and instance.longitude:
-            if not is_valid_latitude(instance.latitude):
+        latitude = getattr(instance, "latitude", None)
+        longitude = getattr(instance, "longitude", None)
+
+        if latitude is not None and longitude is not None:
+            if not is_valid_latitude(latitude):
                 return None
-            if not is_valid_longitude(instance.longitude):
+            if not is_valid_longitude(longitude):
                 return None
-            return {"lat": instance.latitude, "lon": instance.longitude}
+            return {"lat": latitude, "lon": longitude}
         return None
 
     def prepare_country(self, instance):
@@ -206,11 +209,15 @@ class GeocodeMixin(StatusMixin):
         """
 
         facilities = self.cached_facilities(instance)
-        if facilities is not None:
+
+        # Fixes issue #1833 where IX that doesn't have facilities will just populate blank list to elasticsearch.
+        # https://github.com/peeringdb/peeringdb/issues/1833
+        if facilities:
             countries = [facility.country.code for facility in facilities]
             return list(set(countries))
 
-        return instance.country.code if instance.country else None
+        country = getattr(instance, "country", None)
+        return country.code if country else None
 
     def prepare_state(self, instance):
         """
@@ -223,11 +230,11 @@ class GeocodeMixin(StatusMixin):
         """
 
         facilities = self.cached_facilities(instance)
-        if facilities is not None:
+        if facilities:
             states = [facility.state for facility in facilities]
             return list(set(states))
 
-        return instance.state
+        return getattr(instance, "state", None)
 
 
 @registry.register_document

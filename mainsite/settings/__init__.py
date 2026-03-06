@@ -653,6 +653,10 @@ set_option("NEGATIVE_CACHE_REPEATED_RATE_LIMIT", 10)
 # global on / off switch for negative cache
 set_option("NEGATIVE_CACHE_ENABLED", True)
 
+# Rate limit unauthenticated web page requests (non-API) (#1849)
+# Set to empty string to disable rate limiting
+set_option("RATELIMIT_WEB_PAGE_RATE", "120/m")
+
 
 # Django config
 
@@ -668,7 +672,16 @@ ADMINS = [
 MANAGERS = ADMINS
 
 set_option("MEDIA_ROOT", os.path.abspath(os.path.join(BASE_DIR, "media")))
-MEDIA_URL = f"/m/{PEERINGDB_VERSION}/"
+
+# S3 media storage configuration
+set_option("AWS_MEDIA_BUCKET_NAME", "")
+set_option("AWS_S3_REGION_NAME", "us-east-1")
+set_option("AWS_S3_CUSTOM_DOMAIN", "")
+
+if AWS_MEDIA_BUCKET_NAME:
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN or f'{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com'}/media/"
+else:
+    MEDIA_URL = "/m/"
 
 set_option("STATIC_ROOT", os.path.abspath(os.path.join(BASE_DIR, "static")))
 STATIC_URL = f"/s/{PEERINGDB_VERSION}/"
@@ -701,6 +714,10 @@ cache_names = ["default", "negative", "session", "error_emails", "geo"]
 for cache_name in cache_names:
     if cache_name not in CACHES:
         CACHES[cache_name] = get_cache_backend(cache_name)
+
+# When enabled, redis cache errors will be silently ignored
+# rather than crashing the request
+set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False)
 
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose
@@ -887,10 +904,27 @@ STATICFILES_FINDERS = (
 set_option(
     "WHITENOISE_STATICFILES_BACKEND", "whitenoise.storage.CompressedStaticFilesStorage"
 )
-STORAGES = {
-    "default": {
+if AWS_MEDIA_BUCKET_NAME:
+    _DEFAULT_STORAGE = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "bucket_name": AWS_MEDIA_BUCKET_NAME,
+            "region_name": AWS_S3_REGION_NAME,
+            "location": "media",
+            "querystring_auth": False,
+            "default_acl": "public-read",
+            "file_overwrite": False,
+        },
+    }
+    if AWS_S3_CUSTOM_DOMAIN:
+        _DEFAULT_STORAGE["OPTIONS"]["custom_domain"] = AWS_S3_CUSTOM_DOMAIN
+else:
+    _DEFAULT_STORAGE = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
+    }
+
+STORAGES = {
+    "default": _DEFAULT_STORAGE,
     "staticfiles": {
         "BACKEND": WHITENOISE_STATICFILES_BACKEND,
     },
@@ -982,6 +1016,10 @@ set_option(
         "maps.gstatic.com",
     ],
 )
+if AWS_MEDIA_BUCKET_NAME:
+    CSP_IMG_SRC.append(
+        AWS_S3_CUSTOM_DOMAIN or f"{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com"
+    )
 set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
 set_option(
     "CSP_CONNECT_SRC",
@@ -998,9 +1036,9 @@ MIDDLEWARE = (
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.RedisNegativeCacheMiddleware",
     "csp.middleware.CSPMiddleware",
-    "peeringdb_server.middleware.PDBSessionMiddleware",
     "peeringdb_server.middleware.CacheControlMiddleware",
     "peeringdb_server.middleware.ActivateUserLocaleMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -1106,6 +1144,7 @@ AUTHENTICATION_BACKENDS += (
 
 MIDDLEWARE += (
     "peeringdb_server.maintenance.Middleware",
+    "peeringdb_server.middleware.RateLimitWebPageMiddleware",
     "peeringdb_server.middleware.CurrentRequestContext",
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
@@ -1180,6 +1219,8 @@ else:
 set_option("ES_MATCH_PHRASE_BOOST", 10.0)
 set_option("ES_MATCH_PHRASE_PREFIX_BOOST", 5.0)
 set_option("ES_QUERY_STRING_BOOST", 2.0)
+# Boost score for exact ASN matches in numeric searches (higher than name matches to prioritize ASN results)
+set_option("ES_MATCH_ASN_BOOST", 20.0)
 
 # Set Elasticsearch request timeout
 set_option("ES_REQUEST_TIMEOUT", 30.0)
@@ -1367,6 +1408,14 @@ set_option("IXF_NOTIFY_IX_ON_CONFLICT", False)
 # toggle the notification of networks via email
 # for IX-F importer conflicts
 set_option("IXF_NOTIFY_NET_ON_CONFLICT", False)
+
+# toggle the creation of DeskPRO tickets for ASNAUTO automation
+# when False, tickets will not be created for automated ASNAUTO actions
+set_option("TICKET_CREATION_ASNAUTO", False)
+
+# toggle the creation of DeskPRO tickets for PREFIXAUTO automation
+# when False, tickets will not be created for automated PREFIXAUTO actions
+set_option("TICKET_CREATION_PREFIXAUTO", False)
 
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
@@ -1561,9 +1610,6 @@ set_option("MIN_AGE_ORPHANED_USER_DAYS", 14)
 
 # Setting for number of days before deleting pending user to organization affiliation requests
 set_option("AFFILIATION_REQUEST_DELETE_DAYS", 90)
-
-# Notification period to notify organizations of users missing 2FA (days)
-set_option("NOTIFY_MISSING_2FA_DAYS", 30)
 
 # pdb_validate_data cache timeout default
 set_option("PDB_VALIDATE_DATA_CACHE_TIMEOUT", 3600)

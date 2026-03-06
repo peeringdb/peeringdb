@@ -137,7 +137,7 @@
       </div>
       <div class="ip-addr row squeeze-15">
 
-        <div class="col-3 col-sm-4 col-md-3 col-lg-3">
+        <div class="col-3 col-sm-3 col-md-3 col-lg-3">
           <div class="ip4"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -148,7 +148,7 @@
                {{ x.ipaddr4|none_blank }}
           </div>
         </div>
-        <div class="col-4 col-sm-8 col-md-4 col-lg-3">
+        <div class="col-4 col-sm-4 col-md-4 col-lg-4">
           <div class="ip6"
                {% if permissions.can_write %}
                data-edit-type="string"
@@ -159,7 +159,7 @@
                {{ x.ipaddr6|none_blank }}
            </div>
         </div>
-        <div class="col-12 col-sm-6">
+        <div class="col-5 col-sm-5 col-md-5 col-lg-5">
           <div class="net_side"
                {% if permissions.can_write %}
                data-edit-type="autocomplete"

@@ -5,7 +5,13 @@
   <h1>{% block title %}{% trans "Disable TOTP Authentication" %}{% endblock %}</h1>
   <p>{% blocktrans trimmed %}You are about to disable TOTP authentication. This
     could weaken your account security, are you sure?{% endblocktrans %}</p>
-  <form method="post" style="margin-bottom:10px;">
+  <p><strong>{% trans "For security, you must verify your identity with 2FA before disabling it." %}</strong></p>
+  {% if email_token_sent %}
+  <div class="alert alert-info">
+    {% trans "A verification code has been sent to your email address. Please check your email and enter the code below." %}
+  </div>
+  {% endif %}
+  <form method="post" id="disable-form" style="margin-bottom:10px;">
     {% csrf_token %}
     <table>{{ form.as_table }}</table>
     <button class="btn btn-danger"

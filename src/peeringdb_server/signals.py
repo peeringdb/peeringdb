@@ -39,7 +39,6 @@ from grainy.const import PERM_CRUD, PERM_READ
 import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (
     ticket_queue,
-    ticket_queue_asnauto_affil,
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
 )
@@ -147,6 +146,16 @@ def update_counts_for_ixfac(ixfac):
         disable_auto_now_and_save(facility)
 
 
+def update_counts_for_carrierfac(carrierfac):
+    """
+    Whenever a carrierfac is saved, update carrier_count for the related Facility.
+    """
+    if getattr(carrierfac, "id"):
+        facility = carrierfac.facility
+        facility.carrier_count = facility.carrierfac_set_active.count()
+        disable_auto_now_and_save(facility)
+
+
 def connector_objects_post_revision_commit(**kwargs):
     for vs in kwargs.get("versions"):
         # ignore objects that don't have the HandleRef meta class
@@ -159,6 +168,8 @@ def connector_objects_post_revision_commit(**kwargs):
             update_counts_for_netfac(vs.object)
         if vs.object.HandleRef.tag == "ixfac":
             update_counts_for_ixfac(vs.object)
+        if vs.object.HandleRef.tag == "carrierfac":
+            update_counts_for_carrierfac(vs.object)
 
 
 reversion.signals.post_revision_commit.connect(connector_objects_post_revision_commit)
@@ -432,10 +443,13 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
             # check if user's email address matches org requirements
             if instance.org.restrict_user_emails:
-                user_org_emails = instance.org.user_meets_email_requirements(
-                    instance.user
+                invalid_emails, valid_emails = (
+                    instance.org.user_meets_email_requirements(
+                        instance.user, verified_only=True
+                    )
                 )
-                if user_org_emails[0] and not user_org_emails[1]:
+                # Deny if user has no valid verified emails matching the domain
+                if invalid_emails and not valid_emails:
                     instance.deny()
                     return
 
@@ -501,6 +515,14 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     instance.approve()
                     return
 
+                # if user's relationship to network can be validated now
+                # we can approve the ownership request right away
+                if instance.user.validate_rdap_relationship(rdap):
+                    instance.approve()
+                    # No ticket needed - object met automation criteria
+                    return
+
+                # RDAP validation failed - create ticket for manual review
                 ticket_queue_asnauto_create(
                     instance.user,
                     instance.org,
@@ -510,13 +532,6 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     org_created=org_created,
                     net_created=net_created,
                 )
-
-                # if user's relationship to network can be validated now
-                # we can approve the ownership request right away
-                if instance.user.validate_rdap_relationship(rdap):
-                    instance.approve()
-                    ticket_queue_asnauto_affil(instance.user, instance.org, net, rdap)
-                    return
 
             if instance.org:
                 # organization has been set on affiliation request
@@ -536,13 +551,8 @@ def uoar_creation(sender, instance, created=False, **kwargs):
                     for asn, rdap in list(instance.org.rdap_collect.items()):
                         rdap_data["emails"].extend(rdap.emails)
                         if instance.user.validate_rdap_relationship(rdap):
-                            ticket_queue_asnauto_affil(
-                                instance.user,
-                                instance.org,
-                                Network.objects.get(asn=asn),
-                                rdap,
-                            )
                             instance.approve()
+                            # No ticket needed - object met automation criteria
                             return
             else:
                 entity_name = instance.org_name

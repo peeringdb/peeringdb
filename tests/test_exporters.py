@@ -9,6 +9,7 @@ import re
 import tempfile
 from unittest.mock import patch
 
+import pytest
 import reversion
 from django.core.management import call_command
 from django.test import Client
@@ -25,6 +26,9 @@ from peeringdb_server.models import (
 from .util import ClientCase
 
 
+@pytest.mark.django_db
+@pytest.mark.usefixtures("elasticsearch_index")
+@pytest.mark.xdist_group(name="elasticsearch_tests")
 class AdvancedSearchExportTest(ClientCase):
     """
     Tests advanced search result exports
@@ -89,7 +93,7 @@ class AdvancedSearchExportTest(ClientCase):
                 state=f"State {i}",
                 npanxx=f"{i}-{i}",
                 country=countries[i - 1],
-                zipcode=i,
+                zipcode=str(i),
                 org=cls.org[i - 1],
                 latitude=-6.591422,
                 longitude=106.786656,
@@ -135,79 +139,16 @@ class AdvancedSearchExportTest(ClientCase):
             data = fh.read().rstrip()
         return data
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_net_json(self, mock_search_v2):
+    def test_export_net_json(self):
         """test json export of network search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "net",
-                        "_id": net.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": net.name,
-                            "status": net.status,
-                            "aka": net.aka,
-                            "policy_general": net.policy_general,
-                            "info_traffic": net.info_traffic,
-                            "info_types": net.info_types,
-                            "asn": net.asn,
-                            "org": {
-                                "id": net.org.id,
-                                "name": net.org.name,
-                                "country": net.org.country,
-                                "city": net.org.city,
-                                "status": net.org.status,
-                            },
-                        },
-                    }
-                    for net in self.net
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/net/json?name_search=Network")
         assert json.loads(response.content) == json.loads(
             self.expected_data("net", "json")
         )
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_net_json_pretty(self, mock_search_v2):
+    def test_export_net_json_pretty(self):
         """test pretty json export of network search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "net",
-                        "_id": net.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": net.name,
-                            "status": net.status,
-                            "aka": net.aka,
-                            "policy_general": net.policy_general,
-                            "info_traffic": net.info_traffic,
-                            "info_types": net.info_types,
-                            "asn": net.asn,
-                            "org": {
-                                "id": net.org.id,
-                                "name": net.org.name,
-                                "country": net.org.country,
-                                "city": net.org.city,
-                                "status": net.org.status,
-                            },
-                        },
-                    }
-                    for net in self.net
-                ],
-            }
-        }
         client = Client()
         response = client.get(
             "/export/advanced-search/net/json-pretty?name_search=Network"
@@ -221,40 +162,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         assert len(re.findall(r"\n  ", response.content.decode("utf-8"))) > 0
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_net_csv(self, mock_search_v2):
+    def test_export_net_csv(self):
         """test csv export of network search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "net",
-                        "_id": net.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": net.name,
-                            "status": net.status,
-                            "aka": net.aka,
-                            "policy_general": net.policy_general,
-                            "info_traffic": net.info_traffic,
-                            "info_types": net.info_types,
-                            "asn": net.asn,
-                            "org": {
-                                "id": net.org.id,
-                                "name": net.org.name,
-                                "country": net.org.country,
-                                "city": net.org.city,
-                                "status": net.org.status,
-                            },
-                        },
-                    }
-                    for net in self.net
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/net/csv?name_search=Network")
         assert response.content.decode("utf-8").replace(
@@ -268,86 +177,16 @@ class AdvancedSearchExportTest(ClientCase):
 
         self.test_export_net_csv()
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_fac_json(self, mock_search_v2):
+    def test_export_fac_json(self):
         """test json export of facility search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "status": fac.status,
-                            "city": fac.city,
-                            "clli": fac.clli,
-                            "state": fac.state,
-                            "npanxx": fac.npanxx,
-                            "country": fac.country,
-                            "zipcode": fac.zipcode,
-                            "latitude": fac.latitude,
-                            "longitude": fac.longitude,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                                "country": fac.org.country,
-                                "city": fac.org.city,
-                                "status": fac.org.status,
-                            },
-                        },
-                    }
-                    for fac in self.fac
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/fac/json?name_search=Facility")
         assert json.loads(response.content) == json.loads(
             self.expected_data("fac", "json")
         )
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_fac_json_pretty(self, mock_search_v2):
+    def test_export_fac_json_pretty(self):
         """test pretty json export of facility search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "status": fac.status,
-                            "city": fac.city,
-                            "clli": fac.clli,
-                            "state": fac.state,
-                            "npanxx": fac.npanxx,
-                            "country": fac.country,
-                            "zipcode": fac.zipcode,
-                            "latitude": fac.latitude,
-                            "longitude": fac.longitude,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                                "country": fac.org.country,
-                                "city": fac.org.city,
-                                "status": fac.org.status,
-                            },
-                        },
-                    }
-                    for fac in self.fac
-                ],
-            }
-        }
-
         client = Client()
         response = client.get(
             "/export/advanced-search/fac/json-pretty?name_search=Facility"
@@ -361,43 +200,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         assert len(re.findall(r"\n  ", response.content.decode("utf-8"))) > 0
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_fac_csv(self, mock_search_v2):
+    def test_export_fac_csv(self):
         """test csv export of facility search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "status": fac.status,
-                            "city": fac.city,
-                            "clli": fac.clli,
-                            "state": fac.state,
-                            "npanxx": fac.npanxx,
-                            "country": fac.country,
-                            "zipcode": fac.zipcode,
-                            "latitude": fac.latitude,
-                            "longitude": fac.longitude,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                                "country": fac.org.country,
-                                "city": fac.org.city,
-                                "status": fac.org.status,
-                            },
-                        },
-                    }
-                    for fac in self.fac
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/fac/csv?name_search=Facility")
 
@@ -407,81 +211,20 @@ class AdvancedSearchExportTest(ClientCase):
 
     def test_export_fac_csv_with_api_cache(self):
         """test csv export of facility search while api-cache exists"""
-
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
 
         self.test_export_fac_csv()
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_ix_json(self, mock_search_v2):
+    def test_export_ix_json(self):
         """test json export of exchange search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "ix",
-                        "_id": ix.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": ix.name,
-                            "status": ix.status,
-                            "city": ix.city,
-                            "country": ix.country,
-                            "media": ix.media,
-                            "org": {
-                                "id": ix.org.id,
-                                "name": ix.org.name,
-                                "country": ix.org.country,
-                                "city": ix.org.city,
-                                "status": ix.org.status,
-                            },
-                        },
-                    }
-                    for ix in self.ix
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/ix/json?name_search=Exchange")
         self.assertEqual(
             json.loads(response.content), json.loads(self.expected_data("ix", "json"))
         )
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_ix_json_pretty(self, mock_search_v2):
+    def test_export_ix_json_pretty(self):
         """test pretty json export of exchange search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "ix",
-                        "_id": ix.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": ix.name,
-                            "status": ix.status,
-                            "city": ix.city,
-                            "country": ix.country,
-                            "media": ix.media,
-                            "org": {
-                                "id": ix.org.id,
-                                "name": ix.org.name,
-                                "country": ix.org.country,
-                                "city": ix.org.city,
-                                "status": ix.org.status,
-                            },
-                        },
-                    }
-                    for ix in self.ix
-                ],
-            }
-        }
-
         client = Client()
         response = client.get(
             "/export/advanced-search/ix/json-pretty?name_search=Exchange"
@@ -495,38 +238,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         assert len(re.findall(r"\n  ", response.content.decode("utf-8"))) > 0
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_ix_csv(self, mock_search_v2):
+    def test_export_ix_csv(self):
         """test csv export of exchange search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "ix",
-                        "_id": ix.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": ix.name,
-                            "status": ix.status,
-                            "city": ix.city,
-                            "country": ix.country,
-                            "media": ix.media,
-                            "org": {
-                                "id": ix.org.id,
-                                "name": ix.org.name,
-                                "country": ix.org.country,
-                                "city": ix.org.city,
-                                "status": ix.org.status,
-                            },
-                        },
-                    }
-                    for ix in self.ix
-                ],
-            }
-        }
-
         client = Client()
         response = client.get("/export/advanced-search/ix/csv?name_search=Exchange")
         assert response.content.decode("utf-8").replace(
@@ -540,30 +253,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         self.test_export_ix_csv()
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_org_json(self, mock_search_v2):
+    def test_export_org_json(self):
         """test json export of organization search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "org",
-                        "_id": org.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": org.name,
-                            "status": org.status,
-                            "city": org.city,
-                            "country": org.country,
-                        },
-                    }
-                    for org in self.org
-                ],
-            }
-        }
-
         client = Client()
         response = client.get(
             "/export/advanced-search/org/json?name_search=Organization"
@@ -572,30 +263,8 @@ class AdvancedSearchExportTest(ClientCase):
             json.loads(response.content), json.loads(self.expected_data("org", "json"))
         )
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_org_json_pretty(self, mock_search_v2):
+    def test_export_org_json_pretty(self):
         """test pretty json export of organization search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "org",
-                        "_id": org.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": org.name,
-                            "status": org.status,
-                            "city": org.city,
-                            "country": org.country,
-                        },
-                    }
-                    for org in self.org
-                ],
-            }
-        }
-
         client = Client()
         response = client.get(
             "/export/advanced-search/org/json-pretty?name_search=Organization"
@@ -609,30 +278,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         assert len(re.findall(r"\n  ", response.content.decode("utf-8"))) > 0
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_org_csv(self, mock_search_v2):
+    def test_export_org_csv(self):
         """test csv export of organization search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "org",
-                        "_id": org.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": org.name,
-                            "status": org.status,
-                            "city": org.city,
-                            "country": org.country,
-                        },
-                    }
-                    for org in self.org
-                ],
-            }
-        }
-
         client = Client()
         response = client.get(
             "/export/advanced-search/org/csv?name_search=Organization"
@@ -648,43 +295,8 @@ class AdvancedSearchExportTest(ClientCase):
 
         self.test_export_org_csv()
 
-    @patch("peeringdb_server.search_v2.new_elasticsearch")
-    def test_export_fac_kmz(self, mock_search_v2):
+    def test_export_fac_kmz(self):
         """test kmz export of facility search"""
-        mock_es = mock_search_v2.return_value
-        mock_es.search.return_value = {
-            "hits": {
-                "total": {"value": 3},
-                "hits": [
-                    {
-                        "_index": "fac",
-                        "_id": fac.id,
-                        "_score": 1,
-                        "_source": {
-                            "name": fac.name,
-                            "status": fac.status,
-                            "city": fac.city,
-                            "clli": fac.clli,
-                            "state": fac.state,
-                            "npanxx": fac.npanxx,
-                            "country": fac.country,
-                            "zipcode": fac.zipcode,
-                            "latitude": fac.latitude,
-                            "longitude": fac.longitude,
-                            "org": {
-                                "id": fac.org.id,
-                                "name": fac.org.name,
-                                "country": fac.org.country,
-                                "city": fac.org.city,
-                                "status": fac.org.status,
-                            },
-                        },
-                    }
-                    for fac in self.fac
-                ],
-            }
-        }
-
         with tempfile.TemporaryDirectory() as output_dir:
             output_file = os.path.join(output_dir, "advanced_search_export.kmz")
 

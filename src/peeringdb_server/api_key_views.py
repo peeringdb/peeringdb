@@ -53,6 +53,8 @@ def save_key_permissions(org, key, perms):
             grainy_perms[f"{org.grainy_namespace}.internetexchange"] = permissions
         elif id == "fac":
             grainy_perms[f"{org.grainy_namespace}.facility"] = permissions
+        elif id == "carrier":
+            grainy_perms[f"{org.grainy_namespace}.carrier"] = permissions
         elif id.find(".") > -1:
             id = id.split(".")
             if id[0] == "net":
@@ -66,6 +68,8 @@ def save_key_permissions(org, key, perms):
                 )
             elif id[0] == "fac":
                 grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
+            elif id[0] == "carrier":
+                grainy_perms[f"{org.grainy_namespace}.carrier.{id[1]}"] = permissions
 
     # save
     for ns, p in list(grainy_perms.items()):
@@ -89,6 +93,7 @@ def load_all_key_permissions(org):
             "prefix": key.prefix,
             "perms": perms,
             "name": key.name,
+            "is_readonly": key.is_readonly,
         }
     return rv
 
@@ -122,6 +127,7 @@ def manage_key_add(request, **kwargs):
                 "prefix": api_key.prefix,
                 "org_id": api_key.org_id,
                 "key": key,
+                "is_readonly": api_key.is_readonly,
             }
         )
 
@@ -247,7 +253,7 @@ def key_permission_update(request, **kwargs):
     perms[entity] = level
     save_key_permissions(org, key, perms)
 
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok", "is_readonly": key.is_readonly})
 
 
 @login_required
@@ -271,7 +277,7 @@ def key_permission_remove(request, **kwargs):
         del perms[entity]
         save_key_permissions(org, key, perms)
 
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok", "is_readonly": key.is_readonly})
 
 
 """

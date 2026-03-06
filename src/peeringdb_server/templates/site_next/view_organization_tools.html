@@ -187,7 +187,7 @@
                      data-edit-name="country"
                      data-edit-required="yes"
                      data-edit-data="countries"
-                     data-edit-value="US"></div>
+                     data-edit-data-all-entry=":{% trans "-- Select Country --" %}"></div>
               </div>
             </div>
 
@@ -546,7 +546,7 @@
                      data-edit-name="country"
                      data-edit-required="yes"
                      data-edit-data="countries"
-                     data-edit-value="US"></div>
+                     data-edit-data-all-entry=":{% trans "-- Select Country --" %}"></div>
               </div>
             </div>
 
@@ -940,10 +940,6 @@
         <div data-edit-name="org_id">{{ instance.id }}</div>
       </div>
 
-      <div class="mb-3 checkbox-inline">
-        <div data-edit-type="bool" data-edit-name="require_2fa" data-edit-value="{{ instance.require_2fa }}"></div>
-        {% trans "Require users in your organization to enable 2FA." %}
-      </div>
       <div class="mb-3 checkbox-inline">
         <div data-edit-type="bool" data-edit-name="restrict_user_emails" data-edit-value="{{ instance.restrict_user_emails }}"></div>
         {% trans "Restrict user email addresses to these domains" %}

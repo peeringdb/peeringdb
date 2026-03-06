@@ -49,6 +49,17 @@ def test_view_name_change_invalid_data(client, user):
 
 
 @pytest.mark.django_db
+def test_view_name_change_rejects_non_letter_values(client, user):
+    client.force_login(user)
+    url = reverse("change-name")
+    data = {"first_name": "Alice", "last_name": "https://www.bing.com/"}
+    response = client.post(url, data)
+    assert response.status_code == 400
+    errors = response.json()
+    assert "last_name" in errors
+
+
+@pytest.mark.django_db
 def test_view_profile_name_change(client, user):
     client.force_login(user)
     url = reverse("user-profile")

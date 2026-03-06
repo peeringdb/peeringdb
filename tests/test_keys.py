@@ -6,7 +6,10 @@ from grainy.const import PERM_CRUD, PERM_READ
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
+    Carrier,
+    Facility,
     Group,
+    InternetExchange,
     Network,
     Organization,
     OrganizationAPIKey,
@@ -71,6 +74,28 @@ def org():
 def network(org):
     net = Network.objects.create(name="test network", org=org, asn=123, status="ok")
     return net
+
+
+@pytest.fixture
+def carrier(org):
+    carrier = Carrier.objects.create(name="test carrier", org=org, status="ok")
+    return carrier
+
+
+@pytest.fixture
+def facility(org):
+    fac = Facility.objects.create(
+        name="test facility", org=org, status="ok", city="Test City", country="US"
+    )
+    return fac
+
+
+@pytest.fixture
+def exchange(org):
+    ix = InternetExchange.objects.create(
+        name="test exchange", org=org, status="ok", city="Test City", country="US"
+    )
+    return ix
 
 
 @pytest.mark.django_db
@@ -367,3 +392,228 @@ def test_key_active_user_session(network, user, org):
     client.session.save()
     response = client.get(url)
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_carrier_org_key_readonly(org, groups):
+    namespace = "peeringdb.organization.1.carrier"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    factory = RequestFactory()
+    request = factory.get("/api/carrier/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c") is False
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u") is False
+    assert check_permissions(perm_obj, namespace, "d") is False
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_carrier_org_key_crud(org, groups):
+    namespace = "peeringdb.organization.1.carrier"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
+    )
+
+    factory = RequestFactory()
+    request = factory.get("/api/carrier/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c")
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u")
+    assert check_permissions(perm_obj, namespace, "d")
+
+
+@pytest.mark.django_db
+def test_get_carrier_w_org_key(org, carrier, groups):
+    namespace = f"peeringdb.organization.{org.id}.carrier"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    assert Carrier.objects.count() == 1
+    url = reverse("api:carrier-detail", args=(carrier.id,))
+    client = APIClient()
+
+    response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
+    assert response.status_code == 200
+
+    carrier_from_api = response.json()["data"][0]
+    assert carrier_from_api["name"] == carrier.name
+    assert carrier_from_api["org_id"] == carrier.org.id
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_facility_org_key_readonly(org, groups):
+    namespace = "peeringdb.organization.1.facility"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    factory = RequestFactory()
+    request = factory.get("/api/fac/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c") is False
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u") is False
+    assert check_permissions(perm_obj, namespace, "d") is False
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_facility_org_key_crud(org, groups):
+    namespace = "peeringdb.organization.1.facility"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
+    )
+
+    factory = RequestFactory()
+    request = factory.get("/api/fac/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c")
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u")
+    assert check_permissions(perm_obj, namespace, "d")
+
+
+@pytest.mark.django_db
+def test_get_facility_w_org_key(org, facility, groups):
+    namespace = f"peeringdb.organization.{org.id}.facility"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    assert Facility.objects.count() == 1
+    url = reverse("api:fac-detail", args=(facility.id,))
+    client = APIClient()
+
+    response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
+    assert response.status_code == 200
+
+    fac_from_api = response.json()["data"][0]
+    assert fac_from_api["name"] == facility.name
+    assert fac_from_api["org_id"] == facility.org.id
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_exchange_org_key_readonly(org, groups):
+    namespace = "peeringdb.organization.1.internetexchange"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    factory = RequestFactory()
+    request = factory.get("/api/ix/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c") is False
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u") is False
+    assert check_permissions(perm_obj, namespace, "d") is False
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_exchange_org_key_crud(org, groups):
+    namespace = "peeringdb.organization.1.internetexchange"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_CRUD
+    )
+
+    factory = RequestFactory()
+    request = factory.get("/api/ix/1")
+
+    # Add api key header
+    request.META.update({"HTTP_AUTHORIZATION": "Api-Key " + key})
+
+    # Assert we're making a request with a OrgAPIKey
+    assert hasattr(request, "user") is False
+    assert request.META["HTTP_AUTHORIZATION"] == "Api-Key " + key
+
+    # Test permissions
+    perm_obj = get_permission_holder_from_request(request)
+    assert check_permissions(perm_obj, namespace, "c")
+    assert check_permissions(perm_obj, namespace, "r")
+    assert check_permissions(perm_obj, namespace, "u")
+    assert check_permissions(perm_obj, namespace, "d")
+
+
+@pytest.mark.django_db
+def test_get_exchange_w_org_key(org, exchange, groups):
+    namespace = f"peeringdb.organization.{org.id}.internetexchange"
+    api_key, key = OrganizationAPIKey.objects.create_key(
+        name="test key", org=org, email="test@localhost"
+    )
+    OrganizationAPIPermission.objects.create(
+        org_api_key=api_key, namespace=namespace, permission=PERM_READ
+    )
+    assert InternetExchange.objects.count() == 1
+    url = reverse("api:ix-detail", args=(exchange.id,))
+    client = APIClient()
+
+    response = client.get(url, HTTP_AUTHORIZATION="Api-Key " + key)
+    assert response.status_code == 200
+
+    ix_from_api = response.json()["data"][0]
+    assert ix_from_api["name"] == exchange.name
+    assert ix_from_api["org_id"] == exchange.org.id

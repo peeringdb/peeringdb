@@ -12,6 +12,7 @@ from twentyc.rpc.client import PermissionDeniedException, RestClient
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 
+from .elasticsearch_test_mixin import ElasticsearchAPIMixin
 from .test_api import setup_module, teardown_module
 from .util import reset_group_ids
 
@@ -108,7 +109,7 @@ USER_CRUD = {
 }
 
 
-class APITests(TestCase, api_test.TestJSON, api_test.Command):
+class APITests(ElasticsearchAPIMixin, TestCase, api_test.TestJSON, api_test.Command):
     """
     API tests
 
