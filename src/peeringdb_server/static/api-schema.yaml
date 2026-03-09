@@ -62,7 +62,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: date_joined
         in: query
         description: 'Filter results by matching a value against this field.
@@ -71,7 +72,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -111,7 +113,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -158,7 +161,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: last_name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -210,7 +214,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: opt_flags
         in: query
         description: 'Bitmask to store user preference toggles
@@ -281,7 +286,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: username
         in: query
         description: 'Required. Letters, digits and [@.+-/_=|] only.
@@ -813,7 +819,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: campus__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -867,7 +874,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: campus__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -956,7 +964,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -996,7 +1005,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -1074,18 +1084,6 @@ paths:
       - name: net_count
         in: query
         description: 'number of networks at this facility
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: net_count
-        in: query
-        description: 'Number of networks present at this facility
 
 
           Filter results by matching a value against this field.
@@ -1208,7 +1206,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -1242,7 +1241,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1263,7 +1263,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -1373,7 +1374,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -1555,7 +1557,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -5941,7 +5944,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -6079,7 +6083,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -6113,7 +6118,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -6134,7 +6140,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -6244,7 +6251,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -6315,7 +6323,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -8070,7 +8079,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: carrier__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -8124,7 +8134,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: carrier__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -8151,7 +8162,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -8274,7 +8286,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__diverse_serving_substations
         in: query
         description: 'Two separate and distinct paths to individual substations which
@@ -8305,7 +8318,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -8541,7 +8555,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -8637,7 +8652,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14498,7 +14514,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -14549,7 +14566,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_status
         in: query
         description: 'The current status of the manual IX-F import request
@@ -14585,7 +14603,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__date_joined
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14594,7 +14613,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__email
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14625,7 +14645,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14672,7 +14693,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__last_name
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14717,7 +14739,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__opt_flags
         in: query
         description: 'Bitmask to store user preference toggles
@@ -14768,7 +14791,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_import_request_user__username
         in: query
         description: 'Required. Letters, digits and [@.+-/_=|] only.
@@ -14789,7 +14813,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_net_count
         in: query
         description: 'Filter results by matching a value against this field.
@@ -14866,18 +14891,6 @@ paths:
       - name: net_count
         in: query
         description: 'number of networks at this exchange
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: net_count
-        in: query
-        description: 'Number of networks present at this exchange
 
 
           Filter results by matching a value against this field.
@@ -14981,7 +14994,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -15015,7 +15029,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -15036,7 +15051,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -15146,7 +15162,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -15352,7 +15369,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: url_stats
         in: query
         description: 'Filter results by matching a value against this field.
@@ -18303,7 +18321,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -18426,7 +18445,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__diverse_serving_substations
         in: query
         description: 'Two separate and distinct paths to individual substations which
@@ -18457,7 +18477,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -18693,7 +18714,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -18806,7 +18828,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__fac_count
         in: query
         description: 'number of facilities at this exchange
@@ -18839,7 +18862,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__ixf_import_request_status
         in: query
         description: 'The current status of the manual IX-F import request
@@ -18863,7 +18887,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__ixf_net_count
         in: query
         description: 'Filter results by matching a value against this field.
@@ -19076,7 +19101,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__url_stats
         in: query
         description: 'Filter results by matching a value against this field.
@@ -19154,7 +19180,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -26187,7 +26214,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -26288,7 +26316,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__fac_count
         in: query
         description: 'number of facilities at this exchange
@@ -26321,7 +26350,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__ixf_import_request_status
         in: query
         description: 'The current status of the manual IX-F import request
@@ -26345,7 +26375,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__ixf_net_count
         in: query
         description: 'Filter results by matching a value against this field.
@@ -26558,7 +26589,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix__url_stats
         in: query
         description: 'Filter results by matching a value against this field.
@@ -26615,7 +26647,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixf_ixp_import_protocol_conflict
         in: query
         description: 'IX has been sending IP addresses for protocol not supported
@@ -26730,7 +26763,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -27865,7 +27899,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -27925,7 +27960,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__dot1q_support
         in: query
         description: Filter results by matching a value against this field.
@@ -27970,7 +28006,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__ixf_ixp_import_protocol_conflict
         in: query
         description: 'IX has been sending IP addresses for protocol not supported
@@ -28043,7 +28080,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -28142,7 +28180,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -31442,7 +31481,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -31696,7 +31736,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: netixlan
         in: query
         description: 'Find the network that contains this netixlan (netixlan id)
@@ -31714,7 +31755,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: not_fac
         in: query
         description: 'Find networks not present at a facility (facility id)
@@ -31836,7 +31878,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -31870,7 +31913,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -31891,7 +31935,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -32001,7 +32046,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32049,7 +32095,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32123,7 +32170,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -32173,7 +32221,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -34602,7 +34651,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -34682,7 +34732,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__fac_count
         in: query
         description: 'number of facilities at this network
@@ -34875,7 +34926,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__netixlan_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -34884,7 +34936,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__notes
         in: query
         description: 'Filter results by matching a value against this field.
@@ -34902,7 +34955,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -34976,7 +35030,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35012,7 +35067,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -35110,7 +35166,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: url
         in: query
         description: 'Filter results by matching a value against this field.
@@ -37768,7 +37825,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -37891,7 +37949,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__diverse_serving_substations
         in: query
         description: 'Two separate and distinct paths to individual substations which
@@ -37922,7 +37981,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -38158,7 +38218,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: fac__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38259,7 +38320,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__fac_count
         in: query
         description: 'number of facilities at this network
@@ -38452,7 +38514,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__netixlan_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38461,7 +38524,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__notes
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38479,7 +38543,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38553,7 +38618,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38589,7 +38655,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -38660,7 +38727,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -45189,7 +45257,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -45354,7 +45423,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix_side__diverse_serving_substations
         in: query
         description: 'Two separate and distinct paths to individual substations which
@@ -45385,7 +45455,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix_side__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -45621,7 +45692,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ix_side__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -45675,7 +45747,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__dot1q_support
         in: query
         description: Filter results by matching a value against this field.
@@ -45720,7 +45793,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__ixf_ixp_import_protocol_conflict
         in: query
         description: 'IX has been sending IP addresses for protocol not supported
@@ -45793,7 +45867,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: ixlan__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -45867,7 +45942,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__fac_count
         in: query
         description: 'number of facilities at this network
@@ -46060,7 +46136,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__netixlan_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46069,7 +46146,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__notes
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46087,7 +46165,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46161,7 +46240,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46197,7 +46277,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46338,7 +46419,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net_side__diverse_serving_substations
         in: query
         description: 'Two separate and distinct paths to individual substations which
@@ -46369,7 +46451,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net_side__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -46605,7 +46688,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: net_side__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -46709,7 +46793,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52180,7 +52265,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -52223,7 +52309,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -52244,7 +52331,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -52405,7 +52493,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -53983,7 +54072,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -54121,7 +54211,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -54155,7 +54246,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -54176,7 +54268,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -54286,7 +54379,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -54357,7 +54451,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56159,7 +56254,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -56413,7 +56509,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: netixlan
         in: query
         description: 'Find the network that contains this netixlan (netixlan id)
@@ -56431,7 +56528,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: not_fac
         in: query
         description: 'Find networks not present at a facility (facility id)
@@ -56553,7 +56651,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -56587,7 +56686,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56608,7 +56708,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -56718,7 +56819,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56754,7 +56856,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56828,7 +56931,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -56878,7 +56982,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57004,7 +57109,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: depth
         in: query
         required: false
@@ -57258,7 +57364,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: netixlan
         in: query
         description: 'Find the network that contains this netixlan (netixlan id)
@@ -57276,7 +57383,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: not_fac
         in: query
         description: 'Find networks not present at a facility (facility id)
@@ -57398,7 +57506,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__email_domains
         in: query
         description: 'If user email restriction is enabled: only allow users with
@@ -57432,7 +57541,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__floor
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57453,7 +57563,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__geocode_status
         in: query
         description: 'Has this object''s address been normalized with a call to the
@@ -57563,7 +57674,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: org__version
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57599,7 +57711,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: policy_contracts
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57673,7 +57786,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: route_server
         in: query
         description: 'Filter results by matching a value against this field.
@@ -57723,7 +57837,8 @@ paths:
           Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
         required: false
         schema:
-          type: date-time
+          type: string
+          format: date-time
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.
