@@ -2766,10 +2766,16 @@ PeeringDB = {
         const connectivityType = PeeringDB.AsnConnectivity.getConnectivityType();
 
         // Fetch data based on connectivity type
-        const { primaryData, secondaryData } = await PeeringDB.AsnConnectivity.fetchConnectivityData(
+        const { rateLimited, message, primaryData, secondaryData } = await PeeringDB.AsnConnectivity.fetchConnectivityData(
           asnArray.join(','),
           connectivityType
         );
+
+        if (rateLimited) {
+          PeeringDB.AsnConnectivity.displayRateLimited('asn_connectivity', message);
+          searchForm.editable("loading-shim", "hide");
+          return;
+        }
 
         if (!primaryData || !primaryData.length) {
           PeeringDB.AsnConnectivity.displayNoResults('asn_connectivity');
@@ -2876,8 +2882,20 @@ PeeringDB = {
 
       const typeConfig = config[connectivityType];
 
+      const parseRateLimitMessage = async (response) => {
+        try {
+          const data = await response.json();
+          return data.message || null;
+        } catch {
+          return null;
+        }
+      };
+
       // Fetch primary data (netfac or netixlan)
       const primaryResponse = await fetch(typeConfig.primaryEndpoint);
+      if (primaryResponse.status === 429) {
+        return { rateLimited: true, message: await parseRateLimitMessage(primaryResponse), primaryData: null, secondaryData: null };
+      }
       const primaryData = await primaryResponse.json();
 
       if (!primaryData.data || primaryData.data.length === 0) {
@@ -2890,6 +2908,9 @@ PeeringDB = {
       // Fetch secondary data (fac or ix)
       const secondaryUrl = `${typeConfig.secondaryEndpoint}?id__in=${entityIds.join(',')}`;
       const secondaryResponse = await fetch(secondaryUrl);
+      if (secondaryResponse.status === 429) {
+        return { rateLimited: true, message: await parseRateLimitMessage(secondaryResponse), primaryData: null, secondaryData: null };
+      }
       const secondaryData = await secondaryResponse.json();
 
       return {
@@ -2966,6 +2987,7 @@ PeeringDB = {
 
       const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
       searchForm.find('.results-empty').hide();
+      searchForm.find('.results-rate-limited').hide();
       searchForm.find('.results-cutoff').hide();
 
       // Show the legend when results are displayed
@@ -3379,25 +3401,35 @@ PeeringDB = {
     },
 
     /**
+     * Shared cleanup: empties results, hides status divs, hides export buttons and legend.
+     * @param {string} reftag - Search reference tag
+     * @returns {jQuery} searchForm jQuery object
+     */
+    _clearResults: function(reftag) {
+      const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
+      searchForm.find('.results-empty').hide();
+      searchForm.find('.results-rate-limited').hide();
+      searchForm.find('.results').empty();
+      searchForm.parent().find('[data-export-format]').addClass('d-none').removeAttr('href');
+      if (reftag === 'asn_connectivity') {
+        const legend = document.querySelector('#asn_connectivity .connectivity-legend');
+        if (legend) legend.style.display = 'none';
+      }
+      return searchForm;
+    },
+
+    /**
      * Displays "no results" message for ASN connectivity search
      * @param {string} reftag - Search reference tag
      */
     displayNoResults: function(reftag) {
-      const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
-      searchForm.find('.results-empty').show();
-      searchForm.find('.results').empty();
-      searchForm.parent().find('[data-export-format]').each(function () {
-        $(this).addClass('d-none');
-        $(this).removeAttr('href');
-      });
+      this._clearResults(reftag).find('.results-empty').show();
+    },
 
-      // Hide legend when no results
-      if (reftag === 'asn_connectivity') {
-        const legend = document.querySelector('#asn_connectivity .connectivity-legend');
-        if (legend) {
-          legend.style.display = 'none';
-        }
-      }
+    displayRateLimited: function(reftag, message) {
+      const searchForm = this._clearResults(reftag);
+      searchForm.find('.results-rate-limited .rate-limit-message').text(message);
+      searchForm.find('.results-rate-limited').show();
     },
 
     /**
