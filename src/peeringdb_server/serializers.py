@@ -1758,6 +1758,13 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             self.fields["latitude"].read_only = True
             self.fields["longitude"].read_only = True
 
+    def validate_available_voltage_services(self, value):
+        if value and "No Power" in value and len(value) > 1:
+            raise serializers.ValidationError(
+                '"No Power" is mutually exclusive with other voltage options.'
+            )
+        return value
+
     def validate_create(self, data):
         # we don't want users to be able to create facilities if the parent
         # organization status is pending or deleted
