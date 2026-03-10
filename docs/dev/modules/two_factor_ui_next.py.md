@@ -78,4 +78,3 @@ Mixin to override the template selection based on the user's UI version preferen
 
 It uses `resolve_template()` to determine whether to serve the default or 'next' version
 of the template dynamically, depending on user flags or default settings.
-

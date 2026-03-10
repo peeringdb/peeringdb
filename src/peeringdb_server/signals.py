@@ -440,13 +440,9 @@ def _handle_org_with_admins(instance):
     for user in instance.org.admin_usergroup.user_set.all():
         with override(user.locale):
             user.email_user(
-                _(
-                    "User %(u_name)s wishes to be affiliated to your Organization"
-                )
+                _("User %(u_name)s wishes to be affiliated to your Organization")
                 % {"u_name": instance.user.full_name},
-                loader.get_template(
-                    "email/notify-org-admin-user-affil.txt"
-                ).render(
+                loader.get_template("email/notify-org-admin-user-affil.txt").render(
                     {
                         "user": instance.user,
                         "org": instance.org,
@@ -601,9 +597,7 @@ def uoar_creation(sender, instance, created=False, **kwargs):
             entity_name = instance.org_name
 
             if pdb_settings.AUTO_APPROVE_AFFILIATION:
-                org = Organization.objects.create(
-                    name=instance.org_name, status="ok"
-                )
+                org = Organization.objects.create(name=instance.org_name, status="ok")
                 instance.org = org
                 instance.approve()
                 return

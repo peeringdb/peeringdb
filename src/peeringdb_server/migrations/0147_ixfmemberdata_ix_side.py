@@ -5,15 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0146_merge_20260210'),
+        ("peeringdb_server", "0146_merge_20260210"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ixfmemberdata',
-            name='ix_side',
-            field=models.ForeignKey(blank=True, help_text='IX-side port location from IX-F data', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ixf_member_data_set', to='peeringdb_server.facility'),
+            model_name="ixfmemberdata",
+            name="ix_side",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="IX-side port location from IX-F data",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="ixf_member_data_set",
+                to="peeringdb_server.facility",
+            ),
         ),
     ]

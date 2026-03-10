@@ -943,9 +943,7 @@ class Importer:
                     asn, "ignore", _("Invalid connection state: {}").format(state)
                 )
 
-    def parse_vlans(
-        self, vlan_list, network, member, connection, speed, facility=None
-    ):
+    def parse_vlans(self, vlan_list, network, member, connection, speed, facility=None):
         """
         Parse the 'vlan_list' section of the ixf_schema.
 

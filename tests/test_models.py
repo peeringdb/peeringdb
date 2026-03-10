@@ -1,7 +1,7 @@
 import pytest
 import reversion
-
 from django.core.exceptions import ValidationError
+
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
@@ -144,12 +144,24 @@ def test_network_irr_as_set_validation():
     org = Organization.objects.create(name="Test Org", status="ok")
 
     # valid value gets normalized (lowercase -> uppercase, comma -> space)
-    net = Network(asn=1, name="Test Network", org=org, status="ok", irr_as_set="ripe::as-foo, radb::as-bar")
+    net = Network(
+        asn=1,
+        name="Test Network",
+        org=org,
+        status="ok",
+        irr_as_set="ripe::as-foo, radb::as-bar",
+    )
     net.clean()
     assert net.irr_as_set == "RIPE::AS-FOO RADB::AS-BAR"
 
     # invalid value raises ValidationError
-    net2 = Network(asn=2, name="Test Network 2", org=org, status="ok", irr_as_set="AS-Resound Networks,LLC")
+    net2 = Network(
+        asn=2,
+        name="Test Network 2",
+        org=org,
+        status="ok",
+        irr_as_set="AS-Resound Networks,LLC",
+    )
     with pytest.raises(ValidationError) as exc:
         net2.clean()
     assert "irr_as_set" in exc.value.message_dict
