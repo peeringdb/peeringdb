@@ -3481,6 +3481,12 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
             netixlan.network = netixlan_info.network
             changed.append("network_id")
 
+        # IX-side facility
+        info_ix_side_id = getattr(netixlan_info, "ix_side_id", None)
+        if info_ix_side_id is not None and info_ix_side_id != netixlan.ix_side_id:
+            netixlan.ix_side_id = info_ix_side_id
+            changed.append("ix_side")
+
         if save and (changed or netixlan.status == "deleted"):
             netixlan.status = "ok"
             netixlan.full_clean()
@@ -3657,6 +3663,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         default=None, null=True, blank=True, help_text=_("RS Peer")
     )
 
+    ix_side = models.ForeignKey(
+        Facility,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="ixf_member_data_set",
+        help_text=_("IX-side port location from IX-F data"),
+    )
+
     error = models.TextField(
         null=True,
         blank=True,
@@ -3714,6 +3729,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         "speed",
         "operational",
         "is_rs_peer",
+        "ix_side",
     ]
 
     class Meta:
@@ -3769,6 +3785,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         - speed(int=0) : network speed (mbit)
         - operational(bool=True): peer is operational
         - is_rs_peer(bool=False): peer is route server
+        - facility(Facility=None): resolved Facility instance from IX-F data
         """
 
         fetched = datetime.datetime.now().replace(tzinfo=UTC())
@@ -3831,6 +3848,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         instance.ixlan = ixlan
         instance.fetched = fetched
         instance.for_deletion = for_deletion
+
+        instance.ix_side = kwargs.get("facility")
 
         if ipaddr4:
             instance.init_ipaddr4 = ipaddress.ip_address(ipaddr4)
@@ -4166,6 +4185,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
         if netixlan.status != self.status:
             changes.update(status={"from": netixlan.status, "to": self.status})
+
+        if self.ix_side_id is not None and self.ix_side_id != netixlan.ix_side_id:
+            changes.update(
+                ix_side={
+                    "from": netixlan.ix_side_id,
+                    "to": self.ix_side_id,
+                }
+            )
 
         return changes
 
@@ -4550,6 +4577,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
             netixlan.speed = self.speed
             netixlan.is_rs_peer = bool(self.is_rs_peer)
             netixlan.operational = bool(self.operational)
+            if self.ix_side_id is not None:
+                netixlan.ix_side = self.ix_side
 
             if not self.net.ipv6_support:
                 netixlan.ipaddr6 = None
@@ -4566,6 +4595,8 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
                 netixlan.speed = self.speed
             if self.modify_is_rs_peer and self.is_rs_peer is not None:
                 netixlan.is_rs_peer = self.is_rs_peer
+            if self.ix_side_id is not None:
+                netixlan.ix_side = self.ix_side
 
             netixlan.operational = self.operational
             if save:

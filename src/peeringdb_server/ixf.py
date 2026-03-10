@@ -32,6 +32,7 @@ import peeringdb_server.deskpro as deskpro
 from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DeskProTicket,
+    Facility,
     IXFImportEmail,
     IXFMemberData,
     IXLanIXFMemberImportAttempt,
@@ -200,6 +201,7 @@ class Importer:
         self.notifications = []
         self.protocol_conflict = 0
         self.emails = 0
+        self._facility_cache = {}
 
     def fetch(self, url, timeout=5):
         """
@@ -858,6 +860,7 @@ class Importer:
         Arguments:
             - data <dict>: result from fetch()
         """
+        self.switch_map = self.build_switch_map(data)
         with transaction.atomic():
             self.parse_members(data.get("member_list", []))
 
@@ -921,16 +924,28 @@ class Importer:
             state = connection.get("state", "active").lower()
             if state in self.allowed_states:
                 speed = self.parse_speed(connection.get("if_list", []))
+                facility_id = self.parse_facility_id(
+                    connection.get("if_list", []),
+                    switch_map=self.switch_map,
+                )
+                facility = self.resolve_facility(facility_id)
 
                 self.parse_vlans(
-                    connection.get("vlan_list", []), network, member, connection, speed
+                    connection.get("vlan_list", []),
+                    network,
+                    member,
+                    connection,
+                    speed,
+                    facility=facility,
                 )
             else:
                 self.log_peer(
                     asn, "ignore", _("Invalid connection state: {}").format(state)
                 )
 
-    def parse_vlans(self, vlan_list, network, member, connection, speed):
+    def parse_vlans(
+        self, vlan_list, network, member, connection, speed, facility=None
+    ):
         """
         Parse the 'vlan_list' section of the ixf_schema.
 
@@ -940,6 +955,7 @@ class Importer:
             - member <dict>: row from ixf member_list
             - connection <dict>: row from ixf connection_list
             - speed <int>: interface speed
+            - facility (Facility): resolved Facility instance from IX-F data
         """
 
         asn = member["asnum"]
@@ -1118,6 +1134,7 @@ class Importer:
                     speed=speed,
                     operational=operational,
                     is_rs_peer=is_rs_peer,
+                    facility=facility,
                     data=json.dumps(member),
                     ixlan=self.ixlan,
                     save=self.save,
@@ -1163,6 +1180,60 @@ class Importer:
                     self.connection_errors["speed"] = []
                 self.connection_errors["speed"].append(log_msg)
         return speed
+
+    def build_switch_map(self, data):
+        """Build mapping of switch_id -> switch dict from ixp_list."""
+        switch_map = {}
+        for ixp in data.get("ixp_list", []):
+            for switch in ixp.get("switch", []):
+                switch_id = switch.get("id")
+                if switch_id is not None:
+                    switch_map[switch_id] = switch
+        return switch_map
+
+    def parse_facility_id(self, if_list, switch_map=None):
+        """Extract pdb_facility_id from if_list (direct or via switch mapping)."""
+        facility_ids = set()
+
+        for iface in if_list:
+            facility_id = None
+
+            if "pdb_facility_id" in iface:
+                facility_id = iface.get("pdb_facility_id")
+            elif switch_map and "switch_id" in iface:
+                switch_id = iface.get("switch_id")
+                if switch_id in switch_map:
+                    facility_id = switch_map[switch_id].get("pdb_facility_id")
+
+            if facility_id is not None:
+                facility_ids.add(facility_id)
+
+        if len(facility_ids) == 1:
+            return facility_ids.pop()
+        if len(facility_ids) > 1:
+            self.log_error(
+                _("Multiple facility IDs found in connection interfaces: {}").format(
+                    facility_ids
+                )
+            )
+        return None
+
+    def resolve_facility(self, facility_id):
+        """
+        Resolve a pdb_facility_id to an active Facility instance.
+
+        Results are cached per import run to avoid repeated DB queries
+        when multiple connections reference the same facility.
+
+        Returns Facility or None if not found / inactive.
+        """
+        if facility_id is None:
+            return None
+        if facility_id not in self._facility_cache:
+            self._facility_cache[facility_id] = Facility.objects.filter(
+                id=facility_id, status="ok"
+            ).first()
+        return self._facility_cache[facility_id]
 
     def apply_add_or_update(self, ixf_member_data):
         if ixf_member_data.netixlan_exists:
