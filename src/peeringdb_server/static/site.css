@@ -964,6 +964,7 @@ div.list > div.scrollable {
   margin-left: -15px;
   margin-right: -10px;
   padding-left: 15px;
+  position: relative;
 /*  border-bottom: 3px #1c3f28 solid; */
 }
 
