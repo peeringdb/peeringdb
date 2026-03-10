@@ -123,11 +123,11 @@ dev-dependencies = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202508" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202602" }
 # from branch until passkey support is released
-django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202602-fixes-1" }
+django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202603-fixes" }
 # modernization fixes alignment (until 2.4.0 is tagged)
-peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202507" }
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202602" }
 
 
 [tool.ruff.lint]
