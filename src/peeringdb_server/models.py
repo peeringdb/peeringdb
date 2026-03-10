@@ -5038,6 +5038,51 @@ class Network(
         return net, True
 
     @classmethod
+    @reversion.create_revision()
+    @transaction.atomic()
+    def undelete_for_new_owner(cls, asn, org, rdap):
+        """
+        Undeletes a deleted network and reassigns it to a new organization.
+
+        This is called when an ASN is reassigned by an RIR to a new operator
+        and that operator can be validated via RDAP.
+
+        Arguments:
+            asn: The ASN to undelete
+            org: The new Organization to assign the network to
+            rdap: RdapAsn instance containing RDAP data
+
+        Returns:
+            tuple: (Network instance, bool indicating if it was undeleted)
+
+        Note: Child objects (poc_set, netfac_set, netixlan_set) remain soft-deleted.
+        The new owner rebuilds their network data from scratch.
+        """
+        try:
+            network = cls.objects.get(asn=asn, status="deleted")
+        except cls.DoesNotExist:
+            return None, False
+
+        # Update network with new ownership and status
+        network.org = org
+        network.status = "ok"
+
+        # Update name from RDAP if available
+        name = rdap.name if rdap.name else f"AS{asn}"
+        if cls.objects.filter(name=name).exclude(id=network.id).exists():
+            network.name = f"{name} !"
+        else:
+            network.name = name
+
+        network.save()
+
+        reversion.set_comment(
+            "Auto-undeleted network for new owner via RDAP validation"
+        )
+
+        return network, True
+
+    @classmethod
     def related_to_fac(cls, value=None, filt=None, field="facility_id", qset=None):
         """
         Filter queryset of Network objects related to the facility

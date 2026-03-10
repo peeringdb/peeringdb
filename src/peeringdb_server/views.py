@@ -538,17 +538,24 @@ def view_affiliate_to_org(request):
         if asn != 0 and Network.objects.filter(asn=asn).exists():
             network = Network.objects.get(asn=asn)
             if network.status == "deleted":
-                return JsonResponse(
-                    {
-                        "non_field_errors": [
-                            _(
-                                "Unable to affiliate as this network has been deleted. Please reach out to PeeringDB support if you wish to resolve this."
-                            )
-                        ]
-                    },
-                    status=400,
-                )
-            org_id = network.org.id
+                # Issue #1877: Allow auto-undelete for deleted networks
+                # when AUTO_UNDELETE_NETWORK is enabled
+                if not dj_settings.AUTO_UNDELETE_NETWORK:
+                    return JsonResponse(
+                        {
+                            "non_field_errors": [
+                                _(
+                                    "Unable to affiliate as this network has been deleted. Please reach out to PeeringDB support if you wish to resolve this."
+                                )
+                            ]
+                        },
+                        status=400,
+                    )
+                # Network is deleted but AUTO_UNDELETE_NETWORK is enabled
+                # Don't set org_id - let the signal handler process this
+                # as a new ASN to trigger RDAP validation and potential undelete
+            else:
+                org_id = network.org.id
 
         if org_id:
             if Organization.objects.get(id=org_id).status == "deleted":

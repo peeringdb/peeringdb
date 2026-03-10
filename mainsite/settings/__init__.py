@@ -613,6 +613,10 @@ set_option(
 # maximum number of affiliation requests a user can have pending
 set_option("MAX_USER_AFFILIATION_REQUESTS", 5)
 
+# automatically undelete networks when a new owner claims the ASN
+# via RDAP validation (issue #1877)
+set_option("AUTO_UNDELETE_NETWORK", True)
+
 # Determines age of network contact objects that get hard deleted
 # during `pdb_delete_poc` execution. (days)
 set_option("POC_DELETION_PERIOD", 30)
