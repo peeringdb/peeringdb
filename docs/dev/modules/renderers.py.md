@@ -1,4 +1,4 @@
-Generated from renderers.py on 2026-02-17 13:29:49.867713
+Generated from renderers.py on 2026-03-10 15:05:05.162969
 
 # peeringdb_server.renderers
 
@@ -58,3 +58,4 @@ MungeRenderer(rest_framework.renderers.BaseRenderer)
 
 All renderers should extend this class, setting the `media_type`
 and `format` attributes, and override the `.render()` method.
+
