@@ -1,5 +1,6 @@
 import pytest
 import reversion
+from django.core.exceptions import ValidationError
 
 from peeringdb_server.models import (
     Facility,
@@ -129,6 +130,45 @@ def test_strip_fields_model_clean_validation():
     for fac in Facility.objects.all():
         assert len(fac.name) == len(fac.name.strip())
         assert len(fac.city) == len(fac.city.strip())
+
+
+@pytest.mark.django_db
+def test_network_irr_as_set_validation():
+    """
+    Test that Network.clean() validates and normalizes the irr_as_set field.
+
+    The validator is tested in isolation in test_validators.py; here we verify
+    the model wires it up correctly: normalization is written back to the field,
+    and errors are raised under the "irr_as_set" key.
+    """
+    org = Organization.objects.create(name="Test Org", status="ok")
+
+    # valid value gets normalized (lowercase -> uppercase, comma -> space)
+    net = Network(
+        asn=1,
+        name="Test Network",
+        org=org,
+        status="ok",
+        irr_as_set="ripe::as-foo, radb::as-bar",
+    )
+    net.clean()
+    assert net.irr_as_set == "RIPE::AS-FOO RADB::AS-BAR"
+
+    # invalid value raises ValidationError
+    net2 = Network(
+        asn=2,
+        name="Test Network 2",
+        org=org,
+        status="ok",
+        irr_as_set="AS-Resound Networks,LLC",
+    )
+    with pytest.raises(ValidationError) as exc:
+        net2.clean()
+    assert "irr_as_set" in exc.value.message_dict
+
+    # empty value
+    net3 = Network(asn=3, name="Test Network 3", org=org, status="ok", irr_as_set="")
+    net3.clean()
 
 
 @pytest.mark.django_db

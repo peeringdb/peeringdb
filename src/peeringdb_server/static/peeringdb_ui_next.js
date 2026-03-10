@@ -2416,6 +2416,12 @@ PeeringDB = {
       }
     },
 
+    // Current input mode: 'autocomplete' or 'text'
+    inputMode: 'autocomplete',
+
+    // Pending ASNs from paste validation (used when confirming search)
+    pendingAsns: null,
+
     /**
      * Initialize ASN connectivity UI handlers
      */
@@ -2423,6 +2429,8 @@ PeeringDB = {
       // Initialize tooltips for legend
       const tooltipTriggerList = document.querySelectorAll('.connectivity-legend [data-bs-toggle="tooltip"]');
       const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+      this.initializeInputModeToggle();
 
       // Connectivity type toggle handler (Facilities/Exchanges)
       $('.btn-group [data-connectivity-type]').on('click', function () {
@@ -2464,6 +2472,260 @@ PeeringDB = {
         PeeringDB.AsnConnectivity.applyFilters();
         PeeringDB.AsnConnectivity.updateExportUrls();
       });
+
+      // Verify modal confirm button handler
+      $('#asn-verify-confirm').on('click', function() {
+        PeeringDB.AsnConnectivity.confirmAndSearch();
+      });
+
+      // Move focus away before modal starts hiding
+      $('#asn-verify-modal').on('hide.bs.modal', function() {
+        // Blur any focused element inside or on the modal
+        if (document.activeElement && document.activeElement !== document.body) {
+          document.activeElement.blur();
+        }
+      });
+
+      // Clean up modal on any close
+      $('#asn-verify-modal').on('hidden.bs.modal', function() {
+        // Ensure backdrop and body styles are cleaned up
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css({'overflow': '', 'padding-right': ''});
+      });
+    },
+
+    /**
+     * Initialize input mode toggle between Autocomplete and Text Input
+     */
+    initializeInputModeToggle: function() {
+      var self = this;
+
+      $('#asn-input-mode button').on('click', function() {
+        var mode = $(this).data('input-mode');
+
+        // Update active state
+        $('#asn-input-mode button').removeClass('active');
+        $(this).addClass('active');
+
+        // Store current mode
+        self.inputMode = mode;
+
+        if (mode === 'text') {
+          $('#asn-autocomplete-container').hide();
+          $('#asn-paste-container').show();
+        } else {
+          $('#asn-paste-container').hide();
+          $('#asn-autocomplete-container').show();
+        }
+      });
+
+      // Override the submit action for paste mode
+      var searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+      searchForm.on('click', '[data-edit-action="submit"]', function(e) {
+        if (self.inputMode === 'text') {
+          e.preventDefault();
+          e.stopPropagation();
+          self.handlePasteSearch();
+          return false;
+        }
+      // For autocomplete mode, there's already default editable handler
+      });
+
+      // Handle reset action for paste mode
+      searchForm.on('click', '[data-edit-action="reset"]', function() {
+        if (self.inputMode === 'text') {
+          $('#asn-paste-input').val('');
+        }
+      });
+    },
+
+    /**
+     * Parse pasted ASN input into an array of ASN numbers
+     * @param {string} input - Raw input string with ASNs
+     * @returns {Array} Array of unique ASN numbers as strings
+     */
+    parsePastedAsns: function(input) {
+      // Split by comma, space, newline, or combination
+      var asns = input.split(/[\s,]+/)
+        .map(function(asn) {
+          // Remove "AS" prefix if present (case insensitive), trim whitespace
+          return asn.replace(/^AS/i, '').trim();
+        })
+        .filter(function(asn) {
+          // Keep only valid numeric ASNs
+          return asn && /^\d+$/.test(asn);
+        });
+
+      // Remove duplicates using filter
+      return asns.filter(function(asn, index, arr) {
+        return arr.indexOf(asn) === index;
+      });
+    },
+
+    /**
+     * Validate ASN count against minimum and maximum limits
+     * @param {Array} asns - Array of ASN numbers
+     * @returns {string|null} Error message if invalid, null if valid
+     */
+    validateAsnCount: function(asns) {
+      if (asns.length < 2) {
+        return gettext('Please enter at least 2 ASNs');
+      }
+
+      var limit = window.ASN_CONNECTIVITY_LIMIT || 9;
+      if (asns.length > limit) {
+        return gettext('Maximum %s ASNs allowed').replace('%s', limit);
+      }
+
+      return null;
+    },
+
+    /**
+     * Validate ASNs via API and fetch network names
+     * @param {Array} asns - Array of ASN numbers
+     * @returns {Promise} Promise resolving to array of validation results
+     */
+    validateAsns: function(asns) {
+      return new Promise(function(resolve, reject) {
+        $.ajax({
+          url: '/api/net?asn__in=' + asns.join(',') + '&depth=0',
+          method: 'GET',
+          success: function(response) {
+            var foundAsns = {};
+            if (response.data) {
+              response.data.forEach(function(net) {
+                foundAsns[net.asn] = net.name;
+              });
+            }
+
+            var results = asns.map(function(asn) {
+              return {
+                asn: asn,
+                name: foundAsns[asn] || null,
+                valid: !!foundAsns[asn]
+              };
+            });
+
+            resolve(results);
+          },
+          error: function() {
+            reject({ error: gettext('Failed to validate ASNs') });
+          }
+        });
+      });
+    },
+
+    /**
+     * Show verification modal with ASN validation results
+     * @param {Array} results - Array of validation results from validateAsns
+     */
+    showVerificationModal: function(results) {
+      var $list = $('#asn-verify-list').empty();
+      var $error = $('#asn-verify-error').hide();
+      $('#asn-verify-loading').hide();
+      var hasInvalid = false;
+
+      results.forEach(function(item) {
+        var $row = $('<div>').addClass('d-flex align-items-center mb-2');
+
+        if (item.valid) {
+          $row.append($('<span>').addClass('badge bg-success me-2').html('&#10003;'));
+          $row.append($('<strong>').text('AS' + item.asn));
+          $row.append($('<span>').addClass('ms-2 text-muted').text(item.name));
+        } else {
+          hasInvalid = true;
+          $row.append($('<span>').addClass('badge bg-danger me-2').html('&#10007;'));
+          $row.append($('<strong>').text('AS' + item.asn));
+          $row.append($('<span>').addClass('ms-2 text-danger').text(gettext('Not found in PeeringDB')));
+        }
+
+        $list.append($row);
+      });
+
+      if (hasInvalid) {
+        $error.text(gettext('Some ASNs were not found. Only valid ASNs will be included in the search.')).show();
+        // Still allow search with valid ASNs only
+        var validCount = results.filter(function(r) { return r.valid; }).length;
+        if (validCount < 2) {
+          $error.text(gettext('At least 2 valid ASNs are required for the search.')).show();
+          $('#asn-verify-confirm').prop('disabled', true);
+        } else {
+          $('#asn-verify-confirm').prop('disabled', false);
+        }
+      } else {
+        $('#asn-verify-confirm').prop('disabled', false);
+      }
+    },
+
+    /**
+     * Handle search button click when in paste mode
+     */
+    handlePasteSearch: function() {
+      var self = this;
+      var input = $('#asn-paste-input').val();
+      var asns = this.parsePastedAsns(input);
+
+      // Validate ASN count before showing modal
+      var countError = this.validateAsnCount(asns);
+      if (countError) {
+        alert(countError);
+        return;
+      }
+
+      // Show loading state in modal
+      $('#asn-verify-list').empty();
+      $('#asn-verify-error').hide();
+      $('#asn-verify-loading').show();
+      $('#asn-verify-confirm').prop('disabled', true);
+
+      // Use getOrCreateInstance to avoid creating multiple modal instances
+      var modalEl = document.getElementById('asn-verify-modal');
+      var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+
+      this.validateAsns(asns)
+        .then(function(results) {
+          // Store only valid ASNs for search
+          self.pendingAsns = results
+            .filter(function(r) { return r.valid; })
+            .map(function(r) { return r.asn; });
+          self.showVerificationModal(results);
+        })
+        .catch(function(err) {
+          $('#asn-verify-loading').hide();
+          modal.hide();
+          alert(err.error);
+        });
+    },
+
+    /**
+     * Confirm verification and execute search with validated ASNs
+     */
+    confirmAndSearch: function() {
+      if (!this.pendingAsns || this.pendingAsns.length === 0) return;
+
+      var self = this;
+      var pendingAsns = this.pendingAsns;
+
+      // Clear pending ASNs first
+      this.pendingAsns = null;
+
+      // Update the autocomplete field with validated ASNs so the existing
+      // search logic can pick them up
+      var searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
+      var asnListInput = searchForm.find('[data-edit-name="asn_list"]');
+      asnListInput.data('edit-value', pendingAsns.join(','));
+
+      // Update URL parameters
+      var params = new URLSearchParams(window.location.search);
+      params.set('asn_list', pendingAsns.join(','));
+      params.set('reftag', 'asn_connectivity');
+      window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
+
+      // Hide modal and trigger search — search doesn't interact with modal so no need to wait
+      var modalEl = document.getElementById('asn-verify-modal');
+      bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+      self.handleAsnConnectivity();
     },
 
     /**
@@ -2504,10 +2766,16 @@ PeeringDB = {
         const connectivityType = PeeringDB.AsnConnectivity.getConnectivityType();
 
         // Fetch data based on connectivity type
-        const { primaryData, secondaryData } = await PeeringDB.AsnConnectivity.fetchConnectivityData(
+        const { rateLimited, message, primaryData, secondaryData } = await PeeringDB.AsnConnectivity.fetchConnectivityData(
           asnArray.join(','),
           connectivityType
         );
+
+        if (rateLimited) {
+          PeeringDB.AsnConnectivity.displayRateLimited('asn_connectivity', message);
+          searchForm.editable("loading-shim", "hide");
+          return;
+        }
 
         if (!primaryData || !primaryData.length) {
           PeeringDB.AsnConnectivity.displayNoResults('asn_connectivity');
@@ -2548,9 +2816,20 @@ PeeringDB = {
      * @returns {Array|null} Array of ASN numbers or null if invalid
      */
     getValidatedAsnArray: function() {
+      var asnList = null;
+
+      // First try to get from editable search parameters (autocomplete mode)
       const searchParams = window.getSearchParameters ? window.getSearchParameters('asn_connectivity') : '';
-      const urlParams = new URLSearchParams(searchParams);
-      const asnList = urlParams.get('asn_list');
+      if (searchParams) {
+        const urlParams = new URLSearchParams(searchParams);
+        asnList = urlParams.get('asn_list');
+      }
+
+      // If not found, try URL parameters directly (paste mode sets these)
+      if (!asnList) {
+        const windowUrlParams = new URLSearchParams(window.location.search);
+        asnList = windowUrlParams.get('asn_list');
+      }
 
       if (!asnList) {
         console.error('No ASN list provided');
@@ -2603,8 +2882,20 @@ PeeringDB = {
 
       const typeConfig = config[connectivityType];
 
+      const parseRateLimitMessage = async (response) => {
+        try {
+          const data = await response.json();
+          return data.message || null;
+        } catch {
+          return null;
+        }
+      };
+
       // Fetch primary data (netfac or netixlan)
       const primaryResponse = await fetch(typeConfig.primaryEndpoint);
+      if (primaryResponse.status === 429) {
+        return { rateLimited: true, message: await parseRateLimitMessage(primaryResponse), primaryData: null, secondaryData: null };
+      }
       const primaryData = await primaryResponse.json();
 
       if (!primaryData.data || primaryData.data.length === 0) {
@@ -2617,6 +2908,9 @@ PeeringDB = {
       // Fetch secondary data (fac or ix)
       const secondaryUrl = `${typeConfig.secondaryEndpoint}?id__in=${entityIds.join(',')}`;
       const secondaryResponse = await fetch(secondaryUrl);
+      if (secondaryResponse.status === 429) {
+        return { rateLimited: true, message: await parseRateLimitMessage(secondaryResponse), primaryData: null, secondaryData: null };
+      }
       const secondaryData = await secondaryResponse.json();
 
       return {
@@ -2693,6 +2987,7 @@ PeeringDB = {
 
       const searchForm = $('[data-edit-target="advanced_search:asn_connectivity"]');
       searchForm.find('.results-empty').hide();
+      searchForm.find('.results-rate-limited').hide();
       searchForm.find('.results-cutoff').hide();
 
       // Show the legend when results are displayed
@@ -3106,25 +3401,35 @@ PeeringDB = {
     },
 
     /**
+     * Shared cleanup: empties results, hides status divs, hides export buttons and legend.
+     * @param {string} reftag - Search reference tag
+     * @returns {jQuery} searchForm jQuery object
+     */
+    _clearResults: function(reftag) {
+      const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
+      searchForm.find('.results-empty').hide();
+      searchForm.find('.results-rate-limited').hide();
+      searchForm.find('.results').empty();
+      searchForm.parent().find('[data-export-format]').addClass('d-none').removeAttr('href');
+      if (reftag === 'asn_connectivity') {
+        const legend = document.querySelector('#asn_connectivity .connectivity-legend');
+        if (legend) legend.style.display = 'none';
+      }
+      return searchForm;
+    },
+
+    /**
      * Displays "no results" message for ASN connectivity search
      * @param {string} reftag - Search reference tag
      */
     displayNoResults: function(reftag) {
-      const searchForm = $('[data-edit-target="advanced_search:' + reftag + '"]');
-      searchForm.find('.results-empty').show();
-      searchForm.find('.results').empty();
-      searchForm.parent().find('[data-export-format]').each(function () {
-        $(this).addClass('d-none');
-        $(this).removeAttr('href');
-      });
+      this._clearResults(reftag).find('.results-empty').show();
+    },
 
-      // Hide legend when no results
-      if (reftag === 'asn_connectivity') {
-        const legend = document.querySelector('#asn_connectivity .connectivity-legend');
-        if (legend) {
-          legend.style.display = 'none';
-        }
-      }
+    displayRateLimited: function(reftag, message) {
+      const searchForm = this._clearResults(reftag);
+      searchForm.find('.results-rate-limited .rate-limit-message').text(message);
+      searchForm.find('.results-rate-limited').show();
     },
 
     /**
