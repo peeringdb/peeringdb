@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0147_alter_environmentsetting_setting'),
-        ('peeringdb_server', '0147_ixfmemberdata_ix_side'),
+        ("peeringdb_server", "0147_alter_environmentsetting_setting"),
+        ("peeringdb_server", "0147_ixfmemberdata_ix_side"),
     ]
 
-    operations = [
-    ]
+    operations = []
