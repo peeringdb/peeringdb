@@ -1,4 +1,4 @@
-Generated from signals.py on 2026-02-17 13:29:49.492138
+Generated from signals.py on 2026-03-10 15:05:04.911321
 
 # peeringdb_server.signals
 
@@ -16,6 +16,35 @@ Django signal handlers
 # Functions
 ---
 
+## _handle_asn_undelete
+`def _handle_asn_undelete(instance, rdap)`
+
+Handle the auto-undelete flow for issue #1877.
+
+Validates the user's RDAP relationship before undeleting to ensure
+only legitimate new owners can claim deleted networks. Denies the
+request if validation fails without modifying the network.
+
+---
+## _handle_new_asn_affiliation
+`def _handle_new_asn_affiliation(instance, deleted_network)`
+
+Handle RDAP lookup, org/network creation, and approval for new ASN affiliations.
+
+Returns (handled, rdap_lookup, rdap_emails) where:
+- handled=True if the request was fully processed (caller should return)
+- rdap_lookup and rdap_emails are passed back for the fallthrough admin ticket
+
+---
+## _handle_org_with_admins
+`def _handle_org_with_admins(instance)`
+
+Handle affiliation request when the targeted org already has admins.
+
+Checks email restrictions, auto-approves if the user is already a member,
+or notifies org admins to review the request.
+
+---
 ## addressmodel_save
 `def addressmodel_save(sender, instance=None, **kwargs)`
 
@@ -89,10 +118,10 @@ also check if latitude and longitude are in the facility or not
 ## uoar_creation
 `def uoar_creation(sender, instance, created=False, **kwargs)`
 
-Notify the approporiate management entity when a user to organization affiliation request is created.
+Notify the appropriate management entity when a user to organization
+affiliation request is created.
 
-Attempt to derive the targeted organization
-from the ASN the user provided.
+Attempt to derive the targeted organization from the ASN the user provided.
 
 ---
 ## update_counts_for_carrierfac

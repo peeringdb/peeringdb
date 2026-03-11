@@ -630,7 +630,8 @@ div.view_info .theme-container .btn-outline-dark,
 #asn-connectivity-exchange.btn-outline-dark,
 #match-filter-show-all.btn-outline-dark,
 #match-filter-any-match.btn-outline-dark,
-#match-filter-all-match.btn-outline-dark
+#match-filter-all-match.btn-outline-dark,
+#asn-input-mode .btn-outline-dark
 {
   background-color: transparent !important;
   color: var(--heading-color) !important;
@@ -644,7 +645,8 @@ div.view_info .theme-container .btn-outline-dark.active,
 #asn-connectivity-exchange.btn-outline-dark.active,
 #match-filter-show-all.btn-outline-dark.active,
 #match-filter-any-match.btn-outline-dark.active,
-#match-filter-all-match.btn-outline-dark.active
+#match-filter-all-match.btn-outline-dark.active,
+#asn-input-mode .btn-outline-dark.active
 {
   background-color: var(--button-regular-color) !important;
   color: var(--button-text-color-1) !important;
@@ -1020,6 +1022,7 @@ div.list > div.scrollable {
   margin-left: -15px;
   margin-right: -10px;
   padding-left: 15px;
+  position: relative;
 /*  border-bottom: 3px #1c3f28 solid; */
 }
 
@@ -1027,6 +1030,7 @@ div.list > div.scrollable {
   overflow-y: auto;
   max-height: 220px;
   transition: max-height 0.3s ease;
+  position: relative;
 }
 
 .scrollable.expanded {

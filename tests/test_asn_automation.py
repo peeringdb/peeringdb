@@ -598,6 +598,194 @@ class AsnAutomationTestCase(TestCase):
             0,
         )
 
+    # Issue #1877: Auto-undelete network tests
+
+    def test_undelete_network_rdap_validated(self):
+        """
+        Test that a user with RDAP-validated email can claim a deleted network.
+        The network should be undeleted and assigned to a new organization.
+        """
+        asn = 9000010
+
+        reset_group_ids()
+
+        # Create a network and then delete it
+        old_org = models.Organization.objects.create(name="Old Org for Undelete Test")
+        network = models.Network.objects.create(
+            asn=asn, name="Old Network", org=old_org, status="ok"
+        )
+        old_network_id = network.id
+
+        # Delete the network
+        network.delete()
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
+        # User with RDAP-validated email requests affiliation
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn})
+        # user_a has Neteng@20c.com which matches RDAP
+        request.user = self.user_a
+        mock_csrf_session(request)
+
+        resp = json.loads(pdbviews.view_affiliate_to_org(request).content)
+        self.assertEqual(resp.get("status"), "ok")
+
+        # Network should be undeleted
+        network.refresh_from_db()
+        self.assertEqual(network.status, "ok")
+        # Same record, not new
+        self.assertEqual(network.id, old_network_id)
+
+        # Network should be assigned to NEW organization (from RDAP)
+        self.assertNotEqual(network.org.id, old_org.id)
+        self.assertEqual(network.org.name, f"ORG AS{asn}")
+
+        # User should be admin of the new org (RDAP validated = auto-approved)
+        self.assertTrue(
+            self.user_a.groups.filter(name=network.org.admin_usergroup.name).exists()
+        )
+
+    def test_undelete_network_rdap_not_validated(self):
+        """
+        Test that a user without RDAP validation cannot auto-claim a deleted network.
+        The request is denied and the network stays deleted.
+        """
+        asn = 9000011
+
+        reset_group_ids()
+
+        # Create and delete a network
+        old_org = models.Organization.objects.create(
+            name="Old Org for Non-Validated Test"
+        )
+        network = models.Network.objects.create(
+            asn=asn, name="Old Network NV", org=old_org, status="ok"
+        )
+
+        network.delete()
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
+        # User without RDAP-validated email requests affiliation
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn})
+
+        # user_b has neteng@other.com which does NOT match RDAP
+        request.user = self.user_b
+        mock_csrf_session(request)
+
+        pdbviews.view_affiliate_to_org(request)
+
+        # Network should remain deleted - RDAP validation failed
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
+    def test_undelete_preserves_network_id(self):
+        """
+        Test that undelete preserves the original network ID (history preserved).
+        """
+        asn = 9000013
+
+        reset_group_ids()
+
+        old_org = models.Organization.objects.create(name="Old Org for ID Test")
+        network = models.Network.objects.create(
+            asn=asn, name="ID Test Network", org=old_org, status="ok"
+        )
+        original_id = network.id
+
+        network.delete()
+
+        # Request affiliation
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn})
+        request.user = self.user_a
+        mock_csrf_session(request)
+
+        pdbviews.view_affiliate_to_org(request)
+
+        # Verify same network ID
+        network.refresh_from_db()
+        self.assertEqual(network.id, original_id)
+        self.assertEqual(network.status, "ok")
+
+    def test_undelete_child_objects_remain_deleted(self):
+        """
+        Test that child objects (poc_set) remain soft-deleted after network undelete.
+        The new owner rebuilds from scratch.
+        """
+        asn = 9000014
+
+        reset_group_ids()
+
+        old_org = models.Organization.objects.create(name="Old Org for Child Test")
+        network = models.Network.objects.create(
+            asn=asn, name="Child Test Network", org=old_org, status="ok"
+        )
+
+        # Create a contact for the network
+        contact = models.NetworkContact.objects.create(
+            network=network,
+            role="Abuse",
+            name="Old Contact",
+            email="old@example.com",
+            status="ok",
+        )
+
+        # Delete the network (which deletes the contact too)
+        network.delete()
+        contact.refresh_from_db()
+        self.assertEqual(contact.status, "deleted")
+
+        # Request affiliation to undelete
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn})
+        request.user = self.user_a
+        mock_csrf_session(request)
+
+        pdbviews.view_affiliate_to_org(request)
+
+        # Network should be undeleted
+        network.refresh_from_db()
+        self.assertEqual(network.status, "ok")
+
+        # But contact should still be deleted
+        contact.refresh_from_db()
+        self.assertEqual(contact.status, "deleted")
+
+    @override_settings(AUTO_UNDELETE_NETWORK=False)
+    def test_undelete_disabled_returns_error(self):
+        """
+        Test that when AUTO_UNDELETE_NETWORK is disabled, the original
+        error message is returned for deleted networks.
+        """
+        asn = 9000012
+
+        reset_group_ids()
+
+        # Create and delete a network
+        old_org = models.Organization.objects.create(name="Old Org for Disabled Test")
+        network = models.Network.objects.create(
+            asn=asn, name="Old Network Disabled", org=old_org, status="ok"
+        )
+
+        network.delete()
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
+        # Request affiliation - should be rejected
+        request = self.factory.post("/affiliate-to-org", data={"asn": asn})
+        request.user = self.user_a
+        mock_csrf_session(request)
+
+        resp = pdbviews.view_affiliate_to_org(request)
+        self.assertEqual(resp.status_code, 400)
+
+        data = json.loads(resp.content)
+        self.assertIn("non_field_errors", data)
+        self.assertIn("deleted", data["non_field_errors"][0].lower())
+
+        # Network should still be deleted
+        network.refresh_from_db()
+        self.assertEqual(network.status, "deleted")
+
 
 class TestTutorialMode(SettingsCase):
     settings = {"TUTORIAL_MODE": True}

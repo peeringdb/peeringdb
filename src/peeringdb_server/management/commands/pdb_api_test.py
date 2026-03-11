@@ -2063,6 +2063,29 @@ class TestJSON(unittest.TestCase):
             ignore=["longitude", "latitude"],
         )
 
+        # "No Power" option for facilities without power services #1884
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            SHARED["fac_id"],
+            {"available_voltage_services": ["No Power"]},
+            ignore=["longitude", "latitude"],
+        )
+
+        # "No Power" is mutually exclusive with other voltage options #1884
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            SHARED["fac_id"],
+            {"available_voltage_services": ["No Power"]},
+            test_failures={
+                "invalid": {
+                    "available_voltage_services": ["No Power", "480 VAC"],
+                }
+            },
+            ignore=["longitude", "latitude"],
+        )
+
     ##########################################################################
 
     def test_org_admin_002_POST_PUT_DELETE_fac_zipcode(self):

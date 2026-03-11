@@ -89,9 +89,14 @@ class BaseSchema(AutoSchema):
         "AutoField": "integer",
         "BooleanField": "boolean",
         "DecimalField": "number",
+        "DateTimeField": "string",
+        "DateField": "string",
+        "NumberSearchField": "number",
+    }
+
+    format_map = {
         "DateTimeField": "date-time",
         "DateField": "date",
-        "NumberSearchField": "number",
     }
 
     serializer_method_field_map = {
@@ -250,7 +255,9 @@ class BaseSchema(AutoSchema):
             "approve facility presence at carrier",
             "reject facility presence at carrier",
         ]:
-            op_dict["requestBody"]["content"][content_type]["schema"] = None
+            op_dict["requestBody"]["content"][content_type]["schema"] = {
+                "type": "object",
+            }
             return op_dict
 
         # if set net side or set ix side, schema expects a fac_id
@@ -454,6 +461,11 @@ class BaseSchema(AutoSchema):
         for the object.
         """
 
+        # Track existing query parameter names to avoid duplicates
+        existing_query_params = {
+            param["name"] for param in parameters if param.get("in") == "query"
+        }
+
         field_names = [
             (fld.name, fld) for fld in model._meta.get_fields()
         ] + serializer.queryable_relations()
@@ -523,17 +535,28 @@ class BaseSchema(AutoSchema):
                     )
                 )
 
+            param_name = re.sub(
+                "^facility__", "fac__", re.sub("^network__", "net__", field)
+            )
+
+            if param_name in existing_query_params:
+                continue
+
+            existing_query_params.add(param_name)
+            schema = {
+                "type": self.type_map.get(typ, "string"),
+            }
+            # OpenAPI spec requires date/datetime as type: string with format
+            if typ in self.format_map:
+                schema["format"] = self.format_map[typ]
+
             parameters.append(
                 {
-                    "name": re.sub(
-                        "^facility__", "fac__", re.sub("^network__", "net__", field)
-                    ),
+                    "name": param_name,
                     "in": "query",
                     "description": "\n\n".join(description),
                     "required": False,
-                    "schema": {
-                        "type": self.type_map.get(typ, "string"),
-                    },
+                    "schema": schema,
                 }
             )
 
