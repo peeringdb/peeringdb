@@ -1,4 +1,4 @@
-Generated from models.py on 2026-02-17 13:29:49.492138
+Generated from models.py on 2026-03-10 15:05:04.911321
 
 # peeringdb_server.models
 
@@ -743,6 +743,7 @@ Keyword Argument(s):
 - speed(int=0) : network speed (mbit)
 - operational(bool=True): peer is operational
 - is_rs_peer(bool=False): peer is route server
+- facility(Facility=None): resolved Facility instance from IX-F data
 
 ---
 #### network_has_dismissed_actionable
@@ -1522,6 +1523,26 @@ Filter queryset of Network objects related to the netixlan link
 specified by netixlan_id
 
 Relationship through netixlan.
+
+---
+#### undelete_for_new_owner
+`def undelete_for_new_owner(cls, asn, org, rdap)`
+
+Undeletes a deleted network and reassigns it to a new organization.
+
+This is called when an ASN is reassigned by an RIR to a new operator
+and that operator can be validated via RDAP.
+
+Arguments:
+    asn: The ASN to undelete
+    org: The new Organization to assign the network to
+    rdap: RdapAsn instance containing RDAP data
+
+Returns:
+    tuple: (Network instance, bool indicating if it was undeleted)
+
+Note: Child objects (poc_set, netfac_set, netixlan_set) remain soft-deleted.
+The new owner rebuilds their network data from scratch.
 
 ---
 

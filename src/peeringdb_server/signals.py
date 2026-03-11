@@ -418,19 +418,135 @@ def recheck_ownership_requests(request, email_address, **kwargs):
 # USER TO ORGANIZATION AFFILIATION
 
 
+def _handle_org_with_admins(instance):
+    """
+    Handle affiliation request when the targeted org already has admins.
+
+    Checks email restrictions, auto-approves if the user is already a member,
+    or notifies org admins to review the request.
+    """
+    if instance.org.restrict_user_emails:
+        invalid_emails, valid_emails = instance.org.user_meets_email_requirements(
+            instance.user, verified_only=True
+        )
+        if invalid_emails and not valid_emails:
+            instance.deny()
+            return
+
+    if instance.user.groups.filter(name=instance.org.usergroup.name).exists():
+        instance.approve()
+        return
+
+    for user in instance.org.admin_usergroup.user_set.all():
+        with override(user.locale):
+            user.email_user(
+                _("User %(u_name)s wishes to be affiliated to your Organization")
+                % {"u_name": instance.user.full_name},
+                loader.get_template("email/notify-org-admin-user-affil.txt").render(
+                    {
+                        "user": instance.user,
+                        "org": instance.org,
+                        "org_management_url": urljoin(
+                            settings.BASE_URL, f"/org/{instance.org.id}#users"
+                        ),
+                    }
+                ),
+            )
+
+
+def _handle_new_asn_affiliation(instance, deleted_network):
+    """
+    Handle RDAP lookup, org/network creation, and approval for new ASN affiliations.
+
+    Returns (handled, rdap_lookup, rdap_emails) where:
+    - handled=True if the request was fully processed (caller should return)
+    - rdap_lookup and rdap_emails are passed back for the fallthrough admin ticket
+    """
+    try:
+        rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
+    except RdapException:
+        instance.deny()
+        raise
+    except Exception as exc:
+        instance.deny()
+        log.error("rdap_error", exc=exc, asn=instance.asn)
+        raise RdapException(rdap_pretty_error_message(exc))
+
+    instance.org, org_created = Organization.create_from_rdap(
+        rdap, instance.asn, instance.org_name
+    )
+    instance.save()
+
+    if deleted_network:
+        _handle_asn_undelete(instance, rdap)
+        return True, None, []
+
+    net, net_created = Network.create_from_rdap(rdap, instance.asn, instance.org)
+
+    if pdb_settings.AUTO_APPROVE_AFFILIATION:
+        instance.approve()
+        return True, None, []
+
+    if instance.user.validate_rdap_relationship(rdap):
+        instance.approve()
+        return True, None, []
+
+    ticket_queue_asnauto_create(
+        instance.user,
+        instance.org,
+        net,
+        rdap,
+        net.asn,
+        org_created=org_created,
+        net_created=net_created,
+    )
+
+    return False, rdap_lookup, list(rdap.emails)
+
+
+def _handle_asn_undelete(instance, rdap):
+    """
+    Handle the auto-undelete flow for issue #1877.
+
+    Validates the user's RDAP relationship before undeleting to ensure
+    only legitimate new owners can claim deleted networks. Denies the
+    request if validation fails without modifying the network.
+    """
+    if not instance.user.validate_rdap_relationship(rdap):
+        instance.deny()
+        return
+
+    net, net_undeleted = Network.undelete_for_new_owner(
+        instance.asn, instance.org, rdap
+    )
+
+    if not net_undeleted:
+        instance.deny()
+        return
+
+    instance.approve()
+
+
 def uoar_creation(sender, instance, created=False, **kwargs):
     """
-    Notify the approporiate management entity when a user to organization affiliation request is created.
+    Notify the appropriate management entity when a user to organization
+    affiliation request is created.
 
-    Attempt to derive the targeted organization
-    from the ASN the user provided.
+    Attempt to derive the targeted organization from the ASN the user provided.
     """
 
     if created:
         network = Network.objects.filter(asn=instance.asn).first()
+        deleted_network_to_undelete = None
+
         if network and network.status == "deleted":
-            instance.deny()
-            return
+            # Issue #1877: Allow auto-undelete for deleted networks
+            if settings.AUTO_UNDELETE_NETWORK:
+                deleted_network_to_undelete = network
+                network = None
+            else:
+                instance.deny()
+                return
 
         if instance.asn and not instance.org_id:
             if network:
@@ -441,148 +557,70 @@ def uoar_creation(sender, instance, created=False, **kwargs):
         instance.save()
 
         if instance.org_id and instance.org.admin_usergroup.user_set.count() > 0:
-            # check if user's email address matches org requirements
-            if instance.org.restrict_user_emails:
-                invalid_emails, valid_emails = (
-                    instance.org.user_meets_email_requirements(
-                        instance.user, verified_only=True
-                    )
-                )
-                # Deny if user has no valid verified emails matching the domain
-                if invalid_emails and not valid_emails:
-                    instance.deny()
+            # organization exists and has admins - notify them to review
+            _handle_org_with_admins(instance)
+            return
+
+        request_type = "be affiliated to"
+        rdap_data = {"emails": []}
+        rdap_lookup = None
+
+        if instance.asn and not instance.org_id:
+            # ASN specified but no org found - do RDAP lookup and create org/network
+            handled, rdap_lookup, rdap_emails = _handle_new_asn_affiliation(
+                instance, deleted_network_to_undelete
+            )
+            if handled:
+                return
+            rdap_data["emails"].extend(rdap_emails)
+
+        if instance.org:
+            entity_name = instance.org.name
+            if not instance.org.owned:
+                # organization is currently not owned
+                request_type = "request ownership of"
+
+                if pdb_settings.AUTO_APPROVE_AFFILIATION:
+                    instance.approve()
                     return
 
-            # check that user is not already a member of that org
-            if instance.user.groups.filter(name=instance.org.usergroup.name).exists():
+                # if user's relationship to the org can be validated by
+                # checking the rdap information of the org's networks
+                # we can approve the affiliation (ownership) request right away
+                for asn, rdap in list(instance.org.rdap_collect.items()):
+                    rdap_data["emails"].extend(rdap.emails)
+                    if instance.user.validate_rdap_relationship(rdap):
+                        instance.approve()
+                        # No ticket - object met automation criteria
+                        return
+        else:
+            entity_name = instance.org_name
+
+            if pdb_settings.AUTO_APPROVE_AFFILIATION:
+                org = Organization.objects.create(name=instance.org_name, status="ok")
+                instance.org = org
                 instance.approve()
                 return
 
-            # organization exists already and has admins, notify organization
-            # admins
-            for user in instance.org.admin_usergroup.user_set.all():
-                with override(user.locale):
-                    user.email_user(
-                        _(
-                            "User %(u_name)s wishes to be affiliated to your Organization"
-                        )
-                        % {"u_name": instance.user.full_name},
-                        loader.get_template(
-                            "email/notify-org-admin-user-affil.txt"
-                        ).render(
-                            {
-                                "user": instance.user,
-                                "org": instance.org,
-                                "org_management_url": urljoin(
-                                    settings.BASE_URL, f"/org/{instance.org.id}#users"
-                                ),
-                            }
-                        ),
-                    )
-        else:
-            request_type = "be affiliated to"
-            rdap_data = {"emails": []}
-            org_created = False
-            net_created = False
-            rdap_lookup = None
-            if instance.asn and not instance.org_id:
-                # ASN specified in request, but no network found
-                # Lookup RDAP information
-                try:
-                    rdap_lookup = rdap = RdapLookup().get_asn(instance.asn)
-                except RdapException:
-                    instance.deny()
-                    raise
-                except Exception as exc:
-                    # unhandled exception, deny request and log error
-                    instance.deny()
-                    log.error("rdap_error", exc=exc, asn=instance.asn)
-                    raise RdapException(rdap_pretty_error_message(exc))
-
-                # create organization
-                instance.org, org_created = Organization.create_from_rdap(
-                    rdap, instance.asn, instance.org_name
-                )
-                instance.save()
-
-                # create network
-                net, net_created = Network.create_from_rdap(
-                    rdap, instance.asn, instance.org
-                )
-
-                # if affiliate auto appove is on, auto approve at this point
-                if pdb_settings.AUTO_APPROVE_AFFILIATION:
-                    instance.approve()
-                    return
-
-                # if user's relationship to network can be validated now
-                # we can approve the ownership request right away
-                if instance.user.validate_rdap_relationship(rdap):
-                    instance.approve()
-                    # No ticket needed - object met automation criteria
-                    return
-
-                # RDAP validation failed - create ticket for manual review
-                ticket_queue_asnauto_create(
-                    instance.user,
-                    instance.org,
-                    net,
-                    rdap,
-                    net.asn,
-                    org_created=org_created,
-                    net_created=net_created,
-                )
-
-            if instance.org:
-                # organization has been set on affiliation request
-                entity_name = instance.org.name
-                if not instance.org.owned:
-                    # organization is currently not owned
-                    request_type = "request ownership of"
-
-                    # if affiliate auto appove is on, auto approve at this point
-                    if pdb_settings.AUTO_APPROVE_AFFILIATION:
-                        instance.approve()
-                        return
-
-                    # if user's relationship to the org can be validated by
-                    # checking the rdap information of the org's networks
-                    # we can approve the affiliation (ownership) request right away
-                    for asn, rdap in list(instance.org.rdap_collect.items()):
-                        rdap_data["emails"].extend(rdap.emails)
-                        if instance.user.validate_rdap_relationship(rdap):
-                            instance.approve()
-                            # No ticket needed - object met automation criteria
-                            return
-            else:
-                entity_name = instance.org_name
-
-                if pdb_settings.AUTO_APPROVE_AFFILIATION:
-                    org = Organization.objects.create(
-                        name=instance.org_name, status="ok"
-                    )
-                    instance.org = org
-                    instance.approve()
-                    return
-
-            # organization has no owners and RDAP information could not verify the user's relationship to the organization, notify pdb staff for review
-            ticket_queue(
-                f"User {instance.user.username} wishes to {request_type} {entity_name}",
-                loader.get_template("email/notify-pdb-admin-user-affil.txt").render(
-                    {
-                        "user": instance.user,
-                        "instance": instance,
-                        "base_url": settings.BASE_URL,
-                        "org_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_organization_add')}",
-                        "net_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_network_add')}",
-                        "review_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_user_change', args=(instance.user.id,))}",
-                        "approve_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_userorgaffiliationrequest_actions', args=(instance.id, 'approve_and_notify'))}",
-                        "emails": list(set(rdap_data["emails"])),
-                        "rdap_lookup": rdap_lookup,
-                    }
-                ),
-                instance.user,
-            )
+        # organization has no owners and RDAP information could not verify
+        # the user's relationship to the organization - notify pdb staff for review
+        ticket_queue(
+            f"User {instance.user.username} wishes to {request_type} {entity_name}",
+            loader.get_template("email/notify-pdb-admin-user-affil.txt").render(
+                {
+                    "user": instance.user,
+                    "instance": instance,
+                    "base_url": settings.BASE_URL,
+                    "org_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_organization_add')}",
+                    "net_add_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_network_add')}",
+                    "review_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_user_change', args=(instance.user.id,))}",
+                    "approve_url": f"{settings.BASE_URL}{django.urls.reverse('admin:peeringdb_server_userorgaffiliationrequest_actions', args=(instance.id, 'approve_and_notify'))}",
+                    "emails": list(set(rdap_data["emails"])),
+                    "rdap_lookup": rdap_lookup,
+                }
+            ),
+            instance.user,
+        )
 
     elif instance.status == "approved" and instance.org_id:
         # uoar was not created, and status is now approved, call approve

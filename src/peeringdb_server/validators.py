@@ -369,26 +369,28 @@ def validate_irr_as_set(value):
         as_set = None
 
         # <name>@<source>
-        parts_match = re.match(r"^([\w\d\-:]+)@([\w\d\-:]+)$", item)
+        # Source names contain only letters, digits, and hyphens (e.g. RIPE, RADB).
+        # Use [A-Z0-9-]+ for source to exclude colons, which belong only in
+        # the hierarchical set name. See: https://www.rfc-editor.org/rfc/rfc2622
+        parts_match = re.match(r"^([A-Z0-9_:-]+)@([A-Z0-9-]+)$", item)
         if parts_match:
             source = parts_match.group(2)
             as_set = parts_match.group(1)
 
         # <source>::<name>
         else:
-            parts_match = re.match(r"^([\w\d\-:]+)::([\w\d\-:]+)$", item)
+            parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
             if parts_match:
                 source = parts_match.group(1)
                 as_set = parts_match.group(2)
             else:
-                sourceless_match = re.match(r"^([\w\d\-:]+)$", item)
-                if not sourceless_match:
+                if not re.match(r"^[A-Z0-9_:-]+$", item):
                     raise ValidationError(
                         _(
                             "Invalid formatting: {} - should be AS-SET, ASx, AS-SET@SOURCE or SOURCE::AS-SET"
                         ).format(item)
                     )
-                as_set = sourceless_match.group(1)
+                as_set = item
 
         if source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
@@ -411,8 +413,8 @@ def validate_irr_as_set(value):
         types = []
 
         for part in as_parts:
-            match_set = re.match(r"^(AS|RS)-[\w\d\-]+$", part)
-            match_as = re.match(r"^(AS)[\d]+$", part)
+            match_set = re.match(r"^(AS|RS)-[A-Z0-9_-]+$", part)
+            match_as = re.match(r"^AS[0-9]+$", part)
 
             # set name found
 

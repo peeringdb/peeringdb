@@ -42,14 +42,29 @@
             <div class="row">
                 <div class="col-4 col-sm-3 col-md-2">{% trans "ASNs" %}</div>
                 <div class="col-8 col-sm-9 col-md-10">
-                    <div class="editable asn_list_input"
-                        data-edit-type="autocomplete"
-                        data-edit-placeholder="{% trans "Search ASN numbers ..." %}"
-                        data-edit-autocomplete="asn"
-                        data-edit-name="asn_list"
-                        data-edit-value="{{ request.GET.asn_list|autocomplete_preload_asn }}"
-                        data-edit-multiple="yes"
-                        placeholder="ASN"></div>
+                    <div class="btn-group btn-group-sm mb-2" role="group" id="asn-input-mode" aria-label="{% trans "ASN Input Mode" %}">
+                        <button type="button" class="btn btn-sm btn-outline-dark active" data-input-mode="autocomplete">
+                            {% trans "Autocomplete" %}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-dark" data-input-mode="text">
+                            {% trans "Text Input" %}
+                        </button>
+                    </div>
+                    <div id="asn-autocomplete-container">
+                        <div class="editable asn_list_input"
+                            data-edit-type="autocomplete"
+                            data-edit-placeholder="{% trans "Search ASN numbers ..." %}"
+                            data-edit-autocomplete="asn"
+                            data-edit-name="asn_list"
+                            data-edit-value="{{ request.GET.asn_list|autocomplete_preload_asn }}"
+                            data-edit-multiple="yes"
+                            placeholder="ASN"></div>
+                    </div>
+                    <div id="asn-paste-container" style="display: none;">
+                        <textarea class="form-control" id="asn-paste-input" rows="3"
+                                  placeholder="{% trans "Enter ASNs separated by commas or spaces (e.g., 6939, 8452, 3352)" %}"></textarea>
+                        <small class="form-text text-muted">{% trans "Supports comma, space, or newline separated ASNs. 'AS' prefix is optional." %}</small>
+                    </div>
                     <small class="text-muted">{% blocktrans with limit=asn_connectivity_limit %}Maximum {{ limit }} ASNs.{% endblocktrans %}</small>
                 </div>
             </div>
@@ -132,6 +147,12 @@
 {% trans "No connectivity data found." %}
 </div>
 
+<div class="results-rate-limited center" style="display:none;">
+  <span class="rate-limit-message"></span>
+  <br>
+  <span>{% trans "Authenticate for increased limits." %}</span>
+</div>
+
 <div class="results">
 <!-- Results will be populated here by the editable system -->
 </div>
@@ -140,4 +161,31 @@
 {% blocktrans %}...More than {{ row_limit }} entries matched your query, refine your request...{% endblocktrans %}
 </div>
 
+<!-- ASN Verification Modal -->
+<div class="modal fade" id="asn-verify-modal" tabindex="-1" aria-labelledby="asn-verify-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="asn-verify-modal-label">{% trans "Verify ASNs" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans "Close" %}"></button>
+            </div>
+            <div class="modal-body">
+                <div id="asn-verify-loading" class="text-center" style="display: none;">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">{% trans "Loading..." %}</span>
+                    </div>
+                    {% trans "Validating ASNs..." %}
+                </div>
+                <div id="asn-verify-error" class="alert alert-danger" style="display: none;"></div>
+                <div id="asn-verify-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-primary" id="asn-verify-confirm">{% trans "Search" %}</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+</div>
+<script>window.ASN_CONNECTIVITY_LIMIT = {{ asn_connectivity_limit }};</script>
