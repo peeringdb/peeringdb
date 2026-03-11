@@ -15,6 +15,7 @@ from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DataChangeWatchedObject,
     DeskProTicket,
+    Facility,
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
@@ -4576,3 +4577,340 @@ def test_net_count_after_ixf_import_removes_network(entities):
         ix.net_count == 0
         or NetworkIXLan.objects.filter(ixlan=ixlan, status="ok").count() == 0
     )
+
+
+# --- Facility / ix_side tests ---
+
+
+@pytest.mark.django_db
+def test_parse_facility_id_direct():
+    """
+    Test that parse_facility_id extracts pdb_facility_id directly from if_list.
+    """
+    importer = ixf.Importer()
+
+    if_list = [
+        {"switch_id": 1, "if_speed": 10000, "pdb_facility_id": 42},
+    ]
+
+    result = importer.parse_facility_id(if_list)
+    assert result == 42
+
+
+@pytest.mark.django_db
+def test_parse_facility_id_via_switch():
+    """
+    Test that parse_facility_id extracts pdb_facility_id via switch_id mapping
+    when not directly present in if_list.
+    """
+    importer = ixf.Importer()
+
+    switch_map = {
+        1: {"id": 1, "name": "switch-1", "pdb_facility_id": 99},
+    }
+
+    if_list = [
+        {"switch_id": 1, "if_speed": 10000},
+    ]
+
+    result = importer.parse_facility_id(if_list, switch_map=switch_map)
+    assert result == 99
+
+
+@pytest.mark.django_db
+def test_parse_facility_id_multiple_facilities_skipped():
+    """
+    Test that parse_facility_id returns None when multiple different
+    facility IDs are found (LAG across facilities).
+    """
+    importer = ixf.Importer()
+
+    if_list = [
+        {"switch_id": 1, "if_speed": 10000, "pdb_facility_id": 42},
+        {"switch_id": 2, "if_speed": 10000, "pdb_facility_id": 99},
+    ]
+
+    result = importer.parse_facility_id(if_list)
+    assert result is None
+
+
+@pytest.mark.django_db
+def test_multiple_facility_ids_import_continues(entities):
+    """
+    Integration test: when if_list contains interfaces pointing to different
+    facility IDs (ambiguous LAG), ix_side is skipped but the netixlan is still
+    created and the import continues normally.
+    """
+    data = setup_test_data("ixf.member.facility.multi")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    org = entities["org"][0]
+    # Create both facilities so the IDs are valid - the issue is ambiguity, not missing data
+    facility_a = Facility.objects.create(name="Facility A", org=org, status="ok")
+    facility_b = Facility.objects.create(name="Facility B", org=org, status="ok")
+
+    # Patch the test data to use our created facility IDs
+    for member in data["member_list"]:
+        for conn in member["connection_list"]:
+            conn["if_list"][0]["pdb_facility_id"] = facility_a.id
+            conn["if_list"][1]["pdb_facility_id"] = facility_b.id
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    # Import must have continued - netixlan is created
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+
+    # ix_side is left as None since we can't pick between two different facilities
+    assert netixlan.ix_side is None
+
+
+@pytest.mark.django_db
+def test_parse_facility_id_same_facility_multiple_ifaces():
+    """
+    Test that parse_facility_id returns the facility ID when all interfaces
+    reference the same facility.
+    """
+    importer = ixf.Importer()
+
+    if_list = [
+        {"switch_id": 1, "if_speed": 10000, "pdb_facility_id": 42},
+        {"switch_id": 2, "if_speed": 10000, "pdb_facility_id": 42},
+    ]
+
+    result = importer.parse_facility_id(if_list)
+    assert result == 42
+
+
+@pytest.mark.django_db
+def test_facility_id_invalid_skipped(entities):
+    """
+    Test that an invalid (non-existent) facility ID is handled gracefully
+    and ix_side is set to None on the resulting netixlan.
+    """
+    data = setup_test_data("ixf.member.facility")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    # No Facility with id=1 exists, so ix_side should be None
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    # With allow_ixp_update=True, the netixlan is created directly
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side is None
+
+
+@pytest.mark.django_db
+def test_ix_side_set_on_add(entities):
+    """
+    Test that ix_side is populated when adding a new netixlan via IX-F import,
+    using direct pdb_facility_id in if_list.
+    """
+    data = setup_test_data("ixf.member.facility")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    # Create a Facility with id that matches the test data (pdb_facility_id=1)
+    org = entities["org"][0]
+    facility = Facility.objects.create(
+        name="Test Facility",
+        org=org,
+        status="ok",
+    )
+    # Update the test data to use facility id
+    for member in data["member_list"]:
+        for conn in member["connection_list"]:
+            for iface in conn["if_list"]:
+                iface["pdb_facility_id"] = facility.id
+            for switch in data["ixp_list"][0].get("switch", []):
+                switch["pdb_facility_id"] = facility.id
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+
+@pytest.mark.django_db
+def test_ix_side_set_on_add_via_switch(entities):
+    """
+    Test that ix_side is populated when adding a new netixlan via IX-F import,
+    using switch_id mapping to resolve pdb_facility_id.
+    """
+    data = setup_test_data("ixf.member.facility.via_switch")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    org = entities["org"][0]
+    facility = Facility.objects.create(
+        name="Test Facility",
+        org=org,
+        status="ok",
+    )
+
+    # Update the switch pdb_facility_id to match our created facility
+    for switch in data["ixp_list"][0].get("switch", []):
+        switch["pdb_facility_id"] = facility.id
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+
+@pytest.mark.django_db
+def test_ix_side_set_on_modify(entities):
+    """
+    Test that ix_side is updated on an existing netixlan when IX-F data
+    provides a facility ID.
+    """
+    data = setup_test_data("ixf.member.facility")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    org = entities["org"][0]
+    facility = Facility.objects.create(
+        name="Test Facility",
+        org=org,
+        status="ok",
+    )
+
+    # Create an existing netixlan without ix_side
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+    )
+
+    # Update the test data to use our facility id
+    for member in data["member_list"]:
+        for conn in member["connection_list"]:
+            for iface in conn["if_list"]:
+                iface["pdb_facility_id"] = facility.id
+            for switch in data["ixp_list"][0].get("switch", []):
+                switch["pdb_facility_id"] = facility.id
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+
+@pytest.mark.django_db
+def test_ix_side_overwrites_existing(entities):
+    """
+    Test that IX-F data replaces an existing ix_side value
+    (IX-F is source of truth).
+    """
+    data = setup_test_data("ixf.member.facility")
+    network = entities["net"]["UPDATE_ENABLED"]
+    ixlan = entities["ixlan"][0]
+
+    org = entities["org"][0]
+    old_facility = Facility.objects.create(
+        name="Old Facility",
+        org=org,
+        status="ok",
+    )
+    new_facility = Facility.objects.create(
+        name="New Facility",
+        org=org,
+        status="ok",
+    )
+
+    # Create existing netixlan with old ix_side
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+        ix_side=old_facility,
+    )
+
+    # Update the test data to reference the new facility
+    for member in data["member_list"]:
+        for conn in member["connection_list"]:
+            for iface in conn["if_list"]:
+                iface["pdb_facility_id"] = new_facility.id
+            for switch in data["ixp_list"][0].get("switch", []):
+                switch["pdb_facility_id"] = new_facility.id
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == new_facility
+
+
+@pytest.mark.django_db
+def test_build_switch_map():
+    """
+    Test that build_switch_map correctly maps switch IDs to switch dicts.
+    """
+    importer = ixf.Importer()
+
+    data = {
+        "ixp_list": [
+            {
+                "ixp_id": 1,
+                "switch": [
+                    {"id": 1, "name": "sw1", "pdb_facility_id": 10},
+                    {"id": 2, "name": "sw2", "pdb_facility_id": 20},
+                ],
+            },
+            {
+                "ixp_id": 2,
+                "switch": [
+                    {"id": 3, "name": "sw3", "pdb_facility_id": 30},
+                ],
+            },
+        ],
+    }
+
+    switch_map = importer.build_switch_map(data)
+    assert len(switch_map) == 3
+    assert switch_map[1]["pdb_facility_id"] == 10
+    assert switch_map[2]["pdb_facility_id"] == 20
+    assert switch_map[3]["pdb_facility_id"] == 30
+
+
+@pytest.mark.django_db
+def test_build_switch_map_empty():
+    """
+    Test that build_switch_map handles missing switch data gracefully.
+    """
+    importer = ixf.Importer()
+
+    data = {
+        "ixp_list": [
+            {"ixp_id": 1},
+        ],
+    }
+
+    switch_map = importer.build_switch_map(data)
+    assert switch_map == {}
+
+    switch_map = importer.build_switch_map({})
+    assert switch_map == {}

@@ -358,12 +358,15 @@ def test_validate_prefix_overlap_error():
         ("AS15562", "AS15562"),
         ("AS-15562", "AS-15562"),
         ("AS15562 AS33333", "AS15562 AS33333"),
+        ("AS-RESOUND@ARIN", "AS-RESOUND@ARIN"),
+        ("ARIN::AS-RESOUND", "ARIN::AS-RESOUND"),
         # hyphenated source validation
         # we currently do not have valid hyphentated sources in the IRR_SOURCE
         # so this test is commented out
         # ("AS-20C@ARIN-NONAUTH", "AS-20C@ARIN-NONAUTH"),
         # ("ARIN-NONAUTH::AS-20C", "ARIN-NONAUTH::AS-20C"),
         # fail validation
+        ("AS-Resound Networks,LLC", False),
         ("UNKNOWN::AS-FOO", False),
         ("AS-FOO@UNKNOWN", False),
         ("ASFOO@UNKNOWN", False),

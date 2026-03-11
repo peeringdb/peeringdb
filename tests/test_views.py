@@ -4,7 +4,7 @@ import pytest
 from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client
+from django.test import Client, override_settings
 from django.urls import reverse
 from django_grainy.models import Group
 from rest_framework import status
@@ -155,6 +155,7 @@ def test_affiliate_to_deleted_org(client, org):
 
 
 @pytest.mark.django_db
+@override_settings(AUTO_UNDELETE_NETWORK=False)
 def test_affiliate_to_deleted_org_via_network(client, network):
     network.org.delete()
     assert_failing_affiliation_request_because_of_deletion(
@@ -165,6 +166,7 @@ def test_affiliate_to_deleted_org_via_network(client, network):
 
 
 @pytest.mark.django_db
+@override_settings(AUTO_UNDELETE_NETWORK=False)
 def test_affiliate_to_deleted_network(client, network):
     network.delete()
     assert_failing_affiliation_request_because_of_deletion(

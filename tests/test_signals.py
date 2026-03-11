@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import pytest
 import reversion
+from django.test import override_settings
 from django_grainy.models import Group
 
 from peeringdb_server.models import (
@@ -227,7 +228,12 @@ def test_uoar_creation():
 
 
 @pytest.mark.django_db
+@override_settings(AUTO_UNDELETE_NETWORK=False)
 def test_uoar_creation_network_deleted():
+    """
+    Test that when AUTO_UNDELETE_NETWORK is disabled, affiliation requests
+    for deleted networks are denied.
+    """
     user = User.objects.create_user(
         username="user", password="user", email="user@localhost"
     )
