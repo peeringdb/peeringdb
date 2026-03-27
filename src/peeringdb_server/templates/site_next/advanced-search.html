@@ -37,6 +37,14 @@
     <li role="presentation" class"nav-item">
       <a href="#carrier" aria-controls="carrier" role="tab" data-bs-toggle="tab" class="nav-link {% if request.GET.reftag == "carrier" %}active{% else %}inactive{% endif %}">{% trans "Carriers" %}</a>
     </li>
+    <li class="nav-item ms-auto d-flex align-items-center">
+      <button id="advanced-copy-api-query-btn"
+              class="btn btn-default btn-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#advancedCopyQueryModal">
+        {% trans "Copy API Query" %}
+      </button>
+    </li>
   </ul>
 
   <div class="tab-content">
@@ -67,6 +75,134 @@
       </ul>
     </nav>
 
+
+  <div class="modal fade" id="advancedCopyQueryModal" tabindex="-1" aria-labelledby="advancedCopyQueryModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="advancedCopyQueryModalLabel">{% trans "Copy API Query" %}</h5>
+          <button type="button" class="btn-close{% if prefers_dark_mode %} btn-close-white{% endif %}" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pb-0">
+          <ul class="nav nav-tabs" id="advCodeTabs" role="tablist">
+            <li class="active nav-item" role="presentation">
+              <a class="nav-link active" id="adv-curl-tab" data-bs-toggle="tab" data-bs-target="#adv-curl"
+                type="button" role="tab" aria-controls="adv-curl" aria-selected="true">cURL</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="adv-python-tab" data-bs-toggle="tab" data-bs-target="#adv-python"
+                type="button" role="tab" aria-controls="adv-python" aria-selected="false">Python</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="adv-javascript-tab" data-bs-toggle="tab" data-bs-target="#adv-javascript"
+                type="button" role="tab" aria-controls="adv-javascript" aria-selected="false">JavaScript</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="adv-go-tab" data-bs-toggle="tab" data-bs-target="#adv-go"
+                type="button" role="tab" aria-controls="adv-go" aria-selected="false">Go</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="adv-ruby-tab" data-bs-toggle="tab" data-bs-target="#adv-ruby"
+                type="button" role="tab" aria-controls="adv-ruby" aria-selected="false">Ruby</a>
+            </li>
+            <li class="nav-item" role="presentation">
+              <a class="nav-link" id="adv-php-tab" data-bs-toggle="tab" data-bs-target="#adv-php"
+                type="button" role="tab" aria-controls="adv-php" aria-selected="false">PHP</a>
+            </li>
+          </ul>
+          <div class="tab-content" id="advCodeTabsContent">
+            <div class="tab-pane fade show active" id="adv-curl" role="tabpanel" aria-labelledby="adv-curl-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-curl-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-curl" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="adv-python" role="tabpanel" aria-labelledby="adv-python-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-python-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-python" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="adv-javascript" role="tabpanel" aria-labelledby="adv-javascript-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-js-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-js" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="adv-go" role="tabpanel" aria-labelledby="adv-go-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-go-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-go" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="adv-ruby" role="tabpanel" aria-labelledby="adv-ruby-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-ruby-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-ruby" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="adv-php" role="tabpanel" aria-labelledby="adv-php-tab">
+              <div class="code-container">
+                <pre class="px-3 border rounded">
+                  <div class="code-content">
+                    <code id="adv-php-output"></code>
+                    <div class="code-actions">
+                      <button class="copy-btn" data-code-id="adv-php" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                        <i class="material-icons">content_copy</i>
+                      </button>
+                    </div>
+                  </div>
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
     <script language="javascript" type="text/javascript">
 
@@ -367,6 +503,7 @@
         });
         return params;
       }
+      window.getSearchParameters = getSearchParameters;
 
       $(window).bind("load", function() {
 
