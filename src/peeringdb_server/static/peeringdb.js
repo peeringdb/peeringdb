@@ -2277,6 +2277,13 @@ twentyc.editable.target.register(
 
       if(data["undefined"])
         delete data["undefined"]
+
+      // Persist the connectivity type for asn_connectivity so it survives the
+      // page reload that location.replace triggers.
+      if(data.reftag === "asn_connectivity") {
+        data.connectivity_type = PeeringDB.AsnConnectivity.getConnectivityType();
+      }
+
       window.location.replace(
         '?'+$.param(data)
       );
@@ -2445,6 +2452,21 @@ PeeringDB.AsnConnectivity = {
    * Initialize ASN connectivity UI handlers
    */
   init: function() {
+    // Restore connectivity type from URL so it survives page reloads after search.
+    // Whitelist prevents untrusted URL values from reaching querySelector.
+    const urlConnectivityType = new URLSearchParams(window.location.search).get("connectivity_type");
+    if (urlConnectivityType === "facilities" || urlConnectivityType === "exchanges") {
+      const btnId = urlConnectivityType === "exchanges" ? "asn-connectivity-exchange" : "asn-connectivity-facility";
+      const targetBtn = document.getElementById(btnId);
+      if (targetBtn) {
+        document.querySelectorAll("#asn-connectivity-facility, #asn-connectivity-exchange").forEach(btn => btn.classList.remove("active"));
+        targetBtn.classList.add("active");
+        if (urlConnectivityType === "exchanges") {
+          $("#hide-unmatched-label").text(gettext("Hide unmatched exchanges"));
+        }
+      }
+    }
+
     // Initialize tooltips for legend
     const tooltipTriggerList = document.querySelectorAll('.connectivity-legend [data-bs-toggle="tooltip"]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
@@ -5847,20 +5869,14 @@ $(function() {
 });
 
 /**
- * Generates API query code snippets for different programming languages.
+ * Builds code snippet strings for all supported languages for a given API URL.
+ * Shared by generateCodeSnippets() and generateAdvancedSearchCodeSnippets().
  *
- * - Retrieves the current search query from the URL.
- * - Constructs an API URL for the search query.
- * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
- * - Populates the corresponding HTML elements with generated snippets.
+ * @param {string} apiUrl - The full API URL including query parameters.
+ * @returns {Object} Snippets keyed by language: curl, python, js, go, ruby, php.
  */
-function generateCodeSnippets() {
-  const currentUrl = new URL(window.location.href);
-  const searchQuery = currentUrl.searchParams.get('q');
-  const apiBaseUrl = `${window.location.origin}/api/search`;
-  const apiUrl = `${apiBaseUrl}?q=${encodeURIComponent(searchQuery)}`;
-
-  const snippets = {
+function buildApiCodeSnippets(apiUrl) {
+  return {
     curl: `curl -H "Authorization: api-key $YOUR_API_KEY" "${apiUrl}"`,
 
     python:
@@ -5965,6 +5981,22 @@ if ($httpCode >= 400) {
 curl_close($ch);
 ?>`
   };
+}
+
+/**
+ * Generates API query code snippets for different programming languages.
+ *
+ * - Retrieves the current search query from the URL.
+ * - Constructs an API URL for the search query.
+ * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
+ * - Populates the corresponding HTML elements with generated snippets.
+ */
+function generateCodeSnippets() {
+  const currentUrl = new URL(window.location.href);
+  const searchQuery = currentUrl.searchParams.get("q");
+  const apiUrl = `${window.location.origin}/api/search?q=${encodeURIComponent(searchQuery)}`;
+
+  const snippets = buildApiCodeSnippets(apiUrl);
 
   document.getElementById('curl-output').textContent = snippets.curl;
   document.getElementById('python-output').textContent = snippets.python;
@@ -5974,6 +6006,39 @@ curl_close($ch);
   document.getElementById('php-output').textContent = snippets.php;
 
   initializeCopyButtons();
+}
+
+/**
+ * Generates API query code snippets for the Advanced Search page.
+ *
+ * - Reads current form values via getSearchParameters(reftag).
+ * - Constructs the equivalent /api/<reftag>?<params> URL.
+ * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
+ * - Populates the advanced search modal's code elements.
+ *
+ * @param {string} reftag - The active search tab (e.g. "ix", "net", "fac").
+ */
+function generateAdvancedSearchCodeSnippets(reftag) {
+  const rawParams = (window.getSearchParameters
+    ? window.getSearchParameters(reftag)
+    : "").replace(/&$/, "");
+  let apiUrl;
+
+  if (reftag === "asn_connectivity") {
+    const connectivityType = PeeringDB.AsnConnectivity.getConnectivityType();
+    const endpoint = connectivityType === "exchanges" ? "netixlan" : "netfac";
+    const asnList = new URLSearchParams(rawParams).get("asn_list") || "";
+    apiUrl = `${window.location.origin}/api/${endpoint}${asnList ? `?net__asn__in=${asnList}` : ""}`;
+  } else {
+    const apiBaseUrl = `${window.location.origin}/api/${reftag}`;
+    apiUrl = rawParams ? `${apiBaseUrl}?${rawParams}` : apiBaseUrl;
+  }
+
+  const snippets = buildApiCodeSnippets(apiUrl);
+  for (const [lang, code] of Object.entries(snippets)) {
+    const el = document.getElementById(`adv-${lang}-output`);
+    if (el) el.textContent = code;
+  }
 }
 
 /**
@@ -6069,6 +6134,25 @@ function initializeCodeTabs() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  }
+
+  // Advanced search modal: generate snippets on open, handle copy clicks via delegation
+  const advancedModal = document.getElementById("advancedCopyQueryModal");
+  if (advancedModal) {
+    advancedModal.addEventListener("show.bs.modal", function() {
+      const activeLink = document.querySelector(".advanced-search-view > .nav-tabs .nav-link.active");
+      const reftag = activeLink?.getAttribute("href")?.substring(1);
+      if (reftag) {
+        generateAdvancedSearchCodeSnippets(reftag);
+      }
+    });
+
+    advancedModal.addEventListener("click", function(e) {
+      const btn = e.target.closest(".copy-btn");
+      if (!btn) return;
+      const el = document.getElementById(`${btn.getAttribute("data-code-id")}-output`);
+      if (el) copyToClipboard(el.textContent, btn);
     });
   }
 }
