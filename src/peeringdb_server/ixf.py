@@ -1237,6 +1237,9 @@ class Importer:
         if ixf_member_data.netixlan_exists:
             # importer-protocol: netixlan exists
 
+            # ix_side is exchange-owned; apply directly and silently
+            self._apply_ix_side(ixf_member_data)
+
             if not ixf_member_data.changes:
                 # importer-protocol: no changes
 
@@ -1270,6 +1273,22 @@ class Importer:
     def resolve(self, ixf_member_data):
         if ixf_member_data.set_resolved(save=self.save):
             self.queue_notification(ixf_member_data, "resolved")
+
+    def _apply_ix_side(self, ixf_member_data):
+        """
+        Apply ix_side directly to the netixlan. ix_side is an
+        exchange-owned field and should be updated silently
+        regardless of the network's allow_ixp_update flag.
+        """
+        if not self.save:
+            return
+        netixlan = ixf_member_data.netixlan
+        if (
+            ixf_member_data.ix_side_id is not None
+            and ixf_member_data.ix_side_id != netixlan.ix_side_id
+        ):
+            netixlan.ix_side = ixf_member_data.ix_side
+            netixlan.save()
 
     def apply_update(self, ixf_member_data):
         changed_fields = ", ".join(ixf_member_data.changes.keys())
