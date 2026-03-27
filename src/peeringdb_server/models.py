@@ -3729,7 +3729,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         "speed",
         "operational",
         "is_rs_peer",
-        "ix_side",
     ]
 
     class Meta:
@@ -4185,14 +4184,6 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
         if netixlan.status != self.status:
             changes.update(status={"from": netixlan.status, "to": self.status})
-
-        if self.ix_side_id is not None and self.ix_side_id != netixlan.ix_side_id:
-            changes.update(
-                ix_side={
-                    "from": netixlan.ix_side_id,
-                    "to": self.ix_side_id,
-                }
-            )
 
         return changes
 

@@ -4864,6 +4864,170 @@ def test_ix_side_overwrites_existing(entities):
     assert netixlan.ix_side == new_facility
 
 
+def _setup_ix_side_test_data(entities, network):
+    """
+    Helper to set up IX-F test data with facility for ix_side tests.
+    Adjusts the test data to match the network's ASN and supported protocols.
+    """
+    data = setup_test_data("ixf.member.facility")
+
+    # Change test data ASN to match network
+    for member in data["member_list"]:
+        member["asnum"] = network.asn
+
+    org = entities["org"][0]
+    facility = Facility.objects.create(
+        name="Test Facility",
+        org=org,
+        status="ok",
+    )
+
+    for member in data["member_list"]:
+        for conn in member["connection_list"]:
+            for iface in conn["if_list"]:
+                iface["pdb_facility_id"] = facility.id
+            for switch in data["ixp_list"][0].get("switch", []):
+                switch["pdb_facility_id"] = facility.id
+            # Remove unsupported protocol IPs from IX-F data
+            for vlan in conn.get("vlan_list", []):
+                if not network.ipv4_support:
+                    vlan.pop("ipv4", None)
+                if not network.ipv6_support:
+                    vlan.pop("ipv6", None)
+
+    return data, facility
+
+
+@pytest.mark.django_db
+def test_ix_side_applied_when_update_disabled(entities):
+    """
+    Test that ix_side is applied directly even when allow_ixp_update=False.
+    ix_side is an exchange-owned field and should bypass network approval.
+    """
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    data, facility = _setup_ix_side_test_data(entities, network)
+
+    # Create an existing netixlan without ix_side, using only supported IPs
+    ip_kwargs = {}
+    if network.ipv4_support:
+        ip_kwargs["ipaddr4"] = "195.69.147.250"
+    if network.ipv6_support:
+        ip_kwargs["ipaddr6"] = "2001:7f8:1::a500:2906:1"
+
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+        **ip_kwargs,
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # ix_side should be applied directly
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+    # No notifications should have been sent for ix_side
+    assert IXFImportEmail.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ix_side_only_change_no_notification(entities):
+    """
+    Test that when ix_side is the only change, no IXFMemberData suggestion
+    or notification is created.
+    """
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    data, facility = _setup_ix_side_test_data(entities, network)
+
+    # Create existing netixlan matching all fields except ix_side, using only supported IPs
+    ip_kwargs = {}
+    if network.ipv4_support:
+        ip_kwargs["ipaddr4"] = "195.69.147.250"
+    if network.ipv6_support:
+        ip_kwargs["ipaddr6"] = "2001:7f8:1::a500:2906:1"
+
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        status="ok",
+        is_rs_peer=True,
+        operational=True,
+        **ip_kwargs,
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # ix_side should be updated silently
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+    # No IXFMemberData suggestions should exist
+    assert IXFMemberData.objects.count() == 0
+
+    # No notifications should have been sent
+    assert IXFImportEmail.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ix_side_with_other_changes_update_disabled(entities):
+    """
+    Test that when ix_side changes alongside other fields and
+    allow_ixp_update=False, ix_side is applied directly while
+    other changes go through the normal suggestion flow.
+    """
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+    data, facility = _setup_ix_side_test_data(entities, network)
+
+    # Create existing netixlan with different operational (to trigger a non-ix_side change)
+    ip_kwargs = {}
+    if network.ipv4_support:
+        ip_kwargs["ipaddr4"] = "195.69.147.250"
+    if network.ipv6_support:
+        ip_kwargs["ipaddr6"] = "2001:7f8:1::a500:2906:1"
+
+    NetworkIXLan.objects.create(
+        network=network,
+        ixlan=ixlan,
+        asn=network.asn,
+        speed=10000,
+        status="ok",
+        is_rs_peer=True,
+        operational=False,
+        **ip_kwargs,
+    )
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # ix_side should be applied directly despite allow_ixp_update=False
+    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    assert netixlan is not None
+    assert netixlan.ix_side == facility
+
+    # operational change should generate a suggestion
+    assert IXFMemberData.objects.filter(asn=network.asn).count() == 1
+    ixf_member_data = IXFMemberData.objects.get(asn=network.asn)
+    # ix_side should NOT be in the changes
+    assert "ix_side" not in ixf_member_data.changes
+
+
 @pytest.mark.django_db
 def test_build_switch_map():
     """
