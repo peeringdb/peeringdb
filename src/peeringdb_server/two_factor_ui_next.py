@@ -1,3 +1,7 @@
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.generic import FormView
 from two_factor.views import BackupTokensView as BaseBackupTokensView
 from two_factor.views import ProfileView as BaseProfileView
 from two_factor.views import QRGeneratorView as BaseQRGeneratorView
@@ -28,9 +32,22 @@ class UIAwareMixin:
 class BackupTokensView(UIAwareMixin, BaseBackupTokensView):
     """
     Override of BackupTokensView that supports template switching based on UI version.
+
+    Overrides dispatch to allow users who completed MFA via the
+    login wizard to access backup tokens without otp_required
+    redirecting them.
     """
 
-    pass
+    @method_decorator([never_cache, login_required])
+    def dispatch(self, request, *args, **kwargs):
+        # Bypass otp_required for users who completed MFA via the
+        # login wizard (passkey or U2F security key), as these are
+        # strong 2FA methods that don't go through django_otp's
+        # device verification.
+        amr = request.session.get("amr", [])
+        if "mfa" in amr or request.session.get("used_passkey_auth"):
+            return FormView.dispatch(self, request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class ProfileView(UIAwareMixin, BaseProfileView):
