@@ -69,7 +69,7 @@ from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
 
 import peeringdb_server.geo as geo
-from peeringdb_server.context import current_request
+from peeringdb_server.context import current_request, is_forced_ixlan_deletion
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
@@ -2101,12 +2101,6 @@ class Facility(
         default=False,
         help_text="Indicates whether the facility has been notified to update their geocoordinates.",
     )
-
-    # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
-    # this afterwards
-    class HandleRef:
-        tag = "fac"
-        delete_cascade = ["ixfac_set", "netfac_set", "carrierfac_set"]
 
     parent_relations = ["org"]
 
@@ -4959,6 +4953,9 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         netixlans = self.ixlan.netixlan_set.filter(status="ok")
 
         if getattr(self, "_being_renumbered", False):
+            return True
+
+        if is_forced_ixlan_deletion():
             return True
 
         for netixlan in netixlans:
