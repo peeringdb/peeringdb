@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-03-10 15:05:04.911321
+Generated from validators.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.validators
 
@@ -80,6 +80,24 @@ Arguments:
 Returns:
 
 - validated value (`bool`)
+
+---
+## validate_django_ratelimit_rate
+`def validate_django_ratelimit_rate(value)`
+
+Validates a rate string in django-ratelimit format.
+
+e.g., 30/m, 100/5m, 1000/h, 10/s, 800/d
+
+Will raise a ValidationError on failure.
+
+Arguments:
+
+- value(`str`)
+
+Returns:
+
+- validated value (`str`)
 
 ---
 ## validate_identifier

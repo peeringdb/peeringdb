@@ -1,4 +1,4 @@
-Generated from views.py on 2026-03-10 15:05:04.911321
+Generated from views.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.views
 
@@ -611,6 +611,14 @@ by `two_factor` because some
 PDB specific functionality and checks need to be added.
 
 
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- disable_password_auth (`@property`): None
+- disable_totp (`@property`): None
+- require_passkey_mfa (`@property`): None
+
 ### Methods
 
 #### attempt_passkey_auth
@@ -668,6 +676,40 @@ Returns the keyword arguments for instantiating the form
 (or formset) on the given step.
 
 ---
+#### get_mfa_incomplete_redirect
+`def get_mfa_incomplete_redirect(self)`
+
+Called when require_passkey_mfa is True but MFA was not completed
+(either because the user has no TOTP device, or because disable_totp
+prevented the step from being shown).
+
+Return a URL string to redirect the user (e.g. to MFA setup), or None
+to let the login proceed anyway.
+
+Override in subclasses to enforce the requirement. The default returns
+None for backwards compatibility.
+
+---
+#### get_org_auth_settings
+`def get_org_auth_settings(self)`
+
+Return combined passkey policy settings across all orgs the user belongs to.
+Any org enabling a restriction is sufficient to enforce it.
+Result is cached on the view instance to avoid repeated DB queries within
+a single request cycle (has_token_step and has_backup_step both call this).
+
+---
+#### get_passkey_required_error
+`def get_passkey_required_error(self)`
+
+Return the error message stored in the session when password login is
+blocked by disable_password_auth.
+
+Override in subclasses to provide application-specific wording.
+Must return a plain str (not a lazy translation proxy) because the
+session backend serializes session data with json.dumps().
+
+---
 #### get_redirect_url
 `def get_redirect_url(self)`
 
@@ -703,6 +745,12 @@ This prevents unauthorized 2FA activation by attackers with session access.
 
 ### Methods
 
+#### done
+`def done(self, form_list, **kwargs)`
+
+Finish the wizard. Save all forms and redirect.
+
+---
 #### post
 `def post(self, request, *args, **kwargs)`
 

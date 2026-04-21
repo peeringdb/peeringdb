@@ -1311,6 +1311,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -6191,6 +6203,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -15105,6 +15129,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -31992,6 +32028,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -52416,6 +52464,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: page
         required: false
         in: query
@@ -54328,6 +54388,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -56768,6 +56840,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate
@@ -57623,6 +57707,18 @@ paths:
         required: false
         schema:
           type: string
+      - name: org__org_flags
+        in: query
+        description: 'Bitmask to store organization policy toggles
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: org__periodic_reauth
         in: query
         description: 'Require users in this organization to periodically re-authenticate

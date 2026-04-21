@@ -1317,6 +1317,8 @@ set_option("ASN_CONNECTIVITY_LIMIT", 10)
 
 
 set_option("BASE_URL", "http://localhost")
+# normalize to avoid `//` in URL concatenations like f"{BASE_URL}{reverse(...)}"
+BASE_URL = BASE_URL.rstrip("/")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 
 # Sets the maximum allowed length for user passwords.
@@ -1718,6 +1720,14 @@ set_option("USER_OPT_FLAG_NOTIFIED_MFA", 0x08)
 
 # User option flag to api keys notification
 set_option("USER_OPT_FLAG_NOTIFIED_API_KEY", 0x10)
+
+# Organization policy flags (org_flags bitmask)
+# Require passkey authentication; block password-only logins
+set_option("ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH", 0x1)
+# Disable TOTP / backup-code as a login method for org members
+set_option("ORG_FLAGS_DISABLE_TOTP", 0x2)
+# Require MFA even when the user authenticates with a passkey
+set_option("ORG_FLAGS_PASSKEY_REQUIRE_MFA", 0x4)
 
 # Authentication settings to use when syncing via pdb_load
 set_option("PEERINGDB_SYNC_USERNAME", "")

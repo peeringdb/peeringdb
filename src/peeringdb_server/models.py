@@ -69,7 +69,7 @@ from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
 
 import peeringdb_server.geo as geo
-from peeringdb_server.context import current_request
+from peeringdb_server.context import current_request, is_forced_ixlan_deletion
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
@@ -1147,6 +1147,13 @@ class Organization(
         ),
     )
 
+    # Bitmask for organization-level policy flags
+    org_flags = models.IntegerField(
+        _("organization flags"),
+        default=0,
+        help_text=_("Bitmask to store organization policy toggles"),
+    )
+
     # Delete childless org objects #838
     # Flag any childless orgs for deletion
     flagged = models.BooleanField(
@@ -1162,6 +1169,28 @@ class Organization(
 
     class Meta(pdb_models.OrganizationBase.Meta):
         indexes = [models.Index(fields=["status"], name="org_status")]
+
+    def set_org_flag(self, flag: int, value: bool = True) -> None:
+        """
+        Set or clear an organization policy flag in memory.
+        Caller is responsible for calling save() to persist the change.
+        """
+        if value:
+            self.org_flags |= flag
+        else:
+            self.org_flags &= ~flag
+
+    @property
+    def passkey_disable_password_auth(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH)
+
+    @property
+    def disable_totp(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_DISABLE_TOTP)
+
+    @property
+    def passkey_require_mfa(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA)
 
     @staticmethod
     def autocomplete_search_fields():
@@ -2101,12 +2130,6 @@ class Facility(
         default=False,
         help_text="Indicates whether the facility has been notified to update their geocoordinates.",
     )
-
-    # FIXME: delete cascade needs to be fixed in django-peeringdb, can remove
-    # this afterwards
-    class HandleRef:
-        tag = "fac"
-        delete_cascade = ["ixfac_set", "netfac_set", "carrierfac_set"]
 
     parent_relations = ["org"]
 
@@ -4950,6 +4973,9 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         netixlans = self.ixlan.netixlan_set.filter(status="ok")
 
         if getattr(self, "_being_renumbered", False):
+            return True
+
+        if is_forced_ixlan_deletion():
             return True
 
         for netixlan in netixlans:
