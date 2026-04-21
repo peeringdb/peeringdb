@@ -1,4 +1,4 @@
-Generated from oauth_views.py on 2026-03-10 15:05:04.911321
+Generated from oauth_views.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.oauth_views
 
@@ -92,3 +92,4 @@ OAuthMetadataView(django.views.generic.base.View)
 
 Intentionally simple parent class for all views. Only implements
 dispatch-by-method and simple sanity checking.
+

@@ -1,4 +1,4 @@
-Generated from middleware.py on 2026-03-10 15:05:04.911321
+Generated from middleware.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.middleware
 
@@ -182,7 +182,7 @@ Rate limits unauthenticated requests to web pages
 Uses django-ratelimit's core get_usage() for rate tracking,
 keyed by client IP address.
 
-Configurable via RATELIMIT_WEB_PAGE_ENABLED and RATELIMIT_WEB_PAGE_RATE settings.
+Configurable via RATELIMIT_WEB_PAGE_RATE EnvironmentSetting. Set to empty string to disable.
 
 
 ### Methods
