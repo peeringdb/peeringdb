@@ -6991,6 +6991,11 @@ class EnvironmentSetting(StripFieldMixin):
                 "TUTORIAL_MODE_MESSAGE",
                 _("Tutorial mode banner message"),
             ),
+            # site-wide notification banner
+            (
+                "NOTIFICATION_BANNER_CONTENT",
+                _("Notification banner content (HTML)"),
+            ),
         ),
         unique=True,
     )
@@ -7053,6 +7058,7 @@ class EnvironmentSetting(StripFieldMixin):
         "RATELIMIT_WEB_PAGE_RATE": "value_str",
         "DATABASE_LAST_SYNC": "value_str",
         "TUTORIAL_MODE_MESSAGE": "value_str",
+        "NOTIFICATION_BANNER_CONTENT": "value_str",
     }
 
     setting_validators = {

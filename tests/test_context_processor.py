@@ -2,7 +2,12 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory, TestCase
 
-from peeringdb_server.context_processors import theme_mode, ui_version
+from peeringdb_server.context_processors import (
+    notification_banner,
+    theme_mode,
+    ui_version,
+)
+from peeringdb_server.models import EnvironmentSetting
 
 User = get_user_model()
 
@@ -64,3 +69,34 @@ class ContextProcessorTest(TestCase):
         context = theme_mode(request)
         assert context["theme_mode"] == "test"
         assert context["prefers_dark_mode"] is False
+
+    def test_notification_banner_falls_back_to_setting(self):
+        # With no EnvironmentSetting row, the context processor must
+        # return the Django setting value (populated from env var or default).
+        EnvironmentSetting.objects.filter(
+            setting="NOTIFICATION_BANNER_CONTENT"
+        ).delete()
+        request = self.factory.get("/")
+        with self.settings(NOTIFICATION_BANNER_CONTENT="<b>hi</b>"):
+            context = notification_banner(request)
+        assert context["NOTIFICATION_BANNER_CONTENT"] == "<b>hi</b>"
+
+    def test_notification_banner_db_override(self):
+        # An EnvironmentSetting row must take precedence over the Django
+        # setting — this is what allows staff to set it via the admin.
+        EnvironmentSetting.objects.filter(
+            setting="NOTIFICATION_BANNER_CONTENT"
+        ).delete()
+        user = User.objects.create(username="banner_admin")
+        EnvironmentSetting.objects.create(
+            setting="NOTIFICATION_BANNER_CONTENT",
+            value_str='<a href="/elections">Vote now</a>',
+            user=user,
+        )
+        request = self.factory.get("/")
+        with self.settings(NOTIFICATION_BANNER_CONTENT="fallback"):
+            context = notification_banner(request)
+        assert (
+            context["NOTIFICATION_BANNER_CONTENT"]
+            == '<a href="/elections">Vote now</a>'
+        )
