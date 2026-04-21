@@ -1147,6 +1147,13 @@ class Organization(
         ),
     )
 
+    # Bitmask for organization-level policy flags
+    org_flags = models.IntegerField(
+        _("organization flags"),
+        default=0,
+        help_text=_("Bitmask to store organization policy toggles"),
+    )
+
     # Delete childless org objects #838
     # Flag any childless orgs for deletion
     flagged = models.BooleanField(
@@ -1162,6 +1169,28 @@ class Organization(
 
     class Meta(pdb_models.OrganizationBase.Meta):
         indexes = [models.Index(fields=["status"], name="org_status")]
+
+    def set_org_flag(self, flag: int, value: bool = True) -> None:
+        """
+        Set or clear an organization policy flag in memory.
+        Caller is responsible for calling save() to persist the change.
+        """
+        if value:
+            self.org_flags |= flag
+        else:
+            self.org_flags &= ~flag
+
+    @property
+    def passkey_disable_password_auth(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH)
+
+    @property
+    def disable_totp(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_DISABLE_TOTP)
+
+    @property
+    def passkey_require_mfa(self):
+        return bool(self.org_flags & settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA)
 
     @staticmethod
     def autocomplete_search_fields():
