@@ -1317,6 +1317,8 @@ set_option("ASN_CONNECTIVITY_LIMIT", 10)
 
 
 set_option("BASE_URL", "http://localhost")
+# normalize to avoid `//` in URL concatenations like f"{BASE_URL}{reverse(...)}"
+BASE_URL = BASE_URL.rstrip("/")
 set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 
 # Sets the maximum allowed length for user passwords.
