@@ -4024,7 +4024,13 @@ class LoginView(TwoFactorLoginView):
 
         if step == "security-key":
             kwargs.update(
-                {"device": self.get_security_key_device(), "request": self.request}
+                {
+                    "device": self.get_security_key_device(),
+                    "request": self.request,
+                    "passkey_credential_id": self.storage.data.get(
+                        "passkey_credential_id"
+                    ),
+                }
             )
 
         return kwargs
@@ -4097,6 +4103,12 @@ class LoginView(TwoFactorLoginView):
 
         context = super().get_context_data(form, **kwargs)
         context.update(rate_limit_message=getattr(self, "rate_limit_message", None))
+
+        # Surface passkey-required error stored in session across the redirect
+        if not context.get("passkey_error"):
+            context["passkey_error"] = self.request.session.pop(
+                "passkey_required_error", None
+            )
 
         # make_env results to context
         context.update(**make_env())
@@ -4196,6 +4208,51 @@ class LoginView(TwoFactorLoginView):
 
         return redir
 
+    def get_org_auth_settings(self) -> dict:
+        """
+        Return combined passkey policy settings across all orgs the user belongs to.
+        Any org enabling a restriction is sufficient to enforce it.
+        Result is cached on the view instance to avoid repeated DB queries within
+        a single request cycle (has_token_step and has_backup_step both call this).
+        """
+        if hasattr(self, "_org_auth_settings_cache"):
+            return self._org_auth_settings_cache
+
+        user = self.get_user()
+        if not user:
+            return {}
+
+        disable_password_auth = False
+        disable_totp = False
+        require_passkey_mfa = False
+
+        for org in user.organizations:
+            if org.passkey_disable_password_auth:
+                disable_password_auth = True
+            if org.disable_totp:
+                disable_totp = True
+            if org.passkey_require_mfa:
+                require_passkey_mfa = True
+
+        self._org_auth_settings_cache = {
+            "disable_password_auth": disable_password_auth,
+            "disable_totp": disable_totp,
+            "require_passkey_mfa": require_passkey_mfa,
+        }
+        return self._org_auth_settings_cache
+
+    @property
+    def disable_password_auth(self) -> bool:
+        return self.get_org_auth_settings().get("disable_password_auth", False)
+
+    @property
+    def disable_totp(self) -> bool:
+        return self.get_org_auth_settings().get("disable_totp", False)
+
+    @property
+    def require_passkey_mfa(self) -> bool:
+        return self.get_org_auth_settings().get("require_passkey_mfa", False)
+
     def set_amr(self):
         amr = []
         done_forms = self.get_done_form_list()
@@ -4234,12 +4291,71 @@ class LoginView(TwoFactorLoginView):
 
         return amr
 
+    def get_passkey_required_error(self) -> str:
+        # str() is required: gettext_lazy returns a proxy object that is
+        # not JSON-serializable, which would cause a TypeError when the
+        # session backend serializes session data with json.dumps().
+        return str(_(
+            "Your organization requires passkey authentication. "
+            "Please log in using a passkey."
+        ))
+
+    def get_mfa_incomplete_redirect(self):
+        user = self.get_user()
+        passkey_path = self.storage.data.get("passkey_authenticated")
+
+        if self.disable_totp and user.totpdevice_set.exists():
+            # User has a TOTP device but one or more orgs have disabled TOTP.
+            # Applies to both the passkey and password paths — the user must
+            # enroll a different MFA method regardless of how they logged in.
+            orgs_disabling_totp = [
+                org.name for org in user.organizations if org.disable_totp
+            ]
+            org_list = ", ".join(orgs_disabling_totp)
+            self.request.session["passkey_mfa_error"] = str(_(
+                "%(org_list)s has disabled TOTP authentication. "
+                "Please set up a different MFA method to proceed."
+            )) % {"org_list": org_list}
+        elif passkey_path:
+            # Passkey path with no MFA device at all — org requires post-passkey MFA.
+            orgs_requiring_mfa = [
+                org.name for org in user.organizations if org.passkey_require_mfa
+            ]
+            org_list = ", ".join(orgs_requiring_mfa)
+            self.request.session["passkey_mfa_error"] = str(_(
+                "Your organization %(org_list)s requires MFA after passkey authentication. "
+                "Please set up an MFA method to proceed."
+            )) % {"org_list": org_list}
+        else:
+            # Password path + disable_totp but the user has no TOTP device,
+            # so there is nothing being bypassed — let login proceed normally.
+            return None
+
+        self.request.session["mfa_setup_required"] = True
+        return reverse("two_factor:profile")
+
     def done(self, form_list, **kwargs):
         """
         User authenticated successfully, set language options.
         """
 
-        super().done(form_list, **kwargs)
+        # Library LoginView.done() handles the disable_password_auth block and the
+        # MFA-incomplete redirect. In both cases we should return the library's
+        # response directly without overriding it.
+        result = super().done(form_list, **kwargs)
+        # If the library blocked the login (disable_password_auth), auth.login()
+        # was never called so request.user is either absent or not authenticated.
+        # getattr guards against bare RequestFactory requests in tests where
+        # AuthenticationMiddleware has not run.
+        if not getattr(getattr(self.request, "user", None), "is_authenticated", False):
+            return result
+        # If the library redirected to somewhere other than the normal success URL
+        # (e.g. the MFA setup page after an MFA-incomplete passkey login), honour
+        # that redirect rather than overwriting it with the success URL.
+        success_url = self.get_success_url()
+        result_location = result.get("Location", "") if hasattr(result, "get") else ""
+        if result_location and result_location != success_url:
+            return result
 
         # TODO: do this via signal instead?
 
@@ -4247,8 +4363,7 @@ class LoginView(TwoFactorLoginView):
 
         user_language = self.get_user().get_locale()
         translation.activate(user_language)
-        success_url = self.get_success_url()
-        response = redirect(self.get_success_url())
+        response = redirect(success_url)
         if is_oauth_authorize(success_url):
             response.set_signed_cookie(
                 "oauth_session",
@@ -4570,3 +4685,9 @@ class TwoFactorSetupView(BaseSetupView):
             )
 
         return super().post(request, *args, **kwargs)
+
+    def done(self, form_list, **kwargs):
+        # Clear the pending MFA setup flag so the user is no longer restricted
+        # to the setup page after completing setup.
+        self.request.session.pop("mfa_setup_required", None)
+        return super().done(form_list, **kwargs)

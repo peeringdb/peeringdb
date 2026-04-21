@@ -38,7 +38,12 @@ class ProfileView(UIAwareMixin, BaseProfileView):
     Override of ProfileView that supports template switching based on UI version.
     """
 
-    pass
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["passkey_mfa_error"] = self.request.session.pop(
+            "passkey_mfa_error", None
+        )
+        return context
 
 
 class QRGeneratorView(UIAwareMixin, BaseQRGeneratorView):

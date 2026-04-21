@@ -3,6 +3,9 @@
 
 {% block content %}
 <div style="text-align:left !important;">
+  {% if passkey_mfa_error %}
+  <div class="alert alert-warning">{{ passkey_mfa_error }}</div>
+  {% endif %}
   {% if not user|user_has_topt_device and user|user_has_u2f_device %}
     <h1>{% trans "Time Based One Time Passwords (TOTP)" %}</h1>
     <p>

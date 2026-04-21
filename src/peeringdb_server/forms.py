@@ -282,7 +282,42 @@ class ObjectLogoUploadForm(forms.ModelForm):
         return logo
 
 
-class OrgUserOptions(forms.ModelForm):
+class PasskeyFlagFormMixin:
+    """Mixin that adds passkey policy flag fields and logic to an Organization form."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields["passkey_disable_password_auth"].initial = (
+                self.instance.passkey_disable_password_auth
+            )
+            self.fields["disable_totp"].initial = self.instance.disable_totp
+            self.fields["passkey_require_mfa"].initial = self.instance.passkey_require_mfa
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.set_org_flag(
+            dj_settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH,
+            self.cleaned_data["passkey_disable_password_auth"],
+        )
+        instance.set_org_flag(
+            dj_settings.ORG_FLAGS_DISABLE_TOTP,
+            self.cleaned_data["disable_totp"],
+        )
+        instance.set_org_flag(
+            dj_settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA,
+            self.cleaned_data["passkey_require_mfa"],
+        )
+        if commit:
+            instance.save()
+        return instance
+
+
+class OrgUserOptions(PasskeyFlagFormMixin, forms.ModelForm):
+    passkey_disable_password_auth = forms.BooleanField(required=False)
+    disable_totp = forms.BooleanField(required=False)
+    passkey_require_mfa = forms.BooleanField(required=False)
+
     class Meta:
         model = Organization
         fields = [

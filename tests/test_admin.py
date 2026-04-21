@@ -3,6 +3,7 @@ import json
 import urllib
 
 import pytest
+from django.conf import settings as dj_settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
@@ -1216,3 +1217,97 @@ class AdminTests(TestCase):
                 "deleted",
                 f"{entity_tag} status should remain 'deleted' when org is deleted",
             )
+
+    # --- Passkey policy flag tests (org admin form) ---
+
+    def _post_org_admin(self, org, extra_data):
+        """Post to the Django admin change page for an Organization."""
+        url = reverse("admin:peeringdb_server_organization_change", args=[org.id])
+        data = {
+            "status": "ok",
+            "name": org.name,
+            "aka": "",
+            "name_long": "",
+            "address1": "",
+            "address2": "",
+            "city": "",
+            "state": "",
+            "zipcode": "",
+            "country": "",
+            "floor": "",
+            "suite": "",
+            "latitude": "",
+            "longitude": "",
+            "geocode_status": "",
+            "geocode_date": "",
+            "website": "",
+            "notes": "",
+            "restrict_user_emails": False,
+            "email_domains": "",
+            "passkey_disable_password_auth": False,
+            "disable_totp": False,
+            "passkey_require_mfa": False,
+        }
+        data.update(extra_data)
+        self.client.force_login(self.admin_user)
+        return self.client.post(url, data, follow=True)
+
+    def test_admin_sets_passkey_disable_password_auth(self):
+        """Saving the org admin form with passkey_disable_password_auth sets the flag."""
+        org = self.entities["org"][0]
+        response = self._post_org_admin(org, {"passkey_disable_password_auth": True})
+        self.assertEqual(response.status_code, 200)
+
+        org.refresh_from_db()
+        self.assertTrue(org.passkey_disable_password_auth)
+        self.assertFalse(org.disable_totp)
+        self.assertFalse(org.passkey_require_mfa)
+
+    def test_admin_sets_disable_totp(self):
+        """Saving the org admin form with disable_totp sets the flag."""
+        org = self.entities["org"][1]
+        response = self._post_org_admin(org, {"disable_totp": True})
+        self.assertEqual(response.status_code, 200)
+
+        org.refresh_from_db()
+        self.assertFalse(org.passkey_disable_password_auth)
+        self.assertTrue(org.disable_totp)
+        self.assertFalse(org.passkey_require_mfa)
+
+    def test_admin_sets_passkey_require_mfa(self):
+        """Saving the org admin form with passkey_require_mfa sets the flag."""
+        org = self.entities["org"][2]
+        response = self._post_org_admin(org, {"passkey_require_mfa": True})
+        self.assertEqual(response.status_code, 200)
+
+        org.refresh_from_db()
+        self.assertFalse(org.passkey_disable_password_auth)
+        self.assertFalse(org.disable_totp)
+        self.assertTrue(org.passkey_require_mfa)
+
+    def test_admin_allows_disable_totp_and_require_mfa(self):
+        """
+        disable_totp + passkey_require_mfa is a valid combination: the user can
+        satisfy MFA via a second security key (or be redirected to enroll one).
+        """
+        org = self.entities["org"][3]
+        response = self._post_org_admin(
+            org, {"disable_totp": True, "passkey_require_mfa": True}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        org.refresh_from_db()
+        self.assertTrue(org.disable_totp)
+        self.assertTrue(org.passkey_require_mfa)
+
+    def test_admin_clears_passkey_flag(self):
+        """Unchecking a flag in admin clears it."""
+        org = self.entities["org"][4]
+        org.set_org_flag(dj_settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH, True)
+        org.save()
+        self.assertTrue(org.passkey_disable_password_auth)
+
+        self._post_org_admin(org, {"passkey_disable_password_auth": False})
+
+        org.refresh_from_db()
+        self.assertFalse(org.passkey_disable_password_auth)

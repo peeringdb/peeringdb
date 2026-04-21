@@ -961,6 +961,18 @@
              data-edit-name="periodic_reauth_period"
              data-edit-value="{{ instance.periodic_reauth_period }}">{{ instance.periodic_reauth_period }}</div>
       </div>
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="passkey_disable_password_auth" data-edit-value="{{ instance.passkey_disable_password_auth }}"></div>
+        {% trans "Require passkey authentication (disable password login)" %}
+      </div>
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="disable_totp" data-edit-value="{{ instance.disable_totp }}"></div>
+        {% trans "Members must use a non-TOTP MFA method (e.g. security key, passkey)" %}
+      </div>
+      <div class="mb-3 checkbox-inline">
+        <div data-edit-type="bool" data-edit-name="passkey_require_mfa" data-edit-value="{{ instance.passkey_require_mfa }}"></div>
+        {% trans "Require MFA even when authenticating with a passkey" %}
+      </div>
       <div class="right marg-top">
         <a class="btn btn-default" data-edit-action="submit">{% trans "Update Options" %}</a>
       </div>
