@@ -1,1 +1,10 @@
 {% load i18n %}
+{% if NOTIFICATION_BANNER_CONTENT %}
+<div class="marg-bot-20">
+<div class="editable popin info panel">
+<div class="center">
+{{ NOTIFICATION_BANNER_CONTENT|safe }}
+</div>
+</div>
+</div>
+{% endif %}

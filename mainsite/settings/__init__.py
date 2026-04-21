@@ -954,6 +954,7 @@ _TEMPLATE_CONTEXT_PROCESSORS = (
     "peeringdb_server.context_processors.theme_mode",
     "peeringdb_server.context_processors.ui_version",
     "peeringdb_server.context_processors.admin_config",
+    "peeringdb_server.context_processors.notification_banner",
 )
 
 _TEMPLATE_DIRS = (os.path.join(BASE_DIR, "peeringdb_server", "templates"),)
@@ -1487,6 +1488,11 @@ set_option(
     "TUTORIAL_MODE_MESSAGE",
     "The tutorial environment is automatically restored from production when a new release is deployed. Any changes made here will not be permanent.",
 )
+
+# Site-wide notification banner. HTML is rendered as-is, so this must only
+# be set by trusted operators (env var) or staff (EnvironmentSetting override).
+# When empty the banner is not rendered.
+set_option("NOTIFICATION_BANNER_CONTENT", "")
 
 #'guest' user group
 GUEST_GROUP_ID = 1
