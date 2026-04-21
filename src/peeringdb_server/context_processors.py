@@ -33,3 +33,22 @@ def admin_config(request):
     Context processor to provide suggest entity org configuration values
     """
     return {"SUGGEST_ENTITY_ORG": settings.SUGGEST_ENTITY_ORG}
+
+
+def notification_banner(request):
+    """
+    Context processor that exposes the site-wide notification banner
+    content to every template.
+
+    Resolution order: EnvironmentSetting DB override, falling back to the
+    NOTIFICATION_BANNER_CONTENT Django setting (which is itself populated
+    from an environment variable of the same name). When the resulting
+    value is empty the banner template renders nothing.
+    """
+    from peeringdb_server.models import EnvironmentSetting
+
+    return {
+        "NOTIFICATION_BANNER_CONTENT": EnvironmentSetting.get_setting_value(
+            "NOTIFICATION_BANNER_CONTENT"
+        ),
+    }
