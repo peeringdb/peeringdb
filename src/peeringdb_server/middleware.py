@@ -798,6 +798,17 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         if not user.is_authenticated:
             return
 
+        # After a passkey login where require_passkey_mfa is True but the user
+        # has no MFA device/disable_totp is set by other org, we log them in and
+        # redirect to setup. (#1810)
+        if request.session.get("mfa_setup_required"):
+            if user.has_2fa:
+                request.session.pop("mfa_setup_required", None)
+            elif not self.is_path_excluded(request.path):
+                return redirect(reverse("two_factor:profile"))
+            else:
+                return
+
         if not user.email_confirmed or user.has_2fa:
             return
 

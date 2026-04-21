@@ -358,5 +358,8 @@ class Mock:
     def email_domains(self, data, reftag=None):
         return None
 
+    def org_flags(self, data, reftag=None):
+        return 0
+
     def last_notified(self, data, reftag=None):
         return None

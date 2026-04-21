@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-03-10 15:05:05.162969
+Generated from admin.py on 2026-04-21 14:00:55.798734
 
 # peeringdb_server.admin
 
@@ -1266,13 +1266,10 @@ These attributes / properties will be available on instances of the class
 ## OrganizationAdminForm
 
 ```
-OrganizationAdminForm(peeringdb_server.admin.StatusForm)
+OrganizationAdminForm(peeringdb_server.forms.PasskeyFlagFormMixin, peeringdb_server.admin.StatusForm)
 ```
 
-The main implementation of all the Form logic. Note that this class is
-different than Form. See the comments by the Form class for more info. Any
-improvements to the form API should be made to this class, not to the Form
-class.
+Mixin that adds passkey policy flag fields and logic to an Organization form.
 
 
 ### Instanced Attributes

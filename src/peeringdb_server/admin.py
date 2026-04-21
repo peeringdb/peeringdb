@@ -1270,9 +1270,13 @@ class RoundingDecimalFormField(DecimalField):
         return round_decimal(value, self.decimal_places)
 
 
-class OrganizationAdminForm(StatusForm):
+class OrganizationAdminForm(forms.PasskeyFlagFormMixin, StatusForm):
     latitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
     longitude = RoundingDecimalFormField(max_digits=9, decimal_places=6, required=False)
+
+    passkey_disable_password_auth = baseForms.BooleanField(required=False)
+    disable_totp = baseForms.BooleanField(required=False)
+    passkey_require_mfa = baseForms.BooleanField(required=False)
 
 
 class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):
@@ -1305,6 +1309,9 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin)
         "logo",
         "restrict_user_emails",
         "email_domains",
+        "passkey_disable_password_auth",
+        "disable_totp",
+        "passkey_require_mfa",
         "verification_queue",
         "version",
         "id",

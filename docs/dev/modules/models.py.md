@@ -1,4 +1,4 @@
-Generated from models.py on 2026-03-10 15:05:04.911321
+Generated from models.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.models
 
@@ -1891,6 +1891,7 @@ of the following is True:
 - has a network under it with status=ok
 - has a facility under it with status=ok
 - has an exchange under it with status=ok
+- disable_totp (`@property`): None
 - email_domains_list (`@property`): None
 - fac_set_active (`@property`): Returns queryset holding active facilities in this organization.
 - grainy_namespace (`@property`): None
@@ -1908,6 +1909,8 @@ have any objects with status ok or pending under it
 - net_set_active (`@property`): Returns queryset holding active networks in this organization.
 - owned (`@property`): Returns whether or not the organization has been claimed
 by any users.
+- passkey_disable_password_auth (`@property`): None
+- passkey_require_mfa (`@property`): None
 - pending_affiliations (`@property`): Returns queryset holding pending affiliations to this
 organization.
 - rdap_collect (`@property`): Fetche rdap results for all networks under this org and returns
@@ -1956,6 +1959,13 @@ Used by grappelli autocomplete for representation.
 Since grappelli doesn't easily allow one to filter status
 during autocomplete lookup, make sure the objects
 are marked accordingly in the result.
+
+---
+#### set_org_flag
+`def set_org_flag(self, flag, value=True)`
+
+Set or clear an organization policy flag in memory.
+Caller is responsible for calling save() to persist the change.
 
 ---
 #### user_meets_email_requirements

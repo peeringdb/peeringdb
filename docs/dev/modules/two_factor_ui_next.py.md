@@ -1,4 +1,4 @@
-Generated from two_factor_ui_next.py on 2026-03-10 15:05:04.911321
+Generated from two_factor_ui_next.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.two_factor_ui_next
 
@@ -12,6 +12,10 @@ BackupTokensView(peeringdb_server.two_factor_ui_next.UIAwareMixin, two_factor.vi
 ```
 
 Override of BackupTokensView that supports template switching based on UI version.
+
+Overrides dispatch to allow users who completed MFA via the
+login wizard to access backup tokens without otp_required
+redirecting them.
 
 
 ## LoginView

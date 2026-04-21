@@ -2258,6 +2258,13 @@ PeeringDB = {
 
         if(data["undefined"])
           delete data["undefined"]
+
+        // Persist the connectivity type for asn_connectivity so it survives the
+        // page reload that location.replace triggers.
+        if(data.reftag === "asn_connectivity") {
+          data.connectivity_type = PeeringDB.AsnConnectivity.getConnectivityType();
+        }
+
         window.location.replace(
           '?'+$.param(data)
         );
@@ -2426,6 +2433,21 @@ PeeringDB = {
      * Initialize ASN connectivity UI handlers
      */
     init: function() {
+      // Restore connectivity type from URL so it survives page reloads after search.
+      // Whitelist prevents untrusted URL values from reaching querySelector.
+      const urlConnectivityType = new URLSearchParams(window.location.search).get("connectivity_type");
+      if (urlConnectivityType === "facilities" || urlConnectivityType === "exchanges") {
+        const btnId = urlConnectivityType === "exchanges" ? "asn-connectivity-exchange" : "asn-connectivity-facility";
+        const targetBtn = document.getElementById(btnId);
+        if (targetBtn) {
+          document.querySelectorAll("#asn-connectivity-facility, #asn-connectivity-exchange").forEach(btn => btn.classList.remove("active"));
+          targetBtn.classList.add("active");
+          if (urlConnectivityType === "exchanges") {
+            $("#hide-unmatched-label").text(gettext("Hide unmatched exchanges"));
+          }
+        }
+      }
+
       // Initialize tooltips for legend
       const tooltipTriggerList = document.querySelectorAll('.connectivity-legend [data-bs-toggle="tooltip"]');
       const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
@@ -5855,117 +5877,127 @@ PeeringDB = {
    * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
    * - Populates the corresponding HTML elements with generated snippets.
    */
-  function generateCodeSnippets() {
-    const currentUrl = new URL(window.location.href);
-    const searchQuery = currentUrl.searchParams.get('q');
-    const apiBaseUrl = `${window.location.origin}/api/search`;
-    const apiUrl = `${apiBaseUrl}?q=${encodeURIComponent(searchQuery)}`;
-
-    const snippets = {
+  /**
+   * Builds code snippet strings for all supported languages for a given API URL.
+   * Shared by generateCodeSnippets() and generateAdvancedSearchCodeSnippets().
+   *
+   * @param {string} apiUrl - The full API URL including query parameters.
+   * @returns {Object} Snippets keyed by language: curl, python, js, go, ruby, php.
+   */
+  function buildApiCodeSnippets(apiUrl) {
+    return {
       curl: `curl -H "Authorization: api-key $YOUR_API_KEY" "${apiUrl}"`,
 
       python:
-  `import requests
-  headers = {
-    "Authorization": f"api-key {YOUR_API_KEY}"
-  }
-  response = requests.get("${apiUrl}", headers=headers)
-  response.raise_for_status()
-  data = response.json()`,
+`import requests
+headers = {
+  "Authorization": f"api-key {YOUR_API_KEY}"
+}
+response = requests.get("${apiUrl}", headers=headers)
+response.raise_for_status()
+data = response.json()`,
 
       js:
-  `fetch("${apiUrl}", {
-  headers: {
-      "Authorization": \`api-key \${YOUR_API_KEY}\`
-    }
-  })
-  .then(response => {
-  if (!response.ok) {
-      throw new Error('Network response was not ok: ' + response.status);
+`fetch("${apiUrl}", {
+headers: {
+    "Authorization": \`api-key \${YOUR_API_KEY}\`
   }
-  return response.json();
-  })
-  .then(data => console.log(data))
-  .catch(error => console.error('Error:', error));`,
+})
+.then(response => {
+if (!response.ok) {
+    throw new Error('Network response was not ok: ' + response.status);
+}
+return response.json();
+})
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`,
 
       go:
-  `package main
-  import (
-    "encoding/json"
-    "fmt"
-    "io"
-    "net/http"
-  )
-  func main() {
-    client := &http.Client{}
-    req, err := http.NewRequest("GET", "${apiUrl}", nil)
-    if err != nil {
-        panic(err)
-    }
-    req.Header.Add("Authorization", "api-key " + YOUR_API_KEY)
-    resp, err := client.Do(req)
-    if err != nil {
-        panic(err)
-    }
-    defer resp.Body.Close()
+`package main
+import (
+  "encoding/json"
+  "fmt"
+  "io"
+  "net/http"
+)
+func main() {
+  client := &http.Client{}
+  req, err := http.NewRequest("GET", "${apiUrl}", nil)
+  if err != nil {
+      panic(err)
+  }
+  req.Header.Add("Authorization", "api-key " + YOUR_API_KEY)
+  resp, err := client.Do(req)
+  if err != nil {
+      panic(err)
+  }
+  defer resp.Body.Close()
 
-    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-        fmt.Printf("Request failed with status code: %d\\n", resp.StatusCode)
-        return
-    }
+  if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+      fmt.Printf("Request failed with status code: %d\\n", resp.StatusCode)
+      return
+  }
 
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        panic(err)
-    }
+  body, err := io.ReadAll(resp.Body)
+  if err != nil {
+      panic(err)
+  }
 
-    var data interface{}
-    if err := json.Unmarshal(body, &data); err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-  }`,
+  var data interface{}
+  if err := json.Unmarshal(body, &data); err != nil {
+      panic(err)
+  }
+  fmt.Println(data)
+}`,
 
       ruby:
-  `require 'net/http'
-  require 'json'
-  require 'uri'
-  uri = URI('${apiUrl}')
-  req = Net::HTTP::Get.new(uri)
-  req['Authorization'] = "api-key #{YOUR_API_KEY}"
-  response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
-      http.request(req)
-  end
+`require 'net/http'
+require 'json'
+require 'uri'
+uri = URI('${apiUrl}')
+req = Net::HTTP::Get.new(uri)
+req['Authorization'] = "api-key #{YOUR_API_KEY}"
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == 'https') do |http|
+    http.request(req)
+end
 
-  if response.is_a?(Net::HTTPSuccess)
-      data = JSON.parse(response.body)
-      puts data
-  else
-      puts "Request failed with status: #{response.code}"
-      puts response.body
-  end`,
+if response.is_a?(Net::HTTPSuccess)
+    data = JSON.parse(response.body)
+    puts data
+else
+    puts "Request failed with status: #{response.code}"
+    puts response.body
+end`,
 
       php:
-  `<?php
-  $apiUrl = "${apiUrl}";
-  $headers = array(
-      'Authorization: api-key ' . $YOUR_API_KEY
-  );
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, $apiUrl);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-  $response = curl_exec($ch);
-  $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  if ($httpCode >= 400) {
-      echo 'HTTP Error: ' . $httpCode . ' - ' . $response;
-  } else {
-      $data = json_decode($response, true);
-      print_r($data);
-  }
-  curl_close($ch);
-  ?>`
+`<?php
+$apiUrl = "${apiUrl}";
+$headers = array(
+    'Authorization: api-key ' . $YOUR_API_KEY
+);
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $apiUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+if ($httpCode >= 400) {
+    echo 'HTTP Error: ' . $httpCode . ' - ' . $response;
+} else {
+    $data = json_decode($response, true);
+    print_r($data);
+}
+curl_close($ch);
+?>`
     };
+  }
+
+  function generateCodeSnippets() {
+    const currentUrl = new URL(window.location.href);
+    const searchQuery = currentUrl.searchParams.get('q');
+    const apiUrl = `${window.location.origin}/api/search?q=${encodeURIComponent(searchQuery)}`;
+
+    const snippets = buildApiCodeSnippets(apiUrl);
 
     document.getElementById('curl-output').textContent = snippets.curl;
     document.getElementById('python-output').textContent = snippets.python;
@@ -5975,6 +6007,39 @@ PeeringDB = {
     document.getElementById('php-output').textContent = snippets.php;
 
     initializeCopyButtons();
+  }
+
+  /**
+   * Generates API query code snippets for the Advanced Search page.
+   *
+   * - Reads current form values via getSearchParameters(reftag).
+   * - Constructs the equivalent /api/<reftag>?<params> URL.
+   * - Generates code snippets for cURL, Python, JavaScript, Go, Ruby, and PHP.
+   * - Populates the advanced search modal's code elements.
+   *
+   * @param {string} reftag - The active search tab (e.g. "ix", "net", "fac").
+   */
+  function generateAdvancedSearchCodeSnippets(reftag) {
+    const rawParams = (window.getSearchParameters
+      ? window.getSearchParameters(reftag)
+      : "").replace(/&$/, "");
+    let apiUrl;
+
+    if (reftag === "asn_connectivity") {
+      const connectivityType = PeeringDB.AsnConnectivity.getConnectivityType();
+      const endpoint = connectivityType === "exchanges" ? "netixlan" : "netfac";
+      const asnList = new URLSearchParams(rawParams).get("asn_list") || "";
+      apiUrl = `${window.location.origin}/api/${endpoint}${asnList ? `?net__asn__in=${asnList}` : ""}`;
+    } else {
+      const apiBaseUrl = `${window.location.origin}/api/${reftag}`;
+      apiUrl = rawParams ? `${apiBaseUrl}?${rawParams}` : apiBaseUrl;
+    }
+
+    const snippets = buildApiCodeSnippets(apiUrl);
+    for (const [lang, code] of Object.entries(snippets)) {
+      const el = document.getElementById(`adv-${lang}-output`);
+      if (el) el.textContent = code;
+    }
   }
 
   /**
@@ -6070,6 +6135,25 @@ PeeringDB = {
       const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
       tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+
+    // Advanced search modal: generate snippets on open, handle copy clicks via delegation
+    const advancedModal = document.getElementById("advancedCopyQueryModal");
+    if (advancedModal) {
+      advancedModal.addEventListener("show.bs.modal", function() {
+        const activeLink = document.querySelector(".advanced-search-view > .nav-tabs .nav-link.active");
+        const reftag = activeLink?.getAttribute("href")?.substring(1);
+        if (reftag) {
+          generateAdvancedSearchCodeSnippets(reftag);
+        }
+      });
+
+      advancedModal.addEventListener("click", function(e) {
+        const btn = e.target.closest(".copy-btn");
+        if (!btn) return;
+        const el = document.getElementById(`${btn.getAttribute("data-code-id")}-output`);
+        if (el) copyToClipboard(el.textContent, btn);
       });
     }
   }

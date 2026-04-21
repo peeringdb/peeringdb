@@ -1,4 +1,4 @@
-Generated from forms.py on 2026-03-10 15:05:04.911321
+Generated from forms.py on 2026-04-21 14:00:55.614796
 
 # peeringdb_server.forms
 
@@ -78,13 +78,10 @@ These attributes / properties will be available on instances of the class
 ## OrgUserOptions
 
 ```
-OrgUserOptions(django.forms.models.ModelForm)
+OrgUserOptions(peeringdb_server.forms.PasskeyFlagFormMixin, django.forms.models.ModelForm)
 ```
 
-The main implementation of all the Form logic. Note that this class is
-different than Form. See the comments by the Form class for more info. Any
-improvements to the form API should be made to this class, not to the Form
-class.
+Mixin that adds passkey policy flag fields and logic to an Organization form.
 
 
 ### Instanced Attributes
@@ -107,6 +104,24 @@ A collection of Fields, plus their associated data.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+## PasskeyFlagFormMixin
+
+```
+PasskeyFlagFormMixin(builtins.object)
+```
+
+Mixin that adds passkey policy flag fields and logic to an Organization form.
+
+
+### Methods
+
+#### \__init__
+`def __init__(self, *args, **kwargs)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
 
 ## PasswordChangeForm
 

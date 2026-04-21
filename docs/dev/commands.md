@@ -1,4 +1,4 @@
-Generated on 2026-03-10 15:05:04.911321
+Generated on 2026-04-21 14:00:55.614796
 
 ## _db_command.py
 
@@ -106,6 +106,20 @@ to fix any inconsistencies caused by issue #1607.
 
 net_count: Number of unique networks actually peering at the exchange
 ixf_net_count: Number of unique networks in the IX-F export data
+
+## pdb_fix_orphaned_objects.py
+
+Fix orphaned objects where a child has status="ok" but its parent FK
+has status="deleted". This can happen when cascade deletes were not
+properly triggered historically (e.g., missing delete_cascade entries
+or a ProtectedAction blocking the cascade mid-way).
+
+Usage:
+    # Preview only — shows what would be fixed, no changes made
+    python manage.py pdb_fix_orphaned_objects
+
+    # Apply fixes — soft-deletes all orphaned records
+    python manage.py pdb_fix_orphaned_objects --commit
 
 ## pdb_generate_test_data.py
 
