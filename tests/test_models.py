@@ -3,12 +3,18 @@ import reversion
 from django.core.exceptions import ValidationError
 
 from peeringdb_server.models import (
+    Carrier,
+    CarrierFacility,
     Facility,
     InternetExchange,
+    InternetExchangeFacility,
+    IXLanPrefix,
     Network,
+    NetworkContact,
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    ProtectedAction,
 )
 
 
@@ -199,6 +205,257 @@ def test_netixlan_save_will_sync_asn(entities):
         netixlan.save()
 
     assert netixlan.asn == netixlan.network.asn
+
+
+@pytest.mark.django_db
+def test_facility_delete_cascades_to_carrierfac():
+    """
+    When a Facility is soft-deleted, all related CarrierFacility records
+    must also be soft-deleted (status="deleted").
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org Cascade", status="ok")
+        carrier = Carrier.objects.create(name="Test Carrier", status="ok", org=org)
+        fac = Facility.objects.create(
+            name="Test Facility Cascade",
+            status="ok",
+            org=org,
+            city="City",
+            country="US",
+        )
+        carrierfac = CarrierFacility.objects.create(
+            carrier=carrier,
+            facility=fac,
+            status="ok",
+        )
+
+    assert carrierfac.status == "ok"
+
+    with reversion.create_revision():
+        fac.delete()
+
+    fac.refresh_from_db()
+    carrierfac.refresh_from_db()
+
+    assert fac.status == "deleted"
+    assert carrierfac.status == "deleted", (
+        "CarrierFacility should be soft-deleted when its parent Facility is deleted."
+    )
+
+
+@pytest.mark.django_db
+def test_network_delete_cascades():
+    """
+    When a Network is soft-deleted, all related poc, netfac and netixlan
+    records must also be soft-deleted.
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org Net Cascade", status="ok")
+        ix = InternetExchange.objects.create(
+            name="Test IX Net Cascade", org=org, status="ok", tech_email="ix@test.com"
+        )
+        fac = Facility.objects.create(
+            name="Test Fac Net Cascade", org=org, status="ok", city="City", country="US"
+        )
+        net = Network.objects.create(
+            name="Test Net Cascade", asn=64500, org=org, status="ok"
+        )
+        poc = NetworkContact.objects.create(network=net, status="ok", role="Technical")
+        netfac = NetworkFacility.objects.create(
+            network=net, facility=fac, status="ok"
+        )
+        netixlan = NetworkIXLan.objects.create(
+            network=net, ixlan=ix.ixlan, asn=net.asn, speed=1, status="ok"
+        )
+
+    with reversion.create_revision():
+        net.delete()
+
+    poc.refresh_from_db()
+    netfac.refresh_from_db()
+    netixlan.refresh_from_db()
+
+    assert poc.status == "deleted"
+    assert netfac.status == "deleted"
+    assert netixlan.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_ix_delete_cascades():
+    """
+    When an InternetExchange is soft-deleted, all related ixfac and ixlan
+    records must also be soft-deleted.
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org IX Cascade", status="ok")
+        fac = Facility.objects.create(
+            name="Test Fac IX Cascade", org=org, status="ok", city="City", country="US"
+        )
+        ix = InternetExchange.objects.create(
+            name="Test IX Cascade", org=org, status="ok", tech_email="ix@test.com"
+        )
+        ixfac = InternetExchangeFacility.objects.create(
+            ix=ix, facility=fac, status="ok"
+        )
+
+    ixlan = ix.ixlan
+
+    with reversion.create_revision():
+        ix.delete(force=True)
+
+    ixfac.refresh_from_db()
+    ixlan.refresh_from_db()
+
+    assert ixfac.status == "deleted"
+    assert ixlan.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_ixlan_delete_cascades():
+    """
+    When an IXLan is soft-deleted, all related ixpfx and netixlan
+    records must also be soft-deleted.
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org IXLan Cascade", status="ok")
+        ix = InternetExchange.objects.create(
+            name="Test IX IXLan Cascade",
+            org=org,
+            status="ok",
+            tech_email="ix@test.com",
+        )
+        net = Network.objects.create(
+            name="Test Net IXLan Cascade", asn=64501, org=org, status="ok"
+        )
+        ixlan = ix.ixlan
+        ixpfx = IXLanPrefix.objects.create(
+            ixlan=ixlan, status="ok", prefix="192.0.2.0/24", protocol="IPv4"
+        )
+        netixlan = NetworkIXLan.objects.create(
+            network=net, ixlan=ixlan, asn=net.asn, speed=1, status="ok"
+        )
+
+    with reversion.create_revision():
+        ixlan.delete()
+
+    ixpfx.refresh_from_db()
+    netixlan.refresh_from_db()
+
+    assert netixlan.status == "deleted"
+    assert ixpfx.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_ixpfx_delete_protected_while_netixlan_active():
+    """
+    Standalone ixpfx.delete() must raise ProtectedAction when there are
+    active netixlans with IPs inside the prefix.
+
+    The ixlan_deletion context is NOT set here, so IXLanPrefix.deletable
+    runs its full check and blocks the deletion — confirming the context
+    manager does not disable protection globally.
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org IXPfx Protected", status="ok")
+        ix = InternetExchange.objects.create(
+            name="Test IX IXPfx Protected",
+            org=org,
+            status="ok",
+            tech_email="ixpfx@test.com",
+        )
+        net = Network.objects.create(
+            name="Test Net IXPfx Protected", asn=64502, org=org, status="ok"
+        )
+        ixlan = ix.ixlan
+        ixpfx = IXLanPrefix.objects.create(
+            ixlan=ixlan, status="ok", prefix="192.0.2.0/24", protocol="IPv4"
+        )
+        NetworkIXLan.objects.create(
+            network=net,
+            ixlan=ixlan,
+            asn=net.asn,
+            speed=1,
+            status="ok",
+            ipaddr4="192.0.2.1",
+        )
+
+    with pytest.raises(ProtectedAction):
+        ixpfx.delete()
+
+
+@pytest.mark.django_db
+def test_carrier_delete_cascades():
+    """
+    When a Carrier is soft-deleted, all related carrierfac records
+    must also be soft-deleted.
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org Carrier Cascade", status="ok")
+        carrier = Carrier.objects.create(
+            name="Test Carrier Cascade", status="ok", org=org
+        )
+        fac = Facility.objects.create(
+            name="Test Fac Carrier Cascade",
+            org=org,
+            status="ok",
+            city="City",
+            country="US",
+        )
+        carrierfac = CarrierFacility.objects.create(
+            carrier=carrier, facility=fac, status="ok"
+        )
+
+    with reversion.create_revision():
+        carrier.delete()
+
+    carrierfac.refresh_from_db()
+
+    assert carrierfac.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_org_delete_cascades():
+    """
+    When an Organization is soft-deleted, all related fac, net, ix and carrier
+    records must also be soft-deleted.
+
+    Previously, carrier_set was missing from OrganizationBase.HandleRef.delete_cascade
+    in django-peeringdb, causing carrier records to remain status="ok" after the
+    parent org was deleted. This resulted in "dangling relationship" warnings
+    during peeringdb-py syncs (issue #91).
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Test Org Delete Cascade", status="ok")
+        fac = Facility.objects.create(
+            name="Test Fac Org Cascade", org=org, status="ok", city="City", country="US"
+        )
+        net = Network.objects.create(
+            name="Test Net Org Cascade", asn=64502, org=org, status="ok"
+        )
+        ix = InternetExchange.objects.create(
+            name="Test IX Org Cascade",
+            org=org,
+            status="ok",
+            tech_email="ix@test.com",
+        )
+        carrier = Carrier.objects.create(
+            name="Test Carrier Org Cascade", status="ok", org=org
+        )
+
+    with reversion.create_revision():
+        org.delete(force=True)
+
+    fac.refresh_from_db()
+    net.refresh_from_db()
+    ix.refresh_from_db()
+    carrier.refresh_from_db()
+
+    assert fac.status == "deleted"
+    assert net.status == "deleted"
+    assert ix.status == "deleted"
+    assert carrier.status == "deleted", (
+        "Carrier should be soft-deleted when its parent Organization is deleted."
+    )
 
 
 @pytest.mark.django_db
