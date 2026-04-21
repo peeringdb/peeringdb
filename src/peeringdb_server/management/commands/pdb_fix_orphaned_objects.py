@@ -49,11 +49,27 @@ ORPHAN_CHECKS = [
     (IXLan, [("ix__status", "deleted")], False),
     # IXLan-level children
     (IXLanPrefix, [("ixlan__status", "deleted")], True),
-    (NetworkIXLan, [("ixlan__status", "deleted"), ("network__status", "deleted")], False),
+    (
+        NetworkIXLan,
+        [("ixlan__status", "deleted"), ("network__status", "deleted")],
+        False,
+    ),
     # Facility-level children
-    (InternetExchangeFacility, [("ix__status", "deleted"), ("facility__status", "deleted")], False),
-    (NetworkFacility, [("network__status", "deleted"), ("facility__status", "deleted")], False),
-    (CarrierFacility, [("carrier__status", "deleted"), ("facility__status", "deleted")], False),
+    (
+        InternetExchangeFacility,
+        [("ix__status", "deleted"), ("facility__status", "deleted")],
+        False,
+    ),
+    (
+        NetworkFacility,
+        [("network__status", "deleted"), ("facility__status", "deleted")],
+        False,
+    ),
+    (
+        CarrierFacility,
+        [("carrier__status", "deleted"), ("facility__status", "deleted")],
+        False,
+    ),
 ]
 
 
@@ -87,9 +103,13 @@ class Command(PeeringDBBaseCommand):
 
         for obj in orphans:
             parents = self._deleted_parents(obj, parent_filters)
-            self.log(f"[{tag}] Fixing orphaned {tag}-{obj.id} (deleted parent: {parents})")
+            self.log(
+                f"[{tag}] Fixing orphaned {tag}-{obj.id} (deleted parent: {parents})"
+            )
             if self.commit:
-                self._delete(obj, force=force, use_forced_ixlan_deletion=isinstance(obj, IXLan))
+                self._delete(
+                    obj, force=force, use_forced_ixlan_deletion=isinstance(obj, IXLan)
+                )
 
         return count
 

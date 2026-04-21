@@ -288,11 +288,13 @@ class PasskeyFlagFormMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields["passkey_disable_password_auth"].initial = (
-                self.instance.passkey_disable_password_auth
-            )
+            self.fields[
+                "passkey_disable_password_auth"
+            ].initial = self.instance.passkey_disable_password_auth
             self.fields["disable_totp"].initial = self.instance.disable_totp
-            self.fields["passkey_require_mfa"].initial = self.instance.passkey_require_mfa
+            self.fields[
+                "passkey_require_mfa"
+            ].initial = self.instance.passkey_require_mfa
 
     def save(self, commit=True):
         instance = super().save(commit=False)

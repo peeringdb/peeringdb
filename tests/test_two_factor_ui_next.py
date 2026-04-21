@@ -126,7 +126,9 @@ class BackupTokensViewDispatchTests(TestCase):
 
     def test_dispatch_with_verified_totp_allows_access(self):
         """Standard password + TOTP login with a verified OTP device can access backup tokens."""
-        device = TOTPDevice.objects.create(user=self.user, name="default", confirmed=True)
+        device = TOTPDevice.objects.create(
+            user=self.user, name="default", confirmed=True
+        )
         self.client.force_login(self.user)
         session = self.client.session
         session[DEVICE_ID_SESSION_KEY] = device.persistent_id

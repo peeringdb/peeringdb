@@ -238,9 +238,9 @@ def test_facility_delete_cascades_to_carrierfac():
     carrierfac.refresh_from_db()
 
     assert fac.status == "deleted"
-    assert carrierfac.status == "deleted", (
-        "CarrierFacility should be soft-deleted when its parent Facility is deleted."
-    )
+    assert (
+        carrierfac.status == "deleted"
+    ), "CarrierFacility should be soft-deleted when its parent Facility is deleted."
 
 
 @pytest.mark.django_db
@@ -261,9 +261,7 @@ def test_network_delete_cascades():
             name="Test Net Cascade", asn=64500, org=org, status="ok"
         )
         poc = NetworkContact.objects.create(network=net, status="ok", role="Technical")
-        netfac = NetworkFacility.objects.create(
-            network=net, facility=fac, status="ok"
-        )
+        netfac = NetworkFacility.objects.create(network=net, facility=fac, status="ok")
         netixlan = NetworkIXLan.objects.create(
             network=net, ixlan=ix.ixlan, asn=net.asn, speed=1, status="ok"
         )
@@ -453,9 +451,9 @@ def test_org_delete_cascades():
     assert fac.status == "deleted"
     assert net.status == "deleted"
     assert ix.status == "deleted"
-    assert carrier.status == "deleted", (
-        "Carrier should be soft-deleted when its parent Organization is deleted."
-    )
+    assert (
+        carrier.status == "deleted"
+    ), "Carrier should be soft-deleted when its parent Organization is deleted."
 
 
 @pytest.mark.django_db

@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0149_alter_facility_available_voltage_services_and_more'),
+        ("peeringdb_server", "0149_alter_facility_available_voltage_services_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='org_flags',
-            field=models.IntegerField(default=0, help_text='Bitmask to store organization policy toggles', verbose_name='organization flags'),
+            model_name="organization",
+            name="org_flags",
+            field=models.IntegerField(
+                default=0,
+                help_text="Bitmask to store organization policy toggles",
+                verbose_name="organization flags",
+            ),
         ),
     ]

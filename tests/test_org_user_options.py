@@ -4,12 +4,13 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from django.conf import settings as dj_settings
-from django_otp.plugins.otp_totp.models import TOTPDevice
 from django.test import Client, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
-
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_security_keys.models import SecurityKey
+
+from peeringdb_server.forms import OrgUserOptions
 from peeringdb_server.models import (
     EmailAddress,
     EmailAddressData,
@@ -17,7 +18,6 @@ from peeringdb_server.models import (
     Organization,
     User,
 )
-from peeringdb_server.forms import OrgUserOptions
 from peeringdb_server.org_admin_views import update_user_options
 from peeringdb_server.views import LoginView
 from tests.util import mock_csrf_session, reset_group_ids
@@ -654,9 +654,7 @@ def test_done_redirects_to_mfa_setup_when_no_device(reauth_objects):
     view.request = http_request
     view.storage.reset = MagicMock()
 
-    with patch(
-        "django_security_keys.ext.two_factor.views.auth_login"
-    ):
+    with patch("django_security_keys.ext.two_factor.views.auth_login"):
         response = view.done([], **{})
 
     assert response.status_code == 302
@@ -692,9 +690,7 @@ def test_done_redirects_with_totp_disabled_message_when_has_device(reauth_object
     view.request = http_request
     view.storage.reset = MagicMock()
 
-    with patch(
-        "django_security_keys.ext.two_factor.views.auth_login"
-    ):
+    with patch("django_security_keys.ext.two_factor.views.auth_login"):
         response = view.done([], **{})
 
     assert response.status_code == 302
@@ -787,9 +783,7 @@ def test_has_security_key_step_passkey_mfa_required_has_2fa_key(reauth_objects):
     org.set_org_flag(dj_settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA, True)
     org.save()
 
-    view = _make_pdb_login_view(
-        user, storage_data={"passkey_authenticated": True}
-    )
+    view = _make_pdb_login_view(user, storage_data={"passkey_authenticated": True})
 
     with patch.object(SecurityKey, "credentials", return_value=["fake-cred"]):
         result = view.has_security_key_step()
@@ -810,9 +804,7 @@ def test_has_security_key_step_passkey_mfa_required_no_2fa_key(reauth_objects):
     org.set_org_flag(dj_settings.ORG_FLAGS_PASSKEY_REQUIRE_MFA, True)
     org.save()
 
-    view = _make_pdb_login_view(
-        user, storage_data={"passkey_authenticated": True}
-    )
+    view = _make_pdb_login_view(user, storage_data={"passkey_authenticated": True})
 
     with patch.object(SecurityKey, "credentials", return_value=[]):
         result = view.has_security_key_step()

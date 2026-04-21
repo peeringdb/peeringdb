@@ -4295,10 +4295,12 @@ class LoginView(TwoFactorLoginView):
         # str() is required: gettext_lazy returns a proxy object that is
         # not JSON-serializable, which would cause a TypeError when the
         # session backend serializes session data with json.dumps().
-        return str(_(
-            "Your organization requires passkey authentication. "
-            "Please log in using a passkey."
-        ))
+        return str(
+            _(
+                "Your organization requires passkey authentication. "
+                "Please log in using a passkey."
+            )
+        )
 
     def get_mfa_incomplete_redirect(self):
         user = self.get_user()
@@ -4312,20 +4314,24 @@ class LoginView(TwoFactorLoginView):
                 org.name for org in user.organizations if org.disable_totp
             ]
             org_list = ", ".join(orgs_disabling_totp)
-            self.request.session["passkey_mfa_error"] = str(_(
-                "%(org_list)s has disabled TOTP authentication. "
-                "Please set up a different MFA method to proceed."
-            )) % {"org_list": org_list}
+            self.request.session["passkey_mfa_error"] = str(
+                _(
+                    "%(org_list)s has disabled TOTP authentication. "
+                    "Please set up a different MFA method to proceed."
+                )
+            ) % {"org_list": org_list}
         elif passkey_path:
             # Passkey path with no MFA device at all — org requires post-passkey MFA.
             orgs_requiring_mfa = [
                 org.name for org in user.organizations if org.passkey_require_mfa
             ]
             org_list = ", ".join(orgs_requiring_mfa)
-            self.request.session["passkey_mfa_error"] = str(_(
-                "Your organization %(org_list)s requires MFA after passkey authentication. "
-                "Please set up an MFA method to proceed."
-            )) % {"org_list": org_list}
+            self.request.session["passkey_mfa_error"] = str(
+                _(
+                    "Your organization %(org_list)s requires MFA after passkey authentication. "
+                    "Please set up an MFA method to proceed."
+                )
+            ) % {"org_list": org_list}
         else:
             # Password path + disable_totp but the user has no TOTP device,
             # so there is nothing being bypassed — let login proceed normally.

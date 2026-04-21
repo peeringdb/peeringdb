@@ -39,7 +39,9 @@ def make_orphaned_carrierfac_via_fac():
         fac = Facility.objects.create(
             name="Fac CarrierFac", org=org, status="ok", city="City", country="US"
         )
-        carrier = Carrier.objects.create(name="Carrier CarrierFac", org=org, status="ok")
+        carrier = Carrier.objects.create(
+            name="Carrier CarrierFac", org=org, status="ok"
+        )
         carrierfac = CarrierFacility.objects.create(
             carrier=carrier, facility=fac, status="ok"
         )
@@ -156,7 +158,10 @@ def make_orphaned_ixlan_with_protected_ixpfx():
     with reversion.create_revision():
         org = Organization.objects.create(name="Org IXLan Protected", status="ok")
         ix = InternetExchange.objects.create(
-            name="IX IXLan Protected", org=org, status="ok", tech_email="ixlanp@test.com"
+            name="IX IXLan Protected",
+            org=org,
+            status="ok",
+            tech_email="ixlanp@test.com",
         )
         net = Network.objects.create(
             name="Net IXLan Protected", asn=64506, org=org, status="ok"
@@ -208,7 +213,10 @@ def make_orphaned_netixlan_via_network():
     with reversion.create_revision():
         org = Organization.objects.create(name="Org NetIXLan Net", status="ok")
         ix = InternetExchange.objects.create(
-            name="IX NetIXLan Net", org=org, status="ok", tech_email="netixlannet@test.com"
+            name="IX NetIXLan Net",
+            org=org,
+            status="ok",
+            tech_email="netixlannet@test.com",
         )
         net = Network.objects.create(
             name="Net NetIXLan Net", asn=64504, org=org, status="ok"
@@ -230,7 +238,11 @@ def make_orphaned_poc_via_network():
         org = Organization.objects.create(name="Org POC", status="ok")
         net = Network.objects.create(name="Net POC", asn=64505, org=org, status="ok")
         poc = NetworkContact.objects.create(
-            network=net, status="ok", role="Policy", name="Test Contact", email="poc@test.com"
+            network=net,
+            status="ok",
+            role="Policy",
+            name="Test Contact",
+            email="poc@test.com",
         )
 
     net.status = "deleted"

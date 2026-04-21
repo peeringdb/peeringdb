@@ -799,7 +799,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
             return
 
         # After a passkey login where require_passkey_mfa is True but the user
-        # has no MFA device/disable_totp is set by other org, we log them in and 
+        # has no MFA device/disable_totp is set by other org, we log them in and
         # redirect to setup. (#1810)
         if request.session.get("mfa_setup_required"):
             if user.has_2fa:

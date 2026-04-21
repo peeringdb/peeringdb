@@ -27,4 +27,3 @@ TestRouter(peeringdb_server.db_router.DatabaseRouter)
 
 A very basic database router that routes to a different
 read and write db.
-
