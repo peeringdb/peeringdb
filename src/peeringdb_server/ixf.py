@@ -59,6 +59,11 @@ REASON_VALUES_CHANGED = _(
     "Data differences between PeeringDB and the exchange's IX-F data"
 )
 
+REASON_IP_REASSIGNED_TO_DIFFERENT_ASN = _(
+    "The IP address has been reassigned to a different ASN "
+    "in the exchange's IX-F data"
+)
+
 
 class MultipleVlansInPrefix(ValueError):
     """
@@ -714,6 +719,49 @@ class Importer:
         for ixf_member in self.pending_save:
             self.apply_add_or_update(ixf_member)
 
+    def _build_ip_to_asn(self):
+        """
+        Build a {ip: asn} lookup from self.ixf_ids for O(1) reassignment
+        checks. Called once before the process_deletions loop (#1897).
+        """
+        mapping = {}
+        for asn, ipv4, ipv6 in self.ixf_ids:
+            if ipv4:
+                mapping[ipv4] = asn
+            if ipv6:
+                mapping[ipv6] = asn
+        return mapping
+
+    def _ip_reassigned_in_feed(self, netixlan, ip_to_asn):
+        """
+        Return True if the IX-F feed contains an entry with a different
+        ASN that claims either of this netixlan's IPs (#1897).
+        """
+        if netixlan.ipaddr4 and ip_to_asn.get(netixlan.ipaddr4, netixlan.asn) != netixlan.asn:
+            return True
+        if netixlan.ipaddr6 and ip_to_asn.get(netixlan.ipaddr6, netixlan.asn) != netixlan.asn:
+            return True
+        return False
+
+    def _apply_reassignment_delete(self, ixf_member_data):
+        """
+        Immediately apply and notify a deletion caused by IP reassignment.
+        Bypasses allow_ixp_update; notifies only the losing network (#1897).
+        """
+        ixf_member_data._reassigned = True
+        self.log_apply(
+            ixf_member_data.apply(save=self.save),
+            reason=REASON_IP_REASSIGNED_TO_DIFFERENT_ASN,
+        )
+        self.queue_notification(
+            ixf_member_data,
+            "remove",
+            ac=False,
+            ix=False,
+            net=True,
+            reassigned=True,
+        )
+
     @reversion.create_revision()
     @transaction.atomic()
     def process_deletions(self):
@@ -736,6 +784,8 @@ class Importer:
         if self.asn:
             netixlan_qset = netixlan_qset.filter(asn=self.asn)
 
+        ip_to_asn = self._build_ip_to_asn()
+
         for netixlan in netixlan_qset:
             if netixlan.ixf_id not in self.ixf_ids:
                 ixf_member_data = IXFMemberData.instantiate(
@@ -755,7 +805,10 @@ class Importer:
                 self.fix_consolidated_modify(ixf_member_data)
 
                 self.deletions[ixf_member_data.ixf_id] = ixf_member_data
-                if netixlan.network.allow_ixp_update:
+
+                if self._ip_reassigned_in_feed(netixlan, ip_to_asn):
+                    self._apply_reassignment_delete(ixf_member_data)
+                elif netixlan.network.allow_ixp_update:
                     self.log_apply(
                         ixf_member_data.apply(save=self.save),
                         reason=REASON_ENTRY_GONE_FROM_REMOTE,

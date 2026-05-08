@@ -4301,6 +4301,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         if not self.netixlan.id or self.netixlan.status == "deleted":
             # edge-case that should not really happen
             # non-existing netixlan cannot be removed
+            #
+            # #1897: one legitimate case — the importer has just
+            # applied an immediate reassignment-delete on this
+            # instance. The netixlan is now "deleted" but the
+            # instance still represents a removal for downstream
+            # consumers (action, _changes, notification rendering).
+            # Fall through to the normal remote_data_missing rule so
+            # the flag only widens the deleted-netixlan guard, it
+            # doesn't override the core "remote data is gone" check.
+            if getattr(self, "_reassigned", False):
+                return self.remote_data_missing
 
             return False
 

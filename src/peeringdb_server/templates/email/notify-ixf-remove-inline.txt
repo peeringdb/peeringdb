@@ -1,6 +1,10 @@
 {% spaceless %}
 REMOVE {{ instance.ixf_id_pretty_str }}
+{% if reassigned %}
+One or more IP addresses belonging to this entry have been reassigned to a different ASN in the exchange's IX-F data, so this entry has been removed by the IX-F importer. If this removal is incorrect, please contact the exchange to correct their IX-F data.
+{% else %}
 The combination of ASN, IPv4 and IPv6 do not exist in the IX-F data under one member connection.
+{% endif %}
 {% if instance.actionable_error %}
 A validation error was raised when the IX-F importer attempted to process this change.
 
