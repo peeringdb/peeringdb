@@ -1424,6 +1424,10 @@ set_option("TICKET_CREATION_ASNAUTO", False)
 # when False, tickets will not be created for automated PREFIXAUTO actions
 set_option("TICKET_CREATION_PREFIXAUTO", False)
 
+# minimum number of unique ASNs required in an IX-F feed for auto-approval
+# of a new internet exchange (#1832)
+set_option("IXF_PREFIXAUTO_MIN_ASN_COUNT", 3)
+
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)

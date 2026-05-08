@@ -1,0 +1,31 @@
+{
+    "timestamp": "2020-07-13T09:23:47Z",
+    "version": "1.0",
+    "ixp_list": [
+        {
+            "shortname": "Test Exchange",
+            "ixp_id": 1,
+            "ixf_id": 1
+        }
+    ],
+    "member_list": [
+        {
+            "asnum": 64500,
+            "member_type": "peering",
+            "name": "Member A (owned by submitting org)",
+            "connection_list": []
+        },
+        {
+            "asnum": 64501,
+            "member_type": "peering",
+            "name": "Member B",
+            "connection_list": []
+        },
+        {
+            "asnum": 64502,
+            "member_type": "peering",
+            "name": "Member C",
+            "connection_list": []
+        }
+    ]
+}
