@@ -581,8 +581,8 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 
-# minimum value to allow for speed on an netixlan (currently 100Mbit)
-set_option("DATA_QUALITY_MIN_SPEED", 100)
+# minimum value to allow for speed on an netixlan (currently 50Mbit)
+set_option("DATA_QUALITY_MIN_SPEED", 50)
 
 # maximum value to allow for speed on an netixlan (currently 5Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 5000000)

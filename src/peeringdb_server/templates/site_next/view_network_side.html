@@ -33,7 +33,7 @@
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
-      <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
+      <div data-sort-target=".speed" class="numeric">{% trans "Capacity" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2 col-lg-2 ">
       <div data-sort-target=".is_rs_peer" class="numeric">{% trans "RS Peer" %}</div>
@@ -57,7 +57,7 @@
 
     <div class="empty-result">
       <div class="message">{% trans "No filter matches." %}</div>
-      <div class="help">{% trans "You may filter by" %} <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b> {% trans "or" %} <b>{% trans "Speed" %}.</b></div>
+      <div class="help">{% trans "You may filter by" %} <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b> {% trans "or" %} <b>{% trans "Capacity" %}.</b></div>
     </div>
 
     {% for x in data.exchanges %}
@@ -225,7 +225,7 @@
        </div>
 
        <div class="row view_row">
-         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Speed (mbit/sec)" %}</div>
+         <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Capacity (mbit/sec)" %}</div>
          <div class="view_value col-8 col-sm-7 col-md-8">
            <div data-edit-type="network_speed"
                 data-edit-name="speed"
