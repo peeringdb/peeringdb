@@ -43,13 +43,13 @@ from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
+from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
@@ -415,30 +415,6 @@ class InactiveKeyBlock(permissions.BasePermission):
 # VIEW SETS
 
 
-class UnlimitedIfNoPagePagination(PageNumberPagination):
-    page_size = dj_settings.PAGE_SIZE  # default page_size
-    page_size_query_param = "per_page"
-    max_page_size = 250
-
-    def paginate_queryset(self, queryset, request, view=None):
-        self.request = request
-        if "page" in request.query_params:
-            self.pagination_applied = True
-            return super().paginate_queryset(queryset, request)
-        else:
-            self.pagination_applied = False
-            return list(queryset)  # Return all without pagination
-
-    def get_paginated_response(self, data):
-        return Response(
-            {
-                "count": len(data),
-                "next": None,
-                "previous": None,
-                "results": data,
-            }
-        )
-
 
 class ModelViewSet(viewsets.ModelViewSet):
     """
@@ -775,16 +751,9 @@ class ModelViewSet(viewsets.ModelViewSet):
             if getattr(paginator, "pagination_applied", True):
                 serializer = self.get_serializer(page, many=True)
                 r = paginator.get_paginated_response(serializer.data)
-                self.request.meta_response["pagination"] = {
-                    "count": paginator.page.paginator.count,
-                    "has_next": paginator.page.has_next(),
-                    "has_previous": paginator.page.has_previous(),
-                    "next": paginator.get_next_link(),
-                    "previous": paginator.get_previous_link(),
-                    "page": paginator.page.number,
-                    "per_page": paginator.page.paginator.per_page,
-                    "total_pages": paginator.page.paginator.num_pages,
-                }
+                self.request.meta_response["pagination"] = (
+                    paginator.build_pagination_meta()
+                )
             else:
                 serializer = self.get_serializer(queryset, many=True)
                 r = Response(serializer.data)

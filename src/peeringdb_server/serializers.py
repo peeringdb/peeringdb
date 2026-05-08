@@ -2271,7 +2271,7 @@ class CarrierSerializer(ModelSerializer):
 
         return qset, filters
 
-    def get_fac_count(self, inst):
+    def get_fac_count(self, inst) -> int:
         return inst.carrierfac_set.filter(status="ok").count()
 
     def get_facilities(self, obj):
@@ -2596,7 +2596,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             return f"{inst.ix_name}: {ixlan_name}"
         return inst.ix_name
 
-    def get_ix_id(self, inst):
+    def get_ix_id(self, inst) -> int:
         return inst.ix_id
 
     def run_validation(self, data=serializers.empty):
@@ -2698,6 +2698,8 @@ class NetworkFacilitySerializer(ModelSerializer):
     name = serializers.SerializerMethodField()
     country = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
+
+    local_asn = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = NetworkFacility
@@ -3454,7 +3456,7 @@ class IXLanSerializer(ModelSerializer):
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
 
-    def get_dot1q_support(self, inst):
+    def get_dot1q_support(self, inst) -> bool:
         # as per #903 this should always return false as the field
         # is now deprecated
         return False
@@ -3838,10 +3840,10 @@ class InternetExchangeSerializer(ModelSerializer):
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
-    def get_proto_ipv6(self, inst):
+    def get_proto_ipv6(self, inst) -> bool:
         return inst.derived_proto_ipv6
 
-    def get_proto_unicast(self, inst):
+    def get_proto_unicast(self, inst) -> bool:
         return inst.derived_proto_unicast
 
     def validate(self, data):
