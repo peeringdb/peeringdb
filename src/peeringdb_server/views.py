@@ -579,7 +579,15 @@ def view_affiliate_to_org(request):
             status=400,
         )
 
-        pending_affil_reqs = request.user.pending_affiliation_requests
+        # Guard against concurrent POSTs from the same user racing past the
+        # dup check below. The user-row lock serializes requests so a 2nd
+        # near-simultaneous POST blocks until the 1st txn commits.
+        # select_for_update on the dup-check queries is required under MySQL
+        # REPEATABLE READ, where a prior non-locking read in this txn would
+        # otherwise pin the snapshot and hide the 1st txn's committed UOAR.
+        User.objects.select_for_update().get(pk=request.user.pk)
+
+        pending_affil_reqs = request.user.pending_affiliation_requests.select_for_update()
         if org_id and pending_affil_reqs.filter(org_id=org_id).exists():
             return already_requested_affil_response
         elif asn and pending_affil_reqs.filter(asn=asn).exists():

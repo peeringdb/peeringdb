@@ -6474,10 +6474,25 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             if req.org_id and req.org.admin_usergroup.user_set.exists():
                 continue
 
+            # Issue #1945: only delete+recreate if the new email now satisfies
+            # RDAP validation. If validation still fails, leave the existing
+            # UOAR in place — the admin already received a ticket on creation
+            # and recreating would fire the signal again and queue a duplicate.
+            try:
+                rdap = RdapLookup().get_asn(req.asn)
+            except RdapNotFoundError:
+                continue
+            except Exception as exc:
+                logger.error(exc)
+                continue
+
+            if not self.validate_rdap_relationship(rdap):
+                continue
+
             # cancel current request
             req.delete()
 
-            # reopen request
+            # reopen request — signal will auto-approve since RDAP now validates
             UserOrgAffiliationRequest.objects.create(
                 user=self, org=req.org, asn=req.asn, status="pending"
             )
