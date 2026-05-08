@@ -1218,6 +1218,109 @@ class AdminTests(TestCase):
                 f"{entity_tag} status should remain 'deleted' when org is deleted",
             )
 
+    def test_ixf_cascade_delete_internetexchange(self):
+        """
+        A superuser must be able to delete an InternetExchange that has
+        associated IX-F Import Log and IX-F Member Data via the admin
+        (soft-delete sets status to 'deleted'). The IX-F records themselves
+        are not actually deleted — the cascade simulation in the confirmation
+        page is bypassed via InternetExchangeAdmin.get_deleted_objects().
+        Addresses issue #1875.
+        """
+        ix = self.entities["ix"][1]
+        ixlan = ix.ixlan
+
+        models.IXLanPrefix.objects.create(
+            ixlan=ixlan,
+            protocol="IPv4",
+            prefix="198.51.100.0/24",
+            status="ok",
+        )
+        netixlan = models.NetworkIXLan.objects.create(
+            network=self.entities["net"][1],
+            ixlan=ixlan,
+            ipaddr4="198.51.100.10",
+            status="ok",
+            asn=self.entities["net"][1].asn,
+            speed=1000,
+        )
+        ixfmemberdata = models.IXFMemberData.instantiate(
+            ixlan=ixlan,
+            ipaddr4=netixlan.ipaddr4,
+            ipaddr6=netixlan.ipaddr6,
+            asn=netixlan.network.asn,
+        )
+        ixfmemberdata.save()
+        models.IXLanIXFMemberImportLog.objects.create(ixlan=ixlan)
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse("admin:peeringdb_server_internetexchange_delete", args=[ix.id])
+
+        confirm = client.get(url)
+        self.assertEqual(confirm.status_code, 200)
+        body = confirm.content.decode("utf-8")
+        self.assertNotIn("doesn&#x27;t have permission to delete", body)
+        self.assertNotIn("doesn't have permission to delete", body)
+
+        response = client.post(url, {"post": "yes"}, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        ix.refresh_from_db()
+        self.assertEqual(ix.status, "deleted")
+
+    def test_ixf_delete_direct_blocked_for_all(self):
+        """
+        No user — including superusers — must be able to directly delete
+        IXLanIXFMemberImportLog or IXFMemberData via the admin. The bypass
+        in InternetExchangeAdmin.get_deleted_objects() only skips the cascade
+        permission check, it does not open up direct deletion.
+        Addresses issue #1875.
+        """
+        ix = self.entities["ix"][2]
+        ixlan = ix.ixlan
+        netixlan = models.NetworkIXLan.objects.create(
+            network=self.entities["net"][2],
+            ixlan=ixlan,
+            ipaddr4="192.0.2.1",
+            status="ok",
+            asn=self.entities["net"][2].asn,
+            speed=1000,
+        )
+
+        ixfmemberdata = models.IXFMemberData.instantiate(
+            ixlan=ixlan,
+            ipaddr4=netixlan.ipaddr4,
+            ipaddr6=netixlan.ipaddr6,
+            asn=netixlan.network.asn,
+        )
+        ixfmemberdata.save()
+        log = models.IXLanIXFMemberImportLog.objects.create(ixlan=ixlan)
+
+        log_url = reverse(
+            "admin:peeringdb_server_ixlanixfmemberimportlog_delete", args=[log.id]
+        )
+        data_url = reverse(
+            "admin:peeringdb_server_ixfmemberdata_delete", args=[ixfmemberdata.id]
+        )
+
+        for user in [self.admin_user, self.readonly_admin]:
+            client = Client()
+            client.force_login(user)
+
+            response = client.post(log_url, {"post": "yes"}, follow=True)
+            self.assertIn(response.status_code, [403, 302])
+            self.assertTrue(
+                models.IXLanIXFMemberImportLog.objects.filter(id=log.id).exists()
+            )
+
+            response = client.post(data_url, {"post": "yes"}, follow=True)
+            self.assertIn(response.status_code, [403, 302])
+            self.assertTrue(
+                models.IXFMemberData.objects.filter(id=ixfmemberdata.id).exists()
+            )
+
     # --- Passkey policy flag tests (org admin form) ---
 
     def _post_org_admin(self, org, extra_data):
