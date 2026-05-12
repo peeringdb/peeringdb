@@ -21,4 +21,3 @@ has opted-in for this request via a thread-local flag.
 Writes always go to "default" (primary).
 
 See peeringdb_server.db_replica for the middleware that drives this.
-
