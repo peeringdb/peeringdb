@@ -759,6 +759,13 @@ class ApplicationOwnerMixin:
     """
 
     def get_queryset(self):
+        # Superusers can already view and manipulate OAuth applications through
+        # django-admin, so per peeringdb's convention the user-facing UI exposes
+        # the same access. If superuser access to OAuth apps in django-admin is
+        # ever revoked, this bypass should be removed in lockstep.
+        if self.request.user.is_superuser:
+            return get_application_model().objects.all()
+
         org_ids = [org.id for org in self.request.user.admin_organizations]
 
         return get_application_model().objects.filter(
