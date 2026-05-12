@@ -51,6 +51,27 @@ class TestWipe(ClientCase):
         test.peeringdb.com
         """
 
+        # The sync path invokes PeeringDBBackend.setup(), which permanently
+        # flips auto_now_add / auto_now off on the shared `created` /
+        # `updated` field instances of every synced model. Snapshot the
+        # current flags and restore them on teardown so unrelated tests
+        # running later in the same xdist worker don't end up inserting
+        # NULL timestamps.
+        from peeringdb_server.client_adaptor.backend import Backend
+
+        field_flags = []
+        for model in Backend.RESOURCE_MAP.values():
+            for field in model._meta.fields:
+                if field.name in ("created", "updated"):
+                    field_flags.append((field, field.auto_now_add, field.auto_now))
+
+        def _restore_field_flags():
+            for field, auto_now_add, auto_now in field_flags:
+                field.auto_now_add = auto_now_add
+                field.auto_now = auto_now
+
+        self.addCleanup(_restore_field_flags)
+
         dates = {}
 
         for reftag, cls in REFTAG_MAP.items():

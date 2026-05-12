@@ -17,11 +17,14 @@ from simplekml import OverlayXY, ScreenXY, Units
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 
-def disable_auto_now_and_save(entity):
+def disable_auto_now_and_save(entity, update_fields=None):
     updated_field = entity._meta.get_field("updated")
     updated_field.auto_now = False
     try:
-        entity.save()
+        if update_fields is not None:
+            entity.save(update_fields=update_fields)
+        else:
+            entity.save()
     finally:
         updated_field.auto_now = True
 

@@ -779,14 +779,14 @@
   function submitForm() {
     let inputValue = document.getElementById('searchInput').value;
     let form = document.getElementById('quick-search-view');
-    form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+    form.action = "/search?q=" + encodeURIComponent(inputValue);
     return true;
   }
 
 function submitForm() {
   let inputValue = document.getElementById('searchInput').value;
   let form = document.getElementById('quick-search-view');
-  form.action = "/search/v2?q=" + encodeURIComponent(inputValue);
+  form.action = "/search?q=" + encodeURIComponent(inputValue);
   return true;
 }
 

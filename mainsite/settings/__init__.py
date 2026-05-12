@@ -3,14 +3,15 @@
 import ast
 import os
 import sys
+import warnings
 from datetime import datetime
 
 import django.conf.global_settings
 import django.conf.locale
-import redis
 import structlog
 import urllib3
-from redis.sentinel import Sentinel
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 
 from mainsite.oauth2.scopes import SupportedScopes
 
@@ -234,58 +235,6 @@ def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
     set_option(name, value, envvar_type)
 
 
-def can_ping_redis(host, port, password):
-    """
-    Check if Redis is available.
-    """
-    client = redis.StrictRedis(host=host, port=port, password=password)
-    try:
-        return client.ping()
-    except redis.ConnectionError:
-        return False
-
-
-def can_ping_redis_sentinel(sentinels, master_name, password, sentinel_password=None):
-    """
-    Check if Redis Sentinel is available by attempting to connect
-    and discover the master.
-    """
-    try:
-        sentinel_nodes = []
-        for sentinel in sentinels:
-            if isinstance(sentinel, str):
-                # Format: "host:port"
-                host, port = sentinel.split(":")
-                sentinel_nodes.append((host, int(port)))
-            else:
-                # Format: ("host", port) or {"host": "...", "port": ...}
-                if isinstance(sentinel, dict):
-                    sentinel_nodes.append((sentinel["host"], int(sentinel["port"])))
-                else:
-                    sentinel_nodes.append(sentinel)
-
-        sentinel_kwargs = {}
-        if sentinel_password:
-            sentinel_kwargs["password"] = sentinel_password
-
-        sentinel = Sentinel(
-            sentinel_nodes,
-            socket_timeout=0.5,
-            sentinel_kwargs=sentinel_kwargs,
-        )
-
-        master = sentinel.master_for(
-            master_name,
-            socket_timeout=0.5,
-            password=password,
-        )
-        return master.ping()
-
-    except Exception as e:
-        print_debug(f"Redis Sentinel connection error: {e}")
-        return False
-
-
 def get_cache_backend(cache_name):
     """
     Function to get cache backend based on environment variable.
@@ -301,57 +250,40 @@ def get_cache_backend(cache_name):
         options["CULL_FREQUENCY"] = 10
 
     if cache_backend == "RedisCache":
-        print_debug(f"Checking if Redis is available for {cache_name}")
-
         if REDIS_SENTINEL_ENABLED:
-            if can_ping_redis_sentinel(
-                REDIS_SENTINEL_NODES,
-                REDIS_HOST,
-                REDIS_PASSWORD,
-                REDIS_SENTINEL_PASSWORD,
-            ):
-                print_debug(
-                    "Was able to ping Redis Sentinel, using django-redis with Sentinel"
-                )
-                return {
-                    "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": f"redis://{REDIS_HOST}/0",
-                    "OPTIONS": {
-                        "CLIENT_CLASS": "django_redis.client.SentinelClient",
-                        "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
-                        "SENTINELS": REDIS_SENTINEL_NODES,
-                        "PASSWORD": REDIS_PASSWORD,
-                        "SENTINEL_KWARGS": {"password": REDIS_SENTINEL_PASSWORD}
-                        if REDIS_SENTINEL_PASSWORD
-                        else {},
-                        "CONNECTION_POOL_KWARGS": {
-                            "socket_timeout": REDIS_SOCKET_TIMEOUT,
-                            "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
-                            "socket_keepalive": True,
-                            "retry_on_timeout": REDIS_RETRY_ON_TIMEOUT,
-                        },
-                    },
-                }
-            else:
-                print_debug(
-                    f"Was not able to ping Redis Sentinel for {cache_name}, falling back to single Redis or DatabaseCache"
-                )
-        elif can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
-            print_debug("Was able to ping Redis, using RedisCache")
             return {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
-                "OPTIONS": {},
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": f"redis://{REDIS_HOST}/0",
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.SentinelClient",
+                    "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
+                    "SENTINELS": REDIS_SENTINEL_NODES,
+                    "PASSWORD": REDIS_PASSWORD,
+                    "SENTINEL_KWARGS": {
+                        "socket_timeout": REDIS_SOCKET_TIMEOUT,
+                        "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
+                        "retry": _REDIS_RETRY,
+                        **(
+                            {"password": REDIS_SENTINEL_PASSWORD}
+                            if REDIS_SENTINEL_PASSWORD
+                            else {}
+                        ),
+                    },
+                    "CONNECTION_POOL_KWARGS": {
+                        "socket_timeout": REDIS_SOCKET_TIMEOUT,
+                        "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
+                        "socket_keepalive": True,
+                        "retry_on_timeout": REDIS_RETRY_ON_TIMEOUT,
+                        "retry": _REDIS_RETRY,
+                    },
+                },
             }
-        else:
-            # fall back to DatabseCache if cache_name is sessions else
-            # LocMemCache
-            cache_backend = (
-                "DatabaseCache" if cache_name == "session" else "LocMemCache"
-            )
-            print_debug(
-                f"Was not able to ping Redis for {cache_name}, falling back to {cache_backend}"
-            )
+
+        return {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+            "OPTIONS": {},
+        }
 
     if cache_backend == "LocMemCache":
         return {
@@ -438,6 +370,16 @@ set_from_env("REDIS_SENTINEL_PASSWORD", "")
 set_option("REDIS_SOCKET_TIMEOUT", 0.5)
 set_option("REDIS_SOCKET_CONNECT_TIMEOUT", 0.5)
 set_option("REDIS_RETRY_ON_TIMEOUT", True)
+
+# redis-py retries ConnectionError 3x by default. With 3 sentinels per pool
+# that turns a Sentinel outage into a 15-30s hang per cold cache, which
+# DJANGO_REDIS_IGNORE_EXCEPTIONS can't shorten (it only swallows exceptions,
+# not retry loops). Default to 0 so failures surface fast; raise to test
+# retry behaviour against transient outages.
+set_option("REDIS_CONNECT_RETRIES", 0)
+# Constructed here (not at the top of the file) because it depends on the
+# REDIS_CONNECT_RETRIES set_option above. Don't move.
+_REDIS_RETRY = Retry(NoBackoff(), retries=REDIS_CONNECT_RETRIES)
 
 if "REDIS_SENTINEL_NODES" in os.environ:
     try:
@@ -581,8 +523,8 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
 
-# minimum value to allow for speed on an netixlan (currently 100Mbit)
-set_option("DATA_QUALITY_MIN_SPEED", 100)
+# minimum value to allow for speed on an netixlan (currently 50Mbit)
+set_option("DATA_QUALITY_MIN_SPEED", 50)
 
 # maximum value to allow for speed on an netixlan (currently 5Tbit)
 set_option("DATA_QUALITY_MAX_SPEED", 5000000)
@@ -702,6 +644,14 @@ if CACHE_MAX_ENTRIES < 5000:
     raise ValueError("CACHE_MAX_ENTRIES needs to be >= 5000 (#1151)")
 
 
+# Default to DB-backed sessions so PeeringDB can serve auth flows without
+# Redis. Set SESSION_ENGINE=peeringdb_server.sessions to use the cache
+# backend instead — recommended when Redis is a required dependency (e.g.
+# Sentinel HA setups) and the speed of cache-backed sessions is wanted.
+# That backend probes the cache before Django's 10000-iteration create()
+# loop so login/signup fail fast instead of hanging when Redis is down.
+# Note: switching engines logs out users whose sessions are in the previous
+# backend, since the new backend can't see the old storage.
 set_option("SESSION_ENGINE", "django.contrib.sessions.backends.db")
 
 set_option("DEFAULT_CACHE_BACKEND", "DatabaseCache")
@@ -721,7 +671,16 @@ for cache_name in cache_names:
 
 # When enabled, redis cache errors will be silently ignored
 # rather than crashing the request
-set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False)
+set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", True)
+
+# When the rate-limit cache is unreachable, allow requests through instead
+# of treating "unknown" as "over limit" (django-ratelimit defaults to closed).
+# Tradeoff: every per-IP/per-user django_ratelimit limiter — middleware
+# RATELIMIT_WEB_PAGE_RATE, view-level decorators on signup/email/IX-F flows,
+# API throttles via get_usage() — becomes unenforced during a Redis outage.
+# Login brute-force protection is unaffected because that limiter is currently
+# disabled. Acceptable here because the alternative is 429ing every request.
+set_bool("RATELIMIT_FAIL_OPEN", True)
 
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose
@@ -743,6 +702,69 @@ DATABASES = {
         # "TEST": { "NAME": f"{DATABASE_NAME}_test" }
     },
 }
+
+# -----------------------------------------------------------------------------
+# Read-replica routing (optional, default off)
+#
+# Two independent gates control routing — both must be on for GETs to be
+# routed to the replica:
+#   1. DATABASE_REPLICA_HOST set and != DATABASE_HOST → "read" alias is added
+#      to DATABASES, available for ad-hoc .using("read") use.
+#   2. DATABASE_REPLICA_ROUTING_ENABLED=True → router consults the
+#      request-scoped flag and the middleware is appended to MIDDLEWARE.
+# With either gate off the app behaves identically to a single-DB deploy.
+
+set_option("DATABASE_REPLICA_HOST", "")
+set_option("DATABASE_REPLICA_PORT", DATABASE_PORT)
+set_option("DATABASE_REPLICA_NAME", DATABASE_NAME)
+set_option("DATABASE_REPLICA_USER", DATABASE_USER)
+set_option("DATABASE_REPLICA_PASSWORD", DATABASE_PASSWORD)
+set_bool("DATABASE_REPLICA_ROUTING_ENABLED", False)
+# TTL of the post-write pin cookie. Defaults to 15s (matches the
+# django-multidb-router default) which is conservative — over-long is
+# cheap (a bit of extra primary load); under-short causes user-visible
+# stale reads. Tune down once observed replication lag is known.
+set_option("DATABASE_REPLICA_PIN_COOKIE_MAX_AGE", 15)
+
+DATABASE_REPLICA_CONFIGURED = bool(
+    DATABASE_REPLICA_HOST and DATABASE_REPLICA_HOST != DATABASE_HOST
+)
+
+if DATABASE_REPLICA_HOST and DATABASE_REPLICA_HOST == DATABASE_HOST:
+    warnings.warn(
+        "DATABASE_REPLICA_HOST is set but equals DATABASE_HOST. The replica "
+        "config is being treated as inactive (no separate connection will "
+        "be opened); if this is unintended, point DATABASE_REPLICA_HOST at "
+        "the actual replica.",
+        stacklevel=1,
+    )
+
+if DATABASE_REPLICA_CONFIGURED:
+    DATABASES["read"] = {
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
+        "HOST": DATABASE_REPLICA_HOST,
+        "PORT": DATABASE_REPLICA_PORT,
+        "NAME": DATABASE_REPLICA_NAME,
+        "USER": DATABASE_REPLICA_USER,
+        "PASSWORD": DATABASE_REPLICA_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
+    }
+    # Install the router whenever the alias exists, independent of the
+    # middleware gate. The router's allow_migrate and db_for_write are
+    # pure safety; only db_for_read consults the request flag, which
+    # defaults False, so this is a no-op for runtime read routing in the
+    # 'replica configured, middleware off' staging state.
+    DATABASE_ROUTERS = ["peeringdb_server.db_router.DatabaseRouter"]
+elif DATABASE_REPLICA_ROUTING_ENABLED and not DATABASE_REPLICA_HOST:
+    # Only fires when HOST is unset — the host==primary case has its
+    # own dedicated warning above, so an operator with that misconfig
+    # gets one focused message instead of two.
+    warnings.warn(
+        "DATABASE_REPLICA_ROUTING_ENABLED=True but DATABASE_REPLICA_HOST "
+        "is not set. Read-replica routing is inactive — neither the "
+        "router nor the middleware will be installed.",
+        stacklevel=1,
+    )
 
 # Set file logging path
 set_option("LOGFILE_PATH", os.path.join(BASE_DIR, "var/log/django.log"))
@@ -855,7 +877,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
-    "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
@@ -1158,6 +1179,15 @@ MIDDLEWARE += (
     "django_structlog.middlewares.RequestMiddleware",
 )
 
+# Appended last (innermost middleware): with DB-backed sessions, hoisting
+# this earlier would put SessionMiddleware's session-touch writes inside
+# the routing scope and pin every authenticated GET via post_save. After
+# the SESSION_ENGINE=cached_db follow-up under #458 lands, this middleware
+# can move outward so framework-level reads (auth, structlog) also get
+# replica relief.
+if DATABASE_REPLICA_CONFIGURED and DATABASE_REPLICA_ROUTING_ENABLED:
+    MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
+
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": OIDC_ENABLED,
     "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
@@ -1354,23 +1384,6 @@ else:
 set_option("WEBAUTHN_ATTESTATION", "none")
 
 
-# haystack
-
-set_option("WHOOSH_INDEX_PATH", os.path.join(API_CACHE_ROOT, "whoosh-index"))
-set_option("WHOOSH_STORAGE", "file")
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
-        "PATH": WHOOSH_INDEX_PATH,
-        "STORAGE": WHOOSH_STORAGE,
-        "BATCH_SIZE": 40000,
-    },
-}
-
-
-set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 20000)
-set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
-
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {
     "XK": _("Kosovo"),
@@ -1423,6 +1436,10 @@ set_option("TICKET_CREATION_ASNAUTO", False)
 # toggle the creation of DeskPRO tickets for PREFIXAUTO automation
 # when False, tickets will not be created for automated PREFIXAUTO actions
 set_option("TICKET_CREATION_PREFIXAUTO", False)
+
+# minimum number of unique ASNs required in an IX-F feed for auto-approval
+# of a new internet exchange (#1832)
+set_option("IXF_PREFIXAUTO_MIN_ASN_COUNT", 3)
 
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
@@ -1780,5 +1797,28 @@ set_option("MFA_FORCE_HARD_START", None, envvar_type=str)
 # if set convert to datetime off of YYYY-MM-DD
 if MFA_FORCE_HARD_START:
     MFA_FORCE_HARD_START = datetime.strptime(MFA_FORCE_HARD_START, "%Y-%m-%d")
+
+# -----------------------------------------------------------------------------
+# Test-mode read-replica wiring.
+#
+# In RELEASE_ENV=run_tests, install the production routing primitives but
+# back the "read" alias with default's connection (TEST.MIRROR=default).
+# This exercises the same router + middleware path production runs without
+# bootstrapping a second database. Overrides anything an operator's
+# smoke-test .env may have configured.
+if RELEASE_ENV == "run_tests":
+    DATABASES["read"] = {
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
+        "HOST": DATABASE_HOST,
+        "PORT": DATABASE_PORT,
+        "NAME": DATABASE_NAME,
+        "USER": DATABASE_USER,
+        "PASSWORD": DATABASE_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
+        "TEST": {"MIRROR": "default"},
+    }
+    DATABASE_ROUTERS = ["peeringdb_server.db_router.DatabaseRouter"]
+    if "peeringdb_server.db_replica.ReadReplicaRouterMiddleware" not in MIDDLEWARE:
+        MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

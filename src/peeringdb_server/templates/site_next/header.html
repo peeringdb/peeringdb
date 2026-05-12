@@ -139,7 +139,7 @@ $(window).bind("load", function() {
         </div>
         <div class="navbar-nav" style="display: flex; align-items: center; flex-direction: row;">
           <div class="search-container" id="search-container">
-            {% include "site_next/header-search-container.html" with search_version=search_version %}
+            {% include "site_next/header-search-container.html" %}
           </div>
           <a class="nav-link right search-icon hide-on-mobile" style="text-decoration:none;">
             <i class="material-icons" id="search-icon">search</i>
@@ -224,7 +224,7 @@ $(window).bind("load", function() {
       </div>
     </nav>
     <div id="mobile-search-container">
-      {% include "site_next/header-search-container.html" with search_version=search_version %}
+      {% include "site_next/header-search-container.html" %}
     </div>
   </div>
 </div>

@@ -1,4 +1,4 @@
-Generated from context_processors.py on 2026-04-21 14:00:55.614796
+Generated from context_processors.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.context_processors
 
@@ -9,6 +9,18 @@ Generated from context_processors.py on 2026-04-21 14:00:55.614796
 `def admin_config(request)`
 
 Context processor to provide suggest entity org configuration values
+
+---
+## notification_banner
+`def notification_banner(request)`
+
+Context processor that exposes the site-wide notification banner
+content to every template.
+
+Resolution order: EnvironmentSetting DB override, falling back to the
+NOTIFICATION_BANNER_CONTENT Django setting (which is itself populated
+from an environment variable of the same name). When the resulting
+value is empty the banner template renders nothing.
 
 ---
 ## theme_mode

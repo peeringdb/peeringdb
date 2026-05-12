@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-04-21 14:00:55.798734
+Generated from admin.py on 2026-05-12 15:10:38.380404
 
 # peeringdb_server.admin
 
@@ -877,6 +877,16 @@ approve | deny controls to the top of its form.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### get_deleted_objects
+`def get_deleted_objects(self, objs, request)`
+
+Hook for customizing the delete process for the delete view and the
+"delete selected" action.
+
+---
 
 ## InternetExchangeAdminForm
 

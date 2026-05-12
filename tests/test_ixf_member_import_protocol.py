@@ -2036,20 +2036,27 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
 @pytest.mark.django_db
 def test_816_edge_case(entities, use_ip, save):
     """
-    Test that #770 protocol only triggers when the
-    depending deletion is towards the same asn AND
-    not already handled (dependency == noop)
+    Test that #770 protocol consolidation only triggers when the depending
+    deletion is towards the same asn AND not already handled. In this
+    scenario the feed reassigns IP(s) from ASN 1101 to ASN 1001, so the
+    two sides are different networks and no consolidation should occur.
+
+    #1897: because the losing ASN's IP is claimed by a different ASN in the
+    feed, the losing netixlan (1101) is removed immediately even though its
+    network has allow_ixp_update=False, and only the losing network is
+    emailed for that removal. The winning ASN's add still goes through the
+    normal set_add path (1001 also has allow_ixp_update=False).
     """
 
     data = setup_test_data("ixf.member.1")
-    network = entities["net"]["UPDATE_DISABLED_2"]
+    losing_network = entities["net"]["UPDATE_DISABLED_2"]  # asn 1101
     ixlan = entities["ixlan"][0]
 
     entities["netixlan"].append(
         NetworkIXLan.objects.create(
-            network=network,
+            network=losing_network,
             ixlan=ixlan,
-            asn=network.asn,
+            asn=losing_network.asn,
             speed=10000,
             ipaddr4=use_ip(4, "195.69.147.250"),
             ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
@@ -2066,14 +2073,31 @@ def test_816_edge_case(entities, use_ip, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    assert IXFMemberData.objects.count() == 2
+    # #1897: losing netixlan removed immediately (no lingering proposal row)
+    assert NetworkIXLan.objects.filter(asn=1101, status="ok").count() == 0
+
+    # only the winning ASN's add proposal remains
+    assert IXFMemberData.objects.count() == 1
     assert IXFMemberData.objects.get(asn=1001).action == "add"
 
+    # winning network still gets the CREATE email (no protocol consolidation
+    # across different ASNs, so action stays "add" not "modify")
     assert IXFImportEmail.objects.filter(
         net__asn=1001, message__contains="CREATE"
     ).exists()
     assert not IXFImportEmail.objects.filter(
         net__asn=1001, message__contains="MODIFY"
+    ).exists()
+
+    # #1897: losing network gets a REMOVE email; the reassignment flow
+    # itself must not send a REMOVE email to the ix (a protocol-conflict
+    # email to the ix may still exist in single-protocol entities
+    # variants - that's an orthogonal feed-level check)
+    assert IXFImportEmail.objects.filter(
+        net__asn=1101, message__contains="REMOVE"
+    ).exists()
+    assert not IXFImportEmail.objects.filter(
+        ix=ixlan.ix.id, message__contains="REMOVE"
     ).exists()
 
     # Test idempotent
@@ -2490,6 +2514,205 @@ def test_suggest_delete_no_local_ixf(entities, save):
 
     # Test idempotent
     assert_idempotent(importer, ixlan, data)
+
+
+@pytest.mark.django_db
+def test_delete_ip_reassigned_immediate(entities, save):
+    """
+    #1897: IX-F data has reassigned both IPs of an existing netixlan to a
+    different ASN. Even though the losing network has allow_ixp_update=False,
+    the deletion is applied immediately and only the losing network is
+    notified for the removal. The winning ASN's netixlan is created by
+    the normal add path.
+
+    Runs across all four protocol variants of the entities fixture. In
+    ipv4_only / ipv6_only variants the feed still triggers a separate
+    protocol-conflict email to the winning network and IX - that's an
+    orthogonal code path and is not what's under test here; we only guard
+    that no REMOVE email goes to the ix or to the winning network, and
+    that no AC ticket is created.
+    """
+    data = setup_test_data(
+        "ixf.member.0"
+    )  # feed contains ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
+    losing_network = entities["net"]["UPDATE_DISABLED"]  # ASN 1001
+    winning_network = entities["net"]["UPDATE_ENABLED"]  # ASN 2906
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=losing_network,
+                ixlan=ixlan,
+                asn=losing_network.asn,
+                speed=10000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=True,
+                operational=True,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # losing netixlan (ASN 1001) deleted immediately despite allow_ixp_update=False
+    assert NetworkIXLan.objects.filter(asn=1001, status="ok").count() == 0
+
+    # winning netixlan (ASN 2906) created
+    assert NetworkIXLan.objects.filter(asn=2906, status="ok").count() == 1
+
+    winning_netixlan = NetworkIXLan.objects.get(asn=2906, status="ok")
+    if winning_network.ipv4_support:
+        assert str(winning_netixlan.ipaddr4) == "195.69.147.250"
+    if winning_network.ipv6_support:
+        assert str(winning_netixlan.ipaddr6) == "2001:7f8:1::a500:2906:1"
+
+    # losing network gets exactly one email and it's the REMOVE
+    # (protocol-conflict fires for ASN 2906, not 1001, so the losing side is
+    # variant-stable)
+    assert IXFImportEmail.objects.filter(net=losing_network.id).count() == 1
+    email_info = [("REMOVE", 1001, "195.69.147.250", "2001:7f8:1::a500:2906:1")]
+    assert_network_email(losing_network, email_info)
+
+    # winning network: zero emails when both protocols supported, one
+    # protocol-conflict email otherwise (handled by the helper)
+    assert_no_network_email(winning_network)
+
+    # the reassignment-driven removal must not notify the ix itself.
+    assert not IXFImportEmail.objects.filter(
+        ix=ixlan.ix.id, message__contains="REMOVE"
+    ).exists()
+
+    # no AC ticket for the reassignment flow
+    assert_no_ticket_exists()
+
+    # copy assertion: network-facing email should state this was already
+    # removed (not "proposed") and must not tell the network the AC was cc'd
+    net_email = IXFImportEmail.objects.filter(net=losing_network.id).first()
+    assert "has been removed by the IX-F importer" in net_email.message
+    assert "manually accept" not in net_email.message
+    assert "admin committee" not in net_email.message
+
+
+@pytest.mark.django_db
+def test_delete_ip_reassigned_ipv4_only_match(entities, save):
+    """
+    #1897: only the IPv4 matches between the old netixlan and the new feed
+    entry (IPv6 is simply gone, not reassigned). Reassignment still triggers
+    because one IP is enough - the whole row is removed immediately and only
+    the losing network is emailed for the removal.
+    """
+    data = setup_test_data(
+        "ixf.member.0"
+    )  # ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
+    losing_network = entities["net"]["UPDATE_DISABLED"]  # ASN 1001
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=losing_network,
+                ixlan=ixlan,
+                asn=losing_network.asn,
+                speed=10000,
+                ipaddr4="195.69.147.250",  # reassigned in feed
+                ipaddr6=None,
+                status="ok",
+                is_rs_peer=False,
+                operational=True,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    assert NetworkIXLan.objects.filter(asn=1001, status="ok").count() == 0
+    assert NetworkIXLan.objects.filter(asn=2906, status="ok").count() == 1
+
+    email_info = [("REMOVE", 1001, "195.69.147.250", "IPv6 not set")]
+    assert_network_email(losing_network, email_info)
+    assert IXFImportEmail.objects.filter(net=losing_network.id).count() == 1
+
+    # no REMOVE email to the ix (protocol-conflict may exist in single-protocol variants)
+    assert not IXFImportEmail.objects.filter(
+        ix=ixlan.ix.id, message__contains="REMOVE"
+    ).exists()
+    assert_no_ticket_exists()
+
+
+@pytest.mark.django_db
+def test_delete_no_reassignment_still_suggests(entities, save):
+    """
+    #1897 regression guard: when an IP disappears from the feed but is NOT
+    reclaimed by another ASN, the original suggest-delete path must still
+    apply (ix + network + AC all notified, netixlan kept pending).
+    This is the same scenario as test_suggest_delete_no_local_ixf and should
+    be unaffected by the reassignment carve-out.
+    """
+    data = setup_test_data("ixf.member.1")  # feed only contains ASN 1001 at .250 / ipv6
+    network = entities["net"]["UPDATE_DISABLED"]
+    ixlan = entities["ixlan"][0]
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=10000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+    )
+
+    entities["netixlan"].append(
+        NetworkIXLan.objects.create(
+            network=network,
+            ixlan=ixlan,
+            asn=network.asn,
+            speed=20000,
+            ipaddr4="195.69.147.251",  # not in feed, not reassigned to anyone
+            ipaddr6=None,
+            status="ok",
+            is_rs_peer=False,
+            operational=False,
+        )
+    )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    # netixlan stays (proposal, not immediate delete)
+    assert (
+        NetworkIXLan.objects.filter(
+            asn=1001, ipaddr4="195.69.147.251", status="ok"
+        ).count()
+        == 1
+    )
+    assert importer.log["data"][0]["action"] == "suggest-delete"
+
+    email_info = [("REMOVE", 1001, "195.69.147.251", "IPv6 not set")]
+    assert_ix_email(ixlan.ix, email_info)
+    assert_network_email(network, email_info)
 
 
 @pytest.mark.django_db

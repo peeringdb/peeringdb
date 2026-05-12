@@ -9,6 +9,7 @@ The same API cache tests are run with API keys in test_api_cache_keys.py, which 
 
 import datetime
 import json
+import math
 import os
 import tempfile
 
@@ -18,6 +19,7 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django_grainy.models import GroupPermission
+from rest_framework.test import APIClient
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
@@ -192,28 +194,30 @@ def test_no_api_throttle():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "api_cache_enabled,api_cache_all_limits,depth,limit,filters,spatial,since,method,viewset_kwargs,file_exists,expected",
+    "api_cache_enabled,api_cache_all_limits,depth,limit,filters,spatial,since,page,method,viewset_kwargs,file_exists,expected",
     [
         # All conditions met for caching: use cache
-        (True, True, 1, 300, False, False, False, "GET", {}, True, True),
+        (True, True, 1, 300, False, False, False, None, "GET", {}, True, True),
         # API cache disabled: don't use cache
-        (False, True, 1, 300, False, False, False, "GET", {}, True, False),
+        (False, True, 1, 300, False, False, False, None, "GET", {}, True, False),
         # Low limit and no depth: don't use cache
-        (True, False, 0, 200, False, False, False, "GET", {}, True, False),
+        (True, False, 0, 200, False, False, False, None, "GET", {}, True, False),
         # Limit just above the threshold: don't use cache
-        (True, True, 0, 251, False, False, False, "GET", {}, True, True),
+        (True, True, 0, 251, False, False, False, None, "GET", {}, True, True),
         # Filters specified: don't use cache
-        (True, True, 1, 300, True, False, False, "GET", {}, True, False),
+        (True, True, 1, 300, True, False, False, None, "GET", {}, True, False),
         # Spatial search don't use cache
-        (True, True, 1, 300, False, True, False, "GET", {}, True, False),
+        (True, True, 1, 300, False, True, False, None, "GET", {}, True, False),
         # Since parameter specified don't use cache
-        (True, True, 1, 300, False, False, True, "GET", {}, True, False),
+        (True, True, 1, 300, False, False, True, None, "GET", {}, True, False),
+        # Page parameter specified: still use cache (pagination applied in load())
+        (True, True, 1, 300, False, False, False, "1", "GET", {}, True, True),
         # Non-GET method (POST) don't use cache
-        (True, True, 1, 300, False, False, False, "POST", {}, True, False),
+        (True, True, 1, 300, False, False, False, None, "POST", {}, True, False),
         # Primary key in viewset kwargs don't use cache
-        (True, True, 1, 300, False, False, False, "GET", {"pk": 1}, True, False),
+        (True, True, 1, 300, False, False, False, None, "GET", {"pk": 1}, True, False),
         # Cache file doesn't exist don't use cache
-        (True, True, 1, 300, False, False, False, "GET", {}, False, False),
+        (True, True, 1, 300, False, False, False, None, "GET", {}, False, False),
     ],
 )
 def test_api_cache_loader_qualifies(
@@ -224,6 +228,7 @@ def test_api_cache_loader_qualifies(
     filters,
     spatial,
     since,
+    page,
     method,
     viewset_kwargs,
     file_exists,
@@ -247,6 +252,7 @@ def test_api_cache_loader_qualifies(
     loader.depth = depth
     loader.limit = limit
     loader.since = since if since else None
+    loader.page = page
     if spatial:
         setattr(qset, "spatial", True)
 
@@ -257,3 +263,122 @@ def test_api_cache_loader_qualifies(
     mocker.patch.object(loader, "path", "mocked/cache/path")
 
     assert loader.qualifies() == expected
+
+
+@pytest.mark.django_db
+def test_api_cache_loader_load_page_pagination(tmp_path, mocker, settings):
+    """
+    APICacheLoader.load() with ?page= should return the correct slice
+    and populate meta.pagination with count, page, total_pages, next/previous.
+    """
+    # write a fixture cache file with 10 items
+    cache_data = {"data": [{"id": i} for i in range(1, 11)]}
+    cache_file = tmp_path / "org-0.json"
+    cache_file.write_text(json.dumps(cache_data))
+
+    settings.API_CACHE_ROOT = str(tmp_path)
+    settings.API_CACHE_ENABLED = True
+    settings.PAGE_SIZE = 3
+
+    per_page = 3
+    page = 2
+
+    request = type(
+        "Request",
+        (),
+        {
+            "method": "GET",
+            "query_params": {"page": str(page), "per_page": str(per_page)},
+            "path": "/api/org",
+            "build_absolute_uri": lambda self,
+            path=None: f"http://testserver{path or self.path}",
+        },
+    )()
+
+    viewset = type(
+        "ViewSet",
+        (),
+        {"request": request, "model": models.Organization, "kwargs": {}},
+    )
+    loader = APICacheLoader(viewset, models.Organization.objects.none(), {})
+    mocker.patch.object(loader, "path", str(cache_file))
+
+    result = loader.load()
+
+    assert "results" in result
+    assert "__meta" in result
+
+    pagination = result["__meta"].get("pagination")
+    assert pagination is not None
+
+    total = 10
+    total_pages = math.ceil(total / per_page)
+    assert pagination["count"] == total
+    assert pagination["page"] == page
+    assert pagination["per_page"] == per_page
+    assert pagination["total_pages"] == total_pages
+    assert pagination["has_previous"] is True
+    assert pagination["has_next"] is True
+    assert len(result["results"]) == per_page
+
+
+@pytest.mark.django_db
+def test_page_pagination_meta(db):
+    """
+    When ?page= is used, the response should include meta.pagination
+    with all expected fields.
+    """
+    Group.objects.get_or_create(name="guest")
+    Group.objects.get_or_create(name="user")
+    reset_group_ids()
+
+    models.Organization.objects.create(name="Test Org", status="ok")
+
+    api_client = APIClient()
+    response = api_client.get("/api/org", {"page": 1, "per_page": 1})
+    assert response.status_code == 200
+
+    body = json.loads(response.content)
+    assert "data" in body
+    assert "meta" in body
+
+    pagination = body["meta"].get("pagination")
+    assert (
+        pagination is not None
+    ), "meta.pagination should be present when ?page= is used"
+
+    for field in [
+        "count",
+        "has_next",
+        "has_previous",
+        "next",
+        "previous",
+        "page",
+        "per_page",
+        "total_pages",
+    ]:
+        assert field in pagination, f"meta.pagination.{field} is missing"
+
+    assert pagination["page"] == 1
+    assert pagination["per_page"] == 1
+    assert isinstance(pagination["count"], int)
+    assert isinstance(pagination["total_pages"], int)
+    assert isinstance(pagination["has_next"], bool)
+    assert isinstance(pagination["has_previous"], bool)
+
+
+@pytest.mark.django_db
+def test_page_pagination_no_meta_without_page_param(db):
+    """
+    Without ?page=, meta.pagination should not be present.
+    """
+    api_client = APIClient()
+    response = api_client.get("/api/org")
+    assert response.status_code == 200
+
+    body = json.loads(response.content)
+    assert "data" in body
+    assert "meta" in body
+    assert (
+        "pagination" not in body["meta"]
+    ), "meta.pagination should not appear without ?page="

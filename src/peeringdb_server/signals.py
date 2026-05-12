@@ -71,7 +71,7 @@ def update_network_attribute(instance, attribute):
     if getattr(instance, "id"):
         network = instance.network
         setattr(network, attribute, timezone.now())
-        disable_auto_now_and_save(network)
+        disable_auto_now_and_save(network, update_fields=[attribute])
 
 
 def network_post_revision_commit(**kwargs):
@@ -95,21 +95,25 @@ def update_counts_for_netixlan(netixlan):
     if getattr(netixlan, "id"):
         network = netixlan.network
 
-        network.ix_count = (
+        new_ix_count = (
             network.netixlan_set_active.aggregate(
                 ix_count=Count("ixlan__ix_id", distinct=True)
             )
         )["ix_count"]
 
-        disable_auto_now_and_save(network)
+        if network.ix_count != new_ix_count:
+            network.ix_count = new_ix_count
+            disable_auto_now_and_save(network, update_fields=["ix_count"])
 
         ix = netixlan.ixlan.ix
-        ix.net_count = (
+        new_net_count = (
             NetworkIXLan.objects.filter(ixlan__ix_id=ix.id, status="ok").aggregate(
                 net_count=Count("network_id", distinct=True)
             )
         )["net_count"]
-        disable_auto_now_and_save(ix)
+        if ix.net_count != new_net_count:
+            ix.net_count = new_net_count
+            disable_auto_now_and_save(ix, update_fields=["net_count"])
 
 
 def update_counts_for_netfac(netfac):
@@ -120,13 +124,16 @@ def update_counts_for_netfac(netfac):
     if getattr(netfac, "id"):
         network = netfac.network
 
-        network.fac_count = network.netfac_set_active.count()
-
-        disable_auto_now_and_save(network)
+        new_fac_count = network.netfac_set_active.count()
+        if network.fac_count != new_fac_count:
+            network.fac_count = new_fac_count
+            disable_auto_now_and_save(network, update_fields=["fac_count"])
 
         facility = netfac.facility
-        facility.net_count = facility.netfac_set_active.count()
-        disable_auto_now_and_save(facility)
+        new_net_count = facility.netfac_set_active.count()
+        if facility.net_count != new_net_count:
+            facility.net_count = new_net_count
+            disable_auto_now_and_save(facility, update_fields=["net_count"])
 
 
 def update_counts_for_ixfac(ixfac):
@@ -137,13 +144,16 @@ def update_counts_for_ixfac(ixfac):
     if getattr(ixfac, "id"):
         ix = ixfac.ix
 
-        ix.fac_count = ix.ixfac_set_active.count()
-
-        disable_auto_now_and_save(ix)
+        new_fac_count = ix.ixfac_set_active.count()
+        if ix.fac_count != new_fac_count:
+            ix.fac_count = new_fac_count
+            disable_auto_now_and_save(ix, update_fields=["fac_count"])
 
         facility = ixfac.facility
-        facility.ix_count = facility.ixfac_set_active.count()
-        disable_auto_now_and_save(facility)
+        new_ix_count = facility.ixfac_set_active.count()
+        if facility.ix_count != new_ix_count:
+            facility.ix_count = new_ix_count
+            disable_auto_now_and_save(facility, update_fields=["ix_count"])
 
 
 def update_counts_for_carrierfac(carrierfac):
@@ -152,8 +162,10 @@ def update_counts_for_carrierfac(carrierfac):
     """
     if getattr(carrierfac, "id"):
         facility = carrierfac.facility
-        facility.carrier_count = facility.carrierfac_set_active.count()
-        disable_auto_now_and_save(facility)
+        new_carrier_count = facility.carrierfac_set_active.count()
+        if facility.carrier_count != new_carrier_count:
+            facility.carrier_count = new_carrier_count
+            disable_auto_now_and_save(facility, update_fields=["carrier_count"])
 
 
 def connector_objects_post_revision_commit(**kwargs):

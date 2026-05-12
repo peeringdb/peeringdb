@@ -663,7 +663,7 @@ class CacheControlMiddleware(MiddlewareMixin):
 
             if settings.CACHE_CONTROL_STATIC_PAGE:
                 response["Cache-Control"] = (
-                    f"s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
+                    f"public, max-age={settings.CACHE_CONTROL_STATIC_PAGE}, s-maxage={settings.CACHE_CONTROL_STATIC_PAGE}"
                 )
 
         return response

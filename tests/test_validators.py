@@ -560,6 +560,44 @@ def test_bypass_validation():
 
 
 @pytest.mark.django_db
+@override_settings(DATA_QUALITY_MIN_SPEED=50, DATA_QUALITY_MAX_SPEED=5000000)
+def test_netixlan_speed_bounds():
+    """
+    Tests min (50M) and max (5T) speed bounds and their error messages (#1888).
+    """
+    org = Organization.objects.create(name="Test org", status="ok")
+    ix = InternetExchange.objects.create(
+        name="Test exchange",
+        status="ok",
+        org=org,
+        country="US",
+        city="Some city",
+        region_continent="North America",
+        media="Ethernet",
+    )
+    net = Network.objects.create(asn=1234, name="Test net", status="ok", org=org)
+
+    # Below minimum (49M) should raise with "Minimum speed: 50M"
+    with pytest.raises(ValidationError) as exc_info:
+        NetworkIXLan(speed=49, network=net, ixlan=ix.ixlan, status="ok").clean()
+    assert "Minimum speed: 50M" in str(exc_info.value)
+
+    # Exactly at minimum (50M) should pass
+    NetworkIXLan(speed=50, network=net, ixlan=ix.ixlan, status="ok").clean()
+
+    # Old minimum (100M) should also pass
+    NetworkIXLan(speed=100, network=net, ixlan=ix.ixlan, status="ok").clean()
+
+    # Exactly at maximum (5000000M = 5T) should pass
+    NetworkIXLan(speed=5000000, network=net, ixlan=ix.ixlan, status="ok").clean()
+
+    # Above maximum should raise with "Maximum speed: 5T"
+    with pytest.raises(ValidationError) as exc_info:
+        NetworkIXLan(speed=5000001, network=net, ixlan=ix.ixlan, status="ok").clean()
+    assert "Maximum speed: 5T" in str(exc_info.value)
+
+
+@pytest.mark.django_db
 def test_ghost_peer_vs_real_peer_one_netixlan():
     """
     Tests that a real peer can claim the ip addresses of a gohst peer. #983

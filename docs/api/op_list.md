@@ -113,8 +113,33 @@ will serve a cached result and will not be truncated:
 
 ### Pagination
 
+#### Using skip and limit
+
 Use the skip and limit parameters to page through results
 
     ?updated__gt=2011-01-01&depth=1&limit=250 - first page
     ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page
     ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page
+
+#### Using page-based pagination
+
+Use the `page` and `per_page` parameters to page through results. Returns pagination metadata in the response under `meta.pagination`.
+
+    ?page=1 - first page (default page size: 250)
+    ?page=2 - second page
+    ?page=1&per_page=100 - first page with 100 results per page
+
+The response will include a `meta.pagination` object:
+
+    "meta": {
+        "pagination": {
+            "count": 500,
+            "has_next": true,
+            "has_previous": false,
+            "next": "https://www.peeringdb.com/api/net?page=2",
+            "previous": null,
+            "page": 1,
+            "per_page": 250,
+            "total_pages": 2
+        }
+    }

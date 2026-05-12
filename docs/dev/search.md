@@ -4,11 +4,13 @@ PeeringDB has 3 areas where searches are processed:
 
 ### 1. The quick search
 
-This search occurs throught the top search bar on the PeeringDB website.
+This search occurs through the top search bar on the PeeringDB website.
 
-This search is backed by [django-haystack](https://django-haystack.readthedocs.io/en/master/) using the [whoosh](https://whoosh.readthedocs.io/en/latest/intro.html) backend.
+**Autocomplete (typeahead):** Triggered while the user types (without pressing Enter). Handled by `request_api_search` in `views.py`, which calls `autocomplete_v2()` in `search_v2.py`. Uses an Elasticsearch `search_as_you_type` field (`auto_suggest`) indexed across `name`, `aka`, `name_long`, and for networks `irr_as_set` and `AS<asn>` variants.
 
-Search-indexes and logic for this can be found in `peeringdb_server/search_indexes.py` and `peeringdb_server/search.py`
+**Full search (on Enter):** Handled by `request_search` in `views.py`, which calls `search_v2()` in `search_v2.py`. Queries Elasticsearch across `fac`, `ix`, `net`, `org`, `campus`, and `carrier` indexes.
+
+Search document definitions and field mappings are in `peeringdb_server/documents.py`.
 
 ### 2. REST API filtering
 
@@ -24,7 +26,7 @@ These more complex querying behaviors should be implemented in `serializers.py` 
 
 #### `name_search` filter
 
-The `name_search` filter will make use of [django-haystack](https://django-haystack.readthedocs.io/en/master/)
+The `name_search` filter uses `search_v2()` from `search_v2.py` to find matching entity ids via Elasticsearch, then filters the queryset to those ids.
 
 ### 3. Advanced search
 

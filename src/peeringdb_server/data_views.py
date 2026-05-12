@@ -80,6 +80,9 @@ const.REAUTH_PERIODS = models.REAUTH_PERIODS
 def countries_w_blank(request):
     """
     Return all valid countries and their country codes with a blank field.
+
+    Served with public Cache-Control headers — must remain user-agnostic.
+    If this ever returns user-specific data, update CacheControlMiddleware.static_views.
     """
 
     return JsonResponse(
@@ -96,6 +99,9 @@ def countries_w_blank(request):
 def countries(request):
     """
     Return all valid countries and their country codes.
+
+    Served with public Cache-Control headers — must remain user-agnostic.
+    If this ever returns user-specific data, update CacheControlMiddleware.static_views.
     """
 
     return JsonResponse(
@@ -145,6 +151,12 @@ def facilities(request):
 
 
 def enum(request, name):
+    """
+    Return the list of valid values for the given enum type.
+
+    Served with public Cache-Control headers — must remain user-agnostic.
+    If this ever returns user-specific data, update CacheControlMiddleware.static_views.
+    """
     if name.upper() not in [
         "RATIOS",
         "RATIOS_TRUNC",
@@ -252,6 +264,12 @@ def organizations(request):
 
 
 def languages(request):
+    """
+    Return all available languages/locales.
+
+    Served with public Cache-Control headers — must remain user-agnostic.
+    If this ever returns user-specific data, update CacheControlMiddleware.static_views.
+    """
     from django.conf import settings
 
     locales = []

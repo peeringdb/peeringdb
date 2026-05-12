@@ -4301,6 +4301,17 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         if not self.netixlan.id or self.netixlan.status == "deleted":
             # edge-case that should not really happen
             # non-existing netixlan cannot be removed
+            #
+            # #1897: one legitimate case — the importer has just
+            # applied an immediate reassignment-delete on this
+            # instance. The netixlan is now "deleted" but the
+            # instance still represents a removal for downstream
+            # consumers (action, _changes, notification rendering).
+            # Fall through to the normal remote_data_missing rule so
+            # the flag only widens the deleted-netixlan guard, it
+            # doesn't override the core "remote data is gone" check.
+            if getattr(self, "_reassigned", False):
+                return self.remote_data_missing
 
             return False
 
@@ -6474,10 +6485,25 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             if req.org_id and req.org.admin_usergroup.user_set.exists():
                 continue
 
+            # Issue #1945: only delete+recreate if the new email now satisfies
+            # RDAP validation. If validation still fails, leave the existing
+            # UOAR in place — the admin already received a ticket on creation
+            # and recreating would fire the signal again and queue a duplicate.
+            try:
+                rdap = RdapLookup().get_asn(req.asn)
+            except RdapNotFoundError:
+                continue
+            except Exception as exc:
+                logger.error(exc)
+                continue
+
+            if not self.validate_rdap_relationship(rdap):
+                continue
+
             # cancel current request
             req.delete()
 
-            # reopen request
+            # reopen request — signal will auto-approve since RDAP now validates
             UserOrgAffiliationRequest.objects.create(
                 user=self, org=req.org, asn=req.asn, status="pending"
             )

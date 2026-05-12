@@ -2,9 +2,9 @@
 Search v2 implementation used for the PeeringDB top search bar.
 
 This module constructs and executes advanced Elasticsearch queries with
-support for geo-based filtering, keyword logic (AND/OR), and partial
-IPv6 matching. It includes functionality to prioritize exact and "OR"
-term matches and organizes results alphabetically.
+support for geo-based filtering, keyword logic (AND/OR), autocomplete search
+and partial IPv6 matching. It includes functionality to prioritize exact
+and "OR" term matches and organizes results alphabetically.
 """
 
 import copy
@@ -17,12 +17,42 @@ from django.contrib.auth.models import AnonymousUser
 from elasticsearch import Elasticsearch
 
 from mainsite.settings import ELASTIC_PASSWORD, ELASTICSEARCH_URL
-from peeringdb_server.search import (
-    PARTIAL_IPV4_ADDRESS,
-    PARTIAL_IPV6_ADDRESS,
-    append_result,
-    valid_partial_ipv4_address,
-)
+
+# --- utilities formerly in search.py ---
+
+ONLY_DIGITS = re.compile(r"^[0-9]+$")
+PARTIAL_IPV4_ADDRESS = re.compile(r"^([0-9]{1,3}\.){1,3}([0-9]{1,3})?$")
+PARTIAL_IPV6_ADDRESS = re.compile(r"^([0-9A-Fa-f]{1,4}|:):[0-9A-Fa-f:]*$")
+
+
+def valid_partial_ipv4_address(ip):
+    return all(int(s) >= 0 and int(s) <= 255 for s in ip.split(".") if len(s) > 0)
+
+
+def get_lat_long_from_search_result(search_result):
+    if search_result is None:
+        return None
+    latitude = search_result.get("latitude")
+    longitude = search_result.get("longitude")
+    if latitude is not None and longitude is not None:
+        return latitude, longitude
+    return None
+
+
+def append_result(tag, pk, name, org_id, sub_name, result, pk_map, extra=None):
+    pk = int(pk)
+    if pk in pk_map[tag]:
+        return
+    pk_map[tag][pk] = True
+    result[tag].append(
+        {
+            "id": pk,
+            "name": name,
+            "org_id": int(org_id),
+            "sub_name": sub_name,
+            "extra": extra or {},
+        }
+    )
 
 
 def new_elasticsearch() -> Elasticsearch:
@@ -78,6 +108,79 @@ def elasticsearch_proximity_entity(name) -> dict | None:
         return item["_source"]
     else:
         return None
+
+
+def autocomplete_v2(term: str, user=None) -> dict[str, list[dict[str, str | int]]]:
+    """
+    Typeahead autocomplete using Elasticsearch search_as_you_type field.
+
+    Queries the auto_suggest field (search_as_you_type mapping) across all entity
+    indexes using a bool_prefix multi_match, which is the ES-native equivalent of
+    the retired haystack EdgeNgram autocomplete.
+
+    Args:
+        term: The partial search term typed by the user.
+        user: The requesting user (used for hide_ixs_without_fac preference).
+
+    Returns:
+        Categorised result dict with keys fac, ix, net, org, campus, carrier.
+    """
+    indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
+
+    if not term or len(term) > 255:
+        return {tag: [] for tag in indexes}
+
+    es = new_elasticsearch()
+
+    body = {
+        "query": {
+            "bool": {
+                "must": {
+                    "multi_match": {
+                        "query": term,
+                        "type": "bool_prefix",
+                        "fields": [
+                            "auto_suggest",
+                            "auto_suggest._2gram",
+                            "auto_suggest._3gram",
+                        ],
+                    }
+                },
+                "filter": {"term": {"status": "ok"}},
+            }
+        },
+        "_source": True,
+        "sort": ["_score"],
+    }
+
+    hide_ixs_without_fac = (
+        user
+        and not isinstance(user, AnonymousUser)
+        and getattr(user, "hide_ixs_without_fac", False)
+    )
+
+    search_query = es.search(
+        index=indexes,
+        body=body,
+        size=settings.SEARCH_RESULTS_AUTOCOMPLETE_LIMIT,
+        request_timeout=settings.ES_REQUEST_TIMEOUT,
+    )
+
+    result = {tag: [] for tag in indexes}
+    pk_map = {tag: {} for tag in indexes}
+
+    for sq in search_query["hits"]["hits"]:
+        if sq["_source"].get("status") != "ok":
+            continue
+        if (
+            hide_ixs_without_fac
+            and sq["_index"] == "ix"
+            and sq["_source"].get("fac_count", 0) == 0
+        ):
+            continue
+        append_result_to_category(sq, result, pk_map)
+
+    return result
 
 
 def escape_query_string(query_string: str) -> str:
@@ -421,7 +524,13 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase",
-                                        "fields": ["name", "name_long", "aka", "city"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_MATCH_PHRASE_BOOST,
                                     }
                                 },
@@ -429,14 +538,26 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase_prefix",
-                                        "fields": ["name", "name_long", "aka", "city"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                     }
                                 },
                                 {
                                     "query_string": {
                                         "query": term,
-                                        "fields": ["name", "name_long", "aka", "city"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_QUERY_STRING_BOOST,
                                     }
                                 },

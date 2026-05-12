@@ -53,3 +53,6 @@ An IXP provides interconnection only for Autonomous Systems. An IXP does not req
 <div class="marg-top">
   <a class="btn btn-default" data-edit-action="submit">{% trans "Submit" %} {{ entity_name }}</a>
 </div>
+{% if entity_name == "Exchange" %}
+<div class="create-ix-ixf-pending-reason editable popin alert alert-warning marg-top-15" style="display:none"></div>
+{% endif %}

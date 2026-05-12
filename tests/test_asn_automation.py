@@ -283,6 +283,49 @@ class AsnAutomationTestCase(TestCase):
         # Even with TICKET_CREATION_ASNAUTO=True, no tickets when RDAP validates
         assert net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
 
+    @override_settings(TICKET_CREATION_ASNAUTO=True)
+    def test_recheck_no_duplicate_ticket_when_rdap_still_fails(self):
+        """
+        Issue #1945: when a user confirms a new email that still does not
+        satisfy RDAP validation, recheck_affiliation_requests() must leave
+        the existing pending UOAR untouched and must NOT queue a second
+        DeskPro ticket.
+
+        Root cause: the email_confirmed signal calls recheck_affiliation_requests,
+        which unconditionally deleted+recreated the UOAR, firing uoar_creation
+        again and producing a duplicate ticket after the first.
+        """
+        asn = 9000002
+        reset_group_ids()
+
+        # user_b affiliates; RDAP cannot validate (email mismatch) -> 1 ticket
+        request = self.factory.post("/affiliate-to-org", data={"asn": str(asn)})
+        request.user = self.user_b
+        mock_csrf_session(request)
+        pdbviews.view_affiliate_to_org(request)
+
+        ticket_count_after_first = models.DeskProTicket.objects.count()
+        uoar = self.user_b.pending_affiliation_requests.get(asn=asn)
+        uoar_id = uoar.id
+
+        # user_b confirms a new email that still does not match RDAP
+        self.user_b.email = "still_wrong@other.com"
+        self.user_b.save()
+        self.user_b.recheck_affiliation_requests()
+
+        # no new ticket must have been created
+        self.assertEqual(
+            models.DeskProTicket.objects.count(),
+            ticket_count_after_first,
+        )
+
+        # original UOAR must still exist, unchanged
+        self.assertTrue(
+            models.UserOrgAffiliationRequest.objects.filter(
+                id=uoar_id, status="pending"
+            ).exists()
+        )
+
     def test_affiliate_limit(self):
         """
         test affiliation request limit (fail when there is n pending
@@ -359,6 +402,85 @@ class AsnAutomationTestCase(TestCase):
 
         assert response.status_code == 404
         assert self.user_b.pending_affiliation_requests.count() == 1
+
+    def test_affiliate_duplicate_same_org_rejected(self):
+        """
+        Issue #1945: a 2nd affiliation request from the same user for
+        the same org while a pending UOAR exists must be rejected (400).
+        Exactly one UOAR must exist for the (user_id, org_id) pair.
+        """
+        org = models.Organization.objects.create(name="Dedup Org", status="ok")
+
+        request = self.factory.post("/affiliate-to-org", data={"org": str(org.id)})
+        request.user = self.user_b
+        mock_csrf_session(request)
+        resp = pdbviews.view_affiliate_to_org(request)
+        self.assertEqual(resp.status_code, 200)
+
+        request = self.factory.post("/affiliate-to-org", data={"org": str(org.id)})
+        request.user = self.user_b
+        mock_csrf_session(request)
+        resp = pdbviews.view_affiliate_to_org(request)
+        self.assertEqual(resp.status_code, 400)
+        data = json.loads(resp.content)
+        self.assertIn("non_field_errors", data)
+        self.assertIn("already requested", data["non_field_errors"][0].lower())
+
+        self.assertEqual(
+            models.UserOrgAffiliationRequest.objects.filter(
+                user=self.user_b, org=org, status="pending"
+            ).count(),
+            1,
+        )
+
+    def test_affiliate_duplicate_same_asn_rejected(self):
+        """
+        Issue #1945: a 2nd affiliation request from the same user for
+        the same ASN while a pending UOAR exists must be rejected (400).
+        Covers the `elif asn` dup-check branch in view_affiliate_to_org.
+        """
+        # bulk_create skips post_save signals, so no RDAP lookup is
+        # triggered for this seed row — we just need a pending UOAR
+        # with this ASN to exercise the elif-asn dup-check branch.
+        models.UserOrgAffiliationRequest.objects.bulk_create(
+            [
+                models.UserOrgAffiliationRequest(
+                    user=self.user_b, asn=9000999, status="pending"
+                )
+            ]
+        )
+
+        request = self.factory.post("/affiliate-to-org", data={"asn": "9000999"})
+        request.user = self.user_b
+        mock_csrf_session(request)
+        resp = pdbviews.view_affiliate_to_org(request)
+        self.assertEqual(resp.status_code, 400)
+        data = json.loads(resp.content)
+        self.assertIn("non_field_errors", data)
+        self.assertIn("already requested", data["non_field_errors"][0].lower())
+
+    def test_affiliate_duplicate_same_org_name_rejected(self):
+        """
+        Issue #1945: a 2nd affiliation request from the same user for
+        the same org name while a pending UOAR exists must be rejected (400).
+        Covers the `elif org_name` dup-check branch in view_affiliate_to_org.
+        """
+        models.UserOrgAffiliationRequest.objects.bulk_create(
+            [
+                models.UserOrgAffiliationRequest(
+                    user=self.user_b, org_name="New Org Name", status="pending"
+                )
+            ]
+        )
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "New Org Name"})
+        request.user = self.user_b
+        mock_csrf_session(request)
+        resp = pdbviews.view_affiliate_to_org(request)
+        self.assertEqual(resp.status_code, 400)
+        data = json.loads(resp.content)
+        self.assertIn("non_field_errors", data)
+        self.assertIn("already requested", data["non_field_errors"][0].lower())
 
     def test_affil_already_affiliated(self):
         """
