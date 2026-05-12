@@ -54,7 +54,6 @@ from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
-from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
@@ -73,6 +72,7 @@ from peeringdb_server.models import (
     User,
     UserAPIKey,
 )
+from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
     ModelViewSetPermissions,
@@ -447,7 +447,6 @@ class InactiveKeyBlock(permissions.BasePermission):
 
 ###############################################################################
 # VIEW SETS
-
 
 
 class ModelViewSet(viewsets.ModelViewSet):
@@ -1996,9 +1995,7 @@ def search_api_view(request):
     if not q and not geo:
         return JsonResponse({})
 
-    result = perform_search(
-        q, geo, original_query=original_query, user=request.user
-    )
+    result = perform_search(q, geo, original_query=original_query, user=request.user)
 
     response_data = serialize_search_results(result)
 

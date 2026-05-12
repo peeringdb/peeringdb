@@ -1,4 +1,4 @@
-Generated from rest.py on 2026-04-21 14:00:55.614796
+Generated from rest.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.rest
 
@@ -19,6 +19,22 @@ The peeringdb REST API is implemented through django-rest-framework.
 # Functions
 ---
 
+## _filters_may_produce_duplicates
+`def _filters_may_produce_duplicates(model, filters)`
+
+Return True if any filter key traverses a reverse FK or M2M relation on
+`model`. Such joins can fan out and produce duplicate driver rows in the
+result set, which `.distinct()` is needed to collapse. Filters on own
+fields or through forward FK / OneToOne relations join 1:1 and cannot
+produce duplicates.
+
+Walks each `field__field__...__lookup` key segment by segment against the
+model's field metadata. If a segment resolves to a `one_to_many` (reverse
+FK) or `many_to_many` field, duplicates are possible. Segments that do not
+resolve to a field (e.g. lookup suffixes like `lte`, `iexact`) end the
+walk for that key without flagging it.
+
+---
 ## model_view_set
 `def model_view_set(model, methods=None, mixins=None)`
 
@@ -679,29 +695,6 @@ API root view, and adds format suffix patterns to the URLs.
 `def __init__(self, trailing_slash=False)`
 
 Initialize self.  See help(type(self)) for accurate signature.
-
----
-
-## UnlimitedIfNoPagePagination
-
-```
-UnlimitedIfNoPagePagination(rest_framework.pagination.PageNumberPagination)
-```
-
-A simple page number based style that supports page numbers as
-query parameters. For example:
-
-http://api.example.org/accounts/?page=4
-http://api.example.org/accounts/?page=4&page_size=100
-
-
-### Methods
-
-#### paginate_queryset
-`def paginate_queryset(self, queryset, request, view=None)`
-
-Paginate a queryset if required, either returning a
-page object, or `None` if pagination is not configured for this view.
 
 ---
 

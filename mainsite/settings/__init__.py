@@ -1818,10 +1818,7 @@ if RELEASE_ENV == "run_tests":
         "TEST": {"MIRROR": "default"},
     }
     DATABASE_ROUTERS = ["peeringdb_server.db_router.DatabaseRouter"]
-    if (
-        "peeringdb_server.db_replica.ReadReplicaRouterMiddleware"
-        not in MIDDLEWARE
-    ):
+    if "peeringdb_server.db_replica.ReadReplicaRouterMiddleware" not in MIDDLEWARE:
         MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

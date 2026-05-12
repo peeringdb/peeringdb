@@ -46,7 +46,9 @@ class AffiliateConcurrencyTestCase(TransactionTestCase):
         issue #1945.
         """
         if connection.vendor == "sqlite":
-            self.skipTest("SQLite does not honor SELECT ... FOR UPDATE row-level locking")
+            self.skipTest(
+                "SQLite does not honor SELECT ... FOR UPDATE row-level locking"
+            )
 
         barrier = threading.Barrier(2)
         responses = []

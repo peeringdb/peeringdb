@@ -26,6 +26,7 @@ class _FakeSerializer(serializers.Serializer):
     def get_unannotated(self, obj):
         return "something"
 
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "field_name,expected_type",
@@ -47,6 +48,7 @@ def test_map_field_infers_type_from_annotation(field_name, expected_type):
     result = schema.map_field(field)
 
     assert result == {"type": expected_type}
+
 
 @pytest.mark.django_db
 def test_map_field_fallthrough_without_annotation():

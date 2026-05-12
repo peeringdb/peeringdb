@@ -446,7 +446,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
-                                                "irr_as_set"
+                                                "irr_as_set",
                                             ],
                                             "boost": 10.0,
                                         }
@@ -460,7 +460,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
-                                                "irr_as_set"
+                                                "irr_as_set",
                                             ],
                                             "boost": 5.0,
                                         }
@@ -473,7 +473,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
-                                                "irr_as_set"
+                                                "irr_as_set",
                                             ],
                                             "boost": 2.0,
                                         }
@@ -1695,7 +1695,9 @@ class SearchV2SpecificTestCase(TestCase):
         self.assertGreater(len(result["net"]), 0)
 
         net_names = [item["name"] for item in result["net"]]
-        self.assertIn(net.name, net_names, "Network should be found via irr_as_set field")
+        self.assertIn(
+            net.name, net_names, "Network should be found via irr_as_set field"
+        )
 
     def test_search_city_field(self):
         """
@@ -1737,7 +1739,9 @@ class SearchV2SpecificTestCase(TestCase):
         result = autocomplete_v2("Testcityautocomplete")
 
         fac_names = [item["name"] for item in result["fac"]]
-        self.assertIn(fac.name, fac_names, "Facility should be found via city in autocomplete")
+        self.assertIn(
+            fac.name, fac_names, "Facility should be found via city in autocomplete"
+        )
 
     def test_search_numeric_name_not_asn(self):
         """
@@ -1764,7 +1768,9 @@ class SearchV2SpecificTestCase(TestCase):
 
     def test_autocomplete_asn_match(self):
         """autocomplete_v2 finds a network when typing the AS<asn> prefix."""
-        org = models.Organization.objects.create(name="ASN Autocomplete Org", status="ok")
+        org = models.Organization.objects.create(
+            name="ASN Autocomplete Org", status="ok"
+        )
         net = models.Network.objects.create(
             name="ASN Autocomplete Net", asn=64500, status="ok", org=org
         )
@@ -1777,7 +1783,9 @@ class SearchV2SpecificTestCase(TestCase):
 
     def test_autocomplete_irr_as_set_match(self):
         """autocomplete_v2 finds a network when typing its irr_as_set value."""
-        org = models.Organization.objects.create(name="IRR Autocomplete Org", status="ok")
+        org = models.Organization.objects.create(
+            name="IRR Autocomplete Org", status="ok"
+        )
         net = models.Network.objects.create(
             name="IRR Autocomplete Net",
             asn=64501,
@@ -1796,7 +1804,11 @@ class SearchV2SpecificTestCase(TestCase):
         """hide_ixs_without_fac user preference excludes IXes with fac_count=0."""
         org = models.Organization.objects.create(name="IXFilter Org", status="ok")
         ix = models.InternetExchange.objects.create(
-            name="IXFilter NoFac", status="ok", org=org, city="Berlin", country="DE",
+            name="IXFilter NoFac",
+            status="ok",
+            org=org,
+            city="Berlin",
+            country="DE",
             region_continent="Europe",
         )
         self.reindex_for_search()
@@ -1807,7 +1819,9 @@ class SearchV2SpecificTestCase(TestCase):
 
         result_without_pref = autocomplete_v2("IXFilter", user=None)
         ix_names_without = [item["name"] for item in result_without_pref["ix"]]
-        self.assertIn(ix.name, ix_names_without, "IX should appear when preference is off")
+        self.assertIn(
+            ix.name, ix_names_without, "IX should appear when preference is off"
+        )
 
         user.opt_flags |= settings.OPTFLAG_HIDE_IX_WITHOUT_FAC
         user.save()

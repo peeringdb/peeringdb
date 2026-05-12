@@ -32,7 +32,8 @@ from peeringdb_server.serializers import (
 
 logger = logging.getLogger(__name__)
 
-@functools.lru_cache(maxsize=None)
+
+@functools.cache
 def _get_return_annotation(method):
     """Return the return annotation for *method*, or inspect.Parameter.empty."""
     return inspect.signature(method).return_annotation

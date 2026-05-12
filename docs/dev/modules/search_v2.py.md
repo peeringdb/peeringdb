@@ -1,13 +1,13 @@
-Generated from search_v2.py on 2026-04-21 14:00:55.614796
+Generated from search_v2.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.search_v2
 
 Search v2 implementation used for the PeeringDB top search bar.
 
 This module constructs and executes advanced Elasticsearch queries with
-support for geo-based filtering, keyword logic (AND/OR), and partial
-IPv6 matching. It includes functionality to prioritize exact and "OR"
-term matches and organizes results alphabetically.
+support for geo-based filtering, keyword logic (AND/OR), autocomplete search
+and partial IPv6 matching. It includes functionality to prioritize exact
+and "OR" term matches and organizes results alphabetically.
 
 # Functions
 ---
@@ -36,6 +36,23 @@ Args:
     sq: The current search result item.
     result: The dictionary where results are stored by category.
     pk_map: A map for storing primary keys.
+
+---
+## autocomplete_v2
+`def autocomplete_v2(term, user=None)`
+
+Typeahead autocomplete using Elasticsearch search_as_you_type field.
+
+Queries the auto_suggest field (search_as_you_type mapping) across all entity
+indexes using a bool_prefix multi_match, which is the ES-native equivalent of
+the retired haystack EdgeNgram autocomplete.
+
+Args:
+    term: The partial search term typed by the user.
+    user: The requesting user (used for hide_ixs_without_fac preference).
+
+Returns:
+    Categorised result dict with keys fac, ix, net, org, campus, carrier.
 
 ---
 ## build_geo_filter

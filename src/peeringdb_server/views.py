@@ -591,7 +591,9 @@ def view_affiliate_to_org(request):
         # otherwise pin the snapshot and hide the 1st txn's committed UOAR.
         User.objects.select_for_update().get(pk=request.user.pk)
 
-        pending_affil_reqs = request.user.pending_affiliation_requests.select_for_update()
+        pending_affil_reqs = (
+            request.user.pending_affiliation_requests.select_for_update()
+        )
         if org_id and pending_affil_reqs.filter(org_id=org_id).exists():
             return already_requested_affil_response
         elif asn and pending_affil_reqs.filter(asn=asn).exists():
@@ -3428,7 +3430,9 @@ def request_api_search(request):
     except (ApiError, TransportError):
         logger.exception("Autocomplete ES error for query %r", q)
         return HttpResponse(
-            json.dumps({tag: [] for tag in ["fac", "ix", "net", "org", "campus", "carrier"]}),
+            json.dumps(
+                {tag: [] for tag in ["fac", "ix", "net", "org", "campus", "carrier"]}
+            ),
             content_type="application/json",
         )
 

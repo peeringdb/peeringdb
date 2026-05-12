@@ -50,9 +50,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: created
         in: query
@@ -357,9 +368,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: ref_tag
         in: path
@@ -746,9 +768,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: address1
         in: query
@@ -1605,26 +1638,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/FacilityList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -5938,9 +5989,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -6377,26 +6439,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/CarrierList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -6909,7 +6989,7 @@ paths:
                     type: integer
                   readOnly: true
                 fac_count:
-                  type: string
+                  type: integer
                   readOnly: true
                 logo:
                   type: string
@@ -7464,7 +7544,7 @@ paths:
                     type: integer
                   readOnly: true
                 fac_count:
-                  type: string
+                  type: integer
                   readOnly: true
                 logo:
                   type: string
@@ -7972,7 +8052,7 @@ paths:
                     type: integer
                   readOnly: true
                 fac_count:
-                  type: string
+                  type: integer
                   readOnly: true
                 logo:
                   type: string
@@ -8076,9 +8156,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: carrier
         in: query
@@ -8697,26 +8788,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/CarrierFacilityList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -9240,7 +9349,7 @@ paths:
                         type: integer
                       readOnly: true
                     fac_count:
-                      type: string
+                      type: integer
                       readOnly: true
                     logo:
                       type: string
@@ -11156,7 +11265,7 @@ paths:
                         type: integer
                       readOnly: true
                     fac_count:
-                      type: string
+                      type: integer
                       readOnly: true
                     logo:
                       type: string
@@ -13025,7 +13134,7 @@ paths:
                         type: integer
                       readOnly: true
                     fac_count:
-                      type: string
+                      type: integer
                       readOnly: true
                     logo:
                       type: string
@@ -14482,9 +14591,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -15447,26 +15567,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/InternetExchangeList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -16218,13 +16356,13 @@ paths:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -16311,6 +16449,17 @@ paths:
                 prefix:
                   type: string
                   writeOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -17170,13 +17319,13 @@ paths:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -17260,6 +17409,17 @@ paths:
                   items:
                     type: integer
                   readOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -18069,13 +18229,13 @@ paths:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -18162,6 +18322,17 @@ paths:
                 prefix:
                   type: string
                   writeOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -18350,10 +18521,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: created
         in: query
@@ -19240,26 +19421,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/InternetExchangeFacilityList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -20026,13 +20225,13 @@ paths:
                     notes:
                       type: string
                     proto_unicast:
-                      type: string
+                      type: boolean
                       readOnly: true
                     proto_multicast:
                       type: boolean
                       readOnly: true
                     proto_ipv6:
-                      type: string
+                      type: boolean
                       readOnly: true
                     website:
                       type: string
@@ -20119,6 +20318,17 @@ paths:
                     prefix:
                       type: string
                       writeOnly: true
+                    ixf_ixp_member_list_url:
+                      type: string
+                      format: uri
+                      writeOnly: true
+                      nullable: true
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                        .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                        [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                        -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                        .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                     net_count:
                       type: integer
                       maximum: 4294967295
@@ -22341,13 +22551,13 @@ paths:
                     notes:
                       type: string
                     proto_unicast:
-                      type: string
+                      type: boolean
                       readOnly: true
                     proto_multicast:
                       type: boolean
                       readOnly: true
                     proto_ipv6:
-                      type: string
+                      type: boolean
                       readOnly: true
                     website:
                       type: string
@@ -22434,6 +22644,17 @@ paths:
                     prefix:
                       type: string
                       writeOnly: true
+                    ixf_ixp_member_list_url:
+                      type: string
+                      format: uri
+                      writeOnly: true
+                      nullable: true
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                        .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                        [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                        -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                        .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                     net_count:
                       type: integer
                       maximum: 4294967295
@@ -24608,13 +24829,13 @@ paths:
                     notes:
                       type: string
                     proto_unicast:
-                      type: string
+                      type: boolean
                       readOnly: true
                     proto_multicast:
                       type: boolean
                       readOnly: true
                     proto_ipv6:
-                      type: string
+                      type: boolean
                       readOnly: true
                     website:
                       type: string
@@ -24701,6 +24922,17 @@ paths:
                     prefix:
                       type: string
                       writeOnly: true
+                    ixf_ixp_member_list_url:
+                      type: string
+                      format: uri
+                      writeOnly: true
+                      nullable: true
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                        .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                        [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                        -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                        .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                     net_count:
                       type: integer
                       maximum: 4294967295
@@ -26238,9 +26470,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: arp_sponge
         in: query
@@ -26835,26 +27078,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/IXLanList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -27625,13 +27886,13 @@ paths:
                     notes:
                       type: string
                     proto_unicast:
-                      type: string
+                      type: boolean
                       readOnly: true
                     proto_multicast:
                       type: boolean
                       readOnly: true
                     proto_ipv6:
-                      type: string
+                      type: boolean
                       readOnly: true
                     website:
                       type: string
@@ -27718,6 +27979,17 @@ paths:
                     prefix:
                       type: string
                       writeOnly: true
+                    ixf_ixp_member_list_url:
+                      type: string
+                      format: uri
+                      writeOnly: true
+                      nullable: true
+                      pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                        .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                        [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1\
+                        -\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\\
+                        .(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                        .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                     net_count:
                       type: integer
                       maximum: 4294967295
@@ -27815,7 +28087,7 @@ paths:
                   type: integer
                   default: 1500
                 dot1q_support:
-                  type: string
+                  type: boolean
                   readOnly: true
                 rs_asn:
                   type: integer
@@ -27932,9 +28204,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: created
         in: query
@@ -28252,26 +28535,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/IXLanPrefixList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -29037,13 +29338,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -29130,6 +29431,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -29228,7 +29540,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -30097,13 +30409,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -30190,6 +30502,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -30288,7 +30611,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -31109,13 +31432,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -31202,6 +31525,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -31300,7 +31634,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -31485,10 +31819,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -32305,26 +32649,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/NetworkList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -34696,9 +35058,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: created
         in: query
@@ -35262,26 +35635,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/NetworkContactList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -37828,9 +38219,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: avail_atm
         in: query
@@ -38802,26 +39204,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/NetworkFacilityList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -40929,7 +41349,7 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: string
+                  type: integer
                   readOnly: true
                 created:
                   type: string
@@ -43074,7 +43494,7 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: string
+                  type: integer
                   readOnly: true
                 created:
                   type: string
@@ -45171,7 +45591,7 @@ paths:
                   - city
                   readOnly: true
                 local_asn:
-                  type: string
+                  type: integer
                   readOnly: true
                 created:
                   type: string
@@ -45289,10 +45709,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: asn
         in: query
@@ -46871,26 +47301,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/NetworkIXLanList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -47654,7 +48102,7 @@ paths:
                   - asn
                   readOnly: true
                 ix_id:
-                  type: string
+                  type: integer
                   readOnly: true
                 name:
                   type: string
@@ -48346,13 +48794,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -48439,6 +48887,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -48537,7 +48996,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -49425,7 +49884,7 @@ paths:
                   - asn
                   readOnly: true
                 ix_id:
-                  type: string
+                  type: integer
                   readOnly: true
                 name:
                   type: string
@@ -50117,13 +50576,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -50210,6 +50669,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -50308,7 +50778,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -51147,7 +51617,7 @@ paths:
                   - asn
                   readOnly: true
                 ix_id:
-                  type: string
+                  type: integer
                   readOnly: true
                 name:
                   type: string
@@ -51839,13 +52309,13 @@ paths:
                         notes:
                           type: string
                         proto_unicast:
-                          type: string
+                          type: boolean
                           readOnly: true
                         proto_multicast:
                           type: boolean
                           readOnly: true
                         proto_ipv6:
-                          type: string
+                          type: boolean
                           readOnly: true
                         website:
                           type: string
@@ -51932,6 +52402,17 @@ paths:
                         prefix:
                           type: string
                           writeOnly: true
+                        ixf_ixp_member_list_url:
+                          type: string
+                          format: uri
+                          writeOnly: true
+                          nullable: true
+                          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\\
+                            [[0-9a-f:.]+\\]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF\
+                            0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF\
+                            0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+                            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
                         net_count:
                           type: integer
                           maximum: 4294967295
@@ -52030,7 +52511,7 @@ paths:
                       type: integer
                       default: 1500
                     dot1q_support:
-                      type: string
+                      type: boolean
                       readOnly: true
                     rs_asn:
                       type: integer
@@ -52235,10 +52716,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: address1
         in: query
@@ -52601,26 +53092,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Organization'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -54123,9 +54632,20 @@ paths:
         \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
         \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
         \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        Use the skip and limit parameters to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
-        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
-        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n"
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -54562,26 +55082,44 @@ paths:
               schema:
                 type: object
                 required:
-                - count
-                - results
+                - data
+                - meta
                 properties:
-                  count:
-                    type: integer
-                    example: 123
-                  next:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=4
-                  previous:
-                    type: string
-                    nullable: true
-                    format: uri
-                    example: http://api.example.org/accounts/?page=2
-                  results:
+                  data:
                     type: array
                     items:
                       $ref: '#/components/schemas/CampusList'
+                  meta:
+                    type: object
+                    properties:
+                      generated:
+                        type: number
+                        description: Unix timestamp of when the cached response was
+                          generated. Only present for cached responses.
+                      pagination:
+                        type: object
+                        description: Only present when using the ?page= parameter.
+                        properties:
+                          count:
+                            type: integer
+                          has_next:
+                            type: boolean
+                          has_previous:
+                            type: boolean
+                          next:
+                            type: string
+                            nullable: true
+                            format: uri
+                          previous:
+                            type: string
+                            nullable: true
+                            format: uri
+                          page:
+                            type: integer
+                          per_page:
+                            type: integer
+                          total_pages:
+                            type: integer
           description: ''
       tags:
       - api
@@ -56297,10 +56835,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -57158,10 +57706,20 @@ paths:
         \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
         \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
-        ### Pagination\n\nUse the skip and limit parameters to page through results\n\
-        \n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250\
-        \ - second page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 -\
-        \ third page\n"
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
       parameters:
       - name: aka
         in: query
@@ -58897,13 +59455,13 @@ paths:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -58990,6 +59548,17 @@ paths:
                 prefix:
                   type: string
                   writeOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -61629,7 +62198,7 @@ components:
             type: integer
           readOnly: true
         fac_count:
-          type: string
+          type: integer
           readOnly: true
         logo:
           type: string
@@ -61721,7 +62290,7 @@ components:
             type: integer
           readOnly: true
         fac_count:
-          type: string
+          type: integer
           readOnly: true
         logo:
           type: string
@@ -62211,7 +62780,7 @@ components:
                 type: integer
               readOnly: true
             fac_count:
-              type: string
+              type: integer
               readOnly: true
             logo:
               type: string
@@ -64284,13 +64853,13 @@ components:
         notes:
           type: string
         proto_unicast:
-          type: string
+          type: boolean
           readOnly: true
         proto_multicast:
           type: boolean
           readOnly: true
         proto_ipv6:
-          type: string
+          type: boolean
           readOnly: true
         website:
           type: string
@@ -64375,6 +64944,16 @@ components:
         prefix:
           type: string
           writeOnly: true
+        ixf_ixp_member_list_url:
+          type: string
+          format: uri
+          writeOnly: true
+          nullable: true
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+            ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
+            .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
         net_count:
           type: integer
           maximum: 4294967295
@@ -64746,13 +65325,13 @@ components:
         notes:
           type: string
         proto_unicast:
-          type: string
+          type: boolean
           readOnly: true
         proto_multicast:
           type: boolean
           readOnly: true
         proto_ipv6:
-          type: string
+          type: boolean
           readOnly: true
         website:
           type: string
@@ -64837,6 +65416,16 @@ components:
         prefix:
           type: string
           writeOnly: true
+        ixf_ixp_member_list_url:
+          type: string
+          format: uri
+          writeOnly: true
+          nullable: true
+          pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+            .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+            ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF0-9])?(?:\\\
+            .(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1-\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\\
+            .?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\s]*)?\\z"
         net_count:
           type: integer
           maximum: 4294967295
@@ -65611,13 +66200,13 @@ components:
             notes:
               type: string
             proto_unicast:
-              type: string
+              type: boolean
               readOnly: true
             proto_multicast:
               type: boolean
               readOnly: true
             proto_ipv6:
-              type: string
+              type: boolean
               readOnly: true
             website:
               type: string
@@ -65704,6 +66293,17 @@ components:
             prefix:
               type: string
               writeOnly: true
+            ixf_ixp_member_list_url:
+              type: string
+              format: uri
+              writeOnly: true
+              nullable: true
+              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                s]*)?\\z"
             net_count:
               type: integer
               maximum: 4294967295
@@ -67852,13 +68452,13 @@ components:
             notes:
               type: string
             proto_unicast:
-              type: string
+              type: boolean
               readOnly: true
             proto_multicast:
               type: boolean
               readOnly: true
             proto_ipv6:
-              type: string
+              type: boolean
               readOnly: true
             website:
               type: string
@@ -67945,6 +68545,17 @@ components:
             prefix:
               type: string
               writeOnly: true
+            ixf_ixp_member_list_url:
+              type: string
+              format: uri
+              writeOnly: true
+              nullable: true
+              pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                s]*)?\\z"
             net_count:
               type: integer
               maximum: 4294967295
@@ -68042,7 +68653,7 @@ components:
           type: integer
           default: 1500
         dot1q_support:
-          type: string
+          type: boolean
           readOnly: true
         rs_asn:
           type: integer
@@ -68115,7 +68726,7 @@ components:
           type: integer
           default: 1500
         dot1q_support:
-          type: string
+          type: boolean
           readOnly: true
         rs_asn:
           type: integer
@@ -68857,13 +69468,13 @@ components:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -68950,6 +69561,17 @@ components:
                 prefix:
                   type: string
                   writeOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -69047,7 +69669,7 @@ components:
               type: integer
               default: 1500
             dot1q_support:
-              type: string
+              type: boolean
               readOnly: true
             rs_asn:
               type: integer
@@ -72953,7 +73575,7 @@ components:
           - city
           readOnly: true
         local_asn:
-          type: string
+          type: integer
           readOnly: true
         created:
           type: string
@@ -72989,7 +73611,7 @@ components:
         fac_id:
           type: integer
         local_asn:
-          type: string
+          type: integer
           readOnly: true
         created:
           type: string
@@ -73694,7 +74316,7 @@ components:
           - asn
           readOnly: true
         ix_id:
-          type: string
+          type: integer
           readOnly: true
         name:
           type: string
@@ -74384,13 +75006,13 @@ components:
                 notes:
                   type: string
                 proto_unicast:
-                  type: string
+                  type: boolean
                   readOnly: true
                 proto_multicast:
                   type: boolean
                   readOnly: true
                 proto_ipv6:
-                  type: string
+                  type: boolean
                   readOnly: true
                 website:
                   type: string
@@ -74477,6 +75099,17 @@ components:
                 prefix:
                   type: string
                   writeOnly: true
+                ixf_ixp_member_list_url:
+                  type: string
+                  format: uri
+                  writeOnly: true
+                  nullable: true
+                  pattern: "^(?:[a-z0-9.+-]*)://(?:[^\\s:@/]+(?::[^\\s:@/]*)?@)?(?:(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)(?:\\\
+                    .(?:0|25[0-5]|2[0-4][0-9]|1[0-9]?[0-9]?|[1-9][0-9]?)){3}|\\[[0-9a-f:.]+\\\
+                    ]|([a-z\xA1-\uFFFF0-9](?:[a-z\xA1-\uFFFF0-9-]{0,61}[a-z\xA1-\uFFFF\
+                    0-9])?(?:\\.(?!-)[a-z\xA1-\uFFFF0-9-]{1,63}(?<!-))*\\.(?!-)(?:[a-z\xA1\
+                    -\uFFFF-]{2,63}|xn--[a-z0-9]{1,59})(?<!-)\\.?|localhost))(?::[0-9]{1,5})?(?:[/?#][^\\\
+                    s]*)?\\z"
                 net_count:
                   type: integer
                   maximum: 4294967295
@@ -74574,7 +75207,7 @@ components:
               type: integer
               default: 1500
             dot1q_support:
-              type: string
+              type: boolean
               readOnly: true
             rs_asn:
               type: integer
@@ -74685,7 +75318,7 @@ components:
         net_id:
           type: integer
         ix_id:
-          type: string
+          type: integer
           readOnly: true
         name:
           type: string
