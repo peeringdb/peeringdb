@@ -31,6 +31,19 @@ class Command(BaseCommand):
             try:
                 tool = get_tool_from_data({"tool": command.tool})
                 arguments = json.loads(command.arguments)
+
+                # Validate JSON structure and types
+                if not isinstance(arguments, dict):
+                    raise ValueError("Arguments must be a JSON object")
+                if "kwargs" not in arguments:
+                    raise ValueError("Missing required key 'kwargs'")
+                if "args" not in arguments:
+                    raise ValueError("Missing required key 'args'")
+                if not isinstance(arguments.get("kwargs"), dict):
+                    raise ValueError("'kwargs' must be a JSON object")
+                if not isinstance(arguments.get("args"), list):
+                    raise ValueError("'args' must be a JSON array")
+
                 tool.kwargs = arguments.get("kwargs")
                 tool.args = arguments.get("args")
                 tool._run(command, commit=True)
