@@ -75,7 +75,9 @@ class PrefixAutomationTestCase(TestCase):
         auth = base64.b64encode(b"user_ok:user_ok").decode("utf-8")
         self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
         ixf_data = setup_test_data("ixf.prefixauto.valid")
-        with patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with patch(
+            "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+        ):
             request = self.client.post("/api/ix", data=self.payload, format="json")
 
         self.assertEqual(request.data["status"], "ok")
@@ -95,7 +97,9 @@ class PrefixAutomationTestCase(TestCase):
         auth = base64.b64encode(b"user_ok:user_ok").decode("utf-8")
         self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
         ixf_data = setup_test_data("ixf.prefixauto.valid")
-        with patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with patch(
+            "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+        ):
             request = self.client.post("/api/ix", data=self.payload, format="json")
 
         self.assertEqual(request.data["status"], "ok")
@@ -218,7 +222,9 @@ class IXFPrefixAutomationTestCase(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["status"], "pending")
-        self.assertIn("no IX-F member list URL provided", response.data["ixf_pending_reason"])
+        self.assertIn(
+            "no IX-F member list URL provided", response.data["ixf_pending_reason"]
+        )
 
     @override_settings(TICKET_CREATION_PREFIXAUTO=False)
     def test_ixf_url_fetch_error_goes_pending(self):
@@ -228,9 +234,13 @@ class IXFPrefixAutomationTestCase(TestCase):
         Importer.fetch() never raises — it catches all exceptions internally
         and returns {"pdb_error": <exc>}.  We mirror that here.
         """
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch",
-                   return_value={"pdb_error": "connection refused"}):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch",
+                return_value={"pdb_error": "connection refused"},
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -246,8 +256,12 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         ixf_data = setup_test_data("ixf.prefixauto.too_few_asns")
 
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -269,8 +283,12 @@ class IXFPrefixAutomationTestCase(TestCase):
         )
         ixf_data = setup_test_data("ixf.prefixauto.org_conflict")
 
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -290,8 +308,12 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         ixf_data = setup_test_data("ixf.prefixauto.valid")
 
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -314,8 +336,12 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         ixf_data = setup_test_data("ixf.prefixauto.valid")
 
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -345,9 +371,13 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         RDAP passes, fetch returns a pdb_error (e.g. HTTP 404) → IX stays pending.
         """
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch",
-                   return_value={"pdb_error": "Got HTTP status 404"}):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch",
+                return_value={"pdb_error": "Got HTTP status 404"},
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -360,8 +390,10 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         RDAP passes, feed JSON has no member_list key → 0 unique ASNs → pending.
         """
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value={}):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch("peeringdb_server.auto_approval.Importer.fetch", return_value={}),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -374,9 +406,13 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         RDAP passes, member_list is empty → 0 unique ASNs → pending.
         """
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch",
-                   return_value={"member_list": []}):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch",
+                return_value={"member_list": []},
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -392,8 +428,12 @@ class IXFPrefixAutomationTestCase(TestCase):
         """
         ixf_data = setup_test_data("ixf.prefixauto.null_asnum")
 
-        with patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap, \
-             patch("peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data):
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
             self._rdap_mock(mock_rdap)
             response = self.client.post("/api/ix", data=self.payload, format="json")
 
@@ -415,4 +455,6 @@ class IXFPrefixAutomationTestCase(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["status"], "pending")
-        self.assertIn("no IX-F member list URL provided", response.data["ixf_pending_reason"])
+        self.assertIn(
+            "no IX-F member list URL provided", response.data["ixf_pending_reason"]
+        )

@@ -1018,8 +1018,8 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMi
         return None
 
     def get_deleted_objects(self, objs, request):
-        deleted_objects, model_count, perms_needed, protected = super().get_deleted_objects(
-            objs, request
+        deleted_objects, model_count, perms_needed, protected = (
+            super().get_deleted_objects(objs, request)
         )
         if request.user.is_superuser:
             # IX soft-delete only sets status="deleted" — it does not cascade

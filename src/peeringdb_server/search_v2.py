@@ -3,7 +3,7 @@ Search v2 implementation used for the PeeringDB top search bar.
 
 This module constructs and executes advanced Elasticsearch queries with
 support for geo-based filtering, keyword logic (AND/OR), autocomplete search
-and partial IPv6 matching. It includes functionality to prioritize exact 
+and partial IPv6 matching. It includes functionality to prioritize exact
 and "OR" term matches and organizes results alphabetically.
 """
 
@@ -110,9 +110,7 @@ def elasticsearch_proximity_entity(name) -> dict | None:
         return None
 
 
-def autocomplete_v2(
-    term: str, user=None
-) -> dict[str, list[dict[str, str | int]]]:
+def autocomplete_v2(term: str, user=None) -> dict[str, list[dict[str, str | int]]]:
     """
     Typeahead autocomplete using Elasticsearch search_as_you_type field.
 
@@ -174,7 +172,11 @@ def autocomplete_v2(
     for sq in search_query["hits"]["hits"]:
         if sq["_source"].get("status") != "ok":
             continue
-        if hide_ixs_without_fac and sq["_index"] == "ix" and sq["_source"].get("fac_count", 0) == 0:
+        if (
+            hide_ixs_without_fac
+            and sq["_index"] == "ix"
+            and sq["_source"].get("fac_count", 0) == 0
+        ):
             continue
         append_result_to_category(sq, result, pk_map)
 
@@ -522,7 +524,13 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase",
-                                        "fields": ["name", "name_long", "aka", "city", "irr_as_set"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_MATCH_PHRASE_BOOST,
                                     }
                                 },
@@ -530,14 +538,26 @@ def construct_name_query(clean_term: str, term: str) -> dict:
                                     "multi_match": {
                                         "query": clean_term,
                                         "type": "phrase_prefix",
-                                        "fields": ["name", "name_long", "aka", "city", "irr_as_set"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_MATCH_PHRASE_PREFIX_BOOST,
                                     }
                                 },
                                 {
                                     "query_string": {
                                         "query": term,
-                                        "fields": ["name", "name_long", "aka", "city", "irr_as_set"],
+                                        "fields": [
+                                            "name",
+                                            "name_long",
+                                            "aka",
+                                            "city",
+                                            "irr_as_set",
+                                        ],
                                         "boost": settings.ES_QUERY_STRING_BOOST,
                                     }
                                 },

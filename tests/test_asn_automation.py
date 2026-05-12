@@ -442,11 +442,13 @@ class AsnAutomationTestCase(TestCase):
         # bulk_create skips post_save signals, so no RDAP lookup is
         # triggered for this seed row — we just need a pending UOAR
         # with this ASN to exercise the elif-asn dup-check branch.
-        models.UserOrgAffiliationRequest.objects.bulk_create([
-            models.UserOrgAffiliationRequest(
-                user=self.user_b, asn=9000999, status="pending"
-            )
-        ])
+        models.UserOrgAffiliationRequest.objects.bulk_create(
+            [
+                models.UserOrgAffiliationRequest(
+                    user=self.user_b, asn=9000999, status="pending"
+                )
+            ]
+        )
 
         request = self.factory.post("/affiliate-to-org", data={"asn": "9000999"})
         request.user = self.user_b
@@ -463,15 +465,15 @@ class AsnAutomationTestCase(TestCase):
         the same org name while a pending UOAR exists must be rejected (400).
         Covers the `elif org_name` dup-check branch in view_affiliate_to_org.
         """
-        models.UserOrgAffiliationRequest.objects.bulk_create([
-            models.UserOrgAffiliationRequest(
-                user=self.user_b, org_name="New Org Name", status="pending"
-            )
-        ])
-
-        request = self.factory.post(
-            "/affiliate-to-org", data={"org": "New Org Name"}
+        models.UserOrgAffiliationRequest.objects.bulk_create(
+            [
+                models.UserOrgAffiliationRequest(
+                    user=self.user_b, org_name="New Org Name", status="pending"
+                )
+            ]
         )
+
+        request = self.factory.post("/affiliate-to-org", data={"org": "New Org Name"})
         request.user = self.user_b
         mock_csrf_session(request)
         resp = pdbviews.view_affiliate_to_org(request)

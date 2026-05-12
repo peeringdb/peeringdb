@@ -19,11 +19,11 @@ from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django_grainy.models import GroupPermission
+from rest_framework.test import APIClient
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
 from peeringdb_server.api_cache import APICacheLoader
-from rest_framework.test import APIClient
 
 from . import test_api as api_tests
 from .elasticsearch_test_mixin import ElasticsearchAPIMixin
@@ -290,7 +290,8 @@ def test_api_cache_loader_load_page_pagination(tmp_path, mocker, settings):
             "method": "GET",
             "query_params": {"page": str(page), "per_page": str(per_page)},
             "path": "/api/org",
-            "build_absolute_uri": lambda self, path=None: f"http://testserver{path or self.path}",
+            "build_absolute_uri": lambda self,
+            path=None: f"http://testserver{path or self.path}",
         },
     )()
 
@@ -342,9 +343,20 @@ def test_page_pagination_meta(db):
     assert "meta" in body
 
     pagination = body["meta"].get("pagination")
-    assert pagination is not None, "meta.pagination should be present when ?page= is used"
+    assert (
+        pagination is not None
+    ), "meta.pagination should be present when ?page= is used"
 
-    for field in ["count", "has_next", "has_previous", "next", "previous", "page", "per_page", "total_pages"]:
+    for field in [
+        "count",
+        "has_next",
+        "has_previous",
+        "next",
+        "previous",
+        "page",
+        "per_page",
+        "total_pages",
+    ]:
         assert field in pagination, f"meta.pagination.{field} is missing"
 
     assert pagination["page"] == 1
@@ -367,4 +379,6 @@ def test_page_pagination_no_meta_without_page_param(db):
     body = json.loads(response.content)
     assert "data" in body
     assert "meta" in body
-    assert "pagination" not in body["meta"], "meta.pagination should not appear without ?page="
+    assert (
+        "pagination" not in body["meta"]
+    ), "meta.pagination should not appear without ?page="

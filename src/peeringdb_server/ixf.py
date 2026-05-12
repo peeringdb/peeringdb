@@ -737,9 +737,15 @@ class Importer:
         Return True if the IX-F feed contains an entry with a different
         ASN that claims either of this netixlan's IPs (#1897).
         """
-        if netixlan.ipaddr4 and ip_to_asn.get(netixlan.ipaddr4, netixlan.asn) != netixlan.asn:
+        if (
+            netixlan.ipaddr4
+            and ip_to_asn.get(netixlan.ipaddr4, netixlan.asn) != netixlan.asn
+        ):
             return True
-        if netixlan.ipaddr6 and ip_to_asn.get(netixlan.ipaddr6, netixlan.asn) != netixlan.asn:
+        if (
+            netixlan.ipaddr6
+            and ip_to_asn.get(netixlan.ipaddr6, netixlan.asn) != netixlan.asn
+        ):
             return True
         return False
 

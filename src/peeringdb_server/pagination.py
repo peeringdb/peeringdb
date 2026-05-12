@@ -53,8 +53,16 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
                                 "count": {"type": "integer"},
                                 "has_next": {"type": "boolean"},
                                 "has_previous": {"type": "boolean"},
-                                "next": {"type": "string", "nullable": True, "format": "uri"},
-                                "previous": {"type": "string", "nullable": True, "format": "uri"},
+                                "next": {
+                                    "type": "string",
+                                    "nullable": True,
+                                    "format": "uri",
+                                },
+                                "previous": {
+                                    "type": "string",
+                                    "nullable": True,
+                                    "format": "uri",
+                                },
                                 "page": {"type": "integer"},
                                 "per_page": {"type": "integer"},
                                 "total_pages": {"type": "integer"},

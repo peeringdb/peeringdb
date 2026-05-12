@@ -38,17 +38,13 @@ _use_replica = contextvars.ContextVar("peeringdb_use_replica", default=False)
 
 # True if a write to the "default" alias has been observed during the
 # current request. Read by the middleware on response.
-_request_wrote = contextvars.ContextVar(
-    "peeringdb_request_wrote", default=False
-)
+_request_wrote = contextvars.ContextVar("peeringdb_request_wrote", default=False)
 
 # Marks that an HTTP request is currently active. The signal receivers
 # only flip _request_wrote when this is True, so writes from management
 # commands or other non-request paths don't trigger pin cookies that
 # nobody will see.
-_request_active = contextvars.ContextVar(
-    "peeringdb_request_active", default=False
-)
+_request_active = contextvars.ContextVar("peeringdb_request_active", default=False)
 
 
 def use_replica_for_read():
@@ -143,10 +139,7 @@ class ReadReplicaRouterMiddleware:
         wrote_token = _request_wrote.set(False)
         active_token = _request_active.set(True)
 
-        if (
-            request.method in self.SAFE_METHODS
-            and PIN_COOKIE not in request.COOKIES
-        ):
+        if request.method in self.SAFE_METHODS and PIN_COOKIE not in request.COOKIES:
             replica_token = _use_replica.set(True)
         else:
             replica_token = _use_replica.set(False)

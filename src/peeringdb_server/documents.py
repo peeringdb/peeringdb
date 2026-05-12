@@ -450,7 +450,9 @@ class FacilityDocument(AutoSuggestMixin, GeocodeMixin, Document):
 
 
 @registry.register_document
-class InternetExchangeDocument(AutoSuggestMixin, GeocodeMixin, IpAddressMixin, Document):
+class InternetExchangeDocument(
+    AutoSuggestMixin, GeocodeMixin, IpAddressMixin, Document
+):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={

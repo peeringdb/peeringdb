@@ -2532,7 +2532,9 @@ def test_delete_ip_reassigned_immediate(entities, save):
     that no REMOVE email goes to the ix or to the winning network, and
     that no AC ticket is created.
     """
-    data = setup_test_data("ixf.member.0")  # feed contains ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
+    data = setup_test_data(
+        "ixf.member.0"
+    )  # feed contains ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
     losing_network = entities["net"]["UPDATE_DISABLED"]  # ASN 1001
     winning_network = entities["net"]["UPDATE_ENABLED"]  # ASN 2906
     ixlan = entities["ixlan"][0]
@@ -2607,7 +2609,9 @@ def test_delete_ip_reassigned_ipv4_only_match(entities, save):
     because one IP is enough - the whole row is removed immediately and only
     the losing network is emailed for the removal.
     """
-    data = setup_test_data("ixf.member.0")  # ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
+    data = setup_test_data(
+        "ixf.member.0"
+    )  # ASN 2906 at 195.69.147.250 / 2001:7f8:1::a500:2906:1
     losing_network = entities["net"]["UPDATE_DISABLED"]  # ASN 1001
     ixlan = entities["ixlan"][0]
 
@@ -2698,9 +2702,12 @@ def test_delete_no_reassignment_still_suggests(entities, save):
     importer.notify_proposals()
 
     # netixlan stays (proposal, not immediate delete)
-    assert NetworkIXLan.objects.filter(
-        asn=1001, ipaddr4="195.69.147.251", status="ok"
-    ).count() == 1
+    assert (
+        NetworkIXLan.objects.filter(
+            asn=1001, ipaddr4="195.69.147.251", status="ok"
+        ).count()
+        == 1
+    )
     assert importer.log["data"][0]["action"] == "suggest-delete"
 
     email_info = [("REMOVE", 1001, "195.69.147.251", "IPv6 not set")]
