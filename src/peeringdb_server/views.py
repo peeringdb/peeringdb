@@ -15,6 +15,7 @@ View definitions:
 
 import datetime
 import json
+import logging
 import os
 import re
 import uuid
@@ -78,7 +79,7 @@ from django_security_keys.ext.two_factor.views import (
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from django_security_keys.ext.two_factor.views import SetupView as BaseSetupView
-from elasticsearch import Elasticsearch
+from elasticsearch import ApiError, Elasticsearch, TransportError
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
@@ -136,9 +137,10 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
-from peeringdb_server.search import get_lat_long_from_search_result, search
 from peeringdb_server.search_v2 import (
+    autocomplete_v2,
     elasticsearch_proximity_entity,
+    get_lat_long_from_search_result,
     is_valid_latitude,
     is_valid_longitude,
     new_elasticsearch,
@@ -162,6 +164,8 @@ from peeringdb_server.util import (
     render,
     v2_social_media_services,
 )
+
+logger = logging.getLogger(__name__)
 
 RATELIMITS = dj_settings.RATELIMITS
 
@@ -3412,35 +3416,33 @@ def request_api_search(request):
     if not q:
         return HttpResponseBadRequest()
 
-    result = search(q, autocomplete=True, user=request.user)
+    try:
+        result = autocomplete_v2(q, user=request.user)
+    except (ApiError, TransportError):
+        logger.exception("Autocomplete ES error for query %r", q)
+        return HttpResponse(
+            json.dumps({tag: [] for tag in ["fac", "ix", "net", "org", "campus", "carrier"]}),
+            content_type="application/json",
+        )
 
     campus_facilites = {
         fac.id: fac for fac in Facility.objects.exclude(campus_id__isnull=True)
     }
 
-    for item in result["fac"]:
+    for item in result.get("fac", []):
         if item["id"] in campus_facilites:
             item["campus"] = campus_facilites[item["id"]].campus_id
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-def render_search_result(request, version: int = 2) -> HttpResponse:
+def render_search_result(request) -> HttpResponse:
     """
     Triggered by hitting enter on the main search bar.
     Renders a search result page based on the query provided.
-
-    Args:
-        request: The HTTP request object containing the search query.
-        version: The version of the search functionality to use (default is 2).
-
-    Returns:
-        HttpResponse: The rendered search result page.
     """
-    # Extract and process the query
-    q, geo, original_query = extract_query(request, version)
+    q, geo, original_query = extract_query(request)
 
-    # Redirect if no valid query
     if not q and not geo:
         return HttpResponseRedirect("/")
 
@@ -3449,68 +3451,53 @@ def render_search_result(request, version: int = 2) -> HttpResponse:
         authenticated=(
             request.user.is_authenticated if getattr(request, "user", None) else False
         ),
-        version=version,
+        version=2,
     )
 
-    # Handle direct ASN or AS queries
-    asn_redirect = handle_asn_query(q, version)
+    asn_redirect = handle_asn_query(q)
     if asn_redirect:
         return asn_redirect
 
-    # Perform the search based on the query and version
-    result = perform_search(
-        q, geo, version, original_query, request.user if version == 2 else None
-    )
+    result = perform_search(q, geo, original_query, request.user)
 
-    # Build the environment for rendering the template
-    env = build_template_environment(result, geo, version, request, q)
+    env = build_template_environment(result, geo, request, q)
     template = get_template(request, "site/search_result.html")
 
     return HttpResponse(template.render(env, request))
 
 
 def extract_query(
-    request, version: int
+    request,
 ) -> tuple[list[str], dict[str, str | float], str]:
     """
     Extracts the query and geographical parameters from the request.
 
-    Args:
-        request: The HTTP request object.
-        version: The version of the search functionality.
-
     Returns:
         tuple: (query list, geo dictionary, original query string)
     """
-    q = request.GET.getlist("q", []) if version == 2 else request.GET.get("q")
-    original_query = " ".join(q) if isinstance(q, list) else q
+    q = request.GET.getlist("q", [])
+    original_query = " ".join(q)
     geo = {}
 
-    if version == 2:
-        process_near_search(q, geo)
-        process_in_search(q, geo)
+    process_near_search(q, geo)
+    process_in_search(q, geo)
 
     return q, geo, original_query
 
 
-def handle_asn_query(q: list[str], version: int) -> HttpResponseRedirect | None:
+def handle_asn_query(q: list[str]) -> HttpResponseRedirect | None:
     """
     Checks if the query is for a direct ASN or AS and handles redirection.
-
-    Args:
-        q: The list of query terms.
 
     Returns:
         HttpResponseRedirect or None
     """
-    if version == 2:
-        for x in q:
-            match = re.match(r"(asn|as)(\d+)", x.lower())
-    else:
-        match = re.match(r"(asn|as)(\d+)", q.lower())
+    match = None
+    for x in q:
+        match = re.match(r"(asn|as)(\d+)", x.lower())
+        if match:
+            break
 
-    # if the user queried for an asn directly via AS*** or ASN***
-    # redirect to the result
     if match:
         net = Network.objects.filter(asn=match.group(2), status="ok")
         if net.exists() and net.count() == 1:
@@ -3521,27 +3508,23 @@ def handle_asn_query(q: list[str], version: int) -> HttpResponseRedirect | None:
 def perform_search(
     q: list[str],
     geo: dict[str, str | float],
-    version: int,
     original_query: str,
     user,
 ) -> dict:
     """
-    Executes the search based on the query and version.
+    Executes the search using Elasticsearch (v2).
 
     Args:
         q: The list of query terms.
         geo: The geographical search parameters.
-        version: The version of the search functionality.
         original_query: The original search query string.
+        user: The requesting user.
 
     Returns:
         dict: Search results.
     """
     if original_query:
-        if version == 2:
-            return search_v2(q, geo, user)
-        else:
-            return search(q)
+        return search_v2(q, geo, user)
     return {}
 
 
@@ -3608,7 +3591,7 @@ def get_page_range(paginator, current_page, show_pages=5):
 
 
 def build_template_environment(
-    result: dict, geo: dict[str, str | float], version: int, request, q: list
+    result: dict, geo: dict[str, str | float], request, q: list
 ) -> dict:
     """
     Constructs the environment dictionary for rendering the template.
@@ -3616,8 +3599,8 @@ def build_template_environment(
     Args:
         result: The search results.
         geo: The geographical search parameters.
-        version: The version of the search functionality.
-        q: Search query string
+        request: The HTTP request.
+        q: Search query string.
 
     Returns:
         dict: The environment variables for the template.
@@ -3678,7 +3661,6 @@ def build_template_environment(
             "geo": geo,
             "query_combined": query_combined,
             "incomplete_in_search": geo.pop("incomplete_in_search", False),
-            "search_version": version,
             "as_suggestion": as_suggestion,
         }
     )
@@ -3954,11 +3936,7 @@ def handle_city_country_search(
 
 
 def request_search(request):
-    return render_search_result(request, 1)
-
-
-def request_search_v2(request):
-    return render_search_result(request, 2)
+    return render_search_result(request)
 
 
 @transaction.atomic

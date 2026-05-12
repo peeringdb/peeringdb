@@ -855,7 +855,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.messages",
-    "haystack",
     "django_otp",
     "django_otp.plugins.otp_static",
     "django_otp.plugins.otp_totp",
@@ -1353,23 +1352,6 @@ else:
 # collect webauthn device attestation
 set_option("WEBAUTHN_ATTESTATION", "none")
 
-
-# haystack
-
-set_option("WHOOSH_INDEX_PATH", os.path.join(API_CACHE_ROOT, "whoosh-index"))
-set_option("WHOOSH_STORAGE", "file")
-HAYSTACK_CONNECTIONS = {
-    "default": {
-        "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
-        "PATH": WHOOSH_INDEX_PATH,
-        "STORAGE": WHOOSH_STORAGE,
-        "BATCH_SIZE": 40000,
-    },
-}
-
-
-set_option("HAYSTACK_ITERATOR_LOAD_PER_QUERY", 20000)
-set_option("HAYSTACK_LIMIT_TO_REGISTERED_MODELS", False)
 
 # add user defined iso code for Kosovo
 COUNTRIES_OVERRIDE = {

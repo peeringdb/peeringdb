@@ -5,6 +5,7 @@ from types import GeneratorType
 import elasticsearch.helpers.errors as errors
 from django.utils import timezone
 from django_elasticsearch_dsl import Document, fields
+from django_elasticsearch_dsl.fields import SearchAsYouTypeField
 from django_elasticsearch_dsl.registries import registry
 from elasticsearch_dsl import analyzer
 
@@ -41,6 +42,15 @@ name_analyzer = analyzer(
     filter=["lowercase"],
 )
 
+# Used for the search_as_you_type autocomplete field across all entity documents.
+# standard tokenizer splits on whitespace, asciifolding normalizes accented chars
+# so "ãccented" matches "accented" (parity with the retired haystack/unidecode path).
+auto_suggest_analyzer = analyzer(
+    "auto_suggest_analyzer",
+    tokenizer="standard",
+    filter=["lowercase", "asciifolding"],
+)
+
 
 class MultipleChoiceKeywordField(fields.KeywordField):
     def get_value_from_instance(self, instance, field_value_to_ignore=None):
@@ -57,6 +67,19 @@ class MultipleChoiceKeywordField(fields.KeywordField):
 
         # If the value is None or another type, return it as-is
         return value
+
+
+class AutoSuggestMixin:
+    """Provides the default prepare_auto_suggest for name/aka/name_long/city entities."""
+
+    def prepare_auto_suggest(self, instance):
+        parts = [
+            instance.name or "",
+            instance.aka or "",
+            instance.name_long or "",
+            getattr(instance, "city", "") or "",
+        ]
+        return " ".join(p for p in parts if p)
 
 
 class StatusMixin:
@@ -238,7 +261,7 @@ class GeocodeMixin(StatusMixin):
 
 
 @registry.register_document
-class OrganizationDocument(GeocodeMixin, Document):
+class OrganizationDocument(AutoSuggestMixin, GeocodeMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -247,6 +270,8 @@ class OrganizationDocument(GeocodeMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
+
     city = fields.TextField(
         fields={
             "raw": {
@@ -324,7 +349,7 @@ class OrganizationDocument(GeocodeMixin, Document):
 
 
 @registry.register_document
-class FacilityDocument(GeocodeMixin, Document):
+class FacilityDocument(AutoSuggestMixin, GeocodeMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -333,6 +358,7 @@ class FacilityDocument(GeocodeMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -424,7 +450,7 @@ class FacilityDocument(GeocodeMixin, Document):
 
 
 @registry.register_document
-class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
+class InternetExchangeDocument(AutoSuggestMixin, GeocodeMixin, IpAddressMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -433,6 +459,7 @@ class InternetExchangeDocument(GeocodeMixin, IpAddressMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -528,6 +555,7 @@ class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
     asn = fields.LongField(
         fields={
             "raw": {
@@ -585,6 +613,19 @@ class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
 
     info_types = MultipleChoiceKeywordField(attr="info_types")
 
+    def prepare_auto_suggest(self, instance):
+        asn = instance.asn
+        parts = [
+            instance.name or "",
+            instance.aka or "",
+            instance.name_long or "",
+            instance.irr_as_set or "",
+            f"AS{asn}",
+            f"AS-{asn}",
+            str(asn),
+        ]
+        return " ".join(p for p in parts if p)
+
     class Index:
         name = "net"
         settings = {"number_of_shards": 1, "number_of_replicas": 0}
@@ -604,7 +645,7 @@ class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
             # 'name',
             "aka",
             "name_long",
-            # "irr_as_set",
+            "irr_as_set",
             # 'website',
             # 'social_media',
             # 'looking_glass',
@@ -637,7 +678,7 @@ class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
 
 
 @registry.register_document
-class CampusDocument(GeocodeMixin, Document):
+class CampusDocument(AutoSuggestMixin, GeocodeMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -646,6 +687,7 @@ class CampusDocument(GeocodeMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),
@@ -715,7 +757,7 @@ class CampusDocument(GeocodeMixin, Document):
 
 
 @registry.register_document
-class CarrierDocument(GeocodeMixin, Document):
+class CarrierDocument(AutoSuggestMixin, GeocodeMixin, Document):
     name = fields.TextField(
         analyzer=name_analyzer,
         fields={
@@ -724,6 +766,7 @@ class CarrierDocument(GeocodeMixin, Document):
             }
         },
     )
+    auto_suggest = SearchAsYouTypeField(analyzer=auto_suggest_analyzer)
     org = fields.NestedField(
         properties={
             "id": fields.IntegerField(),

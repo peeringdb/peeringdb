@@ -7,20 +7,6 @@
 <div class="view_info left">
 <div class="container">
 
-{% if search_version == 2 %}
-<div class="alert alert-sm alert-info center">
-
-
-  <p>
-    {% blocktrans with feedback="https://forms.gle/TYJgvrCGvyTCiaCY8" q="/search?q="|add:request.GET.q %}
-    You are using our new beta search interface.
-    <a href="{{ q }}">Click here</a> to return to the old interface.
-    <a href="{{ feedback }}">Click here</a> to provide feedback.
-    {% endblocktrans %}
-  </p>
-
-
-</div>
 <div class="modal fade" id="copyQueryModal" tabindex="-1" aria-labelledby="copyQueryModalLabel">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -206,7 +192,6 @@
       </button>
     </div >
   </div>
-{% endif %}
 
 
 <div id="search-list-view" class="search-result mt-3" style="display: none;">
@@ -217,7 +202,7 @@
   {% for result in combined_results %}
   <div class="mb-4">
     <h4>
-      <a href="/{{ result.ref_tag }}/{{ result.id }}">{{ result.name }}{% if search_version == 2 %}{% if result.extra.asn %} ({{ result.extra.asn }}){% endif %}{% endif %}</a>
+      <a href="/{{ result.ref_tag }}/{{ result.id }}">{{ result.name }}{% if result.extra.asn %} ({{ result.extra.asn }}){% endif %}</a>
       {% if result.sponsorship %}
       <a href="/sponsors" class="sponsor {{ result.sponsorship.css }}">{{ result.sponsorship.label }} {% trans "sponsor" %}</a>
       {% endif %}
@@ -292,7 +277,7 @@
       <div class="view_title">{% trans "Networks" %} ({{ count_net }})</div>
       {% for row in search_net%}
       <div class="result_row">
-        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}}{% if search_version == 2 %} ({{ row.extra.asn }}){% endif %}</a>
+        <a href="/{{'Network'|ref_tag}}/{{row.id}}">{{row.name}} ({{ row.extra.asn }})</a>
         {% if row.sub_name %}<div class="highlight">{{ row.sub_name }}</div>{% endif %}
       </div>
       {% endfor %}
@@ -322,7 +307,6 @@
       {% endfor %}
     </div>
   </div>
-  {% if search_version == 2 %}
   <div class="row">
     <div class="col-md-3 col-sm-12 col-12">
       <div class="view_title">{% trans "Campus" %} ({{ count_campus }})</div>
@@ -342,7 +326,6 @@
       {% endfor %}
     </div>
   </div>
-  {% endif %}
 </div>
 
 {% if request.user.is_verified_user %}

@@ -1,5 +1,4 @@
 import json
-import os
 from unittest.mock import MagicMock, patch
 
 import elasticsearch
@@ -9,11 +8,11 @@ from django.core.management import call_command
 from django.test import RequestFactory, TestCase
 
 import peeringdb_server.models as models
-import peeringdb_server.search as search
 import peeringdb_server.views as views
 from peeringdb_server.rest import search_api_view
 from peeringdb_server.search_v2 import (
     add_and_between_keywords,
+    autocomplete_v2,
     build_geo_filter,
     construct_ipv4_query,
     construct_ipv6_query,
@@ -46,9 +45,6 @@ class SearchV2TestCase(TestCase):
         call_command("pdb_generate_test_data", limit=2, commit=True)
 
     def setUp(self):
-        search.ELASTICSEARCH_URL = os.environ.get(
-            "ELASTICSEARCH_URL", "http://localhost:9200"
-        )
         self.indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
         self.factory = RequestFactory()
         self.user = models.User.objects.create_user(
@@ -63,7 +59,7 @@ class SearchV2TestCase(TestCase):
         pass
 
     def test_search_ix(self):
-        response = self.client.get("/search/v2?q=Exchange")
+        response = self.client.get("/search?q=Exchange")
         content = response.content.decode("utf-8")
 
         self.assertIn("Exchanges", content)
@@ -74,7 +70,7 @@ class SearchV2TestCase(TestCase):
             self.assertIn("view_title", content)
 
     def test_search_net(self):
-        response = self.client.get("/search/v2?q=Network")
+        response = self.client.get("/search?q=Network")
         content = response.content.decode("utf-8")
 
         self.assertIn("Networks", content)
@@ -85,7 +81,7 @@ class SearchV2TestCase(TestCase):
             self.assertIn("view_title", content)
 
     def test_search_fac(self):
-        response = self.client.get("/search/v2?q=Facility")
+        response = self.client.get("/search?q=Facility")
         content = response.content.decode("utf-8")
 
         self.assertIn("Facilities", content)
@@ -96,7 +92,7 @@ class SearchV2TestCase(TestCase):
             self.assertIn("view_title", content)
 
     def test_search_org(self):
-        response = self.client.get("/search/v2?q=Organization")
+        response = self.client.get("/search?q=Organization")
         content = response.content.decode("utf-8")
 
         self.assertIn("Organizations", content)
@@ -107,7 +103,7 @@ class SearchV2TestCase(TestCase):
             self.assertIn("view_title", content)
 
     def test_search_campus(self):
-        response = self.client.get("/search/v2?q=Campus")
+        response = self.client.get("/search?q=Campus")
         content = response.content.decode("utf-8")
 
         self.assertIn("Campus", content)
@@ -118,7 +114,7 @@ class SearchV2TestCase(TestCase):
             self.assertIn("view_title", content)
 
     def test_search_carrier(self):
-        response = self.client.get("/search/v2?q=Carrier")
+        response = self.client.get("/search?q=Carrier")
         content = response.content.decode("utf-8")
 
         self.assertIn("Carriers", content)
@@ -127,6 +123,21 @@ class SearchV2TestCase(TestCase):
         carriers = models.Carrier.objects.filter(status="ok")
         if carriers.exists():
             self.assertIn("view_title", content)
+
+    def test_search_v2_url_alias(self):
+        """/search/v2 is an alias for /search — same status and search results."""
+        response_search = self.client.get("/search?q=Exchange")
+        response_v2 = self.client.get("/search/v2?q=Exchange")
+
+        self.assertEqual(response_v2.status_code, 200)
+        self.assertEqual(response_v2.status_code, response_search.status_code)
+        self.assertIn("Exchanges", response_v2.content.decode("utf-8"))
+        self.assertIn("Exchanges", response_search.content.decode("utf-8"))
+
+    def test_search_v2_url_alias_no_redirect(self):
+        """/search/v2 serves directly"""
+        response = self.client.get("/search/v2?q=test", follow=False)
+        self.assertEqual(response.status_code, 200)
 
     def test_process_near_search(self):
         geo = {}
@@ -435,6 +446,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
+                                                "irr_as_set"
                                             ],
                                             "boost": 10.0,
                                         }
@@ -448,6 +460,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
+                                                "irr_as_set"
                                             ],
                                             "boost": 5.0,
                                         }
@@ -460,6 +473,7 @@ class SearchV2TestCase(TestCase):
                                                 "name_long",
                                                 "aka",
                                                 "city",
+                                                "irr_as_set"
                                             ],
                                             "boost": 2.0,
                                         }
@@ -930,6 +944,49 @@ class SearchV2TestCase(TestCase):
         content = json.loads(response.content)
         self.assertIn("No API key provided", content["error"])
 
+    def test_autocomplete_returns_all_categories(self):
+        """autocomplete_v2 result has all six entity-type keys."""
+        result = autocomplete_v2("test")
+        expected_keys = ["fac", "ix", "net", "org", "campus", "carrier"]
+        for key in expected_keys:
+            self.assertIn(key, result)
+            self.assertIsInstance(result[key], list)
+
+    def test_autocomplete_result_shape(self):
+        """Each autocomplete hit has id, name, and org_id fields."""
+        result = autocomplete_v2("test")
+        for category in result.values():
+            for item in category:
+                self.assertIn("id", item)
+                self.assertIn("name", item)
+                self.assertIn("org_id", item)
+
+    def test_api_search_endpoint_returns_categories(self):
+        """GET /api_search?q=<term> returns JSON with all six entity-type keys."""
+        response = self.client.get("/api_search?q=test")
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+        for key in ["fac", "ix", "net", "org", "campus", "carrier"]:
+            self.assertIn(key, content)
+            self.assertIsInstance(content[key], list)
+
+    def test_api_search_endpoint_empty_query(self):
+        """GET /api_search without q returns 400."""
+        response = self.client.get("/api_search")
+        self.assertEqual(response.status_code, 400)
+
+    @patch("peeringdb_server.views.autocomplete_v2")
+    def test_api_search_endpoint_es_error_returns_empty(self, mock_autocomplete):
+        """GET /api_search returns empty categories (not 500) when ES is unavailable."""
+        mock_autocomplete.side_effect = elasticsearch.TransportError("ES unavailable")
+
+        response = self.client.get("/api_search?q=test")
+        self.assertEqual(response.status_code, 200)
+        content = json.loads(response.content)
+        for key in ["fac", "ix", "net", "org", "campus", "carrier"]:
+            self.assertIn(key, content)
+            self.assertEqual(content[key], [])
+
 
 @pytest.mark.django_db
 @pytest.mark.xdist_group(name="elasticsearch_tests")
@@ -940,11 +997,6 @@ class SearchV2SpecificTestCase(TestCase):
     This test class creates its own data and indexes it independently
     to avoid interfering with the main SearchV2TestCase tests.
     """
-
-    def setUp(self):
-        search.ELASTICSEARCH_URL = os.environ.get(
-            "ELASTICSEARCH_URL", "http://elasticsearch:9200"
-        )
 
     def reindex_for_search(self):
         """
@@ -970,7 +1022,7 @@ class SearchV2SpecificTestCase(TestCase):
         )
         self.reindex_for_search()
 
-        response = self.client.get(f"/search/v2?q={net.asn}")
+        response = self.client.get(f"/search?q={net.asn}")
         content = response.content.decode("utf-8")
 
         self.assertEqual(response.status_code, 200)
@@ -984,7 +1036,7 @@ class SearchV2SpecificTestCase(TestCase):
         )
         self.reindex_for_search()
 
-        response = self.client.get(f"/search/v2?q=AS{net.asn}")
+        response = self.client.get(f"/search?q=AS{net.asn}")
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, f"/net/{net.id}")
@@ -994,7 +1046,7 @@ class SearchV2SpecificTestCase(TestCase):
         models.Organization.objects.create(name="Sewan Communications SAS", status="ok")
         self.reindex_for_search()
 
-        response = self.client.get("/search/v2?q=Sewan Communications")
+        response = self.client.get("/search?q=Sewan Communications")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1026,7 +1078,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in charlotte")
+        response = self.client.get("/search?q=fac in charlotte")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1062,7 +1114,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in ca")
+        response = self.client.get("/search?q=fac in ca")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1095,7 +1147,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in ie")
+        response = self.client.get("/search?q=fac in ie")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1127,7 +1179,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=net in chicago")
+        response = self.client.get("/search?q=net in chicago")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1159,7 +1211,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=ix in graz")
+        response = self.client.get("/search?q=ix in graz")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1191,7 +1243,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=org in helsinki")
+        response = self.client.get("/search?q=org in helsinki")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1223,7 +1275,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=carrier in london")
+        response = self.client.get("/search?q=carrier in london")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1255,7 +1307,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in vt, us")
+        response = self.client.get("/search?q=fac in vt, us")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1288,7 +1340,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in in")
+        response = self.client.get("/search?q=fac in in")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1321,7 +1373,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=net in at")
+        response = self.client.get("/search?q=net in at")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1354,7 +1406,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=org in fi")
+        response = self.client.get("/search?q=org in fi")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1387,7 +1439,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=in fi")
+        response = self.client.get("/search?q=in fi")
         self.assertEqual(response.status_code, 200)
 
     def test_search_with_hyphen(self):
@@ -1396,7 +1448,7 @@ class SearchV2SpecificTestCase(TestCase):
         ix = models.InternetExchange.objects.create(name="DE-CIX", status="ok", org=org)
         self.reindex_for_search()
 
-        response = self.client.get(f"/search/v2?q={ix.name}")
+        response = self.client.get(f"/search?q={ix.name}")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1428,7 +1480,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=DE-CIX in Leipzig")
+        response = self.client.get("/search?q=DE-CIX in Leipzig")
         self.assertEqual(response.status_code, 200)
 
     @patch("peeringdb_server.geo.GoogleMaps")
@@ -1465,7 +1517,7 @@ class SearchV2SpecificTestCase(TestCase):
 
         mock_google_maps.return_value = mock_instance
 
-        response = self.client.get("/search/v2?q=fac in vienna")
+        response = self.client.get("/search?q=fac in vienna")
         self.assertEqual(response.status_code, 200)
 
     def test_ix_with_facilities_has_facility_countries(self):
@@ -1614,7 +1666,7 @@ class SearchV2SpecificTestCase(TestCase):
         # Search for IX in France
         # This would previously fail because IX has no coordinates and
         # geo_distance filter would exclude it
-        response = self.client.get("/search/v2?q=ix+in+france")
+        response = self.client.get("/search?q=ix+in+france")
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
@@ -1624,6 +1676,26 @@ class SearchV2SpecificTestCase(TestCase):
             content,
             "IX without coordinates should appear in country-filtered search",
         )
+
+    def test_search_irr_as_set_field(self):
+        """Test that irr_as_set field is included in full searches."""
+        org = models.Organization.objects.create(name="IRR Search Org", status="ok")
+        net = models.Network.objects.create(
+            name="IRR Search Net",
+            asn=64502,
+            irr_as_set="AS-UNIQUEIRRSEARCH",
+            status="ok",
+            org=org,
+        )
+        self.reindex_for_search()
+
+        result = search_v2(["AS-UNIQUEIRRSEARCH"])
+
+        self.assertIn("net", result)
+        self.assertGreater(len(result["net"]), 0)
+
+        net_names = [item["name"] for item in result["net"]]
+        self.assertIn(net.name, net_names, "Network should be found via irr_as_set field")
 
     def test_search_city_field(self):
         """
@@ -1648,6 +1720,25 @@ class SearchV2SpecificTestCase(TestCase):
         fac_names = [item["name"] for item in result["fac"]]
         self.assertIn(fac.name, fac_names, "Facility should be found via city field")
 
+    def test_autocomplete_city_match(self):
+        """autocomplete_v2 finds a facility when typing its city name."""
+        org = models.Organization.objects.create(name="City AC Org", status="ok")
+        fac = models.Facility.objects.create(
+            name="City AC Facility",
+            status="ok",
+            org=org,
+            city="Testcityautocomplete",
+            country="US",
+            latitude=40.7128,
+            longitude=-74.0060,
+        )
+        self.reindex_for_search()
+
+        result = autocomplete_v2("Testcityautocomplete")
+
+        fac_names = [item["name"] for item in result["fac"]]
+        self.assertIn(fac.name, fac_names, "Facility should be found via city in autocomplete")
+
     def test_search_numeric_name_not_asn(self):
         """
         Test that searching for a numeric string matches network names,
@@ -1670,3 +1761,74 @@ class SearchV2SpecificTestCase(TestCase):
 
         net_names = [item["name"] for item in result["net"]]
         self.assertIn(net.name, net_names, "Network with numeric name should be found")
+
+    def test_autocomplete_asn_match(self):
+        """autocomplete_v2 finds a network when typing the AS<asn> prefix."""
+        org = models.Organization.objects.create(name="ASN Autocomplete Org", status="ok")
+        net = models.Network.objects.create(
+            name="ASN Autocomplete Net", asn=64500, status="ok", org=org
+        )
+        self.reindex_for_search()
+
+        result = autocomplete_v2("AS645")
+
+        net_ids = [item["id"] for item in result["net"]]
+        self.assertIn(net.id, net_ids, "Network should be found by AS<asn> prefix")
+
+    def test_autocomplete_irr_as_set_match(self):
+        """autocomplete_v2 finds a network when typing its irr_as_set value."""
+        org = models.Organization.objects.create(name="IRR Autocomplete Org", status="ok")
+        net = models.Network.objects.create(
+            name="IRR Autocomplete Net",
+            asn=64501,
+            irr_as_set="AS-TESTIRR",
+            status="ok",
+            org=org,
+        )
+        self.reindex_for_search()
+
+        result = autocomplete_v2("AS-TESTI")
+
+        net_ids = [item["id"] for item in result["net"]]
+        self.assertIn(net.id, net_ids, "Network should be found by irr_as_set prefix")
+
+    def test_autocomplete_hide_ixs_without_fac(self):
+        """hide_ixs_without_fac user preference excludes IXes with fac_count=0."""
+        org = models.Organization.objects.create(name="IXFilter Org", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="IXFilter NoFac", status="ok", org=org, city="Berlin", country="DE",
+            region_continent="Europe",
+        )
+        self.reindex_for_search()
+
+        user = models.User.objects.create_user(
+            username="ixfilteruser", password="pass", email="ixfilter@example.com"
+        )
+
+        result_without_pref = autocomplete_v2("IXFilter", user=None)
+        ix_names_without = [item["name"] for item in result_without_pref["ix"]]
+        self.assertIn(ix.name, ix_names_without, "IX should appear when preference is off")
+
+        user.opt_flags |= settings.OPTFLAG_HIDE_IX_WITHOUT_FAC
+        user.save()
+        result_filtered = autocomplete_v2("IXFilter", user=user)
+        ix_names_filtered = [item["name"] for item in result_filtered["ix"]]
+        self.assertNotIn(ix.name, ix_names_filtered, "IX with no facs should be hidden")
+
+    def test_autocomplete_accent_insensitive(self):
+        """auto_suggest_analyzer asciifolding lets accented names match unaccented queries."""
+        org = models.Organization.objects.create(name="Accent Org", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="Münchner Internet Exchange",
+            status="ok",
+            org=org,
+            city="Munich",
+            country="DE",
+            region_continent="Europe",
+        )
+        self.reindex_for_search()
+
+        result = autocomplete_v2("Munchner")
+
+        ix_names = [item["name"] for item in result["ix"]]
+        self.assertIn(ix.name, ix_names, "Accented name should match unaccented query")

@@ -637,8 +637,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 else:
                     filters[f"{k}__iexact"] = v
 
-        # any object ids we got back from processing a `q` (haystack)
-        # search we will now merge into the `id__in` filter
+        # merge name_search result ids into the id__in filter
 
         if q_ids:
             if filters.get("id__in"):
@@ -1955,13 +1954,13 @@ def search_api_view(request):
     if len(auth) != 2 or not auth[1].strip():
         return JsonResponse({"error": "API key cannot be empty"}, status=401)
 
-    q, geo, original_query = extract_query(request, version=2)
+    q, geo, original_query = extract_query(request)
 
     if not q and not geo:
         return JsonResponse({})
 
     result = perform_search(
-        q, geo, version=2, original_query=original_query, user=request.user
+        q, geo, original_query=original_query, user=request.user
     )
 
     response_data = serialize_search_results(result)
