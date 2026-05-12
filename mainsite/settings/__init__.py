@@ -7,10 +7,10 @@ from datetime import datetime
 
 import django.conf.global_settings
 import django.conf.locale
-import redis
 import structlog
 import urllib3
-from redis.sentinel import Sentinel
+from redis.backoff import NoBackoff
+from redis.retry import Retry
 
 from mainsite.oauth2.scopes import SupportedScopes
 
@@ -234,58 +234,6 @@ def set_from_file(name, path, default=_DEFAULT_ARG, envvar_type=None):
     set_option(name, value, envvar_type)
 
 
-def can_ping_redis(host, port, password):
-    """
-    Check if Redis is available.
-    """
-    client = redis.StrictRedis(host=host, port=port, password=password)
-    try:
-        return client.ping()
-    except redis.ConnectionError:
-        return False
-
-
-def can_ping_redis_sentinel(sentinels, master_name, password, sentinel_password=None):
-    """
-    Check if Redis Sentinel is available by attempting to connect
-    and discover the master.
-    """
-    try:
-        sentinel_nodes = []
-        for sentinel in sentinels:
-            if isinstance(sentinel, str):
-                # Format: "host:port"
-                host, port = sentinel.split(":")
-                sentinel_nodes.append((host, int(port)))
-            else:
-                # Format: ("host", port) or {"host": "...", "port": ...}
-                if isinstance(sentinel, dict):
-                    sentinel_nodes.append((sentinel["host"], int(sentinel["port"])))
-                else:
-                    sentinel_nodes.append(sentinel)
-
-        sentinel_kwargs = {}
-        if sentinel_password:
-            sentinel_kwargs["password"] = sentinel_password
-
-        sentinel = Sentinel(
-            sentinel_nodes,
-            socket_timeout=0.5,
-            sentinel_kwargs=sentinel_kwargs,
-        )
-
-        master = sentinel.master_for(
-            master_name,
-            socket_timeout=0.5,
-            password=password,
-        )
-        return master.ping()
-
-    except Exception as e:
-        print_debug(f"Redis Sentinel connection error: {e}")
-        return False
-
-
 def get_cache_backend(cache_name):
     """
     Function to get cache backend based on environment variable.
@@ -301,57 +249,40 @@ def get_cache_backend(cache_name):
         options["CULL_FREQUENCY"] = 10
 
     if cache_backend == "RedisCache":
-        print_debug(f"Checking if Redis is available for {cache_name}")
-
         if REDIS_SENTINEL_ENABLED:
-            if can_ping_redis_sentinel(
-                REDIS_SENTINEL_NODES,
-                REDIS_HOST,
-                REDIS_PASSWORD,
-                REDIS_SENTINEL_PASSWORD,
-            ):
-                print_debug(
-                    "Was able to ping Redis Sentinel, using django-redis with Sentinel"
-                )
-                return {
-                    "BACKEND": "django_redis.cache.RedisCache",
-                    "LOCATION": f"redis://{REDIS_HOST}/0",
-                    "OPTIONS": {
-                        "CLIENT_CLASS": "django_redis.client.SentinelClient",
-                        "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
-                        "SENTINELS": REDIS_SENTINEL_NODES,
-                        "PASSWORD": REDIS_PASSWORD,
-                        "SENTINEL_KWARGS": {"password": REDIS_SENTINEL_PASSWORD}
-                        if REDIS_SENTINEL_PASSWORD
-                        else {},
-                        "CONNECTION_POOL_KWARGS": {
-                            "socket_timeout": REDIS_SOCKET_TIMEOUT,
-                            "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
-                            "socket_keepalive": True,
-                            "retry_on_timeout": REDIS_RETRY_ON_TIMEOUT,
-                        },
-                    },
-                }
-            else:
-                print_debug(
-                    f"Was not able to ping Redis Sentinel for {cache_name}, falling back to single Redis or DatabaseCache"
-                )
-        elif can_ping_redis(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD):
-            print_debug("Was able to ping Redis, using RedisCache")
             return {
-                "BACKEND": "django.core.cache.backends.redis.RedisCache",
-                "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
-                "OPTIONS": {},
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": f"redis://{REDIS_HOST}/0",
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.SentinelClient",
+                    "CONNECTION_FACTORY": "django_redis.pool.SentinelConnectionFactory",
+                    "SENTINELS": REDIS_SENTINEL_NODES,
+                    "PASSWORD": REDIS_PASSWORD,
+                    "SENTINEL_KWARGS": {
+                        "socket_timeout": REDIS_SOCKET_TIMEOUT,
+                        "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
+                        "retry": _REDIS_RETRY,
+                        **(
+                            {"password": REDIS_SENTINEL_PASSWORD}
+                            if REDIS_SENTINEL_PASSWORD
+                            else {}
+                        ),
+                    },
+                    "CONNECTION_POOL_KWARGS": {
+                        "socket_timeout": REDIS_SOCKET_TIMEOUT,
+                        "socket_connect_timeout": REDIS_SOCKET_CONNECT_TIMEOUT,
+                        "socket_keepalive": True,
+                        "retry_on_timeout": REDIS_RETRY_ON_TIMEOUT,
+                        "retry": _REDIS_RETRY,
+                    },
+                },
             }
-        else:
-            # fall back to DatabseCache if cache_name is sessions else
-            # LocMemCache
-            cache_backend = (
-                "DatabaseCache" if cache_name == "session" else "LocMemCache"
-            )
-            print_debug(
-                f"Was not able to ping Redis for {cache_name}, falling back to {cache_backend}"
-            )
+
+        return {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+            "OPTIONS": {},
+        }
 
     if cache_backend == "LocMemCache":
         return {
@@ -438,6 +369,16 @@ set_from_env("REDIS_SENTINEL_PASSWORD", "")
 set_option("REDIS_SOCKET_TIMEOUT", 0.5)
 set_option("REDIS_SOCKET_CONNECT_TIMEOUT", 0.5)
 set_option("REDIS_RETRY_ON_TIMEOUT", True)
+
+# redis-py retries ConnectionError 3x by default. With 3 sentinels per pool
+# that turns a Sentinel outage into a 15-30s hang per cold cache, which
+# DJANGO_REDIS_IGNORE_EXCEPTIONS can't shorten (it only swallows exceptions,
+# not retry loops). Default to 0 so failures surface fast; raise to test
+# retry behaviour against transient outages.
+set_option("REDIS_CONNECT_RETRIES", 0)
+# Constructed here (not at the top of the file) because it depends on the
+# REDIS_CONNECT_RETRIES set_option above. Don't move.
+_REDIS_RETRY = Retry(NoBackoff(), retries=REDIS_CONNECT_RETRIES)
 
 if "REDIS_SENTINEL_NODES" in os.environ:
     try:
@@ -702,6 +643,14 @@ if CACHE_MAX_ENTRIES < 5000:
     raise ValueError("CACHE_MAX_ENTRIES needs to be >= 5000 (#1151)")
 
 
+# Default to DB-backed sessions so PeeringDB can serve auth flows without
+# Redis. Set SESSION_ENGINE=peeringdb_server.sessions to use the cache
+# backend instead — recommended when Redis is a required dependency (e.g.
+# Sentinel HA setups) and the speed of cache-backed sessions is wanted.
+# That backend probes the cache before Django's 10000-iteration create()
+# loop so login/signup fail fast instead of hanging when Redis is down.
+# Note: switching engines logs out users whose sessions are in the previous
+# backend, since the new backend can't see the old storage.
 set_option("SESSION_ENGINE", "django.contrib.sessions.backends.db")
 
 set_option("DEFAULT_CACHE_BACKEND", "DatabaseCache")
@@ -721,7 +670,16 @@ for cache_name in cache_names:
 
 # When enabled, redis cache errors will be silently ignored
 # rather than crashing the request
-set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", False)
+set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", True)
+
+# When the rate-limit cache is unreachable, allow requests through instead
+# of treating "unknown" as "over limit" (django-ratelimit defaults to closed).
+# Tradeoff: every per-IP/per-user django_ratelimit limiter — middleware
+# RATELIMIT_WEB_PAGE_RATE, view-level decorators on signup/email/IX-F flows,
+# API throttles via get_usage() — becomes unenforced during a Redis outage.
+# Login brute-force protection is unaffected because that limiter is currently
+# disabled. Acceptable here because the alternative is 429ing every request.
+set_bool("RATELIMIT_FAIL_OPEN", True)
 
 # keep database connection open for n seconds
 # this is defined at the module level so we can expose

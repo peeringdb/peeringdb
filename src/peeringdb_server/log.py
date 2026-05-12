@@ -28,8 +28,11 @@ class ThrottledAdminEmailHandler(AdminEmailHandler):
         try:
             counter = self.increment_counter()
         except Exception:
-            pass
-        else:
-            if counter > settings.ERROR_EMAILS_LIMIT:
-                return
+            counter = None
+        # counter is None when the cache backend silently fails (e.g.
+        # DJANGO_REDIS_IGNORE_EXCEPTIONS swallowed a connection error).
+        # Without a counter we can't enforce the throttle, and a sustained
+        # cache outage would otherwise mean one email per error. Fail closed.
+        if counter is None or counter > settings.ERROR_EMAILS_LIMIT:
+            return
         super().emit(record)
