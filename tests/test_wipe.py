@@ -63,9 +63,7 @@ class TestWipe(ClientCase):
         for model in Backend.RESOURCE_MAP.values():
             for field in model._meta.fields:
                 if field.name in ("created", "updated"):
-                    field_flags.append(
-                        (field, field.auto_now_add, field.auto_now)
-                    )
+                    field_flags.append((field, field.auto_now_add, field.auto_now))
 
         def _restore_field_flags():
             for field, auto_now_add, auto_now in field_flags:
