@@ -27,7 +27,12 @@ from django.apps import apps
 from django.conf import settings
 from django.conf import settings as dj_settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
+from django.core.exceptions import (
+    FieldDoesNotExist,
+    FieldError,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.db import connection, transaction
 from django.db.models import DateTimeField, Q
 from django.http import JsonResponse
@@ -99,6 +104,35 @@ from peeringdb_server.views import extract_query, perform_search
 RATELIMITS = dj_settings.RATELIMITS
 
 logger = logging.getLogger(__name__)
+
+
+def _filters_may_produce_duplicates(model, filters):
+    """
+    Return True if any filter key traverses a reverse FK or M2M relation on
+    `model`. Such joins can fan out and produce duplicate driver rows in the
+    result set, which `.distinct()` is needed to collapse. Filters on own
+    fields or through forward FK / OneToOne relations join 1:1 and cannot
+    produce duplicates.
+
+    Walks each `field__field__...__lookup` key segment by segment against the
+    model's field metadata. If a segment resolves to a `one_to_many` (reverse
+    FK) or `many_to_many` field, duplicates are possible. Segments that do not
+    resolve to a field (e.g. lookup suffixes like `lte`, `iexact`) end the
+    walk for that key without flagging it.
+    """
+    for key in filters:
+        current = model
+        for part in key.split("__"):
+            try:
+                field = current._meta.get_field(part)
+            except FieldDoesNotExist:
+                break
+            if field.many_to_many or field.one_to_many:
+                return True
+            related = getattr(field, "related_model", None)
+            if related is not None:
+                current = related
+    return False
 
 
 class DataException(ValueError):
@@ -663,9 +697,12 @@ class ModelViewSet(viewsets.ModelViewSet):
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
 
-        # using nested filters will produce duplicates of the same object
-        # unless we call distinct()
-        qset = qset.distinct()
+        # distinct() is only needed when a filter traverses a reverse FK or
+        # M2M relation, where the join can fan out and yield duplicate driver
+        # rows. Forward-FK / own-field filters join 1:1 and never duplicate,
+        # so the DISTINCT/temp-table pass is unnecessary in that case.
+        if _filters_may_produce_duplicates(self.model, filters):
+            qset = qset.distinct()
 
         if not self.kwargs:
             if since > 0:
