@@ -1,4 +1,4 @@
-Generated from data_views.py on 2026-04-21 14:00:55.614796
+Generated from data_views.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.data_views
 
@@ -30,17 +30,41 @@ of a campus
 
 Return all valid countries and their country codes.
 
+Served with public Cache-Control headers — must remain user-agnostic.
+If this ever returns user-specific data, update CacheControlMiddleware.static_views.
+
 ---
 ## countries_w_blank
 `def countries_w_blank(request)`
 
 Return all valid countries and their country codes with a blank field.
 
+Served with public Cache-Control headers — must remain user-agnostic.
+If this ever returns user-specific data, update CacheControlMiddleware.static_views.
+
+---
+## enum
+`def enum(request, name)`
+
+Return the list of valid values for the given enum type.
+
+Served with public Cache-Control headers — must remain user-agnostic.
+If this ever returns user-specific data, update CacheControlMiddleware.static_views.
+
 ---
 ## facilities
 `def facilities(request)`
 
 Return all valid facilities with id and name.
+
+---
+## languages
+`def languages(request)`
+
+Return all available languages/locales.
+
+Served with public Cache-Control headers — must remain user-agnostic.
+If this ever returns user-specific data, update CacheControlMiddleware.static_views.
 
 ---
 ## my_organizations

@@ -1,4 +1,4 @@
-Generated from api_schema.py on 2026-04-21 14:00:55.614796
+Generated from api_schema.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.api_schema
 
@@ -119,6 +119,22 @@ Override this so operation ids become "{op} {reftag}"
 `def get_operation_type(self, *args)`
 
 Determine if this is a list retrieval operation.
+
+---
+#### map_field
+`def map_field(self, field)`
+
+NOTE: For SerializerMethodField, the schema type is inferred from the
+return type annotation on the corresponding get_<field_name> method.
+Without an annotation, DRF defaults to string.
+
+Always annotate get_* methods that return non-string types, e.g.:
+
+    def get_fac_count(self, inst) -> int:
+        return inst.fac_set.count()
+
+Supported annotations: int -> integer, float -> number,
+                        bool -> boolean, str -> string.
 
 ---
 #### request_body_schema

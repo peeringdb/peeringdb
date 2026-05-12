@@ -1,4 +1,4 @@
-Generated from documents.py on 2026-04-21 14:00:55.614796
+Generated from documents.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.documents
 
@@ -20,34 +20,40 @@ Validates a longitude.
 # Classes
 ---
 
+## AutoSuggestMixin
+
+```
+AutoSuggestMixin(builtins.object)
+```
+
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
+
+
 ## CampusDocument
 
 ```
-CampusDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+CampusDocument(peeringdb_server.documents.AutoSuggestMixin, peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
-Cleans up invalid lat/lng values beforee passing
-them to the geo code field
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 
 
 ## CarrierDocument
 
 ```
-CarrierDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+CarrierDocument(peeringdb_server.documents.AutoSuggestMixin, peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
-Cleans up invalid lat/lng values beforee passing
-them to the geo code field
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 
 
 ## FacilityDocument
 
 ```
-FacilityDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+FacilityDocument(peeringdb_server.documents.AutoSuggestMixin, peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
-Cleans up invalid lat/lng values beforee passing
-them to the geo code field
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 
 
 ## GeocodeMixin
@@ -108,11 +114,10 @@ for all facilities associated with the object
 ## InternetExchangeDocument
 
 ```
-InternetExchangeDocument(peeringdb_server.documents.GeocodeMixin, peeringdb_server.documents.IpAddressMixin, django_elasticsearch_dsl.documents.DocType)
+InternetExchangeDocument(peeringdb_server.documents.AutoSuggestMixin, peeringdb_server.documents.GeocodeMixin, peeringdb_server.documents.IpAddressMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
-Cleans up invalid lat/lng values beforee passing
-them to the geo code field
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 
 
 ## MultipleChoiceKeywordField
@@ -158,11 +163,10 @@ them to the geo code field
 ## OrganizationDocument
 
 ```
-OrganizationDocument(peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
+OrganizationDocument(peeringdb_server.documents.AutoSuggestMixin, peeringdb_server.documents.GeocodeMixin, django_elasticsearch_dsl.documents.DocType)
 ```
 
-Cleans up invalid lat/lng values beforee passing
-them to the geo code field
+Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 
 
 ## StatusMixin

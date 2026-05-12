@@ -1,4 +1,4 @@
-Generated from views.py on 2026-04-21 14:00:55.614796
+Generated from views.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.views
 
@@ -28,15 +28,15 @@ next Sunday.
 
 ---
 ## build_template_environment
-`def build_template_environment(result, geo, version, request, q)`
+`def build_template_environment(result, geo, request, q)`
 
 Constructs the environment dictionary for rendering the template.
 
 Args:
     result: The search results.
     geo: The geographical search parameters.
-    version: The version of the search functionality.
-    q: Search query string
+    request: The HTTP request.
+    q: Search query string.
 
 Returns:
     dict: The environment variables for the template.
@@ -75,13 +75,9 @@ to be used in template context.
 
 ---
 ## extract_query
-`def extract_query(request, version)`
+`def extract_query(request)`
 
 Extracts the query and geographical parameters from the request.
-
-Args:
-    request: The HTTP request object.
-    version: The version of the search functionality.
 
 Returns:
     tuple: (query list, geo dictionary, original query string)
@@ -107,12 +103,9 @@ list: Page numbers to display
 
 ---
 ## handle_asn_query
-`def handle_asn_query(q, version)`
+`def handle_asn_query(q)`
 
 Checks if the query is for a direct ASN or AS and handles redirection.
-
-Args:
-    q: The list of query terms.
 
 Returns:
     HttpResponseRedirect or None
@@ -173,15 +166,15 @@ Returns:
 
 ---
 ## perform_search
-`def perform_search(q, geo, version, original_query, user)`
+`def perform_search(q, geo, original_query, user)`
 
-Executes the search based on the query and version.
+Executes the search using Elasticsearch (v2).
 
 Args:
     q: The list of query terms.
     geo: The geographical search parameters.
-    version: The version of the search functionality.
     original_query: The original search query string.
+    user: The requesting user.
 
 Returns:
     dict: Search results.
@@ -237,17 +230,10 @@ contact point for peeringdb
 
 ---
 ## render_search_result
-`def render_search_result(request, version=2)`
+`def render_search_result(request)`
 
 Triggered by hitting enter on the main search bar.
 Renders a search result page based on the query provided.
-
-Args:
-    request: The HTTP request object containing the search query.
-    version: The version of the search functionality to use (default is 2).
-
-Returns:
-    HttpResponse: The rendered search result page.
 
 ---
 ## request_api_search

@@ -1,4 +1,4 @@
-Generated from two_factor_ui_next.py on 2026-04-21 14:00:55.614796
+Generated from two_factor_ui_next.py on 2026-05-12 15:10:38.212377
 
 # peeringdb_server.two_factor_ui_next
 
@@ -82,3 +82,4 @@ Mixin to override the template selection based on the user's UI version preferen
 
 It uses `resolve_template()` to determine whether to serve the default or 'next' version
 of the template dynamically, depending on user flags or default settings.
+

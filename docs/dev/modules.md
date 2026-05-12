@@ -1,4 +1,4 @@
-Generated on 2026-04-21 14:00:55.614796
+Generated on 2026-05-12 15:10:38.212377
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -51,6 +51,10 @@ Authentication utilities for securing API access.
 
 Provides decorators to enforce Basic Authentication or API Key Authentication on IX-F import preview.
 
+## [auto_approval.py](/docs/dev/modules/auto_approval.py.md)
+
+# Functions
+
 ## [autocomplete_views.py](/docs/dev/modules/autocomplete_views.py.md)
 
 Autocomplete views.
@@ -73,6 +77,27 @@ This holds JSON views for various data sets.
 
 These are needed for filling form-selects for editable
 mode in UX.
+
+## [db_replica.py](/docs/dev/modules/db_replica.py.md)
+
+Read-replica routing support.
+
+When a read replica is configured (``DATABASE_REPLICA_HOST``) and the
+middleware kill-switch is on (``DATABASE_REPLICA_ROUTING_ENABLED``), the
+``ReadReplicaRouterMiddleware`` defined here pins reads on safe HTTP
+methods (GET / HEAD / OPTIONS) to the ``read`` database alias.
+
+The decision is made once at request start. After a write occurs in a
+request, a short-TTL cookie (``multidb_pin_writes``) is stamped on the
+response so the same client's subsequent GETs stay on primary until the
+replica is expected to have caught up.
+
+``use_primary_db()`` is provided as an in-request escape hatch for the
+rare GET handler that needs read-your-own-writes semantics.
+
+With either gate off this module's middleware is not installed and the
+router (``peeringdb_server.db_router.DatabaseRouter``) defaults to
+``default``, so importing this module is always safe.
 
 ## [db_router.py](/docs/dev/modules/db_router.py.md)
 
@@ -189,6 +214,12 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 
 View for organization administrative actions (/org endpoint).
 
+## [pagination.py](/docs/dev/modules/pagination.py.md)
+
+Shared pagination classes for the PeeringDB REST API.
+
+Extracted here to avoid circular imports between rest.py and api_cache.py.
+
 ## [permissions.py](/docs/dev/modules/permissions.py.md)
 
 Utilities for permission handling.
@@ -233,28 +264,14 @@ The peeringdb REST API is implemented through django-rest-framework.
 
 Custom rate limit handlers for the REST API.
 
-## [search.py](/docs/dev/modules/search.py.md)
-
-Search implementation used for the peeringdb top search bar, name
-searches through the api `name_search` filter, as well as advanced
-search functionality.
-
-Search logic is handled by django-haystack and whoosh.
-
-Refer to search_indexes.py for search index definition.
-
-## [search_indexes.py](/docs/dev/modules/search_indexes.py.md)
-
-Defines django-haystack search indexes.
-
 ## [search_v2.py](/docs/dev/modules/search_v2.py.md)
 
 Search v2 implementation used for the PeeringDB top search bar.
 
 This module constructs and executes advanced Elasticsearch queries with
-support for geo-based filtering, keyword logic (AND/OR), and partial
-IPv6 matching. It includes functionality to prioritize exact and "OR"
-term matches and organizes results alphabetically.
+support for geo-based filtering, keyword logic (AND/OR), autocomplete search
+and partial IPv6 matching. It includes functionality to prioritize exact
+and "OR" term matches and organizes results alphabetically.
 
 ## [serializers.py](/docs/dev/modules/serializers.py.md)
 
@@ -268,6 +285,10 @@ Custom ModelSerializer implements logic for the expansion of relationships drive
 
 Special api filtering implementation should be done through the `prepare_query`
 method.
+
+## [sessions.py](/docs/dev/modules/sessions.py.md)
+
+# Classes
 
 ## [settings.py](/docs/dev/modules/settings.py.md)
 
@@ -323,3 +344,4 @@ View definitions:
 - Entity views (network, facility, internet exchange and organization)
 - Sponsorships
 - User Registration
+
