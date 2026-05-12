@@ -3,6 +3,7 @@
 import ast
 import os
 import sys
+import warnings
 from datetime import datetime
 
 import django.conf.global_settings
@@ -702,6 +703,69 @@ DATABASES = {
     },
 }
 
+# -----------------------------------------------------------------------------
+# Read-replica routing (optional, default off)
+#
+# Two independent gates control routing — both must be on for GETs to be
+# routed to the replica:
+#   1. DATABASE_REPLICA_HOST set and != DATABASE_HOST → "read" alias is added
+#      to DATABASES, available for ad-hoc .using("read") use.
+#   2. DATABASE_REPLICA_ROUTING_ENABLED=True → router consults the
+#      request-scoped flag and the middleware is appended to MIDDLEWARE.
+# With either gate off the app behaves identically to a single-DB deploy.
+
+set_option("DATABASE_REPLICA_HOST", "")
+set_option("DATABASE_REPLICA_PORT", DATABASE_PORT)
+set_option("DATABASE_REPLICA_NAME", DATABASE_NAME)
+set_option("DATABASE_REPLICA_USER", DATABASE_USER)
+set_option("DATABASE_REPLICA_PASSWORD", DATABASE_PASSWORD)
+set_bool("DATABASE_REPLICA_ROUTING_ENABLED", False)
+# TTL of the post-write pin cookie. Defaults to 15s (matches the
+# django-multidb-router default) which is conservative — over-long is
+# cheap (a bit of extra primary load); under-short causes user-visible
+# stale reads. Tune down once observed replication lag is known.
+set_option("DATABASE_REPLICA_PIN_COOKIE_MAX_AGE", 15)
+
+DATABASE_REPLICA_CONFIGURED = bool(
+    DATABASE_REPLICA_HOST and DATABASE_REPLICA_HOST != DATABASE_HOST
+)
+
+if DATABASE_REPLICA_HOST and DATABASE_REPLICA_HOST == DATABASE_HOST:
+    warnings.warn(
+        "DATABASE_REPLICA_HOST is set but equals DATABASE_HOST. The replica "
+        "config is being treated as inactive (no separate connection will "
+        "be opened); if this is unintended, point DATABASE_REPLICA_HOST at "
+        "the actual replica.",
+        stacklevel=1,
+    )
+
+if DATABASE_REPLICA_CONFIGURED:
+    DATABASES["read"] = {
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
+        "HOST": DATABASE_REPLICA_HOST,
+        "PORT": DATABASE_REPLICA_PORT,
+        "NAME": DATABASE_REPLICA_NAME,
+        "USER": DATABASE_REPLICA_USER,
+        "PASSWORD": DATABASE_REPLICA_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
+    }
+    # Install the router whenever the alias exists, independent of the
+    # middleware gate. The router's allow_migrate and db_for_write are
+    # pure safety; only db_for_read consults the request flag, which
+    # defaults False, so this is a no-op for runtime read routing in the
+    # 'replica configured, middleware off' staging state.
+    DATABASE_ROUTERS = ["peeringdb_server.db_router.DatabaseRouter"]
+elif DATABASE_REPLICA_ROUTING_ENABLED and not DATABASE_REPLICA_HOST:
+    # Only fires when HOST is unset — the host==primary case has its
+    # own dedicated warning above, so an operator with that misconfig
+    # gets one focused message instead of two.
+    warnings.warn(
+        "DATABASE_REPLICA_ROUTING_ENABLED=True but DATABASE_REPLICA_HOST "
+        "is not set. Read-replica routing is inactive — neither the "
+        "router nor the middleware will be installed.",
+        stacklevel=1,
+    )
+
 # Set file logging path
 set_option("LOGFILE_PATH", os.path.join(BASE_DIR, "var/log/django.log"))
 
@@ -1114,6 +1178,15 @@ MIDDLEWARE += (
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
 )
+
+# Appended last (innermost middleware): with DB-backed sessions, hoisting
+# this earlier would put SessionMiddleware's session-touch writes inside
+# the routing scope and pin every authenticated GET via post_save. After
+# the SESSION_ENGINE=cached_db follow-up under #458 lands, this middleware
+# can move outward so framework-level reads (auth, structlog) also get
+# replica relief.
+if DATABASE_REPLICA_CONFIGURED and DATABASE_REPLICA_ROUTING_ENABLED:
+    MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
 
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": OIDC_ENABLED,
@@ -1724,5 +1797,31 @@ set_option("MFA_FORCE_HARD_START", None, envvar_type=str)
 # if set convert to datetime off of YYYY-MM-DD
 if MFA_FORCE_HARD_START:
     MFA_FORCE_HARD_START = datetime.strptime(MFA_FORCE_HARD_START, "%Y-%m-%d")
+
+# -----------------------------------------------------------------------------
+# Test-mode read-replica wiring.
+#
+# In RELEASE_ENV=run_tests, install the production routing primitives but
+# back the "read" alias with default's connection (TEST.MIRROR=default).
+# This exercises the same router + middleware path production runs without
+# bootstrapping a second database. Overrides anything an operator's
+# smoke-test .env may have configured.
+if RELEASE_ENV == "run_tests":
+    DATABASES["read"] = {
+        "ENGINE": f"django.db.backends.{DATABASE_ENGINE}",
+        "HOST": DATABASE_HOST,
+        "PORT": DATABASE_PORT,
+        "NAME": DATABASE_NAME,
+        "USER": DATABASE_USER,
+        "PASSWORD": DATABASE_PASSWORD,
+        "CONN_MAX_AGE": CONN_MAX_AGE,
+        "TEST": {"MIRROR": "default"},
+    }
+    DATABASE_ROUTERS = ["peeringdb_server.db_router.DatabaseRouter"]
+    if (
+        "peeringdb_server.db_replica.ReadReplicaRouterMiddleware"
+        not in MIDDLEWARE
+    ):
+        MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
 
 print_debug(f"loaded settings for PeeringDB {PEERINGDB_VERSION} (DEBUG: {DEBUG})")

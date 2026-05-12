@@ -19,7 +19,6 @@ OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH = ""
 
 BASE_URL = "https://localhost"
 PASSWORD_RESET_URL = "localhost"
-DATABASE_ROUTERS = ["peeringdb_server.db_router.TestRouter"]
 SUGGEST_ENTITY_ORG = 1234
 API_CACHED_ENABLED = False
 NSP_GUEST_GROUP = "guest"
