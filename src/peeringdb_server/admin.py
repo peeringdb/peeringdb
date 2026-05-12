@@ -1017,6 +1017,26 @@ class InternetExchangeAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMi
             return mark_safe(f'<a href="{url}">{url}</a>')
         return None
 
+    def get_deleted_objects(self, objs, request):
+        deleted_objects, model_count, perms_needed, protected = super().get_deleted_objects(
+            objs, request
+        )
+        if request.user.is_superuser:
+            # IX soft-delete only sets status="deleted" — it does not cascade
+            # into IXFMemberData or IXLanIXFMemberImportLog. Those records stay
+            # in the DB (dormant but intact) and the importer skips them once
+            # the IXLan is no longer status="ok". Django's confirmation page
+            # incorrectly shows them as "would be deleted" because the FK exists,
+            # so strip them from perms_needed to unblock the page. Their own
+            # has_delete_permission stays False to prevent direct manual deletion.
+            # Issue #1875.
+            ixf_names = {
+                str(IXLanIXFMemberImportLog._meta.verbose_name),
+                str(IXFMemberData._meta.verbose_name),
+            }
+            perms_needed -= ixf_names
+        return deleted_objects, model_count, perms_needed, protected
+
 
 class IXLanAdminForm(StatusForm):
     def __init__(self, *args, **kwargs):
@@ -1159,6 +1179,8 @@ class IXLanIXFMemberImportLogAdmin(
     actions = [rollback]
 
     def has_delete_permission(self, request, obj=None):
+        # Deleting import logs removes the ability to roll back changes that
+        # the IX-F importer already applied to member networks under that IX.
         return False
 
     def changes(self, obj):
@@ -2709,6 +2731,9 @@ class IXFMemberDataAdmin(
         return False
 
     def has_delete_permission(self, request, obj=None):
+        # Deleting member data removes the previous state used for change
+        # detection between IX-F imports, breaking diff logic and causing
+        # duplicate notifications on the next import run.
         return False
 
     def remote_data(self, obj):

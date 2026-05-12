@@ -665,6 +665,13 @@
               </div>
             </div>
 
+            <div class="row">
+              <div class="col-4 col-sm-5 col-md-4">{% trans "IX-F Member List URL" %}</div>
+              <div class="col-8 col-sm-7 col-md-8">
+                <div data-edit-type="url"
+                     data-edit-name="ixf_ixp_member_list_url"></div>
+              </div>
+            </div>
 
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4"> {% trans "Health Check" %}
@@ -1160,6 +1167,14 @@ twentyc.data.load("key_permissions");
 $(document).ready(function() {
   PeeringDB.list_ext_add($('#create-fac-form'),$('#api-listing-fac'));
   PeeringDB.list_ext_add($('#create-ix-form'),$('#api-listing-ix'));
+  $('#create-ix-form').on('action-success:submit', function(ev, data) {
+    var reasonEl = $(this).find('.create-ix-ixf-pending-reason');
+    if (data.ixf_pending_reason) {
+      reasonEl.text(data.ixf_pending_reason).show();
+    } else {
+      reasonEl.hide();
+    }
+  });
   PeeringDB.list_ext_add($('#create-net-form'),$('#api-listing-net'));
   PeeringDB.list_ext_add($('#create-carrier-form'),$('#api-listing-carrier'));
   PeeringDB.list_ext_add($('#create-campus-form'),$('#api-listing-campus'));

@@ -88,7 +88,7 @@
       <div>{% trans "Add" %}</div>
     </div>
     <div class="col-3">
-      <div>{% trans "Speed" %}</div>
+      <div>{% trans "Capacity" %}</div>
     </div>
     <div class="col-4">
       <div>{% trans "Options" %}</div>
@@ -124,7 +124,7 @@
       <div class="col-3">
         <div>
           <div class="editable input-frame">
-            <input type="text" placeholder="{% trans "Speed" %}" data-field="speed" value="{{ x.speed }}" id="{{ x.id }}-speed">
+            <input type="text" placeholder="{% trans "Capacity" %}" data-field="speed" value="{{ x.speed }}" id="{{ x.id }}-speed">
           </div>
         </div>
       </div>
@@ -338,7 +338,7 @@
 
         {% if x.changes.speed %}
         <div class="ixf-suggested-change">
-          <span class="field_name">{% trans "Speed" %}</span>:
+          <span class="field_name">{% trans "Capacity" %}</span>:
           <span class="old-value">{{ x.changes.speed.from|pretty_speed }}</span>
           <svg data-bs-toggle="tooltip" title="{{ x.reason }}" xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           <span class="new-value">{{ x.changes.speed.to|pretty_speed }}</span>

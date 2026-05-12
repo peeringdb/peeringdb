@@ -141,6 +141,45 @@ def test_app_detail(oauth2_apps):
 
 
 @pytest.mark.django_db
+def test_app_superuser_access(oauth2_apps):
+    """Superusers bypass ownership checks across all ApplicationOwnerMixin views."""
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+
+    superuser = User.objects.create_superuser(
+        "superuser", "superuser@localhost", "superuser"
+    )
+
+    client = Client()
+    client.force_login(superuser)
+
+    # list: superuser sees every app, including ones from orgs they aren't in
+    resp = client.get(reverse("oauth2_provider:list"))
+    assert resp.status_code == 200
+    content = resp.content.decode("utf-8")
+    assert user_app.name in content
+    assert org_app.name in content
+    assert other_app.name in content
+
+    # detail: superuser can open any app's detail page (the original bug)
+    for app in (user_app, org_app, other_app):
+        resp = client.get(reverse("oauth2_provider:detail", args=(app.id,)))
+        assert resp.status_code == 200
+
+    # update GET: superuser can load the edit form for an unprovisioned org's app
+    resp = client.get(reverse("oauth2_provider:update", args=(other_app.id,)))
+    assert resp.status_code == 200
+
+    # delete: superuser can delete an unprovisioned org's app
+    resp = client.post(reverse("oauth2_provider:delete", args=(other_app.id,)))
+    assert resp.status_code == 302
+    assert not OAuthApplication.objects.filter(id=other_app.id).exists()
+
+    restore_app_model()
+
+
+@pytest.mark.django_db
 def test_app_delete(oauth2_apps):
     override_app_model()
 

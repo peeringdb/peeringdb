@@ -778,3 +778,74 @@ class TestRateLimitWebPageMiddleware(TestCase):
         # Different forwarded IP should still work
         response = client.get("/", HTTP_X_FORWARDED_FOR="192.168.1.2")
         assert response.status_code != 429
+
+
+@pytest.mark.django_db
+@override_settings(
+    CACHE_CONTROL_STATIC_PAGE=900,
+    CACHE_CONTROL_DYNAMIC_PAGE=10,
+)
+class TestCacheControlMiddleware(TestCase):
+    """
+    Tests that CacheControlMiddleware sets both max-age (browser cache)
+    and s-maxage (CDN/proxy cache) on /data/* responses. (#1899)
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="cc_test", password="cc_test")
+
+    # -- static data views (enum, countries, locales) --
+
+    def _assert_browser_cacheable(self, response, max_age):
+        """Assert response has both browser (max-age) and CDN (s-maxage) cache headers."""
+        cc = response.get("Cache-Control", "")
+        assert "public" in cc
+        assert f"max-age={max_age}" in cc
+        assert f"s-maxage={max_age}" in cc
+
+    def _assert_cdn_only(self, response, s_maxage):
+        """Assert response has CDN cache header only, no browser max-age."""
+        cc = response.get("Cache-Control", "")
+        assert f"s-maxage={s_maxage}" in cc
+        assert "max-age" not in cc
+        assert "public" not in cc
+
+    # -- static data views: browser + CDN cacheable --
+
+    def test_data_enum_anon_has_max_age(self):
+        """Unauthenticated /data/enum/* gets browser-cacheable headers."""
+        response = self.client.get("/data/enum/net_types")
+        self._assert_browser_cacheable(response, 900)
+
+    def test_data_countries_anon_has_max_age(self):
+        response = self.client.get("/data/countries")
+        self._assert_browser_cacheable(response, 900)
+
+    def test_data_locales_anon_has_max_age(self):
+        response = self.client.get("/data/locales")
+        self._assert_browser_cacheable(response, 900)
+
+    def test_data_enum_authenticated_has_max_age(self):
+        """Authenticated /data/enum/* still gets cache headers (in authenticated_views)."""
+        self.client.force_login(self.user)
+        response = self.client.get("/data/enum/net_types")
+        self._assert_browser_cacheable(response, 900)
+
+    def test_data_enum_not_cached_when_setting_disabled(self):
+        """When CACHE_CONTROL_STATIC_PAGE is falsy, no Cache-Control header is set."""
+        with self.settings(CACHE_CONTROL_STATIC_PAGE=0):
+            response = self.client.get("/data/enum/net_types")
+            assert response.get("Cache-Control") is None
+
+    # -- dynamic views: CDN-only, no browser max-age --
+
+    def test_data_facilities_anon_cdn_only(self):
+        """Dynamic views get s-maxage only (CDN cache), not browser max-age."""
+        response = self.client.get("/data/facilities")
+        self._assert_cdn_only(response, 10)
+
+    def test_data_facilities_authenticated_cdn_only(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/data/facilities")
+        self._assert_cdn_only(response, 10)

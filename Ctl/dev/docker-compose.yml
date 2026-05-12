@@ -14,7 +14,11 @@ services:
     volumes:
       - peeringdb_database:/var/lib/mysql:Z
     networks:
-      - peeringdb_network
+      peeringdb_network:
+        # extra alias so the read-replica routing can be smoke-tested
+        # against the same MySQL by setting DATABASE_REPLICA_HOST=database_replica
+        aliases:
+          - database_replica
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4

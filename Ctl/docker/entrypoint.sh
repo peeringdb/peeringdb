@@ -39,6 +39,18 @@ case "$1" in
     unset PEERINGDB_SYNC_API_KEY
     unset GOOGLE_GEOLOC_API_KEY
     unset MELISSA_KEY
+    # Tests use the cache/session defaults from run_tests.py — clear any
+    # operator overrides from .env so the suite is reproducible across envs.
+    unset DEFAULT_CACHE_BACKEND
+    unset NEGATIVE_CACHE_BACKEND
+    unset ERROR_EMAILS_CACHE_BACKEND
+    unset GEO_CACHE_BACKEND
+    unset SESSION_CACHE_BACKEND
+    unset SESSION_CACHE_ALIAS
+    unset SESSION_ENGINE
+    unset REDIS_SENTINEL_NODES
+    unset REDIS_SENTINEL_ENABLED
+    unset REDIS_SENTINEL_PASSWORD
     pytest -v -rA --cov-report term-missing --cov=peeringdb_server --durations=0 tests/ $@
     ;;
   "gen_docs" )

@@ -39,7 +39,7 @@
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-2 d-none d-sm-block">
-      <div data-sort-target=".speed" class="numeric">{% trans "Speed" %}</div>
+      <div data-sort-target=".speed" class="numeric">{% trans "Capacity" %}</div>
     </div>
     <div class="col-2 col-sm-2 col-md-3 d-none d-sm-block">
 
@@ -67,7 +67,7 @@
         {% spaceless %}
         {% trans "You may filter by" %}
         <b>{% trans "Exchange" %}</b>, <b>{% trans "ASN" %}</b>, <b>{% trans "Policy" %}</b>,
-        <b>{% trans "IP" %}</b> {% trans "or" %} <b>{% trans "Speed" %}.</b>
+        <b>{% trans "IP" %}</b> {% trans "or" %} <b>{% trans "Capacity" %}.</b>
         {% endspaceless %}
       </div>
     </div>
@@ -146,7 +146,7 @@
           </div>
 
           <div class="mb-3">
-            <label for="netixlan-speed" class="form-label">Speed (Mbit/sec)</label>
+            <label for="netixlan-speed" class="form-label">Capacity (Mbit/sec)</label>
             <input type="number" class="form-control" id="netixlan-speed" name="speed" placeholder="1000">
           </div>
 

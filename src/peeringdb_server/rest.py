@@ -27,7 +27,12 @@ from django.apps import apps
 from django.conf import settings
 from django.conf import settings as dj_settings
 from django.contrib.auth.models import AnonymousUser
-from django.core.exceptions import FieldError, ObjectDoesNotExist, ValidationError
+from django.core.exceptions import (
+    FieldDoesNotExist,
+    FieldError,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.db import connection, transaction
 from django.db.models import DateTimeField, Q
 from django.http import JsonResponse
@@ -43,13 +48,13 @@ from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
 
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
+from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
 from peeringdb_server.models import (
@@ -99,6 +104,35 @@ from peeringdb_server.views import extract_query, perform_search
 RATELIMITS = dj_settings.RATELIMITS
 
 logger = logging.getLogger(__name__)
+
+
+def _filters_may_produce_duplicates(model, filters):
+    """
+    Return True if any filter key traverses a reverse FK or M2M relation on
+    `model`. Such joins can fan out and produce duplicate driver rows in the
+    result set, which `.distinct()` is needed to collapse. Filters on own
+    fields or through forward FK / OneToOne relations join 1:1 and cannot
+    produce duplicates.
+
+    Walks each `field__field__...__lookup` key segment by segment against the
+    model's field metadata. If a segment resolves to a `one_to_many` (reverse
+    FK) or `many_to_many` field, duplicates are possible. Segments that do not
+    resolve to a field (e.g. lookup suffixes like `lte`, `iexact`) end the
+    walk for that key without flagging it.
+    """
+    for key in filters:
+        current = model
+        for part in key.split("__"):
+            try:
+                field = current._meta.get_field(part)
+            except FieldDoesNotExist:
+                break
+            if field.many_to_many or field.one_to_many:
+                return True
+            related = getattr(field, "related_model", None)
+            if related is not None:
+                current = related
+    return False
 
 
 class DataException(ValueError):
@@ -415,30 +449,6 @@ class InactiveKeyBlock(permissions.BasePermission):
 # VIEW SETS
 
 
-class UnlimitedIfNoPagePagination(PageNumberPagination):
-    page_size = dj_settings.PAGE_SIZE  # default page_size
-    page_size_query_param = "per_page"
-    max_page_size = 250
-
-    def paginate_queryset(self, queryset, request, view=None):
-        self.request = request
-        if "page" in request.query_params:
-            self.pagination_applied = True
-            return super().paginate_queryset(queryset, request)
-        else:
-            self.pagination_applied = False
-            return list(queryset)  # Return all without pagination
-
-    def get_paginated_response(self, data):
-        return Response(
-            {
-                "count": len(data),
-                "next": None,
-                "previous": None,
-                "results": data,
-            }
-        )
-
 
 class ModelViewSet(viewsets.ModelViewSet):
     """
@@ -661,8 +671,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 else:
                     filters[f"{k}__iexact"] = v
 
-        # any object ids we got back from processing a `q` (haystack)
-        # search we will now merge into the `id__in` filter
+        # merge name_search result ids into the id__in filter
 
         if q_ids:
             if filters.get("id__in"):
@@ -688,9 +697,12 @@ class ModelViewSet(viewsets.ModelViewSet):
         if api_cache.qualifies():
             raise CacheRedirect(api_cache)
 
-        # using nested filters will produce duplicates of the same object
-        # unless we call distinct()
-        qset = qset.distinct()
+        # distinct() is only needed when a filter traverses a reverse FK or
+        # M2M relation, where the join can fan out and yield duplicate driver
+        # rows. Forward-FK / own-field filters join 1:1 and never duplicate,
+        # so the DISTINCT/temp-table pass is unnecessary in that case.
+        if _filters_may_produce_duplicates(self.model, filters):
+            qset = qset.distinct()
 
         if not self.kwargs:
             if since > 0:
@@ -775,16 +787,9 @@ class ModelViewSet(viewsets.ModelViewSet):
             if getattr(paginator, "pagination_applied", True):
                 serializer = self.get_serializer(page, many=True)
                 r = paginator.get_paginated_response(serializer.data)
-                self.request.meta_response["pagination"] = {
-                    "count": paginator.page.paginator.count,
-                    "has_next": paginator.page.has_next(),
-                    "has_previous": paginator.page.has_previous(),
-                    "next": paginator.get_next_link(),
-                    "previous": paginator.get_previous_link(),
-                    "page": paginator.page.number,
-                    "per_page": paginator.page.paginator.per_page,
-                    "total_pages": paginator.page.paginator.num_pages,
-                }
+                self.request.meta_response["pagination"] = (
+                    paginator.build_pagination_meta()
+                )
             else:
                 serializer = self.get_serializer(queryset, many=True)
                 r = Response(serializer.data)
@@ -1986,13 +1991,13 @@ def search_api_view(request):
     if len(auth) != 2 or not auth[1].strip():
         return JsonResponse({"error": "API key cannot be empty"}, status=401)
 
-    q, geo, original_query = extract_query(request, version=2)
+    q, geo, original_query = extract_query(request)
 
     if not q and not geo:
         return JsonResponse({})
 
     result = perform_search(
-        q, geo, version=2, original_query=original_query, user=request.user
+        q, geo, original_query=original_query, user=request.user
     )
 
     response_data = serialize_search_results(result)

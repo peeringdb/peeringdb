@@ -7,6 +7,9 @@ implemented through the django-rest-framework.
 Specify custom fields to be added to the generated open-api schema.
 """
 
+import functools
+import inspect
+import logging
 import re
 from copy import deepcopy
 
@@ -26,6 +29,13 @@ from peeringdb_server.serializers import (
     OrganizationSerializer,
     RequestAwareListSerializer,
 )
+
+logger = logging.getLogger(__name__)
+
+@functools.lru_cache(maxsize=None)
+def _get_return_annotation(method):
+    """Return the return annotation for *method*, or inspect.Parameter.empty."""
+    return inspect.signature(method).return_annotation
 
 
 class CustomField:
@@ -109,8 +119,46 @@ class BaseSchema(AutoSchema):
         "fac": FacilitySerializer,
     }
 
+    python_type_to_openapi = {
+        int: "integer",
+        float: "number",
+        bool: "boolean",
+        str: "string",
+    }
+
     def map_field(self, field):
+        """
+        NOTE: For SerializerMethodField, the schema type is inferred from the
+        return type annotation on the corresponding get_<field_name> method.
+        Without an annotation, DRF defaults to string.
+
+        Always annotate get_* methods that return non-string types, e.g.:
+
+            def get_fac_count(self, inst) -> int:
+                return inst.fac_set.count()
+
+        Supported annotations: int -> integer, float -> number,
+                                bool -> boolean, str -> string.
+        """
         if isinstance(field, serializers.SerializerMethodField):
+            method_name = field.method_name or f"get_{field.field_name}"
+            method = getattr(field.parent.__class__, method_name, None)
+            if method:
+                return_type = _get_return_annotation(method)
+                if return_type is not inspect.Parameter.empty:
+                    openapi_type = self.python_type_to_openapi.get(return_type)
+                    if openapi_type:
+                        return {"type": openapi_type}
+                    else:
+                        logger.warning(
+                            "SerializerMethodField %s.%s has unsupported return "
+                            "annotation %r — schema will default to string. "
+                            "Add the type to BaseSchema.python_type_to_openapi if needed.",
+                            field.parent.__class__.__name__,
+                            method_name,
+                            return_type,
+                        )
+
             serializer = self.serializer_method_field_map.get(field.field_name)
             if serializer:
                 serializer_instance = serializer()

@@ -10,6 +10,8 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 
+from peeringdb_server.pagination import UnlimitedIfNoPagePagination
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +50,7 @@ class APICacheLoader:
         self.limit = int(request.query_params.get("limit", 0))
         self.skip = int(request.query_params.get("skip", 0))
         self.since = int(request.query_params.get("since", 0))
+        self.page = request.query_params.get("page")
         self.fields = request.query_params.get("fields")
         if self.fields:
             self.fields = self.fields.split(",")
@@ -102,7 +105,7 @@ class APICacheLoader:
                 data = json.load(f)
                 data = data.get("data")
 
-            # apply pagination
+            # apply skip/limit pagination
             if self.skip and self.limit:
                 data = data[self.skip : self.skip + self.limit]
             elif self.skip:
@@ -110,13 +113,21 @@ class APICacheLoader:
             elif self.limit:
                 data = data[: self.limit]
 
+            # apply page-based pagination
+            meta = {"generated": os.path.getmtime(self.path)}
+            if self.page:
+                paginator = UnlimitedIfNoPagePagination()
+                data = paginator.paginate_queryset(data, self.request)
+                if getattr(paginator, "pagination_applied", False):
+                    meta["pagination"] = paginator.build_pagination_meta()
+
             if self.fields:
                 for row in data:
                     self.filter_fields(row)
 
             return {
                 "results": data,
-                "__meta": {"generated": os.path.getmtime(self.path)},
+                "__meta": meta,
             }
         except json.JSONDecodeError as e:
             logger.error(f"Error cache data is corrupted: {str(e)}", exc_info=True)

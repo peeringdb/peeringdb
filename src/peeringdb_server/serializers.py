@@ -2271,7 +2271,7 @@ class CarrierSerializer(ModelSerializer):
 
         return qset, filters
 
-    def get_fac_count(self, inst):
+    def get_fac_count(self, inst) -> int:
         return inst.carrierfac_set.filter(status="ok").count()
 
     def get_facilities(self, obj):
@@ -2596,7 +2596,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             return f"{inst.ix_name}: {ixlan_name}"
         return inst.ix_name
 
-    def get_ix_id(self, inst):
+    def get_ix_id(self, inst) -> int:
         return inst.ix_id
 
     def run_validation(self, data=serializers.empty):
@@ -2698,6 +2698,8 @@ class NetworkFacilitySerializer(ModelSerializer):
     name = serializers.SerializerMethodField()
     country = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
+
+    local_asn = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = NetworkFacility
@@ -3454,7 +3456,7 @@ class IXLanSerializer(ModelSerializer):
     def get_ix(self, inst):
         return self.sub_serializer(InternetExchangeSerializer, inst.ix)
 
-    def get_dot1q_support(self, inst):
+    def get_dot1q_support(self, inst) -> bool:
         # as per #903 this should always return false as the field
         # is now deprecated
         return False
@@ -3549,6 +3551,17 @@ class InternetExchangeSerializer(ModelSerializer):
         write_only=True,
     )
 
+    # Optional IX-F member list URL supplied at creation time.
+    # Used to validate eligibility for auto-approval (issue #1832).
+    # Ignored on PUT; stored on the IXLan when auto-approval succeeds.
+    ixf_ixp_member_list_url = serializers.URLField(
+        required=False,
+        write_only=True,
+        allow_blank=True,
+        allow_null=True,
+        default=None,
+    )
+
     proto_unicast = serializers.SerializerMethodField()
     proto_ipv6 = serializers.SerializerMethodField()
 
@@ -3596,6 +3609,7 @@ class InternetExchangeSerializer(ModelSerializer):
             "ixlan_set",
             # "suggest",
             "prefix",
+            "ixf_ixp_member_list_url",
             "net_count",
             "fac_count",
             "ixf_net_count",
@@ -3778,6 +3792,9 @@ class InternetExchangeSerializer(ModelSerializer):
             ixlan = self.instance.ixlan
             ixpfx = ixlan.ixpfx_set.first()
             representation.update(ixlan_id=ixlan.id, ixpfx_id=ixpfx.id)
+            reason = getattr(self, "_ixf_pending_reason", "")
+            if reason:
+                representation["ixf_pending_reason"] = reason
 
         if isinstance(representation, dict) and not representation.get("website"):
             representation["website"] = data.org.website
@@ -3793,6 +3810,11 @@ class InternetExchangeSerializer(ModelSerializer):
         # data because we don't need it during the ix creation
         prefix = validated_data.pop("prefix")
 
+        # IX-F member list URL is optional at creation time; used only
+        # for auto-approval validation (issue #1832).  Pop it now so it
+        # isn't forwarded to the model layer, which doesn't have this field.
+        ixf_url = validated_data.pop("ixf_ixp_member_list_url", None) or None
+
         website = validated_data.get("website")
 
         # Check if website field is not empty
@@ -3800,8 +3822,15 @@ class InternetExchangeSerializer(ModelSerializer):
             raise RestValidationError({"website": _("This field may not be blank.")})
 
         request = self.context.get("request", None)
+        submitting_org = validated_data.get("org")
 
-        auto_approve, status = auto_approve_ix(request, prefix)
+        auto_approve, status, ixf_reason = auto_approve_ix(
+            request,
+            prefix,
+            ixf_ixp_member_list_url=ixf_url,
+            submitting_org=submitting_org,
+        )
+        self._ixf_pending_reason = ixf_reason
 
         # create ix
         r = super().create(validated_data, auto_approve=auto_approve)
@@ -3813,6 +3842,12 @@ class InternetExchangeSerializer(ModelSerializer):
         #    ixlan = IXLan(ix=r, status="pending")
         #    ixlan.clean()
         #    ixlan.save()
+
+        # Persist the IX-F URL on the IXLan when it was supplied and
+        # auto-approval succeeded, so operators don't need a separate PUT.
+        if auto_approve and ixf_url:
+            ixlan.ixf_ixp_member_list_url = ixf_url
+            ixlan.save()
 
         # see if prefix already exists in a deleted state
         ixpfx = IXLanPrefix.objects.filter(prefix=prefix, status="deleted").first()
@@ -3838,10 +3873,10 @@ class InternetExchangeSerializer(ModelSerializer):
     def get_org(self, inst):
         return self.sub_serializer(OrganizationSerializer, inst.org)
 
-    def get_proto_ipv6(self, inst):
+    def get_proto_ipv6(self, inst) -> bool:
         return inst.derived_proto_ipv6
 
-    def get_proto_unicast(self, inst):
+    def get_proto_unicast(self, inst) -> bool:
         return inst.derived_proto_unicast
 
     def validate(self, data):
