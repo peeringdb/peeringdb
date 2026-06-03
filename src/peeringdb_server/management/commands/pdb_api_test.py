@@ -3938,7 +3938,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_pagination(self):
-        org_ids = [org.id for org in Organization.objects.filter(status="ok")]
+        org_ids = [org.id for org in Organization.objects.filter(status="ok").order_by("id")]
 
         for n in range(0, 1):
             data_a = self.db_guest.all("org", skip=n * 3, limit=3)
