@@ -751,10 +751,11 @@ class ModelViewSet(viewsets.ModelViewSet):
             # we are handling a list request and need to apply the limit and skip
             # parameters if they are present
 
-            row_count = qset.count()
-            if enforced_limit and depth > 0 and row_count > enforced_limit:
-                qset = qset[:enforced_limit]
-                self.request.meta_response["truncated"] = (
+            if enforced_limit and depth > 0:
+                row_count = qset.count()
+                if row_count > enforced_limit:
+                    qset = qset[:enforced_limit]
+                    self.request.meta_response["truncated"] = (
                     f"Your search query (with depth {depth}) returned more than {enforced_limit} rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
                 )
 
