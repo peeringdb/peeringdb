@@ -1168,7 +1168,11 @@ class Organization(
     )
 
     class Meta(pdb_models.OrganizationBase.Meta):
-        indexes = [models.Index(fields=["status"], name="org_status")]
+        indexes = [
+            models.Index(fields=["status", "updated"], name="org_status_updated"),
+            models.Index(fields=["country"], name="org_country"),
+            models.Index(fields=["state"], name="org_state"),
+        ]
 
     def set_org_flag(self, flag: int, value: bool = True) -> None:
         """
@@ -2134,7 +2138,11 @@ class Facility(
     parent_relations = ["org"]
 
     class Meta(pdb_models.FacilityBase.Meta):
-        indexes = [models.Index(fields=["status"], name="fac_status")]
+        indexes = [
+            models.Index(fields=["status", "updated"], name="fac_status_updated"),
+            models.Index(fields=["country"], name="fac_country"),
+            models.Index(fields=["state"], name="fac_state"),
+        ]
 
     def save(self, *args, **kwargs):
         """
@@ -2463,7 +2471,10 @@ class InternetExchange(
     )
 
     class Meta(pdb_models.InternetExchangeBase.Meta):
-        indexes = [models.Index(fields=["status"], name="ix_status")]
+        indexes = [
+            models.Index(fields=["status", "updated"], name="ix_status_updated"),
+            models.Index(fields=["country"], name="ix_country"),
+        ]
 
     parent_relations = ["org"]
 
@@ -5065,7 +5076,8 @@ class Network(
 
     class Meta(pdb_models.NetworkBase.Meta):
         indexes = [
-            models.Index(fields=["status", "allow_ixp_update"], name="net_status")
+            models.Index(fields=["status", "allow_ixp_update"], name="net_status"),
+            models.Index(fields=["status", "updated"], name="net_status_updated"),
         ]
 
     parent_relations = ["org"]
@@ -5549,7 +5561,9 @@ class NetworkFacility(
     class Meta:
         db_table = "peeringdb_network_facility"
         unique_together = ("network", "facility")
-        indexes = [models.Index(fields=["status"], name="netfac_status")]
+        indexes = [
+            models.Index(fields=["status", "updated"], name="netfac_status_updated"),
+        ]
 
     @classmethod
     def related_to_name(cls, value=None, filt=None, field="facility__name", qset=None):
@@ -5661,7 +5675,9 @@ class NetworkIXLan(
             models.UniqueConstraint(fields=["ipaddr4"], name="unique_ipaddr4"),
             models.UniqueConstraint(fields=["ipaddr6"], name="unique_ipaddr6"),
         ]
-        indexes = [models.Index(fields=["status"], name="netixlan_status")]
+        indexes = [
+            models.Index(fields=["status", "updated"], name="netixlan_status_updated"),
+        ]
 
     @property
     def name(self):
