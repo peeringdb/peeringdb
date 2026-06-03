@@ -756,8 +756,8 @@ class ModelViewSet(viewsets.ModelViewSet):
                 if row_count > enforced_limit:
                     qset = qset[:enforced_limit]
                     self.request.meta_response["truncated"] = (
-                    f"Your search query (with depth {depth}) returned more than {enforced_limit} rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
-                )
+                        f"Your search query (with depth {depth}) returned more than {enforced_limit} rows and has been truncated. Please be more specific in your filters, use the limit and skip parameters to page through the resultset or drop the depth parameter"
+                    )
 
         if depth > 0 or self.kwargs:
             return self.serializer_class.prefetch_related(
