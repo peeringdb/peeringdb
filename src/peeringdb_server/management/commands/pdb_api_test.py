@@ -986,9 +986,9 @@ class TestJSON(unittest.TestCase):
         """
         Assert that the response is 403 Forbidden, with a helpful message.
         """
-        assert (
-            response.status_code == 403
-        ), f"Expected 403 Forbidden for Basic Auth with MFA_FORCE_HARD_START, got {response.status_code}"
+        assert response.status_code == 403, (
+            f"Expected 403 Forbidden for Basic Auth with MFA_FORCE_HARD_START, got {response.status_code}"
+        )
         self.assertEqual(
             response.json(),
             {
@@ -2458,9 +2458,9 @@ class TestJSON(unittest.TestCase):
                 .get("data")
             )
             for item in response:
-                assert (
-                    item["id"] in netixlan_ids
-                ), f"{port_name} {item['id']} not found in netixlan queryset"
+                assert item["id"] in netixlan_ids, (
+                    f"{port_name} {item['id']} not found in netixlan queryset"
+                )
 
         # Check ix_side and net_side
         check_side_response("ix_side", SHARED["fac_rw_ok"].id)
@@ -3938,7 +3938,9 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_pagination(self):
-        org_ids = [org.id for org in Organization.objects.filter(status="ok").order_by("id")]
+        org_ids = [
+            org.id for org in Organization.objects.filter(status="ok").order_by("id")
+        ]
 
         for n in range(0, 1):
             data_a = self.db_guest.all("org", skip=n * 3, limit=3)
