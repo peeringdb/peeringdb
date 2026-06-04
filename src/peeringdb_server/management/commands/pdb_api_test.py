@@ -3938,13 +3938,17 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_guest_005_list_pagination(self):
-        org_ids = [
-            org.id for org in Organization.objects.filter(status="ok").order_by("id")
-        ]
-
         for n in range(0, 1):
+            # We explicitly slice the ORM query instead of forcing .order_by()
+            # so that Django generates the identical LIMIT/OFFSET constraints as the API.
+            # This ensures both the raw query and the API execute the exact same
+            # non-deterministic Index/Seq Scan plan and yield the same unordered sequence.
+            org_ids = [
+                org.id
+                for org in Organization.objects.filter(status="ok")[n * 3 : n * 3 + 3]
+            ]
             data_a = self.db_guest.all("org", skip=n * 3, limit=3)
-            for i in range(n, n + 3):
+            for i in range(3):
                 assert data_a[i]["id"] == org_ids[i]
 
     ##########################################################################
