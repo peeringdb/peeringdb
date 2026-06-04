@@ -7048,6 +7048,11 @@ class EnvironmentSetting(StripFieldMixin):
                 "NOTIFICATION_BANNER_CONTENT",
                 _("Notification banner content (HTML)"),
             ),
+            # auto-IX approval toggle (#1831)
+            (
+                "AUTO_IX_APPROVAL_ENABLED",
+                _("Auto-IX: Enable automatic IX approval"),
+            ),
         ),
         unique=True,
     )
@@ -7111,6 +7116,7 @@ class EnvironmentSetting(StripFieldMixin):
         "DATABASE_LAST_SYNC": "value_str",
         "TUTORIAL_MODE_MESSAGE": "value_str",
         "NOTIFICATION_BANNER_CONTENT": "value_str",
+        "AUTO_IX_APPROVAL_ENABLED": "value_bool",
     }
 
     setting_validators = {
@@ -7135,6 +7141,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_RATE_WRITE": [validate_api_rate],
         "API_THROTTLE_ORGANIZATION_USERS": [validate_api_rate],
         "RATELIMIT_WEB_PAGE_RATE": [validate_django_ratelimit_rate],
+        "AUTO_IX_APPROVAL_ENABLED": [validate_bool],
     }
 
     @classmethod
