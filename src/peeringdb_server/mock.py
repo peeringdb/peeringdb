@@ -228,7 +228,7 @@ class Mock:
         return self.name(data, reftag=reftag)
 
     def irr_as_set(self, data, reftag=None):
-        return f"AS-{str(uuid.uuid4())[:8].upper()}@RIPE"
+        return f"RIPE::AS-{str(uuid.uuid4())[:8].upper()}"
 
     def looking_glass(self, data, reftag=None):
         return f"{self.website(data, reftag=reftag)}/looking-glass"

@@ -346,7 +346,7 @@ class TestJSON(unittest.TestCase):
             "asn": asn,
             "website": WEBSITE,
             "social_media": SOCIAL_MEDIA,
-            "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
+            "irr_as_set": "RIPE::AS-ZZ-ZZZZZZ",
             "info_types": ["NSP"],
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
