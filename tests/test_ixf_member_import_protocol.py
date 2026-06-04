@@ -1413,6 +1413,36 @@ def test_add_netixlan_conflict(entities, save):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("net_key", ["UPDATE_DISABLED", "UPDATE_ENABLED"])
+def test_ixf_v6_address_in_ipaddr4_field_is_rejected(net_key):
+    """
+    Test that v6 addresses in the ipaddr4 field are rejected and do not cause the importer to abort.
+    """
+    _entities = entities_ipv4_ipv6(entities_base())
+    network = _entities["net"][net_key]
+    ixlan = _entities["ixlan"][0]
+
+    data = setup_test_data("ixf.member.invalid.ipaddr4")
+    data["member_list"][0]["asnum"] = network.asn
+
+    importer = ixf.Importer()
+
+    # must not raise (the bug aborted the whole run / persisted poison data)
+    assert importer.update(ixlan, data=data) is True
+
+    # the bad address was reported as an invalid IP, not silently accepted
+    assert any("Expected 4 octets" in err for err in importer.invalid_ip_errors)
+
+    # and the exchange was notified of the feed error
+    assert ixlan.ixf_ixp_import_error
+    assert "Expected 4 octets" in ixlan.ixf_ixp_import_error
+
+    # nothing invalid was persisted for this member
+    assert not IXFMemberData.objects.filter(ixlan=ixlan, asn=network.asn).exists()
+    assert not NetworkIXLan.objects.filter(ixlan=ixlan, asn=network.asn).exists()
+
+
+@pytest.mark.django_db
 def test_suggest_add_local_ixf(entities, use_ip, save):
     """
     The netixlan described in the remote-ixf doesn't exist,

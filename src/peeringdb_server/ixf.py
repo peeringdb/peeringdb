@@ -991,13 +991,13 @@ class Importer:
                 ixf_id = [asn]
 
                 if ipv4_addr:
-                    ipv4_addr = ipaddress.ip_address(f"{ipv4_addr}")
+                    ipv4_addr = ipaddress.IPv4Address(f"{ipv4_addr}")
                     ixf_id.append(ipv4_addr)
                 else:
                     ixf_id.append(None)
 
                 if ipv6_addr:
-                    ipv6_addr = ipaddress.ip_address(f"{ipv6_addr}")
+                    ipv6_addr = ipaddress.IPv6Address(f"{ipv6_addr}")
                     ixf_id.append(ipv6_addr)
                 else:
                     ixf_id.append(None)
