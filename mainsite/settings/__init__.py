@@ -1438,6 +1438,9 @@ set_option("TICKET_CREATION_ASNAUTO", False)
 # when False, tickets will not be created for automated PREFIXAUTO actions
 set_option("TICKET_CREATION_PREFIXAUTO", False)
 
+# toggle auto-IX approval; when False all new IX submissions go to pending
+set_option("AUTO_IX_APPROVAL_ENABLED", True)
+
 # minimum number of unique ASNs required in an IX-F feed for auto-approval
 # of a new internet exchange (#1832)
 set_option("IXF_PREFIXAUTO_MIN_ASN_COUNT", 3)
