@@ -7,11 +7,15 @@ from django.db.models import Count, F, Q
 def populate_carrier_fac_counts(apps, schema_editor):
     Carrier = apps.get_model("peeringdb_server", "Carrier")
 
-    Carrier._default_manager.annotate(
-        actual_count=Count(
-            "carrierfac", filter=Q(carrierfac__status="ok"), distinct=True
-        )
-    ).update(fac_count=F("actual_count"))
+    CarrierFacility = apps.get_model("peeringdb_server", "CarrierFacility")
+
+    for carrier in Carrier._default_manager.all():
+        count = CarrierFacility._default_manager.filter(
+            carrier_id=carrier.id, status="ok"
+        ).count()
+        if carrier.fac_count != count:
+            carrier.fac_count = count
+            carrier.save(update_fields=["fac_count"])
 
 
 class Migration(migrations.Migration):
