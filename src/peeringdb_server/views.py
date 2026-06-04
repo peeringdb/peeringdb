@@ -3342,6 +3342,7 @@ def view_advanced_search(request):
     env = make_env(row_limit=getattr(dj_settings, "API_DEPTH_ROW_LIMIT", 250))
 
     env["google_maps_api_key"] = getattr(dj_settings, "GOOGLE_GEOLOC_API_KEY", "")
+    env["google_maps_map_id"] = getattr(dj_settings, "GOOGLE_MAPS_MAP_ID", "")
 
     # Expose map visualization preference
     default_map_vis = getattr(dj_settings, "DEFAULT_MAP_VISUALIZATION_ENABLED", False)
