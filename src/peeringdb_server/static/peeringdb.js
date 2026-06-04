@@ -5235,7 +5235,7 @@ twentyc.data.loaders.assign("enum/social_media_services", "data");
 const checkAsSet = () =>{
   // check the use of hierarchical AS-SET name and if a non-hierarchical AS-SET name is already in use
 
-  const isHierarchicalAsSet = (as_set) => /^[a-zA-Z0-9_-]+(?:::|@)[a-zA-Z0-9_-]+$/.test(as_set.trim());
+  const isHierarchicalAsSet = (as_set) => /^[a-zA-Z0-9_-]+::[a-zA-Z0-9_-]+$/.test(as_set.trim());
 
   const irr_as_set_container = $("div[data-edit-name='irr_as_set']");
   let debounceTimeout;

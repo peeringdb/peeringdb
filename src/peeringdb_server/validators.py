@@ -338,7 +338,7 @@ def validate_irr_as_set(value):
     Validate irr as-set string.
 
     - the as-set/rs-set name has to conform to RFC 2622 (5.1 and 5.2)
-    - the source may be specified by AS-SET@SOURCE or SOURCE::AS-SET
+    - the source may be specified by SOURCE::AS-SET
     - multiple values must be separated by either comma, space or comma followed by space
 
     Arguments:
@@ -368,29 +368,19 @@ def validate_irr_as_set(value):
         source = None
         as_set = None
 
-        # <name>@<source>
-        # Source names contain only letters, digits, and hyphens (e.g. RIPE, RADB).
-        # Use [A-Z0-9-]+ for source to exclude colons, which belong only in
-        # the hierarchical set name. See: https://www.rfc-editor.org/rfc/rfc2622
-        parts_match = re.match(r"^([A-Z0-9_:-]+)@([A-Z0-9-]+)$", item)
-        if parts_match:
-            source = parts_match.group(2)
-            as_set = parts_match.group(1)
-
         # <source>::<name>
+        parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
+        if parts_match:
+            source = parts_match.group(1)
+            as_set = parts_match.group(2)
         else:
-            parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
-            if parts_match:
-                source = parts_match.group(1)
-                as_set = parts_match.group(2)
-            else:
-                if not re.match(r"^[A-Z0-9_:-]+$", item):
-                    raise ValidationError(
-                        _(
-                            "Invalid formatting: {} - should be AS-SET, ASx, AS-SET@SOURCE or SOURCE::AS-SET"
-                        ).format(item)
-                    )
-                as_set = item
+            if not re.match(r"^[A-Z0-9_:-]+$", item):
+                raise ValidationError(
+                    _(
+                        "Invalid formatting: {} - should be AS-SET, ASx, or SOURCE::AS-SET"
+                    ).format(item)
+                )
+            as_set = item
 
         if source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
