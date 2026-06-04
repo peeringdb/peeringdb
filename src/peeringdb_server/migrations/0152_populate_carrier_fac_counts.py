@@ -7,7 +7,7 @@ from django.db.models import Count, F, Q
 def populate_carrier_fac_counts(apps, schema_editor):
     Carrier = apps.get_model("peeringdb_server", "Carrier")
 
-    Carrier.objects.annotate(
+    Carrier._default_manager.annotate(
         actual_count=Count(
             "carrierfac", filter=Q(carrierfac__status="ok"), distinct=True
         )
