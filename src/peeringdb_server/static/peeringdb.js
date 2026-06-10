@@ -1065,6 +1065,10 @@ PeeringDB.IXFPreview = twentyc.cls.define(
        *    created automatically)
        */
 
+      // remember which entity this preview is for so the export can build
+      // a meaningful download filename (#1949)
+      this.entity_id = ixlanId;
+
       renderTo.find("#tab-ixf-changes").tab("show");
       renderTo.find('.ixf-result').empty().
         append($("<div>").addClass("center").text("... loading ..."));
@@ -1098,6 +1102,10 @@ PeeringDB.IXFPreview = twentyc.cls.define(
        *
        */
 
+      // keep the raw preview result around so the export buttons can build
+      // the download from it without re-requesting the preview (#1949)
+      this.result = result;
+
       renderTo.find('.ixf-errors-list').empty()
       renderTo.find('.ixf-result').empty()
 
@@ -1111,6 +1119,8 @@ PeeringDB.IXFPreview = twentyc.cls.define(
           renderTo.find("#tab-ixf-errors").tab("show");
         }
       }
+
+      this.wire_export(renderTo);
     },
 
     render_errors : function(errors, renderTo) {
@@ -1160,6 +1170,176 @@ PeeringDB.IXFPreview = twentyc.cls.define(
           )
         );
       }
+    },
+
+    wire_export : function(renderTo) {
+      /**
+       * Wire the "Export" buttons in the preview modal footer to build a
+       * client-side file download from the already-fetched preview data
+       * (#1949). Scoped to the modal that contains renderTo so it is
+       * a no-op for modals without export buttons (e.g. the postmortem).
+       *
+       * @method wire_export
+       * @param {jQuery} renderTo
+       */
+
+      var self = this;
+      renderTo.closest(".modal").find("[data-ixf-export]")
+        .off("click.ixfexport")
+        .on("click.ixfexport", function(e) {
+          e.preventDefault();
+          self.export_as($(this).data("ixf-export"));
+        });
+    },
+
+    export_as : function(format) {
+      /**
+       * Build and download the current preview as a file in the requested
+       * format ("csv" or "json").
+       *
+       * @method export
+       * @param {String} format
+       */
+
+      var data = (this.result && this.result.data) || [];
+      var columns = this.export_columns();
+      var rows = data.map(this.export_row.bind(this));
+
+      if(format == "json") {
+        this.download_file(
+          JSON.stringify({data: rows}, null, 2),
+          this.export_filename("json"),
+          "application/json"
+        );
+      } else {
+        this.download_file(
+          this.to_csv(columns, rows),
+          this.export_filename("csv"),
+          "text/csv"
+        );
+      }
+    },
+
+    export_columns : function() {
+      /**
+       * Column order for the export, matching the preview table.
+       * Overridden for the network side.
+       *
+       * @method export_columns
+       * @returns {Array}
+       */
+
+      return ["action", "asn", "ipaddr4", "ipaddr6", "speed", "is_rs_peer", "reason"];
+    },
+
+    export_row : function(row) {
+      /**
+       * Flatten a single preview row into the exported columns.
+       * Overridden for the network side.
+       *
+       * @method export_row
+       * @param {Object} row
+       * @returns {Object}
+       */
+
+      var peer = row.peer || {};
+      return {
+        action: row.action,
+        asn: peer.asn,
+        ipaddr4: peer.ipaddr4 || "",
+        ipaddr6: peer.ipaddr6 || "",
+        speed: peer.speed != null ? peer.speed : "",
+        is_rs_peer: peer.is_rs_peer ? true : false,
+        reason: row.reason
+      };
+    },
+
+    export_filename : function(ext) {
+      /**
+       * Build the download filename, named after the exchange so multiple
+       * exports don't all collide on the same generic name.
+       *
+       * @method export_filename
+       * @param {String} ext - file extension without the dot
+       * @returns {String}
+       */
+
+      var data = (this.result && this.result.data) || [];
+      var name = data.length ? data[0].peer.ix_name : "";
+      var slug = this.slugify(name) || ("ixlan-" + this.entity_id);
+      return "ixf-import-preview-" + slug + "." + ext;
+    },
+
+    to_csv : function(columns, rows) {
+      /**
+       * Render rows to a CSV string with a header line.
+       *
+       * @method to_csv
+       * @param {Array} columns
+       * @param {Array} rows
+       * @returns {String}
+       */
+
+      var self = this;
+      var lines = [columns.map(function(c) { return self.csv_escape(c); }).join(",")];
+      rows.forEach(function(row) {
+        lines.push(columns.map(function(c) { return self.csv_escape(row[c]); }).join(","));
+      });
+      return lines.join("\n");
+    },
+
+    csv_escape : function(value) {
+      /**
+       * Escape a single CSV cell per RFC 4180.
+       *
+       * @method csv_escape
+       * @param {*} value
+       * @returns {String}
+       */
+
+      if(value === null || value === undefined)
+        value = "";
+      value = "" + value;
+      // neutralize spreadsheet formula injection (e.g. a hostile ix_name)
+      if(/^[=+\-@\t\r]/.test(value))
+        value = "'" + value;
+      if(/[",\n\r]/.test(value))
+        value = '"' + value.replace(/"/g, '""') + '"';
+      return value;
+    },
+
+    slugify : function(value) {
+      /**
+       * Lowercase, ascii, hyphen-separated slug for use in filenames.
+       *
+       * @method slugify
+       * @param {*} value
+       * @returns {String}
+       */
+
+      return ("" + value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-+|-+$)/g, "");
+    },
+
+    download_file : function(content, filename, mime) {
+      /**
+       * Trigger a client-side file download of `content`.
+       *
+       * @method download_file
+       * @param {String} content
+       * @param {String} filename
+       * @param {String} mime
+       */
+
+      var blob = new Blob([content], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // defer revoke so the download isn't aborted mid-flight in some browsers
+      setTimeout(function() { URL.revokeObjectURL(url); }, 100);
     }
   }
 );
@@ -1187,6 +1367,8 @@ PeeringDB.IXFNetPreview =  twentyc.cls.extend(
        *    created automatically)
        */
 
+      this.entity_id = netId;
+
       renderTo.find("#tab-ixf-changes").tab("show");
       renderTo.find('.ixf-result').empty().
         append($("<div>").addClass("center").text("... loading ..."));
@@ -1200,6 +1382,33 @@ PeeringDB.IXFNetPreview =  twentyc.cls.extend(
           this.render({"non_field_errors": ["HTTP error "+result.status]});
         }
       }.bind(this));
+    },
+
+    export_columns : function() {
+      // network side preview shows the exchange instead of the asn
+      return ["action", "ix_id", "ix_name", "ipaddr4", "ipaddr6", "speed", "is_rs_peer", "reason"];
+    },
+
+    export_row : function(row) {
+      var peer = row.peer || {};
+      return {
+        action: row.action,
+        ix_id: peer.ix_id,
+        ix_name: peer.ix_name,
+        ipaddr4: peer.ipaddr4 || "",
+        ipaddr6: peer.ipaddr6 || "",
+        speed: peer.speed != null ? peer.speed : "",
+        is_rs_peer: peer.is_rs_peer ? true : false,
+        reason: row.reason
+      };
+    },
+
+    export_filename : function(ext) {
+      // name the file after the network's asn
+      var data = (this.result && this.result.data) || [];
+      var asn = data.length ? data[0].peer.asn : null;
+      var slug = asn ? ("as" + asn) : ("net-" + this.entity_id);
+      return "ixf-import-preview-" + slug + "." + ext;
     },
 
     render_data : function(data, renderTo) {
