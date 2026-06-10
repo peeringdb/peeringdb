@@ -109,6 +109,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
+    IXP_UPDATE_EXCLUDE_FIELDS,
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
@@ -3143,6 +3144,22 @@ def view_network(request, id):
                         "label": "",
                         "value": network.allow_ixp_update,
                     }
+                ],
+            },
+            {
+                "type": "flags",
+                "admin": True,
+                "label": _("IX-F Fields to Exclude"),
+                "help_text": _(
+                    "Fields that will not be automatically updated from IX-F import data"
+                ),
+                "value": [
+                    {
+                        "name": f"ixp_update_exclude_{field}",
+                        "label": label,
+                        "value": field in network_d.get("ixp_update_exclude", []),
+                    }
+                    for field, label in IXP_UPDATE_EXCLUDE_FIELDS
                 ],
             },
             {

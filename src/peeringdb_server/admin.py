@@ -63,6 +63,7 @@ from peeringdb_server.mail import (
 )
 from peeringdb_server.models import (
     COMMANDLINE_TOOLS,
+    IXP_UPDATE_EXCLUDE_FIELDS,
     QUEUE_ENABLED,
     REFTAG_MAP,
     UTC,
@@ -1592,6 +1593,13 @@ class NetworkAdminForm(StatusForm):
     # info_types should be multiple choice
     info_types = baseForms.MultipleChoiceField(
         choices=NET_TYPES_MULTI_CHOICE,
+        widget=baseForms.CheckboxSelectMultiple,
+        required=False,
+    )
+
+    # ixp_update_exclude should be multiple choice checkboxes
+    ixp_update_exclude = baseForms.MultipleChoiceField(
+        choices=IXP_UPDATE_EXCLUDE_FIELDS,
         widget=baseForms.CheckboxSelectMultiple,
         required=False,
     )

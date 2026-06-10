@@ -76,6 +76,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.models import (
     ASSET_REFTAG_MAP,
+    IXP_UPDATE_EXCLUDE_FIELDS,
     QUEUE_ENABLED,
     Campus,
     Carrier,
@@ -106,6 +107,7 @@ from peeringdb_server.permissions import (
 )
 from peeringdb_server.search_v2 import elasticsearch_proximity_entity
 from peeringdb_server.validators import (
+    clean_ixp_update_exclude,
     validate_address_space,
     validate_asn_prefix,
     validate_distance_geocode,
@@ -2838,6 +2840,14 @@ class NetworkSerializer(ModelSerializer):
         validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
 
+    ixp_update_exclude_speed = serializers.BooleanField(required=False, write_only=True)
+    ixp_update_exclude_is_rs_peer = serializers.BooleanField(
+        required=False, write_only=True
+    )
+    ixp_update_exclude_operational = serializers.BooleanField(
+        required=False, write_only=True
+    )
+
     info_prefixes4 = NullableIntegerField(
         allow_null=True, required=False, validators=[validate_info_prefixes4]
     )
@@ -2909,6 +2919,10 @@ class NetworkSerializer(ModelSerializer):
             "netixlan_set",
             "poc_set",
             "allow_ixp_update",
+            "ixp_update_exclude",
+            "ixp_update_exclude_speed",
+            "ixp_update_exclude_is_rs_peer",
+            "ixp_update_exclude_operational",
             "suggest",
             "status_dashboard",
             "rir_status",
@@ -3256,7 +3270,54 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
         else:
             return value
 
+    def validate_ixp_update_exclude(self, value):
+        cleaned, error = clean_ixp_update_exclude(value)
+        if error:
+            raise serializers.ValidationError(error)
+        return cleaned
+
+    def _fold_ixp_update_exclude_flags(self, data):
+        """
+        The dashboard submits `ixp_update_exclude` as three independent boolean
+        checkbox fields (`ixp_update_exclude_<field>`). Fold whichever are
+        present into the canonical `ixp_update_exclude` list (#1943).
+
+        Flags absent from the payload retain their current value, so a partial
+        API request (e.g. PATCH with only `ixp_update_exclude_speed`) changes
+        only the field it names and never silently clears the others. The base
+        list comes from an explicit `ixp_update_exclude` in this same payload if
+        present, otherwise from the existing instance.
+        """
+        flag_keys = {
+            field: f"ixp_update_exclude_{field}"
+            for field, label in IXP_UPDATE_EXCLUDE_FIELDS
+        }
+        if not any(key in data for key in flag_keys.values()):
+            return
+
+        if "ixp_update_exclude" in data:
+            excluded = set(data["ixp_update_exclude"])
+        elif self.instance is not None:
+            excluded = set(self.instance.ixp_update_exclude or [])
+        else:
+            excluded = set()
+
+        for field, key in flag_keys.items():
+            if key not in data:
+                continue
+            if data.pop(key):
+                excluded.add(field)
+            else:
+                excluded.discard(field)
+
+        # preserve the canonical field order from the const
+        data["ixp_update_exclude"] = [
+            field for field, label in IXP_UPDATE_EXCLUDE_FIELDS if field in excluded
+        ]
+
     def validate(self, data):
+        self._fold_ixp_update_exclude_flags(data)
+
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = data.get("org").website

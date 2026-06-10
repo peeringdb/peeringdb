@@ -292,6 +292,9 @@ class Mock:
     def speed(self, data, reftag=None):
         return 1000
 
+    def ixp_update_exclude(self, data, reftag=None):
+        return []
+
     def ixf_net_count(self, data, reftag=None):
         return 0
 
