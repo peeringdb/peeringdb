@@ -959,6 +959,15 @@ class VerificationQueueItem(StripFieldMixin):
     created = CreatedDateTimeField()
     notified = models.BooleanField(default=False)
 
+    deskpro_ticket = models.ForeignKey(
+        "peeringdb_server.DeskProTicket",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="vq_items",
+        help_text=_("DeskPRO ticket created when this item entered the queue"),
+    )
+
     class Meta:
         db_table = "peeringdb_verification_queue"
         unique_together = (("content_type", "object_id"),)
@@ -1052,6 +1061,21 @@ class DeskProTicket(StripFieldMixin):
 
     deskpro_id = models.IntegerField(
         null=True, blank=True, help_text=_("Ticket id on the DeskPRO side")
+    )
+
+    close_requested = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Set when the related pending object was deleted and the ticket "
+            "should be auto-closed on the DeskPRO side (#1948). Processed "
+            "asynchronously by pdb_deskpro_publish."
+        ),
+    )
+
+    closed = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When the auto-close request was processed"),
     )
 
     class Meta:

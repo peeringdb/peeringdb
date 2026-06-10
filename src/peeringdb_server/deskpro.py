@@ -21,7 +21,7 @@ from peeringdb_server.permissions import get_org_key_from_request, get_user_from
 def ticket_queue(subject, body, user):
     """Queue a deskpro ticket for creation."""
 
-    DeskProTicket.objects.create(
+    return DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         user=user,
@@ -31,7 +31,7 @@ def ticket_queue(subject, body, user):
 def ticket_queue_email_only(subject, body, email):
     """Queue a deskpro ticket for creation."""
 
-    DeskProTicket.objects.create(
+    return DeskProTicket.objects.create(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
         body=body,
         email=email,
@@ -213,8 +213,10 @@ def ticket_queue_vqi_notify(instance, rdap):
     if is_suggested(item):
         title = f"[SUGGEST] {title}"
 
+    ticket = None
+
     if user:
-        ticket_queue(
+        ticket = ticket_queue(
             title,
             loader.get_template("email/notify-pdb-admin-vq.txt").render(
                 {
@@ -230,7 +232,7 @@ def ticket_queue_vqi_notify(instance, rdap):
         )
 
     elif org_key:
-        ticket_queue_email_only(
+        ticket = ticket_queue_email_only(
             title,
             loader.get_template("email/notify-pdb-admin-vq-org-key.txt").render(
                 {
@@ -244,6 +246,9 @@ def ticket_queue_vqi_notify(instance, rdap):
             ),
             org_key.email,
         )
+
+    if ticket:
+        instance.deskpro_ticket = ticket
 
 
 def ticket_queue_rdap_error(request, asn, error):
@@ -311,19 +316,28 @@ class APIClient:
 
     def get(self, endpoint, param):
         response = requests.get(
-            f"{self.url}/{endpoint}", params=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}",
+            params=param,
+            headers=self.auth_headers,
+            timeout=settings.DESKPRO_TIMEOUT,
         )
         return self.parse_response(response)
 
     def create(self, endpoint, param):
         response = requests.post(
-            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}",
+            json=param,
+            headers=self.auth_headers,
+            timeout=settings.DESKPRO_TIMEOUT,
         )
         return self.parse_response(response)
 
     def update(self, endpoint, param):
         response = requests.put(
-            f"{self.url}/{endpoint}", json=param, headers=self.auth_headers
+            f"{self.url}/{endpoint}",
+            json=param,
+            headers=self.auth_headers,
+            timeout=settings.DESKPRO_TIMEOUT,
         )
         if response.status_code == 204:
             return {}
@@ -424,6 +438,16 @@ class APIClient:
             },
         )
 
+    def get_ticket_status(self, deskpro_id):
+        """
+        Return the current ticket_status for a ticket on DeskPro's side,
+        or None if the ticket can't be fetched.
+        """
+        ticket_data = self.get(f"tickets/{deskpro_id}", param={})
+        if not ticket_data:
+            return None
+        return ticket_data.get("ticket_status")
+
     def reopen_ticket(self, ticket):
         """
         Check the current status of existing tickets
@@ -437,13 +461,37 @@ class APIClient:
         if not ticket.deskpro_id:
             return
 
-        endpoint = f"tickets/{ticket.deskpro_id}"
-        ticket_data = self.get(endpoint, param={})
-
-        if ticket_data and ticket_data.get("ticket_status") == "resolved":
+        if self.get_ticket_status(ticket.deskpro_id) == "resolved":
             print("ticket resolved already")
-            self.update(endpoint, {"status": "awaiting_agent"})
+            self.update(f"tickets/{ticket.deskpro_id}", {"status": "awaiting_agent"})
             print("Re-opened ticket (set to awaiting_agent)", ticket.deskpro_id)
+
+    def close_ticket(self, deskpro_id):
+        """
+        Resolve a ticket on DeskPro by id (#1948).
+
+        The ticket is only resolved if its current status on the DeskPro
+        side is one of settings.DESKPRO_AUTO_CLOSE_STATUSES (default
+        ["awaiting_agent"]). This avoids closing tickets an agent has
+        already moved on (e.g. awaiting_user, resolved). DeskPro has no
+        conditional update, so we GET the current status first.
+
+        Returns True if the ticket was resolved, False otherwise.
+        """
+        current_status = self.get_ticket_status(deskpro_id)
+
+        if current_status is None:
+            return False
+
+        if current_status not in settings.DESKPRO_AUTO_CLOSE_STATUSES:
+            print(
+                f"Not auto-closing ticket {deskpro_id}: "
+                f"status '{current_status}' not in auto-close set"
+            )
+            return False
+
+        self.update(f"tickets/{deskpro_id}", {"status": "resolved"})
+        return True
 
 
 class MockAPIClient(APIClient):
@@ -457,6 +505,7 @@ class MockAPIClient(APIClient):
     def __init__(self, *args, **kwargs):
         super().__init__("", "")
         self.ticket_count = 0
+        self.closed_tickets = []
 
     def get(self, endpoint, param):
         if endpoint == "people":
@@ -470,6 +519,13 @@ class MockAPIClient(APIClient):
             ref = f"{uuid.uuid4()}"
             return {"ref": ref[:16], "id": self.ticket_count}
         return {}
+
+    def update(self, endpoint, param):
+        return {}
+
+    def close_ticket(self, deskpro_id):
+        self.closed_tickets.append(deskpro_id)
+        return True
 
 
 class FailingMockAPIClient(MockAPIClient):
@@ -495,6 +551,12 @@ class FailingMockAPIClient(MockAPIClient):
         raise APIError(
             "API error when creating ticket.",
             {"error": "API error when creating ticket.", "code": "mock-error"},
+        )
+
+    def close_ticket(self, deskpro_id):
+        raise APIError(
+            "API error when closing ticket.",
+            {"error": "API error when closing ticket.", "code": "mock-error"},
         )
 
 
@@ -572,3 +634,27 @@ def ticket_queue_deletion_prevented(request, instance):
             ),
             org_key.email,
         )
+
+
+def close_deskpro_ticket_for_vq_item(vq_item):
+    """
+    Flag the DeskPro ticket linked to a VerificationQueueItem for auto-close
+    when the corresponding pending object is deleted (#1948).
+
+    This only touches the database (a single atomic UPDATE) — every decision
+    that affects the DeskPro side is made later by pdb_deskpro_publish, which
+    is the single writer of DeskPro state. This avoids any race with the
+    publisher:
+
+    - If the ticket has not been published yet, the publisher skips it (it
+      excludes close_requested tickets) and the close pass deletes the local
+      row — so it is never sent.
+    - If it has already been published, the close pass resolves it via the API.
+
+    """
+    if not vq_item.deskpro_ticket_id:
+        return
+
+    DeskProTicket.objects.filter(pk=vq_item.deskpro_ticket_id).update(
+        close_requested=True
+    )

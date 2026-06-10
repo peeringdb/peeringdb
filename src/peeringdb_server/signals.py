@@ -38,6 +38,7 @@ from grainy.const import PERM_CRUD, PERM_READ
 
 import peeringdb_server.settings as pdb_settings
 from peeringdb_server.deskpro import (
+    close_deskpro_ticket_for_vq_item,
     ticket_queue,
     ticket_queue_asnauto_create,
     ticket_queue_vqi_notify,
@@ -651,6 +652,8 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
                     content_type=ContentType.objects.get_for_model(sender),
                     object_id=instance.id,
                 )
+                if instance.status == "deleted":
+                    close_deskpro_ticket_for_vq_item(q)
                 q.delete()
             except VerificationQueueItem.DoesNotExist:
                 pass
@@ -661,6 +664,25 @@ if getattr(settings, "DISABLE_VERIFICATION_QUEUE", False) is False:
                 content_type=ContentType.objects.get_for_model(sender),
                 object_id=instance.id,
             )
+            # A VQI only exists while its item is pending (the post_save
+            # handler above removes it as soon as status leaves "pending"),
+            # so an existing VQI on hard delete implies a pending object —
+            # flagging its ticket for close is always correct here (#1948).
+            #
+            # SCOPE NOTE: this hard-delete path covers more than the user
+            # soft-deleting their own object (which goes through the post_save
+            # handler with status="deleted"). It also fires on AC deny
+            # (VerificationQueueItem.deny() -> item.delete(hard=True)) and on
+            # admin purges. So denying a pending item also flags its ticket
+            # for auto-close. This is broader than the literal #1948 spec but
+            # is intentional and confirmed: once the item is hard deleted there
+            # is nothing left for the ticket to reference, so auto-closing it
+            # makes sense. It stays safe because the close is gated on
+            # DESKPRO_AUTO_CLOSE_STATUSES (default awaiting_agent): a ticket an
+            # agent is mid-conversation on (awaiting_user) is left untouched.
+            # To restrict auto-close to user-initiated deletions only, drop
+            # this call and keep the one in verification_queue_update.
+            close_deskpro_ticket_for_vq_item(q)
             q.delete()
         except VerificationQueueItem.DoesNotExist:
             pass
