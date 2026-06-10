@@ -1,6 +1,7 @@
 import datetime
 import ipaddress
 import json
+from types import SimpleNamespace
 
 import jsonschema
 import pytest
@@ -27,6 +28,7 @@ from peeringdb_server.models import (
     Organization,
     User,
 )
+from peeringdb_server.serializers import NetworkSerializer
 
 from .util import setup_test_data
 
@@ -5301,3 +5303,455 @@ def test_build_switch_map_empty():
 
     switch_map = importer.build_switch_map({})
     assert switch_map == {}
+
+
+# Tests for ixp_update_exclude (#1943)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_speed(entities, save):
+    """
+    When `speed` is in ixp_update_exclude, speed should not be updated from IX-F
+    data, but is_rs_peer and operational should still be updated normally.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=False, operational=False
+    Expected after import:    speed=20000, is_rs_peer=True, operational=True
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["speed"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=False,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert (
+        netixlan.speed == 20000
+    ), "speed should NOT be updated when in ixp_update_exclude"
+    assert netixlan.is_rs_peer is True, "is_rs_peer should be updated normally"
+    assert netixlan.operational is True, "operational should be updated normally"
+
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_is_rs_peer(entities, save):
+    """
+    When `is_rs_peer` is in ixp_update_exclude, is_rs_peer should not be updated
+    from IX-F data, but speed and operational should still be updated normally.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=False, operational=False
+    Expected after import:    speed=10000, is_rs_peer=False, operational=True
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["is_rs_peer"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=False,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert netixlan.speed == 10000, "speed should be updated normally"
+    assert (
+        netixlan.is_rs_peer is False
+    ), "is_rs_peer should NOT be updated when in ixp_update_exclude"
+    assert netixlan.operational is True, "operational should be updated normally"
+
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_operational(entities, save):
+    """
+    When `operational` is in ixp_update_exclude, operational should not be updated
+    from IX-F data, but speed and is_rs_peer should still be updated normally.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=False, operational=False
+    Expected after import:    speed=10000, is_rs_peer=True, operational=False
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["operational"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=False,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert netixlan.speed == 10000, "speed should be updated normally"
+    assert netixlan.is_rs_peer is True, "is_rs_peer should be updated normally"
+    assert (
+        netixlan.operational is False
+    ), "operational should NOT be updated when in ixp_update_exclude"
+
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_all_no_proposal(entities, save):
+    """
+    When all three data fields are in ixp_update_exclude, no changes are detected,
+    no IXFMemberData proposals are created, and no emails are sent — even though
+    the IX-F data differs from the netixlan on all three fields.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=False, operational=False
+    Expected after import:    all values unchanged, IXFMemberData.count()==0, no email
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["speed", "is_rs_peer", "operational"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=False,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert netixlan.speed == 20000, "speed should NOT be updated"
+    assert netixlan.is_rs_peer is False, "is_rs_peer should NOT be updated"
+    assert netixlan.operational is False, "operational should NOT be updated"
+
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_speed_on_add(entities, save):
+    """
+    When `speed` is in ixp_update_exclude and a new netixlan is being added
+    automatically (allow_ixp_update=True), the speed field should stay at its
+    default (0) rather than taking the IX-F value.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Expected added netixlan:  speed=0, is_rs_peer=True, operational=True
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["speed"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    # No pre-existing netixlan — the importer will add one
+    assert NetworkIXLan.objects.filter(network=network, status="ok").count() == 0
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = NetworkIXLan.objects.filter(network=network, status="ok").first()
+    assert netixlan is not None, "netixlan should have been added"
+    assert (
+        netixlan.speed == 0
+    ), "speed should NOT be set from IX-F when in ixp_update_exclude"
+    assert netixlan.is_rs_peer is True, "is_rs_peer should be set from IX-F normally"
+    assert netixlan.operational is True, "operational should be set from IX-F normally"
+
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_no_notification_when_only_blocked_field_differs(
+    entities, save
+):
+    """
+    When the only difference between the netixlan and IX-F data is a field that is
+    in ixp_update_exclude, no notification email should be sent and no IXFMemberData
+    proposal should be created.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=True, operational=True (only speed differs)
+    ixp_update_exclude:       ["speed"]
+    Expected:                 IXFMemberData.count()==0, no email
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.ixp_update_exclude = ["speed"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=True,
+                operational=True,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert (
+        netixlan.speed == 20000
+    ), "speed should NOT be updated when in ixp_update_exclude"
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_default_empty_unchanged_behavior(entities, save):
+    """
+    When ixp_update_exclude is empty (default), behavior is identical to before:
+    all three fields are updated when allow_ixp_update=True.
+
+    IX-F data (ixf.member.0): speed=10000, is_rs_peer=True, operational=True
+    Netixlan starts:          speed=20000, is_rs_peer=False, operational=False
+    Expected after import:    speed=10000, is_rs_peer=True, operational=True
+    """
+    data = setup_test_data("ixf.member.0")
+    network = entities["net"]["UPDATE_ENABLED"]
+    assert network.ixp_update_exclude == [], "default should be empty list"
+    ixlan = entities["ixlan"][0]
+
+    with reversion.create_revision():
+        entities["netixlan"].append(
+            NetworkIXLan.objects.create(
+                network=network,
+                ixlan=ixlan,
+                asn=network.asn,
+                speed=20000,
+                ipaddr4="195.69.147.250",
+                ipaddr6="2001:7f8:1::a500:2906:1",
+                status="ok",
+                is_rs_peer=False,
+                operational=False,
+            )
+        )
+
+    importer = ixf.Importer()
+
+    if not save:
+        return assert_idempotent(importer, ixlan, data, save=False)
+
+    importer.update(ixlan, data=data)
+    importer.notify_proposals()
+
+    netixlan = entities["netixlan"][-1]
+    netixlan.refresh_from_db()
+
+    assert netixlan.speed == 10000
+    assert netixlan.is_rs_peer is True
+    assert netixlan.operational is True
+
+    assert IXFMemberData.objects.count() == 0
+    assert_no_emails(network, ixlan.ix)
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_add_preserves_non_excluded_when_update_disabled():
+    """
+    Regression for the #1943 predicate split (modify_* vs take_*_from_ixf).
+
+    Applying an "add" proposal manually - e.g. via the Django-admin "Apply"
+    action - on a network with allow_ixp_update=False must still take the
+    non-excluded fields (is_rs_peer, operational) from the IX-F data, exactly
+    as it did before #1943. Only fields listed in ixp_update_exclude are
+    withheld; the add branch must NOT have become gated on allow_ixp_update as
+    a side effect of folding the exclude check into modify_speed.
+
+    The IX-F importer never calls apply() for an allow_ixp_update=False network,
+    so admin bulk-apply is the only path that reaches this - hence the direct
+    apply() call rather than driving the importer. entities_base() is used
+    directly (not the parametrized `entities` fixture) so both protocols are
+    supported and the add does not null out an ip address.
+
+    IX-F proposal: speed=10000, is_rs_peer=True, operational=True
+    ixp_update_exclude: ["speed"]
+    Expected added netixlan: speed=0 (excluded -> default), is_rs_peer=True,
+                             operational=True (both taken from IX-F)
+    """
+    entities = entities_base()
+    network = entities["net"]["UPDATE_DISABLED"]
+    assert network.allow_ixp_update is False
+    network.ixp_update_exclude = ["speed"]
+    network.save()
+    ixlan = entities["ixlan"][0]
+
+    assert not NetworkIXLan.objects.filter(network=network, status="ok").exists()
+
+    ixf_member_data = IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.250",
+        ipaddr6="2001:7f8:1::a500:2906:1",
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data={"foo": "bar"},
+    )
+
+    assert ixf_member_data.action == "add"
+
+    ixf_member_data.apply(save=True)
+
+    netixlan = NetworkIXLan.objects.get(network=network, status="ok")
+    # excluded -> falls back to the model default (0), NOT the IX-F value 10000
+    assert netixlan.speed == 0, "excluded speed must not be taken from IX-F"
+    # not excluded -> taken from IX-F even though allow_ixp_update is False
+    # (pre-#1943 add behavior preserved by the modify_* / take_* split)
+    assert (
+        netixlan.is_rs_peer is True
+    ), "non-excluded is_rs_peer must be taken from IX-F"
+    assert (
+        netixlan.operational is True
+    ), "non-excluded operational must be taken from IX-F"
+
+
+@pytest.mark.django_db
+def test_ixp_update_exclude_fold_flags_partial_patch():
+    """
+    The dashboard submits ixp_update_exclude as three boolean checkbox fields
+    (ixp_update_exclude_<field>). A partial API request that sends only some of
+    those flags must change only the fields it names and preserve the rest -
+    it must NOT clear the unsent fields (#1943).
+
+    Verifies NetworkSerializer._fold_ixp_update_exclude_flags directly:
+      - a flag set True is added, unsent flags keep their current value
+      - a flag set False is removed, unsent flags keep their current value
+      - the result preserves the canonical field order
+      - the write-only flag keys are consumed (not passed through to the model)
+      - a payload with no flags is left untouched
+    """
+    serializer = NetworkSerializer()
+    # existing network already excludes is_rs_peer and operational
+    serializer.instance = SimpleNamespace(
+        ixp_update_exclude=["is_rs_peer", "operational"]
+    )
+
+    # partial PATCH: only the speed flag is present, set True
+    data = {"ixp_update_exclude_speed": True}
+    serializer._fold_ixp_update_exclude_flags(data)
+    assert data["ixp_update_exclude"] == ["speed", "is_rs_peer", "operational"]
+    assert "ixp_update_exclude_speed" not in data
+
+    # partial PATCH: only the is_rs_peer flag is present, set False -> removed,
+    # operational preserved
+    data = {"ixp_update_exclude_is_rs_peer": False}
+    serializer._fold_ixp_update_exclude_flags(data)
+    assert data["ixp_update_exclude"] == ["operational"]
+    assert "ixp_update_exclude_is_rs_peer" not in data
+
+    # no flags present -> ixp_update_exclude is not touched at all
+    data = {"name": "unchanged"}
+    serializer._fold_ixp_update_exclude_flags(data)
+    assert "ixp_update_exclude" not in data

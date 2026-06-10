@@ -142,6 +142,33 @@ def validate_account_name(value):
     return value
 
 
+def clean_ixp_update_exclude(value):
+    """
+    Normalize and validate a list of IX-F field names that a network has
+    opted to exclude from automatic import updates (#1943).
+
+    Returns a `(cleaned_list, error_message)` tuple. `error_message` is None
+    when the value is valid; otherwise `cleaned_list` is empty. Callers raise
+    the ValidationError flavor appropriate to their layer (django vs DRF) so
+    this helper stays framework-agnostic - it is shared by `Network.clean()`
+    and `NetworkSerializer.validate_ixp_update_exclude()`.
+    """
+    valid_choices = peeringdb_server.models.IXP_UPDATE_EXCLUDE_FIELDS
+    if value is None:
+        return [], None
+    if not isinstance(value, list):
+        return [], _("Must be a list.")
+    valid = {field for field, label in valid_choices}
+    invalid = set(value) - valid
+    if invalid:
+        return [], _("Invalid field(s): %(fields)s. Valid values: %(valid)s") % {
+            "fields": ", ".join(sorted(invalid)),
+            "valid": ", ".join(sorted(valid)),
+        }
+    # de-duplicate while preserving order
+    return list(dict.fromkeys(value)), None
+
+
 def validate_prefix(prefix):
     """
     Validate ip prefix.

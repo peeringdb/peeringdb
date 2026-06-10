@@ -74,6 +74,7 @@ from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
+    clean_ixp_update_exclude,
     validate_account_name,
     validate_address_space,
     validate_api_rate,
@@ -133,6 +134,12 @@ REAUTH_PERIODS = (
     ("3m", _("3 Month")),
     ("6m", _("6 Months")),
     ("1y", _("1 Year")),
+)
+
+IXP_UPDATE_EXCLUDE_FIELDS = (
+    ("speed", _("Speed")),
+    ("is_rs_peer", _("Route Server Peer")),
+    ("operational", _("Operational")),
 )
 
 
@@ -4190,6 +4197,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
         if (
             self.modify_is_rs_peer
+            and self.take_is_rs_peer_from_ixf
             and self.is_rs_peer is not None
             and netixlan.is_rs_peer != self.is_rs_peer
         ):
@@ -4197,10 +4205,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
                 is_rs_peer={"from": netixlan.is_rs_peer, "to": self.is_rs_peer}
             )
 
-        if self.modify_speed and self.speed > 0 and netixlan.speed != self.speed:
+        if (
+            self.modify_speed
+            and self.take_speed_from_ixf
+            and self.speed > 0
+            and netixlan.speed != self.speed
+        ):
             changes.update(speed={"from": netixlan.speed, "to": self.speed})
 
-        if netixlan.operational != self.operational:
+        if self.take_operational_from_ixf and netixlan.operational != self.operational:
             changes.update(
                 operational={"from": netixlan.operational, "to": self.operational}
             )
@@ -4237,6 +4250,55 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
             return self.net.allow_ixp_update
         except Exception:
             return False
+
+    @property
+    def take_speed_from_ixf(self):
+        """
+        Returns whether `speed` may be taken from IX-F import data, i.e. whether
+        the network has NOT excluded it via `ixp_update_exclude` (#1943).
+
+        This is an independent, field-level opt-out - orthogonal to
+        `allow_ixp_update`. Consumers combine the two as appropriate: the
+        `modify` action and `_changes()` require both
+        (`modify_speed and take_speed_from_ixf`), while the `add` action and
+        new-netixlan construction consult only this predicate, since an add
+        never depended on `allow_ixp_update`.
+
+        Defaults to True (not excluded) when the network cannot be resolved.
+        Unlike the False-on-exception default of `modify_speed` - which is an
+        authorization gate that must fail closed - this is a feature opt-out
+        that fails *open* to the pre-#1943 behavior of taking the IX-F value,
+        rather than silently dropping it on a half-constructed instance.
+        """
+        try:
+            return "speed" not in self.net.ixp_update_exclude
+        except Exception:
+            return True
+
+    @property
+    def take_is_rs_peer_from_ixf(self):
+        """
+        Whether `is_rs_peer` may be taken from IX-F import data (#1943).
+        See `take_speed_from_ixf` for the semantics and exception default.
+        """
+        try:
+            return "is_rs_peer" not in self.net.ixp_update_exclude
+        except Exception:
+            return True
+
+    @property
+    def take_operational_from_ixf(self):
+        """
+        Whether `operational` may be taken from IX-F import data (#1943).
+
+        Unlike speed / is_rs_peer, `operational` has never been gated by
+        `allow_ixp_update` - it was always applied - so this exclude predicate
+        is its only gate. See `take_speed_from_ixf` for the exception default.
+        """
+        try:
+            return "operational" not in self.net.ixp_update_exclude
+        except Exception:
+            return True
 
     @property
     def changed_fields(self):
@@ -4487,15 +4549,25 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
                 if is_rs_peer is None:
                     is_rs_peer = False
 
+                # Read net once so the three take_*_from_ixf property calls
+                # below all hit the Django FK cache instead of re-querying.
+                net = self.net
+
+                # This is a brand-new netixlan (add path), which historically
+                # never consulted allow_ixp_update - so gate excluded fields on
+                # take_*_from_ixf only (#1943). An excluded field falls back to
+                # the model default rather than the IX-F value.
                 self._netixlan = NetworkIXLan(
                     ipaddr4=self.ipaddr4,
                     ipaddr6=self.ipaddr6,
-                    speed=self.speed,
+                    speed=self.speed if self.take_speed_from_ixf else 0,
                     asn=self.asn,
-                    operational=self.operational,
-                    is_rs_peer=is_rs_peer,
+                    operational=self.operational
+                    if self.take_operational_from_ixf
+                    else True,
+                    is_rs_peer=is_rs_peer if self.take_is_rs_peer_from_ixf else False,
                     ixlan=self.ixlan,
-                    network=self.net,
+                    network=net,
                     status="ok",
                 )
 
@@ -4596,12 +4668,16 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         self.changes
 
         if action == "add":
-            self.validate_speed()
+            # add never gated on allow_ixp_update; gate only on the #1943
+            # per-field exclude (take_*_from_ixf).
+            if self.take_speed_from_ixf:
+                self.validate_speed()
+                netixlan.speed = self.speed
+            if self.take_is_rs_peer_from_ixf:
+                netixlan.is_rs_peer = bool(self.is_rs_peer)
+            if self.take_operational_from_ixf:
+                netixlan.operational = bool(self.operational)
 
-            # Update data values
-            netixlan.speed = self.speed
-            netixlan.is_rs_peer = bool(self.is_rs_peer)
-            netixlan.operational = bool(self.operational)
             if self.ix_side_id is not None:
                 netixlan.ix_side = self.ix_side
 
@@ -4614,16 +4690,23 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
             self._netixlan = netixlan = result["netixlan"]
         elif action == "modify":
-            self.validate_speed()
-
-            if self.modify_speed and self.speed:
-                netixlan.speed = self.speed
-            if self.modify_is_rs_peer and self.is_rs_peer is not None:
+            # modify keeps its historical allow_ixp_update gate (modify_*) and
+            # additionally honors the #1943 per-field exclude (take_*_from_ixf).
+            # operational was never gated by allow_ixp_update, so exclude-only.
+            if self.modify_speed and self.take_speed_from_ixf:
+                self.validate_speed()
+                if self.speed:
+                    netixlan.speed = self.speed
+            if (
+                self.modify_is_rs_peer
+                and self.take_is_rs_peer_from_ixf
+                and self.is_rs_peer is not None
+            ):
                 netixlan.is_rs_peer = self.is_rs_peer
             if self.ix_side_id is not None:
                 netixlan.ix_side = self.ix_side
-
-            netixlan.operational = self.operational
+            if self.take_operational_from_ixf:
+                netixlan.operational = self.operational
             if save:
                 netixlan.full_clean()
                 netixlan.save()
@@ -5031,6 +5114,15 @@ class Network(
         ),
     )
 
+    ixp_update_exclude = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_(
+            "List of IX-F fields to exclude from automatic import updates. "
+            "Valid values: speed, is_rs_peer, operational"
+        ),
+    )
+
     @classmethod
     def automated_net_count(cls):
         """
@@ -5069,6 +5161,13 @@ class Network(
         ]
 
     parent_relations = ["org"]
+
+    def clean(self):
+        super().clean()
+        cleaned, error = clean_ixp_update_exclude(self.ixp_update_exclude)
+        if error:
+            raise ValidationError({"ixp_update_exclude": error})
+        self.ixp_update_exclude = cleaned
 
     @staticmethod
     def autocomplete_search_fields():
