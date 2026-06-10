@@ -417,6 +417,14 @@ set_from_env("RECAPTCHA_SECRET_KEY")
 set_from_env("DESKPRO_KEY")
 set_from_env("DESKPRO_URL")
 
+# Timeout (seconds) for outgoing HTTP requests to the DeskPRO API.
+set_option("DESKPRO_TIMEOUT", 30)
+
+# DeskPRO ticket statuses that are eligible for auto-close when the
+# related pending object is deleted (#1948). A ticket is only resolved
+# automatically if its current status on the DeskPRO side is in this set.
+set_option("DESKPRO_AUTO_CLOSE_STATUSES", ["awaiting_agent"])
+
 set_from_env(
     "OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH", os.path.join(API_CACHE_ROOT, "keys", "oidc.key")
 )
