@@ -1692,7 +1692,23 @@ set_from_env(
 )
 
 # Setting for number of days before deleting notok RIR
-set_option("KEEP_RIR_STATUS", 90)
+# (i.e. how long after an RIR/NIR reclaims an ASN we keep the network).
+# GH #1942: accelerated from 90 to 1 day; still env-configurable.
+set_option("KEEP_RIR_STATUS", 1)
+
+# Network contact roles to notify when a network is flagged for RIR-status
+# deletion (GH #1942). Comma-separated env var, matched case-insensitively
+# against NetworkContact.role; empty disables notifications. Defaults to the
+# operational roles (== NetworkContact.TECH_ROLES) that can action a reclaimed
+# ASN; widen via the env var if needed.
+set_option(
+    "RIR_STATUS_NOTIFY_ROLES",
+    [
+        "technical",
+        "noc",
+        "policy",
+    ],
+)
 
 # A toggle for RIR status check
 set_option("AUTO_UPDATE_RIR_STATUS", True)

@@ -349,6 +349,9 @@ class Mock:
     def rir_status_updated(self, data, reftag=None):
         return None
 
+    def rir_status_notified(self, data, reftag=None):
+        return None
+
     def periodic_reauth(self, data, reftag=None):
         return False
 
