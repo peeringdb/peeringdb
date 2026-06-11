@@ -5147,6 +5147,42 @@ class Network(
         ),
     )
 
+    # GH #1942: when contacts were last notified about pending RIR-status
+    # removal. pdb_rir_status won't delete a network until this is set, so
+    # removal is always preceded by at least one notification attempt (not
+    # guaranteed delivery).
+    rir_status_notified = models.DateTimeField(blank=True, null=True)
+
+    @property
+    def rir_status_notify_contacts(self):
+        """
+        Returns a deduplicated list of network contact email addresses that
+        should be notified when this network is flagged for RIR-status
+        deletion (GH #1942).
+
+        The set of roles to notify is configured via the
+        `RIR_STATUS_NOTIFY_ROLES` setting (matched case-insensitively against
+        `NetworkContact.role`). An empty setting disables notifications.
+        """
+        # Drop blank entries so an empty setting disables notifications; an
+        # empty env var yields [""] (via _set_list), not [].
+        roles = [
+            role.lower() for role in settings.RIR_STATUS_NOTIFY_ROLES if role.strip()
+        ]
+        if not roles:
+            return []
+
+        qset = self.poc_set_active.exclude(email="").exclude(email__isnull=True)
+
+        # strip/skip whitespace-only emails so a blank contact can't break a send
+        contacts = [
+            poc.email.strip()
+            for poc in qset
+            if poc.role.lower() in roles and poc.email.strip()
+        ]
+
+        return list(set(contacts))
+
     @classmethod
     def automated_net_count(cls):
         """

@@ -1,3 +1,59 @@
+"""
+Check and update the RIR status of networks against RIR allocation data, and
+remove networks whose ASN has been reclaimed by the RIR/NIR (GH #1942).
+
+Each run compares every network's ASN to the RIR data and:
+
+- flags a network whose status went good -> bad (e.g. "missing"/"reserved"),
+  notifying its contacts and starting the deletion countdown,
+- deletes a still-unassigned network once it has been notified and
+  KEEP_RIR_STATUS days have elapsed,
+- clears the flag if the assignment recovers (bad -> good).
+
+Typically run from cron. Without --commit it runs in pretend mode (logs only,
+no DB changes or emails).
+
+Usage:
+    # dry run (no changes, no emails)
+    ./Ctl/dev/run.sh manage pdb_rir_status
+
+    # apply changes / send notifications
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit
+
+    # only a single ASN
+    ./Ctl/dev/run.sh manage pdb_rir_status --asn 63311 --commit
+
+    # cap the per-run notification burst (e.g. draining a first-deploy backlog)
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit --max-notifications 100
+
+    # reset all RIR status / deletion timers (no notifications)
+    ./Ctl/dev/run.sh manage pdb_rir_status --reset --commit
+
+Options:
+    --commit                 Apply changes and send notifications. Without it the
+                             command runs in pretend mode (logs only).
+    --asn ASN                Only check this single ASN.
+    --limit N                Only process the first N networks (ordered by ASN).
+    --max-age HOURS          Skip networks whose rir_status was updated less than
+                             HOURS ago (avoids rechecking recently-checked nets).
+    --reset                  Reset every network's rir_status / rir_status_updated
+                             to the current RIR data and clear the notification
+                             marker, resetting all deletion timers. Sends no
+                             notifications.
+    -o, --output FILE        With --reset, write all networks with a bad RIR
+                             status to FILE.
+    -M, --max-changes N      Abort (CommandError) if more than N networks flip
+                             good<->bad in one run, guarding against mass flagging
+                             from bad RIR data. Default 100.
+    -N, --max-notifications N  Cap how many removal notifications are sent per run.
+                             Networks beyond the cap keep rir_status_notified unset
+                             and are handled on later runs, bounding the burst
+                             (e.g. a first-deploy backlog, which --max-changes does
+                             not cover). Default 100.
+"""
+
+import logging
+
 import reversion
 from django.conf import settings as pdb_settings
 from django.core.management.base import BaseCommand, CommandError
@@ -7,7 +63,30 @@ from rdap.assignment import RIRAssignmentLookup
 
 from peeringdb_server.deskpro import ticket_queue_rir_status_updates
 from peeringdb_server.inet import rir_status_is_ok
+from peeringdb_server.mail import mail_network_rir_status_flagged
 from peeringdb_server.models import Network
+
+logger = logging.getLogger(__name__)
+
+
+def _send_rir_status_notifications(networks, days_until_deletion):
+    """
+    Send RIR-status removal warnings to each network's contacts (GH #1942).
+
+    Run via transaction.on_commit so emails are only sent once changes are
+    committed, stay out of the open transaction, and a single failed send
+    neither rolls back the run nor blocks the rest.
+    """
+    for net in networks:
+        recipients = net.rir_status_notify_contacts
+        if not recipients:
+            continue
+        try:
+            mail_network_rir_status_flagged(net, recipients, days_until_deletion)
+        except Exception:
+            logger.exception(
+                "Failed to send RIR removal notification for AS%s", net.asn
+            )
 
 
 class Command(BaseCommand):
@@ -36,6 +115,13 @@ class Command(BaseCommand):
             type=int,
             default=100,
             help="Maximum amount of networks having a RIR status change from good to bad or vice versa. If exceeded, script will exit with error and a human should look at. This is to help prevent mass flagging of networks because of bad RIR data. Default to 100.",
+        )
+        parser.add_argument(
+            "-N",
+            "--max-notifications",
+            type=int,
+            default=100,
+            help="Maximum number of RIR-status removal notifications to send per run (GH #1942). Flagged networks beyond this limit keep rir_status_notified unset and are picked up on subsequent runs, bounding the notification burst -- e.g. the first run after deploy against an existing backlog of already-flagged networks, which is not covered by --max-changes. Default to 100.",
         )
 
     def log(self, msg):
@@ -77,6 +163,8 @@ class Command(BaseCommand):
         for net in qset:
             net.rir_status = rir.get_status(net.asn)
             net.rir_status_updated = now
+            # GH #1942: resetting timelines also resets the notification cycle
+            net.rir_status_notified = None
 
             if not rir_status_is_ok(net.rir_status):
                 bad_networks.append(net)
@@ -86,7 +174,8 @@ class Command(BaseCommand):
         self.log(f"Saving {len(batch_save)} networks")
         if self.commit:
             Network.objects.bulk_update(
-                batch_save, ["rir_status", "rir_status_updated"]
+                batch_save,
+                ["rir_status", "rir_status_updated", "rir_status_notified"],
             )
 
         if self.output:
@@ -107,6 +196,7 @@ class Command(BaseCommand):
             self.limit = options.get("limit")
             self.output = options.get("output")
             self.max_changes = options.get("max_changes")
+            self.max_notifications = options.get("max_notifications")
 
             reset = options.get("reset")
             if reset:
@@ -154,6 +244,11 @@ class Command(BaseCommand):
             networks_from_good_to_bad = []
             networks_from_bad_to_good = []
 
+            # GH #1942: networks to warn about pending RIR-status removal.
+            # Notified after commit (see _send_rir_status_notifications), so a
+            # rollback never warns about a deletion that wasn't recorded.
+            networks_to_notify = []
+
             num_pending_deletion = 0
 
             for net in networks:
@@ -178,6 +273,19 @@ class Command(BaseCommand):
                         net.rir_status = new_rir_status
                         networks_from_good_to_bad.append(net)
 
+                        # GH #1942: queue a warning and set rir_status_notified
+                        # (which gates deletion). Past the per-run cap, leave it
+                        # unset so the network is warned on a later run before it
+                        # can be deleted.
+                        if len(networks_to_notify) < self.max_notifications:
+                            net.rir_status_notified = now
+                            networks_to_notify.append(net)
+                            self.log(f"AS{net.asn} flagged, will notify contacts")
+                        else:
+                            self.log(
+                                f"AS{net.asn} flagged, notification deferred (per-run cap reached)"
+                            )
+
                         if self.commit:
                             batch_save.append(net)
 
@@ -194,9 +302,37 @@ class Command(BaseCommand):
 
                     if not rir_status_is_ok(old_rir_status):
                         # old status was not ok (!assigned)
+                        # the network is flagged for deletion
+
+                        if not net.rir_status_notified:
+                            # GH #1942: flagged but not yet warned (e.g. flagged
+                            # before notifications existed). Warn now and restart
+                            # the window from the notification. This path isn't
+                            # bounded by --max-changes (the whole backlog lands
+                            # here on first deploy), so honour the per-run cap:
+                            # past it, leave the network untouched for a later run.
+                            if len(networks_to_notify) >= self.max_notifications:
+                                self.log(
+                                    f"AS{net.asn} flagged for RIR removal, notification deferred (per-run cap reached)"
+                                )
+                                num_pending_deletion += 1
+                                continue
+
+                            self.log(
+                                f"AS{net.asn} flagged for RIR removal but not yet notified, notifying and deferring deletion"
+                            )
+                            net.rir_status_updated = now
+                            net.rir_status_notified = now
+                            networks_to_notify.append(net)
+                            num_pending_deletion += 1
+
+                            if self.commit:
+                                batch_save.append(net)
+
+                            continue
+
                         # check if we should delete the network, because
                         # it has been unassigned for too long
-
                         notok_since = now - net.rir_status_updated
                         if (
                             notok_since.total_seconds()
@@ -227,6 +363,9 @@ class Command(BaseCommand):
                         # but new status is ok (assigned)
                         net.rir_status_updated = now
                         net.rir_status = new_rir_status
+                        # GH #1942: assignment restored, clear the marker so a
+                        # future flagging starts a fresh warning cycle.
+                        net.rir_status_notified = None
                         if self.commit:
                             batch_save.append(net)
 
@@ -260,6 +399,19 @@ class Command(BaseCommand):
             # batch update
 
             if self.commit:
+                # GH #1942: send notifications only after the transaction
+                # commits (see _send_rir_status_notifications).
+                if networks_to_notify:
+                    self.log(
+                        f"Scheduling RIR removal notifications for {len(networks_to_notify)} networks"
+                    )
+                    notify = list(networks_to_notify)
+                    transaction.on_commit(
+                        lambda: _send_rir_status_notifications(
+                            notify, pdb_settings.KEEP_RIR_STATUS
+                        )
+                    )
+
                 if networks_from_bad_to_good:
                     # notify admin comittee on networks changed from bad RIR status to ok RIR status
 
@@ -271,7 +423,8 @@ class Command(BaseCommand):
 
                 self.log(f"Applying rir status updates for {len(batch_save)} networks")
                 Network.objects.bulk_update(
-                    batch_save, ["rir_status", "rir_status_updated"]
+                    batch_save,
+                    ["rir_status", "rir_status_updated", "rir_status_notified"],
                 )
         finally:
             Network._meta.get_field("updated").auto_now = True
