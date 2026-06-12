@@ -288,6 +288,8 @@ class ValidationErrorEncoder(json.JSONEncoder):
             return obj.message
         elif isinstance(obj, Promise):
             return f"{obj}"
+        elif isinstance(obj, Exception):
+            return f"{obj}"
         return super().default(obj)
 
 
