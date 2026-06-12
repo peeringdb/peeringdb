@@ -1,3 +1,6 @@
+import ipaddress
+import json
+
 import pytest
 import reversion
 from django.core.exceptions import ValidationError
@@ -15,6 +18,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     ProtectedAction,
+    ValidationErrorEncoder,
 )
 
 
@@ -97,6 +101,33 @@ def test_network_legacy_info_type():
 
     with pytest.raises(AttributeError):
         Network(asn=1, name="Test Network", irr_as_set="AS-TEST", info_type="Content")
+
+
+@pytest.mark.django_db
+def test_validation_error_encoder_wraps_raw_exception():
+    """
+    Test that ValidationErrorEncoder can wrap a ValidationError that contains a raw exception
+    (e.g. AddressValueError) in its message_dict, and that the original error message is preserved 
+    in the JSON output.
+    """
+    try:
+        ipaddress.IPv4Address("2001:7f8:60::1026:d")
+    except ipaddress.AddressValueError as exc:
+        address_error = exc
+
+    error = ValidationError(
+        {
+            "ipaddr4": [ValidationError(address_error)],
+            "ipaddr6": [ValidationError("IP already exists")],
+        }
+    )
+
+    encoded = json.loads(json.dumps(error, cls=ValidationErrorEncoder))
+
+    assert encoded == {
+        "ipaddr4": ["Expected 4 octets in '2001:7f8:60::1026:d'"],
+        "ipaddr6": ["IP already exists"],
+    }
 
 
 @pytest.mark.django_db
