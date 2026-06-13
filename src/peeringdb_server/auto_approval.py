@@ -66,7 +66,7 @@ def _validate_ixf_feed(ixf_ixp_member_list_url, submitting_org):
 
 def auto_approve_ix(request, prefix, ixf_ixp_member_list_url=None, submitting_org=None):
     if not EnvironmentSetting.get_setting_value("AUTO_IX_APPROVAL_ENABLED"):
-        return False, "pending"
+        return False, "pending", ""
 
     user = request.user
 
