@@ -266,6 +266,54 @@ class SearchV2TestCase(TestCase):
         self.assertEqual(geo["lat"], 48.8566)
         self.assertEqual(geo["long"], 2.3522)
 
+    @patch("peeringdb_server.geo.GoogleMaps")
+    def test_handle_city_country_search_country_code_fallback(self, mock_google_maps):
+        # Regression for #461: a country code ("IE") is expanded to the country
+        # name ("Ireland") and geocoded, but Google returns it as a
+        # natural_feature with no country component, so build_location_dict
+        # yields an empty country. The code must fall back to the resolved
+        # alpha-2 code instead of dropping the country filter.
+        mock_geocode_result = [
+            {
+                "address_components": [
+                    {
+                        "long_name": "Ireland",
+                        "short_name": "Ireland",
+                        "types": ["establishment", "natural_feature"],
+                    },
+                ],
+                "geometry": {
+                    "location": {"lat": 53.41291, "lng": -8.24389},
+                    "bounds": {
+                        "northeast": {"lat": 55.4, "lng": -5.4},
+                        "southwest": {"lat": 51.4, "lng": -10.7},
+                    },
+                },
+            }
+        ]
+
+        mock_instance = MagicMock()
+        mock_instance.client.geocode.return_value = mock_geocode_result
+        # natural_feature result has no country component -> empty country
+        mock_instance.build_location_dict.return_value = {
+            "location": "",
+            "state": None,
+            "country": "",
+        }
+        mock_instance.distance_from_bounds.return_value = 551
+
+        mock_google_maps.return_value = mock_instance
+
+        geo = {}
+        q = ["fac in IE"]
+        list_of_words = q[0].split()
+        geo = views.handle_city_country_search(list_of_words, 1, q, 0, geo)
+
+        # country filter must be preserved via the alpha-2 fallback
+        self.assertEqual(geo["country"], "IE")
+        self.assertEqual(geo["lat"], 53.41291)
+        self.assertEqual(geo["long"], -8.24389)
+
     def test_escape_query_string(self):
         self.assertEqual(escape_query_string("test"), "test")
         self.assertEqual(escape_query_string("test?"), "test\\?")
