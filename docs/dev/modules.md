@@ -1,4 +1,4 @@
-Generated on 2026-05-12 15:10:38.212377
+Generated on 2026-06-16 15:01:18.089584
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -344,3 +344,4 @@ View definitions:
 - Entity views (network, facility, internet exchange and organization)
 - Sponsorships
 - User Registration
+

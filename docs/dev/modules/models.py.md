@@ -1,4 +1,4 @@
-Generated from models.py on 2026-05-12 15:10:38.212377
+Generated from models.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.models
 
@@ -330,7 +330,7 @@ Return str(self).
 DeskProTicket(peeringdb_server.models.StripFieldMixin)
 ```
 
-DeskProTicket(id, subject, body, user, email, created, published, deskpro_ref, deskpro_id)
+DeskProTicket(id, subject, body, user, email, created, published, deskpro_ref, deskpro_id, close_requested, closed)
 
 
 ## DeskProTicketCC
@@ -694,6 +694,28 @@ objects for this IXFMemberData object. Currently this
 only happens on add proposals that require two netixlans
 to be deleted because both ipaddresses exist on separate
 netixlans (#770).
+- take_is_rs_peer_from_ixf (`@property`): Whether `is_rs_peer` may be taken from IX-F import data (#1943).
+See `take_speed_from_ixf` for the semantics and exception default.
+- take_operational_from_ixf (`@property`): Whether `operational` may be taken from IX-F import data (#1943).
+
+Unlike speed / is_rs_peer, `operational` has never been gated by
+`allow_ixp_update` - it was always applied - so this exclude predicate
+is its only gate. See `take_speed_from_ixf` for the exception default.
+- take_speed_from_ixf (`@property`): Returns whether `speed` may be taken from IX-F import data, i.e. whether
+the network has NOT excluded it via `ixp_update_exclude` (#1943).
+
+This is an independent, field-level opt-out - orthogonal to
+`allow_ixp_update`. Consumers combine the two as appropriate: the
+`modify` action and `_changes()` require both
+(`modify_speed and take_speed_from_ixf`), while the `add` action and
+new-netixlan construction consult only this predicate, since an add
+never depended on `allow_ixp_update`.
+
+Defaults to True (not excluded) when the network cannot be resolved.
+Unlike the False-on-exception default of `modify_speed` - which is an
+authorization gate that must fail closed - this is a feature opt-out
+that fails *open* to the pre-#1943 behavior of taking the IX-F value,
+rather than silently dropping it on a half-constructed instance.
 
 ### Class Methods
 
@@ -1430,6 +1452,13 @@ have active suggestions for the network.
 - netfac_set_active (`@property`): None
 - netixlan_set_active (`@property`): None
 - poc_set_active (`@property`): None
+- rir_status_notify_contacts (`@property`): Returns a deduplicated list of network contact email addresses that
+should be notified when this network is flagged for RIR-status
+deletion (GH #1942).
+
+The set of roles to notify is configured via the
+`RIR_STATUS_NOTIFY_ROLES` setting (matched case-insensitively against
+`NetworkContact.role`). An empty setting disables notifications.
 - search_result_name (`@property`): This will be the name displayed for quick search matches
 of this entity.
 - sponsorship (`@property`): None

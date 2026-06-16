@@ -1,4 +1,4 @@
-Generated on 2026-05-12 15:10:38.212377
+Generated on 2026-06-16 15:01:18.089584
 
 ## _db_command.py
 
@@ -27,6 +27,21 @@ Replace a value in a field across several entities.
 ## pdb_cleanup_vq.py
 
 Verification queue cleanup.
+
+## pdb_convert_irr_as_set_postfix.py
+
+Convert irr_as_set @SOURCE postfix tokens to SOURCE:: prefix notation.
+
+Finds all Network objects (status=ok) whose irr_as_set contains @SOURCE
+tokens and rewrites each token to SOURCE::as-set format.
+
+Usage:
+
+    # Preview changes without modifying the database
+    ./Ctl/dev/run.sh manage pdb_convert_irr_as_set_postfix
+
+    # Apply changes
+    ./Ctl/dev/run.sh manage pdb_convert_irr_as_set_postfix --commit
 
 ## pdb_delete_childless_org.py
 
@@ -181,7 +196,57 @@ Inspect an object's history of changes.
 
 ## pdb_rir_status.py
 
-# Classes
+Check and update the RIR status of networks against RIR allocation data, and
+remove networks whose ASN has been reclaimed by the RIR/NIR (GH #1942).
+
+Each run compares every network's ASN to the RIR data and:
+
+- flags a network whose status went good -> bad (e.g. "missing"/"reserved"),
+  notifying its contacts and starting the deletion countdown,
+- deletes a still-unassigned network once it has been notified and
+  KEEP_RIR_STATUS days have elapsed,
+- clears the flag if the assignment recovers (bad -> good).
+
+Typically run from cron. Without --commit it runs in pretend mode (logs only,
+no DB changes or emails).
+
+Usage:
+    # dry run (no changes, no emails)
+    ./Ctl/dev/run.sh manage pdb_rir_status
+
+    # apply changes / send notifications
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit
+
+    # only a single ASN
+    ./Ctl/dev/run.sh manage pdb_rir_status --asn 63311 --commit
+
+    # cap the per-run notification burst (e.g. draining a first-deploy backlog)
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit --max-notifications 100
+
+    # reset all RIR status / deletion timers (no notifications)
+    ./Ctl/dev/run.sh manage pdb_rir_status --reset --commit
+
+Options:
+    --commit                 Apply changes and send notifications. Without it the
+                             command runs in pretend mode (logs only).
+    --asn ASN                Only check this single ASN.
+    --limit N                Only process the first N networks (ordered by ASN).
+    --max-age HOURS          Skip networks whose rir_status was updated less than
+                             HOURS ago (avoids rechecking recently-checked nets).
+    --reset                  Reset every network's rir_status / rir_status_updated
+                             to the current RIR data and clear the notification
+                             marker, resetting all deletion timers. Sends no
+                             notifications.
+    -o, --output FILE        With --reset, write all networks with a bad RIR
+                             status to FILE.
+    -M, --max-changes N      Abort (CommandError) if more than N networks flip
+                             good<->bad in one run, guarding against mass flagging
+                             from bad RIR data. Default 100.
+    -N, --max-notifications N  Cap how many removal notifications are sent per run.
+                             Networks beyond the cap keep rir_status_notified unset
+                             and are handled on later runs, bounding the burst
+                             (e.g. a first-deploy backlog, which --max-changes does
+                             not cover). Default 100.
 
 ## pdb_search_index.py
 
@@ -229,3 +294,4 @@ Wipe all peering data.
 ## runserver.py
 
 # Classes
+

@@ -1,4 +1,4 @@
-Generated from search_v2.py on 2026-05-12 15:10:38.212377
+Generated from search_v2.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.search_v2
 
@@ -160,6 +160,23 @@ query_string (str): The query string to be escaped.
 
 Returns:
 str: Escaped query string.
+
+---
+## get_index_tag
+`def get_index_tag(index_name)`
+
+Return the alias root (ref tag) for an Elasticsearch index name.
+
+Once the concrete indices are converted to aliases pointing at
+suffixed physical indices (e.g. `net` aliased to `net-20260520043834`),
+search hits report the physical index name in `_index`. Strip the
+suffix so results can be categorized by the alias root.
+
+Args:
+    index_name (str): The index name as reported by Elasticsearch.
+
+Returns:
+    str: The alias root (e.g. `net`, `org`, `fac`).
 
 ---
 ## is_matching_geo
