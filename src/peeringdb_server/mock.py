@@ -228,7 +228,7 @@ class Mock:
         return self.name(data, reftag=reftag)
 
     def irr_as_set(self, data, reftag=None):
-        return f"AS-{str(uuid.uuid4())[:8].upper()}@RIPE"
+        return f"RIPE::AS-{str(uuid.uuid4())[:8].upper()}"
 
     def looking_glass(self, data, reftag=None):
         return f"{self.website(data, reftag=reftag)}/looking-glass"
@@ -292,6 +292,9 @@ class Mock:
     def speed(self, data, reftag=None):
         return 1000
 
+    def ixp_update_exclude(self, data, reftag=None):
+        return []
+
     def ixf_net_count(self, data, reftag=None):
         return 0
 
@@ -344,6 +347,9 @@ class Mock:
         return "assigned"
 
     def rir_status_updated(self, data, reftag=None):
+        return None
+
+    def rir_status_notified(self, data, reftag=None):
         return None
 
     def periodic_reauth(self, data, reftag=None):

@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-05-12 15:10:38.212377
+Generated from validators.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.validators
 
@@ -7,6 +7,19 @@ peeringdb model / field validators
 # Functions
 ---
 
+## clean_ixp_update_exclude
+`def clean_ixp_update_exclude(value)`
+
+Normalize and validate a list of IX-F field names that a network has
+opted to exclude from automatic import updates (#1943).
+
+Returns a `(cleaned_list, error_message)` tuple. `error_message` is None
+when the value is valid; otherwise `cleaned_list` is empty. Callers raise
+the ValidationError flavor appropriate to their layer (django vs DRF) so
+this helper stays framework-agnostic - it is shared by `Network.clean()`
+and `NetworkSerializer.validate_ixp_update_exclude()`.
+
+---
 ## validate_account_name
 `def validate_account_name(value)`
 
@@ -120,7 +133,7 @@ Raises:
 Validate irr as-set string.
 
 - the as-set/rs-set name has to conform to RFC 2622 (5.1 and 5.2)
-- the source may be specified by AS-SET@SOURCE or SOURCE::AS-SET
+- the source may be specified by SOURCE::AS-SET
 - multiple values must be separated by either comma, space or comma followed by space
 
 Arguments:

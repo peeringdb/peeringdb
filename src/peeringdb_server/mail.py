@@ -2,12 +2,16 @@
 Utility functions for emailing users and admin staff.
 """
 
+import logging
+
 from django.conf import settings
 from django.core.mail.message import EmailMultiAlternatives
 from django.template import loader
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
+
+logger = logging.getLogger(__name__)
 
 
 def mail_sponsorship_admin(subj, msg):
@@ -100,6 +104,53 @@ def mail_users_entity_merge(users_source, users_target, entity_source, entity_ta
                 ),
                 msg,
             )
+
+
+def mail_network_rir_status_flagged(net, recipients, days_until_deletion):
+    """
+    Notify a network's contacts that the network has been flagged for
+    automatic removal because its ASN is no longer registered as assigned by
+    its RIR/NIR (GH #1942).
+
+    Arguments:
+        - net <Network>: the flagged network
+        - recipients <list>: list of contact email addresses
+        - days_until_deletion <int>: KEEP_RIR_STATUS, the number of days the
+          network is kept after being flagged before it is removed
+    """
+
+    if not recipients:
+        return
+
+    msg = loader.get_template("email/notify-net-rir-status.txt").render(
+        {
+            "net": net,
+            "days_until_deletion": days_until_deletion,
+            "support_email": settings.DEFAULT_FROM_EMAIL,
+        }
+    )
+
+    subject = _("AS{} flagged for removal from PeeringDB (RIR status)").format(net.asn)
+
+    # Honor MAIL_DEBUG like the other mail paths (ixf/deskpro/email_user): in
+    # debug/non-prod environments (e.g. beta) we never put real removal warnings
+    # on the wire to network contacts. GH #1942.
+    if getattr(settings, "MAIL_DEBUG", False):
+        logger.info(
+            "MAIL_DEBUG set; not sending RIR removal notification for AS%s to %s",
+            net.asn,
+            recipients,
+        )
+        return
+
+    mail = EmailMultiAlternatives(
+        f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",
+        strip_tags(msg),
+        settings.DEFAULT_FROM_EMAIL,
+        recipients,
+    )
+    mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
+    mail.send(fail_silently=False)
 
 
 def mail_username_retrieve(email, secret):

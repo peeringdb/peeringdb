@@ -158,3 +158,149 @@ class VeriQueueTests(TestCase):
                 content_type=models.ContentType.objects.get_for_model(type(fac)),
                 object_id=fac.id,
             )
+
+    def test_pending_deleted_flags_unpublished_ticket_for_close(self):
+        """
+        When a pending object is deleted and its DeskPro ticket has not yet
+        been published (deskpro_id is None), the signal only flags it
+        (close_requested=True). The row is not deleted here — pdb_deskpro_publish
+        is the single writer of DeskPro state and drops it later (#1948).
+        """
+        org = models.Organization.objects.create(name="CloseTest Org", status="ok")
+        ix = models.InternetExchange.objects.create(
+            org=org, name="CloseTest IX", status="pending"
+        )
+
+        vqi = models.VerificationQueueItem.get_for_entity(ix)
+
+        ticket = models.DeskProTicket.objects.create(
+            subject="test unpublished", body="", user=None, email="test@example.com"
+        )
+        vqi.deskpro_ticket = ticket
+        vqi.save()
+
+        ix.status = "deleted"
+        ix.save()
+
+        ticket.refresh_from_db()
+        assert ticket.close_requested is True
+        assert ticket.closed is None
+        assert ticket.deskpro_id is None
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
+            vqi.refresh_from_db()
+
+    def test_pending_deleted_flags_published_ticket_for_close(self):
+        """
+        When a pending object is deleted and its DeskPro ticket has already
+        been published (deskpro_id is set), the ticket is flagged for async
+        auto-close (close_requested=True). The actual API call is performed
+        by pdb_deskpro_publish (#1948).
+        """
+        org = models.Organization.objects.create(name="CloseTest2 Org", status="ok")
+        fac = models.Facility.objects.create(
+            org=org, name="CloseTest2 Fac", status="pending"
+        )
+
+        vqi = models.VerificationQueueItem.get_for_entity(fac)
+
+        ticket = models.DeskProTicket.objects.create(
+            subject="test published",
+            body="",
+            user=None,
+            email="test@example.com",
+            deskpro_id=42,
+            deskpro_ref="REF-42",
+        )
+        vqi.deskpro_ticket = ticket
+        vqi.save()
+
+        fac.status = "deleted"
+        fac.save()
+
+        ticket.refresh_from_db()
+        assert ticket.close_requested is True
+        assert ticket.closed is None
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
+            vqi.refresh_from_db()
+
+    def test_pending_approved_does_not_flag_ticket_for_close(self):
+        """
+        When a pending object is approved (status -> ok), the linked DeskPro
+        ticket should NOT be flagged for close — AC may still need to respond
+        (#1948).
+        """
+        org = models.Organization.objects.create(name="CloseTest3 Org", status="ok")
+        carrier = models.Carrier.objects.create(
+            org=org, name="CloseTest3 Carrier", status="pending"
+        )
+
+        vqi = models.VerificationQueueItem.get_for_entity(carrier)
+
+        ticket = models.DeskProTicket.objects.create(
+            subject="test approved",
+            body="",
+            user=None,
+            email="test@example.com",
+            deskpro_id=99,
+            deskpro_ref="REF-99",
+        )
+        vqi.deskpro_ticket = ticket
+        vqi.save()
+
+        carrier.status = "ok"
+        carrier.save()
+
+        ticket.refresh_from_db()
+        assert ticket.close_requested is False
+
+    def test_pending_deleted_no_ticket_does_not_crash(self):
+        """
+        When a pending object is deleted but has no linked DeskPro ticket,
+        the deletion should proceed without error (#1948).
+        """
+        org = models.Organization.objects.create(name="CloseTest4 Org", status="ok")
+        ix = models.InternetExchange.objects.create(
+            org=org, name="CloseTest4 IX", status="pending"
+        )
+
+        vqi = models.VerificationQueueItem.get_for_entity(ix)
+        assert vqi.deskpro_ticket is None
+
+        ix.status = "deleted"
+        ix.save()
+
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
+            vqi.refresh_from_db()
+
+    def test_pending_hard_deleted_flags_ticket_for_close(self):
+        """
+        Hard-deleting a pending object (the pre_delete path used by AC deny
+        and admin purges, not just the user soft-delete path) also flags the
+        linked DeskPro ticket for auto-close (#1948). Locks in the behavior
+        documented in the SCOPE NOTE in signals.verification_queue_delete.
+        """
+        org = models.Organization.objects.create(name="CloseTest5 Org", status="ok")
+        fac = models.Facility.objects.create(
+            org=org, name="CloseTest5 Fac", status="pending"
+        )
+
+        vqi = models.VerificationQueueItem.get_for_entity(fac)
+
+        ticket = models.DeskProTicket.objects.create(
+            subject="test hard delete",
+            body="",
+            user=None,
+            email="test@example.com",
+            deskpro_id=77,
+            deskpro_ref="REF-77",
+        )
+        vqi.deskpro_ticket = ticket
+        vqi.save()
+
+        # hard delete -> fires pre_delete -> verification_queue_delete
+        fac.delete(hard=True)
+
+        ticket.refresh_from_db()
+        assert ticket.close_requested is True
+        with pytest.raises(models.VerificationQueueItem.DoesNotExist):
+            vqi.refresh_from_db()

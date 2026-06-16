@@ -110,6 +110,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
+    IXP_UPDATE_EXCLUDE_FIELDS,
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
     UTC,
@@ -3167,6 +3168,22 @@ def view_network(request, id):
                 ],
             },
             {
+                "type": "flags",
+                "admin": True,
+                "label": _("IX-F Fields to Exclude"),
+                "help_text": _(
+                    "Fields that will not be automatically updated from IX-F import data"
+                ),
+                "value": [
+                    {
+                        "name": f"ixp_update_exclude_{field}",
+                        "label": label,
+                        "value": field in network_d.get("ixp_update_exclude", []),
+                    }
+                    for field, label in IXP_UPDATE_EXCLUDE_FIELDS
+                ],
+            },
+            {
                 "type": "action",
                 "admin": True,
                 "label": _("Notify On IXP Update"),
@@ -3342,6 +3359,7 @@ def view_advanced_search(request):
     env = make_env(row_limit=getattr(dj_settings, "API_DEPTH_ROW_LIMIT", 250))
 
     env["google_maps_api_key"] = getattr(dj_settings, "GOOGLE_GEOLOC_API_KEY", "")
+    env["google_maps_map_id"] = getattr(dj_settings, "GOOGLE_MAPS_MAP_ID", "")
 
     # Expose map visualization preference
     default_map_vis = getattr(dj_settings, "DEFAULT_MAP_VISUALIZATION_ENABLED", False)
@@ -3913,6 +3931,16 @@ def handle_city_country_search(
         selected_result = filtered_result[0] if filtered_result else geocode_result[0]
         # returns locality, state and country in a dict
         location_dict = gmaps.build_location_dict(selected_result["address_components"])
+
+        # When the query was a country code, fall back to that code if the
+        # geocoder did not yield a country component. Google sometimes
+        # classifies a country name as a non-country type (e.g. "Ireland"
+        # comes back as a natural_feature with no country component), in which
+        # case build_location_dict returns an empty country and the country
+        # filter is silently dropped — leaving only the large bounding-box
+        # distance, which bleeds results into neighbouring countries.
+        if not location_dict.get("country") and alpha_2_country:
+            location_dict["country"] = alpha_2_country.alpha_2
 
         # get geo coords fromn google result
         coords = geocode_result[0].get("geometry").get("location")

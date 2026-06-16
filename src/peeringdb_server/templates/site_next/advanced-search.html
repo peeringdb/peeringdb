@@ -682,7 +682,7 @@
         }
       }
 
-      function renderResultsMap(reftag) {
+      async function renderResultsMap(reftag) {
         if (reftag !== 'fac') return;
 
         // If Google Maps is requested and API is available, render via Google Maps
@@ -692,17 +692,19 @@
           const resultsG = (window.PeeringDB && PeeringDB.advanced_search_result && PeeringDB.advanced_search_result[reftag] && PeeringDB.advanced_search_result[reftag].data) || [];
 
           if (typeof google !== 'undefined' && google.maps) {
-            // Render Google map
             try {
-              // clean container
+              const { Map, InfoWindow } = await google.maps.importLibrary("maps");
+              const { LatLngBounds } = await google.maps.importLibrary("core");
+              const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
               containerG.innerHTML = '';
-              var gmap = new google.maps.Map(containerG, {
+              var gmap = new Map(containerG, {
                 center: {lat: 20, lng: 0},
                 zoom: 2,
-                mapTypeId: 'roadmap'
+                mapTypeId: 'roadmap',
+                mapId: '{{ google_maps_map_id|escapejs }}'
               });
-              var bounds = new google.maps.LatLngBounds();
-              var info = new google.maps.InfoWindow();
+              var bounds = new LatLngBounds();
+              var info = new InfoWindow();
               var any = false;
               resultsG.forEach(function(item) {
                 var lat = item.latitude;
@@ -710,20 +712,7 @@
                 if (typeof lat !== 'number' || typeof lon !== 'number') return;
                 any = true;
                 var pos = {lat: lat, lng: lon};
-              // Use AdvancedMarkerElement if available (Google Maps deprecation notice)
-              var marker;
-              try {
-                if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-                  marker = new google.maps.marker.AdvancedMarkerElement({
-                    map: gmap,
-                    position: pos,
-                  });
-                } else {
-                  marker = new google.maps.Marker({position: pos, map: gmap});
-                }
-              } catch (e) {
-                marker = new google.maps.Marker({position: pos, map: gmap});
-              }
+                var marker = new AdvancedMarkerElement({map: gmap, position: pos});
                 var name = item.name || '';
                 var org = item.org_name || (item.org && item.org.name) || '';
                 var city = item.city || '';
@@ -735,7 +724,7 @@
                   + '<div style="margin-top:6px;display:flex;gap:10px;color:#666">'
                   + '</div>'
                   + '</div>';
-                marker.addListener('click', function() {
+                marker.addEventListener('gmp-click', function() {
                   info.setContent(html);
                   info.open(gmap, marker);
                 });
@@ -755,9 +744,9 @@
               window._googleMapsLoading = true;
               var apiKey = '{{ google_maps_api_key|default:"" }}';
               var s = document.createElement('script');
-              s.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey;
+              window._googleMapsReady = function() { renderResultsMap(reftag); };
+              s.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey + '&loading=async&callback=_googleMapsReady';
               s.async = true;
-              s.onload = function() { renderResultsMap(reftag); };
               document.body.appendChild(s);
             })();
             return;
