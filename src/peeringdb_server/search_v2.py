@@ -39,6 +39,24 @@ def get_lat_long_from_search_result(search_result):
     return None
 
 
+def get_index_tag(index_name: str) -> str:
+    """
+    Return the alias root (ref tag) for an Elasticsearch index name.
+
+    Once the concrete indices are converted to aliases pointing at
+    suffixed physical indices (e.g. `net` aliased to `net-20260520043834`),
+    search hits report the physical index name in `_index`. Strip the
+    suffix so results can be categorized by the alias root.
+
+    Args:
+        index_name (str): The index name as reported by Elasticsearch.
+
+    Returns:
+        str: The alias root (e.g. `net`, `org`, `fac`).
+    """
+    return index_name.split("-", 1)[0]
+
+
 def append_result(tag, pk, name, org_id, sub_name, result, pk_map, extra=None):
     pk = int(pk)
     if pk in pk_map[tag]:
@@ -103,7 +121,7 @@ def elasticsearch_proximity_entity(name) -> dict | None:
     # Check if there are any matches and return the first one if available
     if search_result["hits"]["total"]["value"] > 0:
         item = search_result["hits"]["hits"][0]
-        item["_source"]["ref_tag"] = item["_index"]
+        item["_source"]["ref_tag"] = get_index_tag(item["_index"])
         item["_source"]["id"] = item["_id"]
         return item["_source"]
     else:
@@ -174,7 +192,7 @@ def autocomplete_v2(term: str, user=None) -> dict[str, list[dict[str, str | int]
             continue
         if (
             hide_ixs_without_fac
-            and sq["_index"] == "ix"
+            and get_index_tag(sq["_index"]) == "ix"
             and sq["_source"].get("fac_count", 0) == 0
         ):
             continue
@@ -784,14 +802,16 @@ def append_result_to_category(sq: dict, result: dict, pk_map: dict):
         result: The dictionary where results are stored by category.
         pk_map: A map for storing primary keys.
     """
-    if sq["_index"] == "net":
+    tag = get_index_tag(sq["_index"])
+
+    if tag == "net":
         extra = {"asn": sq["_source"]["asn"]}
         if "_score" in sq["_source"]:
             extra["_score"] = sq["_source"]["_score"]
             extra["_score_explanation"] = sq["_source"].get("_score_explanation")
 
         append_result(
-            sq["_index"],
+            tag,
             sq["_id"],
             f"{sq['_source']['name']}",
             sq["_source"]["org"]["id"],
@@ -800,14 +820,14 @@ def append_result_to_category(sq: dict, result: dict, pk_map: dict):
             pk_map,
             extra,
         )
-    elif sq["_index"] == "org":
+    elif tag == "org":
         extra = {}
         if "_score" in sq["_source"]:
             extra["_score"] = sq["_source"]["_score"]
             extra["_score_explanation"] = sq["_source"].get("_score_explanation")
 
         append_result(
-            sq["_index"],
+            tag,
             sq["_id"],
             sq["_source"]["name"],
             sq["_id"],
@@ -823,7 +843,7 @@ def append_result_to_category(sq: dict, result: dict, pk_map: dict):
             extra["_score_explanation"] = sq["_source"].get("_score_explanation")
 
         append_result(
-            sq["_index"],
+            tag,
             sq["_id"],
             sq["_source"]["name"],
             sq["_source"]["org"]["id"],

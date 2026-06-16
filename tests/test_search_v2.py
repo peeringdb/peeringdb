@@ -19,6 +19,7 @@ from peeringdb_server.search_v2 import (
     construct_query_body,
     elasticsearch_proximity_entity,
     escape_query_string,
+    get_index_tag,
     is_matching_geo,
     is_valid_latitude,
     is_valid_longitude,
@@ -604,6 +605,153 @@ class SearchV2TestCase(TestCase):
 
         expected_empty_result = {cat: [] for cat in self.indexes}
         self.assertEqual(result, expected_empty_result)
+
+    def test_get_index_tag(self):
+        # concrete index names pass through unchanged
+        self.assertEqual(get_index_tag("net"), "net")
+        self.assertEqual(get_index_tag("org"), "org")
+        self.assertEqual(get_index_tag("fac"), "fac")
+        # suffixed physical index names (alias targets) are normalized
+        # to their alias root
+        self.assertEqual(get_index_tag("net-20260520043834"), "net")
+        self.assertEqual(get_index_tag("carrier-20260520043834"), "carrier")
+        self.assertEqual(get_index_tag("ix-20260520043834-foo"), "ix")
+
+    def test_process_search_results_with_aliased_indices(self):
+        """
+        When the concrete indices are aliases pointing at suffixed physical
+        indices, hits report the physical index name in _index. Results
+        must still be categorized under the alias root.
+        """
+        search_query = {
+            "hits": {
+                "total": {"value": 3, "relation": "eq"},
+                "max_score": 1.0,
+                "hits": [
+                    {
+                        "_index": "net-20260520043834",
+                        "_id": "1",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Network",
+                            "asn": 63311,
+                            "org": {"id": 10, "name": "Test Organization"},
+                            "status": "ok",
+                        },
+                    },
+                    {
+                        "_index": "org-20260520043834",
+                        "_id": "10",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Organization",
+                            "status": "ok",
+                        },
+                    },
+                    {
+                        "_index": "fac-20260520043834",
+                        "_id": "100",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Facility",
+                            "org": {"id": 10, "name": "Test Organization"},
+                            "status": "ok",
+                        },
+                    },
+                ],
+            },
+        }
+
+        result = process_search_results(
+            search_query=search_query, geo={}, categories=self.indexes, limit=1000
+        )
+
+        self.assertEqual(len(result["net"]), 1)
+        self.assertEqual(result["net"][0]["id"], 1)
+        self.assertEqual(result["net"][0]["extra"]["asn"], 63311)
+        self.assertEqual(len(result["org"]), 1)
+        self.assertEqual(result["org"][0]["id"], 10)
+        self.assertEqual(len(result["fac"]), 1)
+        self.assertEqual(result["fac"][0]["id"], 100)
+
+    def test_elasticsearch_proximity_entity_aliased_index(self):
+        """ref_tag is normalized to the alias root for aliased indices."""
+        mock_es = MagicMock()
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 1, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "fac-20260520043834",
+                        "_id": "100",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Facility",
+                            "status": "ok",
+                            "geocode_coordinates": {"lat": 40.0, "lon": -73.0},
+                        },
+                    }
+                ],
+            }
+        }
+
+        with patch(
+            "peeringdb_server.search_v2.new_elasticsearch", return_value=mock_es
+        ):
+            result = elasticsearch_proximity_entity("Test Facility")
+
+        self.assertEqual(result["ref_tag"], "fac")
+        self.assertEqual(result["id"], "100")
+
+    def test_autocomplete_v2_aliased_index(self):
+        """
+        Autocomplete categorizes hits from aliased indices and the
+        hide_ixs_without_fac filter recognizes suffixed ix index names.
+        """
+        mock_es = MagicMock()
+        mock_es.search.return_value = {
+            "hits": {
+                "total": {"value": 2, "relation": "eq"},
+                "hits": [
+                    {
+                        "_index": "ix-20260520043834",
+                        "_id": "5",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Exchange",
+                            "status": "ok",
+                            "fac_count": 0,
+                            "org": {"id": 10, "name": "Test Organization"},
+                        },
+                    },
+                    {
+                        "_index": "net-20260520043834",
+                        "_id": "1",
+                        "_score": 1.0,
+                        "_source": {
+                            "name": "Test Network",
+                            "asn": 63311,
+                            "status": "ok",
+                            "org": {"id": 10, "name": "Test Organization"},
+                        },
+                    },
+                ],
+            }
+        }
+
+        user = MagicMock()
+        user.hide_ixs_without_fac = True
+
+        with patch(
+            "peeringdb_server.search_v2.new_elasticsearch", return_value=mock_es
+        ):
+            result = autocomplete_v2("test", user=user)
+
+        # the ix hit has no facilities and the user hides those
+        self.assertEqual(result["ix"], [])
+        # the net hit is categorized under its alias root
+        self.assertEqual(len(result["net"]), 1)
+        self.assertEqual(result["net"][0]["id"], 1)
 
     def test_is_matching_geo(self):
         sq = {
