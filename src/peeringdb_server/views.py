@@ -3932,6 +3932,16 @@ def handle_city_country_search(
         # returns locality, state and country in a dict
         location_dict = gmaps.build_location_dict(selected_result["address_components"])
 
+        # When the query was a country code, fall back to that code if the
+        # geocoder did not yield a country component. Google sometimes
+        # classifies a country name as a non-country type (e.g. "Ireland"
+        # comes back as a natural_feature with no country component), in which
+        # case build_location_dict returns an empty country and the country
+        # filter is silently dropped — leaving only the large bounding-box
+        # distance, which bleeds results into neighbouring countries.
+        if not location_dict.get("country") and alpha_2_country:
+            location_dict["country"] = alpha_2_country.alpha_2
+
         # get geo coords fromn google result
         coords = geocode_result[0].get("geometry").get("location")
 
