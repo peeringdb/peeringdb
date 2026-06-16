@@ -2,12 +2,16 @@
 Utility functions for emailing users and admin staff.
 """
 
+import logging
+
 from django.conf import settings
 from django.core.mail.message import EmailMultiAlternatives
 from django.template import loader
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
+
+logger = logging.getLogger(__name__)
 
 
 def mail_sponsorship_admin(subj, msg):
@@ -127,6 +131,17 @@ def mail_network_rir_status_flagged(net, recipients, days_until_deletion):
     )
 
     subject = _("AS{} flagged for removal from PeeringDB (RIR status)").format(net.asn)
+
+    # Honor MAIL_DEBUG like the other mail paths (ixf/deskpro/email_user): in
+    # debug/non-prod environments (e.g. beta) we never put real removal warnings
+    # on the wire to network contacts. GH #1942.
+    if getattr(settings, "MAIL_DEBUG", False):
+        logger.info(
+            "MAIL_DEBUG set; not sending RIR removal notification for AS%s to %s",
+            net.asn,
+            recipients,
+        )
+        return
 
     mail = EmailMultiAlternatives(
         f"{settings.EMAIL_SUBJECT_PREFIX}{subject}",

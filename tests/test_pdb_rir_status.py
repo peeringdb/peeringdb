@@ -233,6 +233,7 @@ def test_rir_status_default_keep_is_one_day():
     assert net.status == "deleted"
 
 
+@override_settings(MAIL_DEBUG=False)
 @pytest.mark.django_db
 def test_rir_status_flag_notifies_contacts(django_capture_on_commit_callbacks):
     """
@@ -275,7 +276,7 @@ def test_rir_status_flag_notifies_contacts(django_capture_on_commit_callbacks):
     assert recipients == {"tech@example.com", "policy@example.com"}
 
 
-@override_settings(RIR_STATUS_NOTIFY_ROLES=["technical"])
+@override_settings(RIR_STATUS_NOTIFY_ROLES=["technical"], MAIL_DEBUG=False)
 @pytest.mark.django_db
 def test_rir_status_notify_roles_filter(django_capture_on_commit_callbacks):
     """
@@ -343,6 +344,81 @@ def test_rir_status_notify_roles_empty_disables(django_capture_on_commit_callbac
     assert net.rir_status_notified is not None
 
 
+@override_settings(MAIL_DEBUG=True)
+@pytest.mark.django_db
+def test_rir_status_mail_debug_suppresses_email(django_capture_on_commit_callbacks):
+    """
+    GH #1942: with MAIL_DEBUG set (non-prod envs), no removal email is put on the
+    wire, but the network is still flagged and marked notified.
+    """
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _make_net(
+            org,
+            1234,
+            rir_status="ok",
+            rir_status_updated=now - timezone.timedelta(days=100),
+        )
+        NetworkContact.objects.create(
+            network=net, role="Technical", email="tech@example.com", status="ok"
+        )
+
+        mail.outbox = []
+        with patch.object(
+            RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+        ):
+            with django_capture_on_commit_callbacks(execute=True):
+                call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert len(mail.outbox) == 0
+    assert net.status == "ok"
+    assert net.rir_status_notified is not None
+
+
+@override_settings(MAIL_DEBUG=False)
+@pytest.mark.django_db
+def test_rir_status_mute_notifications(django_capture_on_commit_callbacks):
+    """
+    GH #1942: --mute-notifications runs the full flagging/deletion logic (network
+    still flagged and marked notified) but sends no removal emails, even with
+    MAIL_DEBUG off.
+    """
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _make_net(
+            org,
+            1234,
+            rir_status="ok",
+            rir_status_updated=now - timezone.timedelta(days=100),
+        )
+        NetworkContact.objects.create(
+            network=net, role="Technical", email="tech@example.com", status="ok"
+        )
+
+        mail.outbox = []
+        with patch.object(
+            RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+        ):
+            with django_capture_on_commit_callbacks(execute=True):
+                call_command(
+                    "pdb_rir_status",
+                    asn=net.asn,
+                    commit=True,
+                    mute_notifications=True,
+                )
+
+    net.refresh_from_db()
+    assert len(mail.outbox) == 0
+    assert net.status == "ok"
+    assert net.rir_status_notified is not None
+
+
+@override_settings(MAIL_DEBUG=False)
 @pytest.mark.django_db
 def test_rir_status_legacy_flagged_not_deleted_until_notified(
     django_capture_on_commit_callbacks,
@@ -453,6 +529,7 @@ def test_rir_status_notification_failure_does_not_block_flagging(
     assert net.rir_status_notified is not None
 
 
+@override_settings(MAIL_DEBUG=False)
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "days, expected_phrase",
@@ -501,6 +578,7 @@ def test_rir_status_notification_email_no_recipients_skipped():
     assert len(mail.outbox) == 0
 
 
+@override_settings(MAIL_DEBUG=False)
 @pytest.mark.django_db
 def test_rir_status_notification_per_run_cap(django_capture_on_commit_callbacks):
     """
@@ -548,6 +626,7 @@ def test_rir_status_notification_per_run_cap(django_capture_on_commit_callbacks)
     assert Network.objects.filter(status="deleted").count() == 0
 
 
+@override_settings(MAIL_DEBUG=False)
 @pytest.mark.django_db
 def test_rir_status_per_run_cap_good_to_bad(django_capture_on_commit_callbacks):
     """

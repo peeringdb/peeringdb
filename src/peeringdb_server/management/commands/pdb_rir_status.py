@@ -29,6 +29,9 @@ Usage:
     # reset all RIR status / deletion timers (no notifications)
     ./Ctl/dev/run.sh manage pdb_rir_status --reset --commit
 
+    # run the full logic but send no emails (e.g. on beta)
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit --mute-notifications
+
 Options:
     --commit                 Apply changes and send notifications. Without it the
                              command runs in pretend mode (logs only).
@@ -50,6 +53,12 @@ Options:
                              and are handled on later runs, bounding the burst
                              (e.g. a first-deploy backlog, which --max-changes does
                              not cover). Default 100.
+    --mute-notifications     Run the full flagging/deletion logic but send no
+                             removal emails. Networks are still flagged and marked
+                             notified (deletion proceeds) -- only the outbound
+                             emails are suppressed. For envs like beta whose DB is
+                             re-synced from prod daily. Mail is also suppressed
+                             globally wherever MAIL_DEBUG is set.
 """
 
 import logging
@@ -122,6 +131,11 @@ class Command(BaseCommand):
             type=int,
             default=100,
             help="Maximum number of RIR-status removal notifications to send per run (GH #1942). Flagged networks beyond this limit keep rir_status_notified unset and are picked up on subsequent runs, bounding the notification burst -- e.g. the first run after deploy against an existing backlog of already-flagged networks, which is not covered by --max-changes. Default to 100.",
+        )
+        parser.add_argument(
+            "--mute-notifications",
+            action="store_true",
+            help="Run the full flagging/deletion logic but do NOT send removal notification emails to network contacts (GH #1942). Networks are still flagged and marked notified so deletion proceeds normally -- this only suppresses the outbound emails. Intended for environments like beta, whose DB is re-synced from prod daily and would otherwise re-notify the same contacts every run.",
         )
 
     def log(self, msg):
@@ -197,6 +211,7 @@ class Command(BaseCommand):
             self.output = options.get("output")
             self.max_changes = options.get("max_changes")
             self.max_notifications = options.get("max_notifications")
+            self.mute_notifications = options.get("mute_notifications")
 
             reset = options.get("reset")
             if reset:
@@ -401,7 +416,11 @@ class Command(BaseCommand):
             if self.commit:
                 # GH #1942: send notifications only after the transaction
                 # commits (see _send_rir_status_notifications).
-                if networks_to_notify:
+                if networks_to_notify and self.mute_notifications:
+                    self.log(
+                        f"--mute-notifications set; flagged {len(networks_to_notify)} networks but sending no removal emails"
+                    )
+                elif networks_to_notify:
                     self.log(
                         f"Scheduling RIR removal notifications for {len(networks_to_notify)} networks"
                     )
