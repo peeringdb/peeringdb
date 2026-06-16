@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0150_organization_org_flags'),
+        ("peeringdb_server", "0150_organization_org_flags"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='network',
-            name='ixp_update_exclude',
-            field=models.JSONField(blank=True, default=list, help_text='List of IX-F fields to exclude from automatic import updates. Valid values: speed, is_rs_peer, operational'),
+            model_name="network",
+            name="ixp_update_exclude",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="List of IX-F fields to exclude from automatic import updates. Valid values: speed, is_rs_peer, operational",
+            ),
         ),
     ]

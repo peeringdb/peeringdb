@@ -107,7 +107,7 @@ def test_network_legacy_info_type():
 def test_validation_error_encoder_wraps_raw_exception():
     """
     Test that ValidationErrorEncoder can wrap a ValidationError that contains a raw exception
-    (e.g. AddressValueError) in its message_dict, and that the original error message is preserved 
+    (e.g. AddressValueError) in its message_dict, and that the original error message is preserved
     in the JSON output.
     """
     try:

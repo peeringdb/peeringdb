@@ -4,13 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0151_alter_environmentsetting_setting'),
-        ('peeringdb_server', '0151_deskproticket_close_requested_deskproticket_closed_and_more'),
-        ('peeringdb_server', '0151_network_ixp_update_exclude'),
-        ('peeringdb_server', '0151_network_rir_status_notified_and_more'),
+        ("peeringdb_server", "0151_alter_environmentsetting_setting"),
+        (
+            "peeringdb_server",
+            "0151_deskproticket_close_requested_deskproticket_closed_and_more",
+        ),
+        ("peeringdb_server", "0151_network_ixp_update_exclude"),
+        ("peeringdb_server", "0151_network_rir_status_notified_and_more"),
     ]
 
-    operations = [
-    ]
+    operations = []

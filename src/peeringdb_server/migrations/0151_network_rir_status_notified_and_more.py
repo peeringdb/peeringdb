@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('peeringdb_server', '0150_organization_org_flags'),
+        ("peeringdb_server", "0150_organization_org_flags"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='network',
-            name='rir_status_notified',
+            model_name="network",
+            name="rir_status_notified",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

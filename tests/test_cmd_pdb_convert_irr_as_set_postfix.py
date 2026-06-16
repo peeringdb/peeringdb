@@ -2,9 +2,10 @@
 Tests for pdb_convert_irr_as_set_postfix management command.
 """
 
+from io import StringIO
+
 import pytest
 from django.core.management import call_command
-from io import StringIO
 
 from peeringdb_server.management.commands.pdb_convert_irr_as_set_postfix import (
     convert_irr_as_set,

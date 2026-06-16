@@ -4,8 +4,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from peeringdb_server.inet import RdapLookup
 from peeringdb_server.ixf import Importer
-from peeringdb_server.models import Network
-from peeringdb_server.models import EnvironmentSetting
+from peeringdb_server.models import EnvironmentSetting, Network
 
 log = structlog.get_logger("django")
 
