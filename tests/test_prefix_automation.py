@@ -460,7 +460,7 @@ class IXFPrefixAutomationTestCase(TestCase):
         )
 
     def _post_ix_as_user_ok(self):
-        auth = base64.b64encode(b"user_ok:user_ok").decode("utf-8")
+        auth = base64.b64encode(b"ixf_user_ok:ixf_user_ok").decode("utf-8")
         self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
         return self.client.post("/api/ix", data=self.payload, format="json")
 
