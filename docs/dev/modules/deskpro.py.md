@@ -1,4 +1,4 @@
-Generated from deskpro.py on 2026-05-12 15:10:38.212377
+Generated from deskpro.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.deskpro
 
@@ -8,6 +8,23 @@ from the deskpro API.
 # Functions
 ---
 
+## close_deskpro_ticket_for_vq_item
+`def close_deskpro_ticket_for_vq_item(vq_item)`
+
+Flag the DeskPro ticket linked to a VerificationQueueItem for auto-close
+when the corresponding pending object is deleted (#1948).
+
+This only touches the database (a single atomic UPDATE) — every decision
+that affects the DeskPro side is made later by pdb_deskpro_publish, which
+is the single writer of DeskPro state. This avoids any race with the
+publisher:
+
+- If the ticket has not been published yet, the publisher skips it (it
+  excludes close_requested tickets) and the close pass deletes the local
+  row — so it is never sent.
+- If it has already been published, the close pass resolves it via the API.
+
+---
 ## ticket_queue
 `def ticket_queue(subject, body, user)`
 
@@ -104,6 +121,20 @@ with issue 856.
 Initialize self.  See help(type(self)) for accurate signature.
 
 ---
+#### close_ticket
+`def close_ticket(self, deskpro_id)`
+
+Resolve a ticket on DeskPro by id (#1948).
+
+The ticket is only resolved if its current status on the DeskPro
+side is one of settings.DESKPRO_AUTO_CLOSE_STATUSES (default
+["awaiting_agent"]). This avoids closing tickets an agent has
+already moved on (e.g. awaiting_user, resolved). DeskPro has no
+conditional update, so we GET the current status first.
+
+Returns True if the ticket was resolved, False otherwise.
+
+---
 #### create_ticket
 `def create_ticket(self, ticket=None)`
 
@@ -133,5 +164,19 @@ IXF_SEND_TICKETS=False
 `def __init__(self, *args, **kwargs)`
 
 Initialize self.  See help(type(self)) for accurate signature.
+
+---
+#### close_ticket
+`def close_ticket(self, deskpro_id)`
+
+Resolve a ticket on DeskPro by id (#1948).
+
+The ticket is only resolved if its current status on the DeskPro
+side is one of settings.DESKPRO_AUTO_CLOSE_STATUSES (default
+["awaiting_agent"]). This avoids closing tickets an agent has
+already moved on (e.g. awaiting_user, resolved). DeskPro has no
+conditional update, so we GET the current status first.
+
+Returns True if the ticket was resolved, False otherwise.
 
 ---

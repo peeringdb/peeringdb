@@ -32563,6 +32563,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -33401,6 +33411,19 @@ paths:
                   type: boolean
                   description: Specifies whether an IXP is allowed to add a netixlan
                     entry for this network via their ixp_member data
+                ixp_update_exclude:
+                  type: object
+                  description: 'List of IX-F fields to exclude from automatic import
+                    updates. Valid values: speed, is_rs_peer, operational'
+                ixp_update_exclude_speed:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_is_rs_peer:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_operational:
+                  type: boolean
+                  writeOnly: true
                 suggest:
                   type: boolean
                   writeOnly: true
@@ -34181,6 +34204,19 @@ paths:
                   type: boolean
                   description: Specifies whether an IXP is allowed to add a netixlan
                     entry for this network via their ixp_member data
+                ixp_update_exclude:
+                  type: object
+                  description: 'List of IX-F fields to exclude from automatic import
+                    updates. Valid values: speed, is_rs_peer, operational'
+                ixp_update_exclude_speed:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_is_rs_peer:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_operational:
+                  type: boolean
+                  writeOnly: true
                 status_dashboard:
                   type: string
                   format: uri
@@ -34909,6 +34945,19 @@ paths:
                   type: boolean
                   description: Specifies whether an IXP is allowed to add a netixlan
                     entry for this network via their ixp_member data
+                ixp_update_exclude:
+                  type: object
+                  description: 'List of IX-F fields to exclude from automatic import
+                    updates. Valid values: speed, is_rs_peer, operational'
+                ixp_update_exclude_speed:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_is_rs_peer:
+                  type: boolean
+                  writeOnly: true
+                ixp_update_exclude_operational:
+                  type: boolean
+                  writeOnly: true
                 suggest:
                   type: boolean
                   writeOnly: true
@@ -35452,6 +35501,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -36391,6 +36450,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -37229,6 +37301,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -38019,6 +38104,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -39069,6 +39167,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -39969,6 +40077,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -42114,6 +42235,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -44211,6 +44345,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -46722,6 +46869,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -48057,6 +48214,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -49839,6 +50009,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -51572,6 +51755,19 @@ paths:
                       type: boolean
                       description: Specifies whether an IXP is allowed to add a netixlan
                         entry for this network via their ixp_member data
+                    ixp_update_exclude:
+                      type: object
+                      description: 'List of IX-F fields to exclude from automatic
+                        import updates. Valid values: speed, is_rs_peer, operational'
+                    ixp_update_exclude_speed:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_is_rs_peer:
+                      type: boolean
+                      writeOnly: true
+                    ixp_update_exclude_operational:
+                      type: boolean
+                      writeOnly: true
                     suggest:
                       type: boolean
                       writeOnly: true
@@ -57567,6 +57763,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -58444,6 +58650,16 @@ paths:
         required: false
         schema:
           type: string
+      - name: rir_status_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: rir_status_updated
         in: query
         description: 'Filter results by matching a value against this field.
@@ -70416,6 +70632,19 @@ components:
           type: boolean
           description: Specifies whether an IXP is allowed to add a netixlan entry
             for this network via their ixp_member data
+        ixp_update_exclude:
+          type: object
+          description: 'List of IX-F fields to exclude from automatic import updates.
+            Valid values: speed, is_rs_peer, operational'
+        ixp_update_exclude_speed:
+          type: boolean
+          writeOnly: true
+        ixp_update_exclude_is_rs_peer:
+          type: boolean
+          writeOnly: true
+        ixp_update_exclude_operational:
+          type: boolean
+          writeOnly: true
         suggest:
           type: boolean
           writeOnly: true
@@ -70703,6 +70932,19 @@ components:
           type: boolean
           description: Specifies whether an IXP is allowed to add a netixlan entry
             for this network via their ixp_member data
+        ixp_update_exclude:
+          type: object
+          description: 'List of IX-F fields to exclude from automatic import updates.
+            Valid values: speed, is_rs_peer, operational'
+        ixp_update_exclude_speed:
+          type: boolean
+          writeOnly: true
+        ixp_update_exclude_is_rs_peer:
+          type: boolean
+          writeOnly: true
+        ixp_update_exclude_operational:
+          type: boolean
+          writeOnly: true
         suggest:
           type: boolean
           writeOnly: true
@@ -71388,6 +71630,19 @@ components:
               type: boolean
               description: Specifies whether an IXP is allowed to add a netixlan entry
                 for this network via their ixp_member data
+            ixp_update_exclude:
+              type: object
+              description: 'List of IX-F fields to exclude from automatic import updates.
+                Valid values: speed, is_rs_peer, operational'
+            ixp_update_exclude_speed:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_is_rs_peer:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_operational:
+              type: boolean
+              writeOnly: true
             suggest:
               type: boolean
               writeOnly: true
@@ -72197,6 +72452,19 @@ components:
               type: boolean
               description: Specifies whether an IXP is allowed to add a netixlan entry
                 for this network via their ixp_member data
+            ixp_update_exclude:
+              type: object
+              description: 'List of IX-F fields to exclude from automatic import updates.
+                Valid values: speed, is_rs_peer, operational'
+            ixp_update_exclude_speed:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_is_rs_peer:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_operational:
+              type: boolean
+              writeOnly: true
             suggest:
               type: boolean
               writeOnly: true
@@ -74271,6 +74539,19 @@ components:
               type: boolean
               description: Specifies whether an IXP is allowed to add a netixlan entry
                 for this network via their ixp_member data
+            ixp_update_exclude:
+              type: object
+              description: 'List of IX-F fields to exclude from automatic import updates.
+                Valid values: speed, is_rs_peer, operational'
+            ixp_update_exclude_speed:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_is_rs_peer:
+              type: boolean
+              writeOnly: true
+            ixp_update_exclude_operational:
+              type: boolean
+              writeOnly: true
             suggest:
               type: boolean
               writeOnly: true

@@ -407,6 +407,7 @@ else:
 # Keys
 set_from_env("MELISSA_KEY", "")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
+set_from_env("GOOGLE_MAPS_MAP_ID")
 
 set_from_env("RDAP_LACNIC_APIKEY")
 
@@ -415,6 +416,14 @@ set_from_env("RECAPTCHA_SECRET_KEY")
 
 set_from_env("DESKPRO_KEY")
 set_from_env("DESKPRO_URL")
+
+# Timeout (seconds) for outgoing HTTP requests to the DeskPRO API.
+set_option("DESKPRO_TIMEOUT", 30)
+
+# DeskPRO ticket statuses that are eligible for auto-close when the
+# related pending object is deleted (#1948). A ticket is only resolved
+# automatically if its current status on the DeskPRO side is in this set.
+set_option("DESKPRO_AUTO_CLOSE_STATUSES", ["awaiting_agent"])
 
 set_from_env(
     "OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH", os.path.join(API_CACHE_ROOT, "keys", "oidc.key")
@@ -1437,6 +1446,9 @@ set_option("TICKET_CREATION_ASNAUTO", False)
 # when False, tickets will not be created for automated PREFIXAUTO actions
 set_option("TICKET_CREATION_PREFIXAUTO", False)
 
+# toggle auto-IX approval; when False all new IX submissions go to pending
+set_option("AUTO_IX_APPROVAL_ENABLED", True)
+
 # minimum number of unique ASNs required in an IX-F feed for auto-approval
 # of a new internet exchange (#1832)
 set_option("IXF_PREFIXAUTO_MIN_ASN_COUNT", 3)
@@ -1680,7 +1692,23 @@ set_from_env(
 )
 
 # Setting for number of days before deleting notok RIR
-set_option("KEEP_RIR_STATUS", 90)
+# (i.e. how long after an RIR/NIR reclaims an ASN we keep the network).
+# GH #1942: accelerated from 90 to 1 day; still env-configurable.
+set_option("KEEP_RIR_STATUS", 1)
+
+# Network contact roles to notify when a network is flagged for RIR-status
+# deletion (GH #1942). Comma-separated env var, matched case-insensitively
+# against NetworkContact.role; empty disables notifications. Defaults to the
+# operational roles (== NetworkContact.TECH_ROLES) that can action a reclaimed
+# ASN; widen via the env var if needed.
+set_option(
+    "RIR_STATUS_NOTIFY_ROLES",
+    [
+        "technical",
+        "noc",
+        "policy",
+    ],
+)
 
 # A toggle for RIR status check
 set_option("AUTO_UPDATE_RIR_STATUS", True)

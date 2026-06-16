@@ -1,4 +1,4 @@
-Generated from serializers.py on 2026-05-12 15:10:38.212377
+Generated from serializers.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.serializers
 
@@ -800,6 +800,20 @@ Currently supports: ixlan_id, ix_id, netixlan_id, netfac_id, fac_id
 
 ### Methods
 
+#### _fold_ixp_update_exclude_flags
+`def _fold_ixp_update_exclude_flags(self, data)`
+
+The dashboard submits `ixp_update_exclude` as three independent boolean
+checkbox fields (`ixp_update_exclude_<field>`). Fold whichever are
+present into the canonical `ixp_update_exclude` list (#1943).
+
+Flags absent from the payload retain their current value, so a partial
+API request (e.g. PATCH with only `ixp_update_exclude_speed`) changes
+only the field it names and never silently clears the others. The base
+list comes from an explicit `ixp_update_exclude` in this same payload if
+present, otherwise from the existing instance.
+
+---
 #### create
 `def create(self, validated_data)`
 

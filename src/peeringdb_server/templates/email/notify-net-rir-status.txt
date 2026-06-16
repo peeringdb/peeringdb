@@ -1,0 +1,11 @@
+{% load i18n %}
+{% language 'en' %}{% blocktrans with asn=net.asn name=net.name %}The Autonomous System Number (ASN) for your network AS{{ asn }} - {{ name }} appears to have been reclaimed by its Regional or National Internet Registry (RIR/NIR) and is no longer registered as assigned.{% endblocktrans %}
+
+{% blocktrans count days=days_until_deletion %}Unless the assignment is restored, this network will be automatically removed from PeeringDB in {{ days }} day.{% plural %}Unless the assignment is restored, this network will be automatically removed from PeeringDB in {{ days }} days.{% endblocktrans %}
+
+{% blocktrans %}If you believe this is an error, or the ASN has been (or will be) re-assigned to your organization, please make sure the registration is up to date with your RIR/NIR. PeeringDB rechecks RIR assignment data regularly and will keep the network if the assignment is restored before the removal date.{% endblocktrans %}
+
+{% trans "Network:" %} {{ net.view_url }}
+
+{% blocktrans with email=support_email %}If you have any questions, please contact us at {{ email }}.{% endblocktrans %}
+{% endlanguage %}

@@ -335,20 +335,13 @@ def test_validate_prefix_overlap_error():
     [
         # success validation
         ("RIPE::AS-FOO", "RIPE::AS-FOO"),
-        ("AS-FOO@RIPE", "AS-FOO@RIPE"),
-        ("AS-FOO-BAR@RIPE", "AS-FOO-BAR@RIPE"),
         ("ripe::as-foo", "RIPE::AS-FOO"),
-        ("as-foo@ripe", "AS-FOO@RIPE"),
-        ("as-foo@ripe as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
-        ("as-foo@ripe,as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
-        ("as-foo@ripe, as-bar@ripe", "AS-FOO@RIPE AS-BAR@RIPE"),
         (
             "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
             "RIPE::AS12345:AS-FOO RIPE::AS12345:AS-FOO:AS9876",
         ),
         ("ripe::as-foo:as123:as345", "RIPE::AS-FOO:AS123:AS345"),
         ("RIPE::AS12345", "RIPE::AS12345"),
-        ("AS12345@RIPE", "AS12345@RIPE"),
         ("RIPE::AS123456:RS-FOO", "RIPE::AS123456:RS-FOO"),
         ("as-foo", "AS-FOO"),
         ("rs-foo", "RS-FOO"),
@@ -358,16 +351,19 @@ def test_validate_prefix_overlap_error():
         ("AS15562", "AS15562"),
         ("AS-15562", "AS-15562"),
         ("AS15562 AS33333", "AS15562 AS33333"),
-        ("AS-RESOUND@ARIN", "AS-RESOUND@ARIN"),
         ("ARIN::AS-RESOUND", "ARIN::AS-RESOUND"),
         # hyphenated source validation
         # we currently do not have valid hyphentated sources in the IRR_SOURCE
         # so this test is commented out
-        # ("AS-20C@ARIN-NONAUTH", "AS-20C@ARIN-NONAUTH"),
         # ("ARIN-NONAUTH::AS-20C", "ARIN-NONAUTH::AS-20C"),
         # fail validation
         ("AS-Resound Networks,LLC", False),
         ("UNKNOWN::AS-FOO", False),
+        # postfix @SOURCE notation is no longer supported #1894
+        ("AS-FOO@RIPE", False),
+        ("AS-FOO-BAR@RIPE", False),
+        ("AS12345@RIPE", False),
+        ("AS-RESOUND@ARIN", False),
         ("AS-FOO@UNKNOWN", False),
         ("ASFOO@UNKNOWN", False),
         ("UNKNOWN::ASFOO", False),

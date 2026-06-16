@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2026-05-12 15:10:38.212377
+Generated from rest_throttles.py on 2026-06-16 15:01:18.089584
 
 # peeringdb_server.rest_throttles
 

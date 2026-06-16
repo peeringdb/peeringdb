@@ -458,3 +458,30 @@ class IXFPrefixAutomationTestCase(TestCase):
         self.assertIn(
             "no IX-F member list URL provided", response.data["ixf_pending_reason"]
         )
+
+    def _post_ix_as_user_ok(self):
+        auth = base64.b64encode(b"ixf_user_ok:ixf_user_ok").decode("utf-8")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
+        return self.client.post("/api/ix", data=self.payload, format="json")
+
+    @override_settings(AUTO_IX_APPROVAL_ENABLED=False)
+    def test_ix_create_disabled_via_setting(self):
+        """
+        When AUTO_IX_APPROVAL_ENABLED=False the qualifying user still gets
+        pending, not auto-approved.
+        """
+        response = self._post_ix_as_user_ok()
+        self.assertEqual(response.data["status"], "pending")
+        self.assertEqual(response.status_code, 201)
+
+    def test_ix_create_disabled_via_environment_setting(self):
+        """
+        When AUTO_IX_APPROVAL_ENABLED is disabled via EnvironmentSetting the
+        qualifying user still gets pending.
+        """
+        models.EnvironmentSetting.objects.create(
+            setting="AUTO_IX_APPROVAL_ENABLED", value_bool=False
+        )
+        response = self._post_ix_as_user_ok()
+        self.assertEqual(response.data["status"], "pending")
+        self.assertEqual(response.status_code, 201)

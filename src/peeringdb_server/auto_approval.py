@@ -4,7 +4,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from peeringdb_server.inet import RdapLookup
 from peeringdb_server.ixf import Importer
-from peeringdb_server.models import Network
+from peeringdb_server.models import EnvironmentSetting, Network
 
 log = structlog.get_logger("django")
 
@@ -64,6 +64,9 @@ def _validate_ixf_feed(ixf_ixp_member_list_url, submitting_org):
 
 
 def auto_approve_ix(request, prefix, ixf_ixp_member_list_url=None, submitting_org=None):
+    if not EnvironmentSetting.get_setting_value("AUTO_IX_APPROVAL_ENABLED"):
+        return False, "pending", ""
+
     user = request.user
 
     if isinstance(user, AnonymousUser):

@@ -346,7 +346,7 @@ class TestJSON(unittest.TestCase):
             "asn": asn,
             "website": WEBSITE,
             "social_media": SOCIAL_MEDIA,
-            "irr_as_set": "AS-ZZ-ZZZZZZ@RIPE",
+            "irr_as_set": "RIPE::AS-ZZ-ZZZZZZ",
             "info_types": ["NSP"],
             "info_prefixes4": 11000,
             "info_prefixes6": 12000,
@@ -2776,6 +2776,31 @@ class TestJSON(unittest.TestCase):
                     "allow_ixp_update": "Cannot be enabled - must have a Technical, NOC, or Policy point of contact with valid email."
                 }
             },
+        )
+
+    ##########################################################################
+
+    def test_org_admin_002_PUT_net_ixp_update_exclude(self):
+        # the canonical ixp_update_exclude list field round-trips through the
+        # REST API (write + read back), preserving order, and an unknown field
+        # name is rejected with 400 (#1943).
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_rw_ok"].id,
+            {"ixp_update_exclude": ["speed", "is_rs_peer"]},
+            test_failures={
+                "invalid": {"ixp_update_exclude": ["speed", "bogus_field"]},
+            },
+        )
+
+        # the empty list (default: every field imported) is valid and clears
+        # any previously set exclusions
+        self.assert_update(
+            self.db_org_admin,
+            "net",
+            SHARED["net_rw_ok"].id,
+            {"ixp_update_exclude": []},
         )
 
     ##########################################################################

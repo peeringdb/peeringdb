@@ -142,6 +142,33 @@ def validate_account_name(value):
     return value
 
 
+def clean_ixp_update_exclude(value):
+    """
+    Normalize and validate a list of IX-F field names that a network has
+    opted to exclude from automatic import updates (#1943).
+
+    Returns a `(cleaned_list, error_message)` tuple. `error_message` is None
+    when the value is valid; otherwise `cleaned_list` is empty. Callers raise
+    the ValidationError flavor appropriate to their layer (django vs DRF) so
+    this helper stays framework-agnostic - it is shared by `Network.clean()`
+    and `NetworkSerializer.validate_ixp_update_exclude()`.
+    """
+    valid_choices = peeringdb_server.models.IXP_UPDATE_EXCLUDE_FIELDS
+    if value is None:
+        return [], None
+    if not isinstance(value, list):
+        return [], _("Must be a list.")
+    valid = {field for field, label in valid_choices}
+    invalid = set(value) - valid
+    if invalid:
+        return [], _("Invalid field(s): %(fields)s. Valid values: %(valid)s") % {
+            "fields": ", ".join(sorted(invalid)),
+            "valid": ", ".join(sorted(valid)),
+        }
+    # de-duplicate while preserving order
+    return list(dict.fromkeys(value)), None
+
+
 def validate_prefix(prefix):
     """
     Validate ip prefix.
@@ -338,7 +365,7 @@ def validate_irr_as_set(value):
     Validate irr as-set string.
 
     - the as-set/rs-set name has to conform to RFC 2622 (5.1 and 5.2)
-    - the source may be specified by AS-SET@SOURCE or SOURCE::AS-SET
+    - the source may be specified by SOURCE::AS-SET
     - multiple values must be separated by either comma, space or comma followed by space
 
     Arguments:
@@ -368,29 +395,19 @@ def validate_irr_as_set(value):
         source = None
         as_set = None
 
-        # <name>@<source>
-        # Source names contain only letters, digits, and hyphens (e.g. RIPE, RADB).
-        # Use [A-Z0-9-]+ for source to exclude colons, which belong only in
-        # the hierarchical set name. See: https://www.rfc-editor.org/rfc/rfc2622
-        parts_match = re.match(r"^([A-Z0-9_:-]+)@([A-Z0-9-]+)$", item)
-        if parts_match:
-            source = parts_match.group(2)
-            as_set = parts_match.group(1)
-
         # <source>::<name>
+        parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
+        if parts_match:
+            source = parts_match.group(1)
+            as_set = parts_match.group(2)
         else:
-            parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
-            if parts_match:
-                source = parts_match.group(1)
-                as_set = parts_match.group(2)
-            else:
-                if not re.match(r"^[A-Z0-9_:-]+$", item):
-                    raise ValidationError(
-                        _(
-                            "Invalid formatting: {} - should be AS-SET, ASx, AS-SET@SOURCE or SOURCE::AS-SET"
-                        ).format(item)
-                    )
-                as_set = item
+            if not re.match(r"^[A-Z0-9_:-]+$", item):
+                raise ValidationError(
+                    _(
+                        "Invalid formatting: {} - should be AS-SET, ASx, or SOURCE::AS-SET"
+                    ).format(item)
+                )
+            as_set = item
 
         if source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
