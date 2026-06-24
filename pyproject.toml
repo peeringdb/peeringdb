@@ -1,6 +1,6 @@
 [project]
 name = "peeringdb_server"
-version = "2.79.0-beta1"
+version = "2.80.0"
 description = "source code for PeeringDB.com"
 readme = "README.md"
 authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
@@ -96,8 +96,8 @@ dependencies = [
 [project.urls]
 repository = "https://github.com/peeringdb/peeringdb"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     # testing
     "pytest>=6",
     "pytest-cov>=1",
