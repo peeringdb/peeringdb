@@ -1744,7 +1744,7 @@ dependencies = [
 
 [[package]]
 name = "peeringdb-server"
-version = "2.80.0"
+version = "2.80.1"
 source = { virtual = "." }
 dependencies = [
     { name = "argon2-cffi" },
