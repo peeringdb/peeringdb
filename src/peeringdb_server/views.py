@@ -3358,7 +3358,11 @@ def view_advanced_search(request):
     template = get_template(request, "site/advanced-search.html")
     env = make_env(row_limit=getattr(dj_settings, "API_DEPTH_ROW_LIMIT", 250))
 
-    env["google_maps_api_key"] = getattr(dj_settings, "GOOGLE_GEOLOC_API_KEY", "")
+    # Use the dedicated browser maps key if configured; fall back to the
+    # geocoding key so behavior is unchanged until GOOGLE_MAPS_API_KEY is set.
+    env["google_maps_api_key"] = getattr(
+        dj_settings, "GOOGLE_MAPS_API_KEY", ""
+    ) or getattr(dj_settings, "GOOGLE_GEOLOC_API_KEY", "")
     env["google_maps_map_id"] = getattr(dj_settings, "GOOGLE_MAPS_MAP_ID", "")
 
     # Expose map visualization preference
