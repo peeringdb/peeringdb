@@ -407,6 +407,12 @@ else:
 # Keys
 set_from_env("MELISSA_KEY", "")
 set_from_env("GOOGLE_GEOLOC_API_KEY")
+# Browser-side Google Maps JavaScript API key for the advanced-search map.
+# Kept separate from GOOGLE_GEOLOC_API_KEY because the maps key is rendered
+# into the page (public) and should carry HTTP-referrer restrictions, while
+# GOOGLE_GEOLOC_API_KEY is used server-side for geocoding and must NOT be
+# referrer-restricted. Falls back to GOOGLE_GEOLOC_API_KEY when unset.
+set_from_env("GOOGLE_MAPS_API_KEY")
 set_from_env("GOOGLE_MAPS_MAP_ID")
 
 set_from_env("RDAP_LACNIC_APIKEY")

@@ -211,6 +211,30 @@ def test_adv_search_init():
 
 
 @pytest.mark.django_db
+def test_adv_search_google_maps_key():
+    """
+    The advanced-search browser map key falls back to GOOGLE_GEOLOC_API_KEY
+    when GOOGLE_MAPS_API_KEY is unset, and uses GOOGLE_MAPS_API_KEY when set.
+    GOOGLE_GEOLOC_API_KEY stays server-side only (geocoding); the browser map
+    must not pin to a referrer-restricted key.
+    """
+    reset_group_ids()
+    client = Client()
+
+    # GOOGLE_MAPS_API_KEY is unset in run_tests.py, so the rendered map key
+    # falls back to GOOGLE_GEOLOC_API_KEY ("AIzatest").
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
+    assert b"var apiKey = 'AIzatest'" in response.content
+
+    # When GOOGLE_MAPS_API_KEY is set, the browser map uses it instead.
+    with override_settings(GOOGLE_MAPS_API_KEY="AIzamapstest"):
+        response = client.get("/advanced_search")
+        assert response.status_code == 200
+        assert b"var apiKey = 'AIzamapstest'" in response.content
+
+
+@pytest.mark.django_db
 def test_signup_page():
     client = Client()
 
