@@ -5982,7 +5982,8 @@ PeeringDB = {
             dark: document.getElementById('dark-mode-btn'),
             auto: document.getElementById('auto-mode-btn')
         };
-        Object.values(buttons).forEach(btn => btn.classList.remove('active'));
+        // Theme mode buttons are not present on every page, so skip any that are absent.
+        Object.values(buttons).forEach(btn => btn && btn.classList.remove('active'));
         if (buttons[mode]) {
             buttons[mode].classList.add('active');
         }
