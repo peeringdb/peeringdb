@@ -5835,9 +5835,9 @@ def test_ixf_import_does_not_create_addressless_netixlan():
     blank = NetworkIXLan.objects.filter(
         status="ok", ipaddr4__isnull=True, ipaddr6__isnull=True
     )
-    assert blank.count() == 0, (
-        f"importer created {blank.count()} netixlan(s) with no IPv4 or IPv6 address"
-    )
+    assert (
+        blank.count() == 0
+    ), f"importer created {blank.count()} netixlan(s) with no IPv4 or IPv6 address"
 
     # the suppressed hint must be resolved (deleted), not left as a
     # perpetual, unactionable "add" proposal

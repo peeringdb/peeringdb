@@ -52,9 +52,9 @@ class Command(PeeringDBBaseCommand):
         resulting version had neither ip set. Rows the importer only modified,
         or that once carried an ip, are not matched.
         """
-        entries = netixlan.ixf_import_log_entries.filter(
-            action="add"
-        ).select_related("version_after")
+        entries = netixlan.ixf_import_log_entries.filter(action="add").select_related(
+            "version_after"
+        )
         for entry in entries:
             data = entry.version_after.field_dict
             if not data.get("ipaddr4") and not data.get("ipaddr6"):
