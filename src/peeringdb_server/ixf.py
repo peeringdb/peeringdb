@@ -1371,11 +1371,15 @@ class Importer:
     def apply_add(self, ixf_member_data):
         if ixf_member_data.net.allow_ixp_update:
             try:
-                self.log_apply(
-                    ixf_member_data.apply(save=self.save), reason=REASON_NEW_ENTRY
-                )
-                if not self.save:
-                    self.consolidate_delete_add(ixf_member_data)
+                apply_result = ixf_member_data.apply(save=self.save)
+                if apply_result["action"] == "noop":
+                    # add suppressed for having no ip address (#2005); resolve
+                    # the hint so it doesn't linger as an unactionable "add"
+                    self.resolve(ixf_member_data)
+                else:
+                    self.log_apply(apply_result, reason=REASON_NEW_ENTRY)
+                    if not self.save:
+                        self.consolidate_delete_add(ixf_member_data)
             except ValidationError as exc:
                 if ixf_member_data.set_conflict(error=exc, save=self.save):
                     self.queue_notification(ixf_member_data, ixf_member_data.action)

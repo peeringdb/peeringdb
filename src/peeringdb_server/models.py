@@ -4716,6 +4716,12 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
             if not self.net.ipv4_support:
                 netixlan.ipaddr4 = None
 
+            # if the protocol wipe above left no address, don't create an
+            # address-less netixlan - the mismatch is already surfaced via
+            # the protocol-conflict notification (#2005)
+            if netixlan.ipaddr4 is None and netixlan.ipaddr6 is None:
+                return {"action": "noop", "netixlan": netixlan, "ixf_member_data": self}
+
             result = self.ixlan.add_netixlan(netixlan, save=save, save_others=save)
 
             self._netixlan = netixlan = result["netixlan"]

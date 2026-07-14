@@ -5785,3 +5785,88 @@ def test_ixp_update_exclude_fold_flags_partial_patch():
     data = {"name": "unchanged"}
     serializer._fold_ixp_update_exclude_flags(data)
     assert "ixp_update_exclude" not in data
+
+
+@pytest.mark.django_db
+def test_ixf_import_does_not_create_addressless_netixlan():
+    """
+    The IX-F importer must never create a netixlan with neither an IPv4
+    nor an IPv6 address.
+
+    A network that supports only IPv6 has a stale IXFMemberData hint still
+    carrying an IPv4 address (left over from when it supported IPv4). The
+    feed advertises that IPv4 address, apply() nulls it because the net no
+    longer supports IPv4, and the resulting address-less netixlan would
+    otherwise be persisted.
+    """
+
+    entities = entities_base()
+
+    # v6-only network with automatic IX-F updates enabled
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.info_unicast = False
+    network.info_ipv6 = True
+    network.save()
+    assert network.ipv4_support is False
+    assert network.ipv6_support is True
+
+    ixlan = entities["ixlan"][0]
+
+    # stale hint left over from when the net still supported IPv4
+    IXFMemberData.objects.create(
+        asn=network.asn,
+        ipaddr4="195.69.147.250",
+        ipaddr6=None,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=datetime.datetime.now(datetime.timezone.utc),
+        operational=True,
+        is_rs_peer=False,
+        status="ok",
+        data="{}",
+    )
+
+    # feed advertises the ASN with only the (now unsupported) IPv4 address
+    data = setup_test_data("ixf.member.no.ip")
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    blank = NetworkIXLan.objects.filter(
+        status="ok", ipaddr4__isnull=True, ipaddr6__isnull=True
+    )
+    assert blank.count() == 0, (
+        f"importer created {blank.count()} netixlan(s) with no IPv4 or IPv6 address"
+    )
+
+    # the suppressed hint must be resolved (deleted), not left as a
+    # perpetual, unactionable "add" proposal
+    assert IXFMemberData.objects.filter(asn=network.asn).count() == 0
+
+
+@pytest.mark.django_db
+def test_ixf_import_creates_netixlan_for_supported_protocol():
+    """
+    Guard against over-suppression: a v6-only network whose feed carries a
+    valid IPv6 address (plus an IPv4 the net does not support) must still get
+    a netixlan created - with the IPv6 address kept and the IPv4 dropped.
+    """
+
+    entities = entities_base()
+
+    network = entities["net"]["UPDATE_ENABLED"]
+    network.info_unicast = False
+    network.info_ipv6 = True
+    network.save()
+
+    ixlan = entities["ixlan"][0]
+
+    # feed has both a v4 and a v6 address for the ASN
+    data = setup_test_data("ixf.member.0")
+
+    importer = ixf.Importer()
+    importer.update(ixlan, data=data)
+
+    netixlan = NetworkIXLan.objects.get(status="ok", asn=network.asn)
+    assert netixlan.ipaddr4 is None
+    assert str(netixlan.ipaddr6) == "2001:7f8:1::a500:2906:1"
