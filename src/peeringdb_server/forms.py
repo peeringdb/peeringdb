@@ -26,7 +26,7 @@ from schema import Schema, SchemaError
 
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
-from peeringdb_server.validators import validate_account_name
+from peeringdb_server.validators import validate_account_name, validate_name
 
 
 class OrganizationAPIKeyForm(forms.Form):
@@ -71,6 +71,8 @@ class AffiliateToOrgForm(forms.Form):
                 org = Organization.objects.get(name=org_id)
                 return org.id
             except Organization.DoesNotExist:
+                # reject consecutive whitespace in human-typed org name (#1984)
+                validate_name(org_id)
                 self.cleaned_data["org_name"] = org_id
                 return 0
 

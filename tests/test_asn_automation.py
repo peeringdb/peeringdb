@@ -134,6 +134,55 @@ class AsnAutomationTestCase(TestCase):
         )
         self.assertEqual(net.name, "AS63313")
 
+    @staticmethod
+    def _rdap_with(name=None, org_name=None):
+        # seeding _parsed short-circuits _parse() and the block-range check
+        rdap = pdbinet.RdapAsn({})
+        rdap._parsed = {
+            "name": name,
+            "org_name": org_name,
+            "org_address": None,
+            "emails": [],
+        }
+        return rdap
+
+    def test_org_create_from_rdap_normalizes_whitespace(self):
+        # #1984 - RDAP org name whitespace is collapsed (normalized, not rejected)
+        rdap = self._rdap_with(org_name="Foo  Bar")
+        org, created = models.Organization.create_from_rdap(rdap, 63330)
+        self.assertEqual(org.name, "Foo Bar")
+
+        # collapsed variant resolves to the same org (dedup still works)
+        org2, created2 = models.Organization.create_from_rdap(
+            self._rdap_with(org_name="Foo Bar"), 63330
+        )
+        self.assertEqual(org2.id, org.id)
+
+    def test_net_create_from_rdap_normalizes_whitespace(self):
+        rdap = self._rdap_with(name="Foo  Bar")
+        net, created = models.Network.create_from_rdap(rdap, 63331, self.base_org)
+        self.assertEqual(net.name, "Foo Bar")
+
+        # duplicate-name branch: " !" suffix builds on the collapsed name
+        net2, created2 = models.Network.create_from_rdap(
+            self._rdap_with(name="Foo  Bar"), 63332, self.base_org
+        )
+        self.assertEqual(net2.name, "Foo Bar !")
+
+    def test_undelete_for_new_owner_normalizes_whitespace(self):
+        # #1984 - reclaiming a deleted ASN pulls the name from RDAP
+        deleted = models.Network.objects.create(
+            name="Old Name", asn=63333, org=self.base_org, status="ok"
+        )
+        deleted.delete()  # soft-delete
+
+        new_org = models.Organization.objects.create(name="New Owner Org")
+        net, undeleted = models.Network.undelete_for_new_owner(
+            63333, new_org, self._rdap_with(name="Foo  Bar")
+        )
+        self.assertTrue(undeleted)
+        self.assertEqual(net.name, "Foo Bar")
+
     def test_validate_rdap_relationship(self):
         b = self.user_a.validate_rdap_relationship(self.rdap_63311)
         self.assertEqual(b, True)

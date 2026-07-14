@@ -38,6 +38,7 @@ from peeringdb_server.validators import (
     validate_irr_as_set,
     validate_latitude,
     validate_longitude,
+    validate_name,
     validate_phonenumber,
     validate_prefix_overlap,
     validate_social_media,
@@ -140,6 +141,48 @@ def test_validate_account_name_allows_expected_characters():
     assert validate_account_name("John  Doe") == "John  Doe"
     assert validate_account_name("- -") == "- -"
     assert validate_account_name("' '") == "' '"
+
+
+# #1984 - entity name consecutive-whitespace rejection
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Foo Bar",
+        "Foo-Bar",
+        "Foo Bar Baz",
+        "Foo\tBar",
+        "Foo Bar ",
+        " Foo Bar",
+        "Foo  ",
+        "  Foo",
+        "",
+        None,
+    ],
+)
+def test_validate_name_allows(value):
+    assert validate_name(value) == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Foo  Bar",
+        "Foo   Bar",
+        "Foo \t Bar",
+        "Foo\t\tBar",
+        "Webair Internet  Development",
+        "Foo  Bar ",
+    ],
+)
+def test_validate_name_rejects_consecutive_whitespace(value):
+    with pytest.raises(ValidationError):
+        validate_name(value)
+
+
+def test_network_serializer_inherits_name_validation():
+    assert NetworkSerializer().validate_name("Acme Corp") == "Acme Corp"
+    with pytest.raises(ValidationError):
+        NetworkSerializer().validate_name("Acme  Corp")
 
 
 @pytest.mark.parametrize(

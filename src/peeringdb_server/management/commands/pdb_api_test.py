@@ -1674,7 +1674,11 @@ class TestJSON(unittest.TestCase):
             data,
             ignore=["prefix"],
             test_failures={
-                "invalid": {"prefix": self.get_prefix4(), "name": ""},
+                "invalid": [
+                    {"prefix": self.get_prefix4(), "name": ""},
+                    # #1984 - reject 2+ consecutive whitespace in name
+                    {"prefix": self.get_prefix4(), "name": "Foo  Bar"},
+                ],
                 "perms": {
                     "prefix": self.get_prefix4(),
                     # need to set name again so it doesnt fail unique validation
@@ -1708,13 +1712,29 @@ class TestJSON(unittest.TestCase):
         assert ix.ixlan
         assert ix.ixlan.id == ix.id
 
+        # #1984 - leading/trailing whitespace in name is stripped on save
+        # (normalized via StripFieldMixin.save(), not rejected)
+        strip_name = self.make_name("StripTest")
+        r_strip = self.assert_get_single(
+            self.db_org_admin.create(
+                "ix",
+                self.make_data_ix(prefix=self.get_prefix4(), name=f"  {strip_name}  "),
+                return_response=True,
+            ).get("data")
+        )
+        assert r_strip["name"] == strip_name
+
         self.assert_update(
             self.db_org_admin,
             "ix",
             SHARED["ix_id"],
             {"name": self.make_name("Test")},
             test_failures={
-                "invalid": {"name": ""},
+                "invalid": [
+                    {"name": ""},
+                    # #1984 - reject 2+ consecutive whitespace in name
+                    {"name": "Foo  Bar"},
+                ],
                 "perms": {"id": SHARED["ix_r_ok"].id},
                 "readonly": {"ixf_net_count": 50, "ixf_last_import": "not even valid"},
             },
