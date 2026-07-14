@@ -1,4 +1,4 @@
-Generated on 2026-07-14 15:39:36.347825
+Generated on 2026-07-14 21:31:39.993597
 
 ## _db_command.py
 
@@ -42,6 +42,34 @@ Usage:
 
     # Apply changes
     ./Ctl/dev/run.sh manage pdb_convert_irr_as_set_postfix --commit
+
+## pdb_delete_addressless_netixlan.py
+
+Remove active netixlans that were created by the IX-F importer with neither
+an IPv4 nor an IPv6 address.
+
+The IX-F importer used to create address-less netixlans when a network
+disabled the only ip protocol its feed advertised (#2005). That has been
+fixed at the source, but rows created before the fix remain in the
+database - this command cleans them up.
+
+An address-less netixlan is NOT necessarily an import artifact: an admin
+can intentionally blank both ip fields via the inline form (#644), and the
+importer may have merely modified an entry that was later blanked by hand.
+To stay safe this command only deletes a row when the importer itself
+CREATED it already address-less - i.e. it has an "add" IX-F import log entry
+whose resulting version had neither ip set. Every other address-less row is
+only reported, never deleted - handle those by hand.
+
+Rows are soft-deleted (status -> "deleted") so the change is reversible.
+
+Usage:
+
+    # Preview what would be deleted without modifying the database
+    ./Ctl/dev/run.sh manage pdb_delete_addressless_netixlan
+
+    # Apply
+    ./Ctl/dev/run.sh manage pdb_delete_addressless_netixlan --commit
 
 ## pdb_delete_childless_org.py
 
@@ -322,3 +350,4 @@ Wipe all peering data.
 ## runserver.py
 
 # Classes
+
