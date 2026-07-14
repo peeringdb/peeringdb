@@ -127,6 +127,8 @@ django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev 
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202604-fixes" }
 # modernization fixes alignment (until 2.4.0 is tagged)
 peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202602" }
+# GH #2001: delegated-stats validation + RdapBootstrapError, until released
+rdap = { git = "https://github.com/20c/rdap.git", rev = "rir_assignment_check_hardening" }
 
 
 [tool.ruff.lint]

@@ -1155,7 +1155,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1884,7 +1884,7 @@ requires-dist = [
     { name = "phonenumbers", specifier = ">=8.11.1" },
     { name = "pycountry", specifier = ">=23.12.11" },
     { name = "pyjwt", specifier = ">=2.8.0" },
-    { name = "rdap", specifier = ">=1.5.2" },
+    { name = "rdap", git = "https://github.com/20c/rdap.git?rev=rir_assignment_check_hardening" },
     { name = "redis", specifier = ">=6.0.0" },
     { name = "schema", specifier = ">=0.7.7" },
     { name = "setuptools", specifier = ">=80.9.0,<82" },
@@ -2541,17 +2541,13 @@ wheels = [
 [[package]]
 name = "rdap"
 version = "1.7.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/20c/rdap.git?rev=rir_assignment_check_hardening#de3a07e4fcb942db7241465a8d0ae5e2f1c16128" }
 dependencies = [
     { name = "googlemaps" },
     { name = "munge", extra = ["yaml"] },
     { name = "phonenumbers" },
     { name = "pydantic" },
     { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/19/b93b153b88fc764e36abb59aab6ac482e40d20d67ea3eec0a733b436b828/rdap-1.7.0.tar.gz", hash = "sha256:c06fb48891c267bc5f136eec525cc715c761e73332586231b5935b86a0d0a544", size = 141300, upload-time = "2025-11-12T03:50:33.07Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/d4/4b52babcd3170be4891f482cd924534addf7819f88ec5d65094ce4adff24/rdap-1.7.0-py3-none-any.whl", hash = "sha256:4dfea71c65c71592113b3ada130f5fba25a2b5a6a5eb8022785fcf7ee2fb2cfa", size = 31688, upload-time = "2025-11-12T03:50:31.89Z" },
 ]
 
 [[package]]
