@@ -1,4 +1,4 @@
-Generated from db_router.py on 2026-06-16 15:01:18.089584
+Generated from db_router.py on 2026-07-14 15:39:36.347825
 
 # peeringdb_server.db_router
 
@@ -21,3 +21,4 @@ has opted-in for this request via a thread-local flag.
 Writes always go to "default" (primary).
 
 See peeringdb_server.db_replica for the middleware that drives this.
+

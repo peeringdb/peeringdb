@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-06-16 15:01:18.257870
+Generated from admin.py on 2026-07-14 15:39:36.655232
 
 # peeringdb_server.admin
 

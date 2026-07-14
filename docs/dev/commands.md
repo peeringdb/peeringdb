@@ -1,4 +1,4 @@
-Generated on 2026-06-16 15:01:18.089584
+Generated on 2026-07-14 15:39:36.347825
 
 ## _db_command.py
 
@@ -174,6 +174,20 @@ Put peeringdb in or out of maintenance mode.
 DEPRECATED
 Used during ixlan migrations for #21.
 
+## pdb_normalize_name_whitespace.py
+
+Backfill: collapse 2+ consecutive whitespace in entity `name` fields (#1984).
+
+Fixes rows that predate the validate_name validator. Rows whose normalized name
+would collide with an existing non-deleted row (unique=True) are skipped and
+reported - a collision may be two distinct entities, so it needs human review,
+not an automatic merge. Run this at/before the deploy enabling validate_name.
+
+Usage:
+
+    ./Ctl/dev/run.sh manage pdb_normalize_name_whitespace           # preview
+    ./Ctl/dev/run.sh manage pdb_normalize_name_whitespace --commit  # apply
+
 ## pdb_notify_geocoords.py
 
 # Classes
@@ -204,8 +218,13 @@ Each run compares every network's ASN to the RIR data and:
 - flags a network whose status went good -> bad (e.g. "missing"/"reserved"),
   notifying its contacts and starting the deletion countdown,
 - deletes a still-unassigned network once it has been notified and
-  KEEP_RIR_STATUS days have elapsed,
+  KEEP_RIR_STATUS days have elapsed -- but only if a live RDAP lookup no longer
+  resolves the ASN #2001; if RDAP still finds it, or cannot be reached, the
+  deletion is deferred to a later run,
 - clears the flag if the assignment recovers (bad -> good).
+
+The pre-deletion RDAP verification is on by default and can be toggled with the
+RIR_STATUS_VERIFY_BEFORE_DELETE setting (env-overridable).
 
 Typically run from cron. Without --commit it runs in pretend mode (logs only,
 no DB changes or emails).
@@ -225,6 +244,9 @@ Usage:
 
     # reset all RIR status / deletion timers (no notifications)
     ./Ctl/dev/run.sh manage pdb_rir_status --reset --commit
+
+    # run the full logic but send no emails (e.g. on beta)
+    ./Ctl/dev/run.sh manage pdb_rir_status --commit --mute-notifications
 
 Options:
     --commit                 Apply changes and send notifications. Without it the
@@ -247,6 +269,12 @@ Options:
                              and are handled on later runs, bounding the burst
                              (e.g. a first-deploy backlog, which --max-changes does
                              not cover). Default 100.
+    --mute-notifications     Run the full flagging/deletion logic but send no
+                             removal emails. Networks are still flagged and marked
+                             notified (deletion proceeds) -- only the outbound
+                             emails are suppressed. For envs like beta whose DB is
+                             re-synced from prod daily. Mail is also suppressed
+                             globally wherever MAIL_DEBUG is set.
 
 ## pdb_search_index.py
 
@@ -294,3 +322,4 @@ Wipe all peering data.
 ## runserver.py
 
 # Classes
+
