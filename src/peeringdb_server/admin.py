@@ -108,7 +108,7 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
-from peeringdb_server.validators import validate_account_name
+from peeringdb_server.validators import validate_account_name, validate_name
 
 from . import forms
 
@@ -383,6 +383,11 @@ class StatusForm(baseForms.ModelForm):
                 self.fields["status"].choices = [("ok", "ok"), ("pending", "pending")]
             elif inst.status == "deleted":
                 self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
+
+    def clean_name(self):
+        # reject 2+ consecutive whitespace (#1984); subclasses overriding
+        # clean_name must call super().clean_name()
+        return validate_name(self.cleaned_data.get("name"))
 
     def clean(self):
         """
@@ -1639,7 +1644,8 @@ class NetworkAdminForm(StatusForm):
         return asn
 
     def clean_name(self):
-        name = self.cleaned_data["name"]
+        # shared consecutive-whitespace check (#1984), then uniqueness
+        name = super().clean_name()
         if Network.objects.filter(name=name).exclude(id=self.instance.id).exists():
             # Clear name field from form
             self.cleaned_data["name"] = None

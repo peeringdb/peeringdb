@@ -194,6 +194,15 @@ def test_affiliate_to_nonexisting_org_multiple(client):
 
 
 @pytest.mark.django_db
+def test_affiliate_to_org_name_rejects_consecutive_whitespace(client):
+    # #1984 - human-typed org name with consecutive whitespace is rejected
+    response = client.post(URL, {"org": "Foo  Bar"})
+    assert response.status_code == 400
+    assert b"consecutive whitespace" in response.content
+    assert UserOrgAffiliationRequest.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_adv_search_init():
     reset_group_ids()
     client = Client()

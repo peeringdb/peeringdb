@@ -75,6 +75,7 @@ from peeringdb_server.managers import CustomManager
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     clean_ixp_update_exclude,
+    normalize_name,
     validate_account_name,
     validate_address_space,
     validate_api_rate,
@@ -1508,6 +1509,9 @@ class Organization(
         name = rdap.org_name
         if not name:
             name = org_name or (f"AS{asn}")
+        # normalize RDAP name (human-entered at the RIR); can't reject here
+        # without breaking affiliation (#1984)
+        name = normalize_name(name)
         if cls.objects.filter(name=name).exists():
             return cls.objects.get(name=name), False
         else:
@@ -5251,6 +5255,8 @@ class Network(
         name = rdap.name
         if not rdap.name:
             name = f"AS{asn}"
+        # normalize RDAP name; can't reject without breaking affiliation (#1984)
+        name = normalize_name(name)
         if cls.objects.filter(name=name).exists():
             net = cls.objects.create(org=org, asn=asn, name=f"{name} !", status="ok")
         else:
@@ -5287,8 +5293,8 @@ class Network(
         network.org = org
         network.status = "ok"
 
-        # Update name from RDAP if available
-        name = rdap.name if rdap.name else f"AS{asn}"
+        # normalize RDAP name; can't reject without breaking affiliation (#1984)
+        name = normalize_name(rdap.name) if rdap.name else f"AS{asn}"
         if cls.objects.filter(name=name).exclude(id=network.id).exists():
             network.name = f"{name} !"
         else:
