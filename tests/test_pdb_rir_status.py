@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.core import mail
@@ -6,9 +6,16 @@ from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
 from rdap.assignment import RIRAssignmentLookup
+from rdap.exceptions import RdapNotFoundError
 
+from peeringdb_server.inet import RdapInvalidRange
 from peeringdb_server.mail import mail_network_rir_status_flagged
 from peeringdb_server.models import Network, NetworkContact, Organization
+
+try:
+    from rdap.exceptions import RdapBootstrapError
+except ImportError:  # rdap without the GH #2001 bootstrap-miss split
+    RdapBootstrapError = None
 
 now = timezone.now()
 
@@ -67,6 +74,9 @@ now = timezone.now()
         ),
     ],
 )
+# the RDAP recheck (GH #2001) is exercised separately below; these cases test
+# the RIR-data/timer gate, so keep the pre-recheck behaviour
+@override_settings(RIR_STATUS_VERIFY_BEFORE_DELETE=False)
 @pytest.mark.django_db
 def test_pdb_rir_status_asn(
     network, rdap_rir_status, new_rir_status, new_network_status
@@ -98,7 +108,7 @@ def test_pdb_rir_status_asn(
                 assert net.rir_status_updated >= network.get("rir_status_updated")
 
 
-@override_settings(KEEP_RIR_STATUS=90)
+@override_settings(KEEP_RIR_STATUS=90, RIR_STATUS_VERIFY_BEFORE_DELETE=False)
 @pytest.mark.django_db
 def test_pdb_rir_status():
     with patch.object(
@@ -206,7 +216,7 @@ def _make_net(org, asn, **kwargs):
     return net
 
 
-@override_settings(KEEP_RIR_STATUS=1)
+@override_settings(KEEP_RIR_STATUS=1, RIR_STATUS_VERIFY_BEFORE_DELETE=False)
 @pytest.mark.django_db
 def test_rir_status_default_keep_is_one_day():
     """
@@ -231,6 +241,291 @@ def test_rir_status_default_keep_is_one_day():
 
     net.refresh_from_db()
     assert net.status == "deleted"
+
+
+def _eligible_for_deletion(org, asn):
+    """A network past every RIR-data/timer deletion gate (unassigned, warned,
+    window elapsed) -- so only the GH #2001 RDAP recheck decides its fate."""
+    return _make_net(
+        org,
+        asn,
+        rir_status="missing",
+        rir_status_updated=now - timezone.timedelta(days=2),
+        rir_status_notified=now - timezone.timedelta(days=2),
+    )
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_skips_delete_when_rdap_still_resolves():
+    """
+    GH #2001: a network eligible for deletion per RIR data must NOT be deleted
+    if a live RDAP lookup still resolves the ASN -- this is the guard against
+    deletions driven by stale/partial RIR delegated-stats data.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.return_value = MagicMock()  # ASN still exists in RDAP
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _eligible_for_deletion(org, 219272)
+        with (
+            patch.object(
+                RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert net.status == "ok"
+    assert net.rir_status == "missing"
+    mock_rdap.get_asn.assert_called_once_with(219272)
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_deletes_when_rdap_confirms_gone():
+    """
+    GH #2001: when live RDAP positively reports the ASN as not found, the
+    reclaim is confirmed and the network is deleted as before.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.side_effect = RdapNotFoundError()
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _eligible_for_deletion(org, 1234)
+        with (
+            patch.object(
+                RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert net.status == "deleted"
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_defers_delete_when_rdap_lookup_errors():
+    """
+    GH #2001: if the RDAP recheck itself errors (network/rate-limit), the
+    reclaim is unverified, so deletion is deferred rather than risking removal
+    of a live network on transient failure.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.side_effect = Exception("rdap unreachable")
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _eligible_for_deletion(org, 1234)
+        with (
+            patch.object(
+                RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert net.status == "ok"
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_deletes_bogon_asn_when_rdap_reports_invalid_range():
+    """
+    GH #2001: a private/reserved (bogon) ASN can never be a valid RIR
+    assignment, so RdapInvalidRange is treated as a confirmed reclaim and the
+    network is deleted -- not deferred forever.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.side_effect = RdapInvalidRange()
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _eligible_for_deletion(org, 64512)
+        with (
+            patch.object(
+                RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert net.status == "deleted"
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+@pytest.mark.skipif(
+    RdapBootstrapError is None,
+    reason="requires rdap with the GH #2001 RdapBootstrapError split",
+)
+def test_rir_status_defers_delete_on_rdap_bootstrap_miss():
+    """
+    GH #2001: a bootstrap miss (RDAP resolved no service, so no registry query
+    happened) must NOT be treated as confirmation the ASN is gone. A freshly
+    assigned block can lag bootstrap the same way it lags the RIR snapshot, so
+    the two sources are not independent -- defer instead of deleting.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.side_effect = RdapBootstrapError("no service for asn")
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        net = _eligible_for_deletion(org, 219273)
+        with (
+            patch.object(
+                RIRAssignmentLookup, "get_status", side_effect=lambda asn: None
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    assert net.status == "ok"
+    assert net.rir_status == "missing"
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_recheck_only_at_delete_gate():
+    """
+    GH #2001 guard: the live RDAP recheck must fire ONLY for networks actually
+    at the delete gate -- not for good->bad, not-yet-notified, or recovering
+    networks. Guards against a future refactor calling RDAP for every net.
+    """
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.return_value = MagicMock()  # ASN exists -> defer, no delete
+
+    # 3001 good->bad, 3002 bad->bad not yet notified, 3003 bad->good recovery,
+    # 3004 bad->bad notified + window elapsed (the only one at the delete gate)
+    rir_status_map = {3001: None, 3002: None, 3003: "allocated", 3004: None}
+
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        _make_net(
+            org,
+            3001,
+            rir_status="ok",
+            rir_status_updated=now - timezone.timedelta(days=5),
+            rir_status_notified=None,
+        )
+        _make_net(
+            org,
+            3002,
+            rir_status="missing",
+            rir_status_updated=now - timezone.timedelta(days=5),
+            rir_status_notified=None,
+        )
+        _make_net(
+            org,
+            3003,
+            rir_status="missing",
+            rir_status_updated=now - timezone.timedelta(days=5),
+            rir_status_notified=now - timezone.timedelta(days=5),
+        )
+        _eligible_for_deletion(org, 3004)
+
+        with (
+            patch.object(
+                RIRAssignmentLookup,
+                "get_status",
+                side_effect=lambda asn: rir_status_map.get(asn),
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", commit=True)
+
+    # RDAP consulted for exactly the one net at the delete gate, nobody else
+    mock_rdap.get_asn.assert_called_once_with(3004)
+
+
+@override_settings(KEEP_RIR_STATUS=1)
+@pytest.mark.django_db
+def test_rir_status_multi_net_delete_defer_recover_in_one_run():
+    """
+    GH #2001: eligible networks are handled independently within one run -- one
+    deleted (RDAP confirms gone), one deferred (RDAP still resolves), one
+    recovered (RIR data now ok) -- with no cross-contamination.
+    """
+
+    def rdap_get_asn(asn):
+        if asn == 4001:
+            raise RdapNotFoundError()  # confirmed gone -> delete
+        return MagicMock()  # 4002 still resolves -> defer
+
+    mock_rdap = MagicMock()
+    mock_rdap.get_asn.side_effect = rdap_get_asn
+
+    rir_status_map = {4001: None, 4002: None, 4003: "allocated"}
+
+    with patch.object(
+        RIRAssignmentLookup, "load_data", side_effect=lambda data_path, cache_days: None
+    ):
+        org = Organization.objects.create(name="test org")
+        n1 = _eligible_for_deletion(org, 4001)
+        n2 = _eligible_for_deletion(org, 4002)
+        n3 = _make_net(
+            org,
+            4003,
+            rir_status="missing",
+            rir_status_updated=now - timezone.timedelta(days=2),
+            rir_status_notified=now - timezone.timedelta(days=2),
+        )
+
+        with (
+            patch.object(
+                RIRAssignmentLookup,
+                "get_status",
+                side_effect=lambda asn: rir_status_map.get(asn),
+            ),
+            patch(
+                "peeringdb_server.management.commands.pdb_rir_status.RdapLookup",
+                return_value=mock_rdap,
+            ),
+        ):
+            call_command("pdb_rir_status", commit=True)
+
+    n1.refresh_from_db()
+    n2.refresh_from_db()
+    n3.refresh_from_db()
+    assert n1.status == "deleted"  # RDAP confirmed gone
+    assert n2.status == "ok"  # RDAP resolved -> deferred
+    assert n2.rir_status == "missing"
+    assert n3.status == "ok"  # recovered
+    assert n3.rir_status == "allocated"
+    assert n3.rir_status_notified is None  # recovery clears the marker
 
 
 @override_settings(MAIL_DEBUG=False)

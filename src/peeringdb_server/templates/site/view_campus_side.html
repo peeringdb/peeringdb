@@ -49,7 +49,7 @@
        </div>
        <div class="col-6 col-sm-6 col-md-6">
          {% if permissions.can_delete %}
-             <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans 'Remove this carrier from your facility.' %}">&times;</a>
+             <a class="btn-row-delete" data-edit-toggled="edit" data-edit-action="remove_campus_facility"  data-bs-toggle="tooltip" data-placement="top" data-bs-original-title="{% trans 'Remove this facility from your campus.' %}">&times;</a>
          {% endif %}
          <div class="facility" data-sort-value="{{ f.name|lower }}" data-filter-value="{{ f.name }}">
            <a href="/{{ f|ref_tag }}/{{ f.id }}">{{ f.name }}</a>

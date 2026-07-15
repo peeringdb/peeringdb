@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-06-16 15:01:18.089584
+Generated from validators.py on 2026-07-14 21:31:39.993597
 
 # peeringdb_server.validators
 
@@ -18,6 +18,15 @@ when the value is valid; otherwise `cleaned_list` is empty. Callers raise
 the ValidationError flavor appropriate to their layer (django vs DRF) so
 this helper stays framework-agnostic - it is shared by `Network.clean()`
 and `NetworkSerializer.validate_ixp_update_exclude()`.
+
+---
+## normalize_name
+`def normalize_name(value)`
+
+Collapse runs of 2+ whitespace to a single space and strip the ends - the
+collapse counterpart to validate_name (which rejects). Used by the
+pdb_normalize_name_whitespace backfill to fix rows that predate the
+validator.
 
 ---
 ## validate_account_name
@@ -143,6 +152,13 @@ Arguments:
 Returns:
 
 - str: validated irr as-set string
+
+---
+## validate_name
+`def validate_name(value)`
+
+Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
+whitespace is left to StripFieldMixin, so we check the stripped value.
 
 ---
 ## validate_phonenumber

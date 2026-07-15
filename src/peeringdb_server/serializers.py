@@ -116,6 +116,7 @@ from peeringdb_server.validators import (
     validate_irr_as_set,
     validate_latitude,
     validate_longitude,
+    validate_name,
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
@@ -739,6 +740,11 @@ class ModelSerializer(serializers.ModelSerializer):
             existing = set(self.fields.keys())
             for field_name in existing - allowed:
                 self.fields.pop(field_name)
+
+    def validate_name(self, value):
+        # reject 2+ consecutive whitespace (#1984); the API cannot rely on the
+        # mixin's clean() since serializers never call full_clean()
+        return validate_name(value)
 
     @classmethod
     def queryable_field_xl(self, fld):

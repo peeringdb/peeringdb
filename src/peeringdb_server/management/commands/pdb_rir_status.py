@@ -7,8 +7,13 @@ Each run compares every network's ASN to the RIR data and:
 - flags a network whose status went good -> bad (e.g. "missing"/"reserved"),
   notifying its contacts and starting the deletion countdown,
 - deletes a still-unassigned network once it has been notified and
-  KEEP_RIR_STATUS days have elapsed,
+  KEEP_RIR_STATUS days have elapsed -- but only if a live RDAP lookup no longer
+  resolves the ASN #2001; if RDAP still finds it, or cannot be reached, the
+  deletion is deferred to a later run,
 - clears the flag if the assignment recovers (bad -> good).
+
+The pre-deletion RDAP verification is on by default and can be toggled with the
+RIR_STATUS_VERIFY_BEFORE_DELETE setting (env-overridable).
 
 Typically run from cron. Without --commit it runs in pretend mode (logs only,
 no DB changes or emails).
@@ -69,11 +74,19 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 from rdap.assignment import RIRAssignmentLookup
+from rdap.exceptions import RdapNotFoundError
 
 from peeringdb_server.deskpro import ticket_queue_rir_status_updates
-from peeringdb_server.inet import rir_status_is_ok
+from peeringdb_server.inet import RdapInvalidRange, RdapLookup, rir_status_is_ok
 from peeringdb_server.mail import mail_network_rir_status_flagged
 from peeringdb_server.models import Network
+
+try:
+    # GH #2001: distinguishes a bootstrap miss (no registry queried) from an
+    # authoritative 404. Absent in rdap versions without that split.
+    from rdap.exceptions import RdapBootstrapError
+except ImportError:  # pragma: no cover
+    RdapBootstrapError = None
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +157,53 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"[pretend] {msg}")
 
+    @property
+    def rdap(self):
+        # lazily created and reused so the RDAP bootstrap is set up once per run,
+        # only when a deletion is actually being considered
+        if not hasattr(self, "_rdap"):
+            self._rdap = RdapLookup()
+        return self._rdap
+
+    def asn_still_exists(self, asn):
+        """
+        GH #2001: safety net before the irreversible deletion of a network whose
+        ASN reads as reclaimed in the (daily, sometimes truncated) RIR snapshot.
+
+        Fails safe: returns True (keep the network) unless the reclaim is
+        positively confirmed. Deletion is only allowed on an authoritative
+        registry not-found (or a bogon ASN, which can never be RIR-assigned);
+        any other RDAP outcome -- including a bootstrap miss where no registry
+        was queried -- defers to a later run.
+        """
+        try:
+            self.rdap.get_asn(asn)
+        except RdapInvalidRange:
+            # a private/reserved (bogon) ASN cannot be a valid RIR assignment,
+            # so treat it as a confirmed reclaim -- otherwise a legacy bogon row
+            # (registration is blocked, GH #995) would defer forever
+            return False
+        except RdapNotFoundError as exc:
+            if RdapBootstrapError is not None and isinstance(exc, RdapBootstrapError):
+                # RDAP bootstrap had no service for this ASN: no registry query
+                # happened. A newly-assigned block can lag bootstrap the same
+                # way it lags the RIR snapshot (GH #2001), so the two sources
+                # are not independent here -- this is NOT authoritative, defer.
+                logger.warning(
+                    "RDAP bootstrap miss for AS%s (%s); deferring deletion", asn, exc
+                )
+                return True
+            # authoritative registry not-found -> confirmed gone, safe to delete
+            return False
+        except Exception as exc:
+            # could not verify (network error, rate limit, ...)
+            logger.warning(
+                "RDAP recheck for AS%s failed (%s); deferring deletion", asn, exc
+            )
+            return True
+        # RDAP returned a record -> ASN still exists, do not delete
+        return True
+
     def reset(self):
         """
         Reset RIR status for all networks, setting their
@@ -212,6 +272,8 @@ class Command(BaseCommand):
             self.max_changes = options.get("max_changes")
             self.max_notifications = options.get("max_notifications")
             self.mute_notifications = options.get("mute_notifications")
+            # GH #2001: verify a reclaim against live RDAP before deleting
+            self.verify_before_delete = pdb_settings.RIR_STATUS_VERIFY_BEFORE_DELETE
 
             reset = options.get("reset")
             if reset:
@@ -353,6 +415,22 @@ class Command(BaseCommand):
                             notok_since.total_seconds()
                             >= pdb_settings.KEEP_RIR_STATUS * 86400
                         ):
+                            # GH #2001: the RIR delegated-stats snapshot can be
+                            # stale or truncated and wrongly show a live ASN as
+                            # reclaimed. Since deletion is irreversible, confirm
+                            # the reclaim against live RDAP first; if RDAP still
+                            # knows the ASN, defer instead of deleting.
+                            if self.verify_before_delete and self.asn_still_exists(
+                                net.asn
+                            ):
+                                self.log(
+                                    f"AS{net.asn} reads reclaimed in RIR data but is still "
+                                    f"present in live RDAP; skipping deletion (possible "
+                                    f"stale/partial RIR data)"
+                                )
+                                num_pending_deletion += 1
+                                continue
+
                             self.log(
                                 f"{net.name} ({net.asn}) has been RIR unassigned for too long, deleting"
                             )

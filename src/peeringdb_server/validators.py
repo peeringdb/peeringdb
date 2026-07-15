@@ -29,6 +29,9 @@ DANGEROUS_NAME_CHARS = re.compile(
     r"[\x00-\x1f\x7f]"  # control characters
 )
 
+# two or more consecutive whitespace characters (spaces, tabs, or mixed) - #1984
+CONSECUTIVE_WHITESPACE = re.compile(r"\s{2,}")
+
 
 def validate_email_domains(text):
     if not text:
@@ -140,6 +143,34 @@ def validate_account_name(value):
         )
 
     return value
+
+
+def validate_name(value):
+    """
+    Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
+    whitespace is left to StripFieldMixin, so we check the stripped value.
+    """
+    if not value:
+        return value
+
+    if CONSECUTIVE_WHITESPACE.search(value.strip()):
+        raise ValidationError(
+            _("Name cannot contain consecutive whitespace characters.")
+        )
+
+    return value
+
+
+def normalize_name(value):
+    """
+    Collapse runs of 2+ whitespace to a single space and strip the ends - the
+    collapse counterpart to validate_name (which rejects). Used by the
+    pdb_normalize_name_whitespace backfill to fix rows that predate the
+    validator.
+    """
+    if not value:
+        return value
+    return CONSECUTIVE_WHITESPACE.sub(" ", value).strip()
 
 
 def clean_ixp_update_exclude(value):

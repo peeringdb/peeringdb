@@ -1721,6 +1721,13 @@ set_option("AUTO_UPDATE_RIR_STATUS", True)
 
 set_option("RIR_ALLOCATION_DATA_CACHE_DAYS", 1)
 
+# GH #2001: before deleting a network whose ASN reads as reclaimed in the RIR
+# delegated-stats snapshot, do a live RDAP lookup and skip the deletion if the
+# ASN still exists -- guards against deletes driven by stale/partial RIR data.
+# Only networks past every other deletion gate are rechecked (negligible RDAP
+# volume).
+set_bool("RIR_STATUS_VERIFY_BEFORE_DELETE", True)
+
 # A toggle for read only mode
 set_option("DJANGO_READ_ONLY", False)
 
