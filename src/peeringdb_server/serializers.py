@@ -2207,8 +2207,6 @@ class CarrierSerializer(ModelSerializer):
         source="carrierfac_set_active_prefetched",
     )
 
-    fac_count = serializers.SerializerMethodField()
-
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
@@ -2278,9 +2276,6 @@ class CarrierSerializer(ModelSerializer):
                 qset = qset.filter(**filter_kwargs)
 
         return qset, filters
-
-    def get_fac_count(self, inst) -> int:
-        return inst.carrierfac_set.filter(status="ok").count()
 
     def get_facilities(self, obj):
         return ", ".join([cf.facility.name for cf in obj.carrierfac_set.all()])

@@ -159,9 +159,16 @@ def update_counts_for_ixfac(ixfac):
 
 def update_counts_for_carrierfac(carrierfac):
     """
-    Whenever a carrierfac is saved, update carrier_count for the related Facility.
+    Whenever a carrierfac is saved, update carrier_count for the related Facility,
+    and update fac_count for the related Carrier.
     """
     if getattr(carrierfac, "id"):
+        carrier = carrierfac.carrier
+        new_fac_count = carrier.carrierfac_set_active.count()
+        if carrier.fac_count != new_fac_count:
+            carrier.fac_count = new_fac_count
+            disable_auto_now_and_save(carrier, update_fields=["fac_count"])
+
         facility = carrierfac.facility
         new_carrier_count = facility.carrierfac_set_active.count()
         if facility.carrier_count != new_carrier_count:
