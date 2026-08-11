@@ -199,6 +199,13 @@ def return_user_api_key_perms(key):
 
     If the UserAPIKey is marked readonly, it downgrades
     all permissions to readonly.
+
+    If the UserAPIKey has explicit grainy permission scoping
+    (`key.grainy_permissions`), the resulting permission set is
+    further restricted to the intersection of the user's actual
+    permissions and the key's declared scope - a scoped key can
+    never see more than the user could see without it, regardless
+    of what namespace/level is set on the key itself.
     """
     user = key.user
     permissions = Permissions(user)
@@ -209,7 +216,61 @@ def return_user_api_key_perms(key):
         }
         permissions.pset.update(readonly_perms)
 
+    if key.grainy_permissions.exists():
+        permissions.pset = intersect_permission_sets(
+            user_permissions=permissions,
+            scope=key.grainy_permissions.permission_set(),
+        )
+
     return permissions
+
+
+def intersect_permission_sets(user_permissions, scope):
+    """
+    Given a `Permissions` instance holding a user's real permission
+    set and a `PermissionSet` describing a requested scope (e.g. from
+    a scoped UserAPIKey), returns a new PermissionSet containing only
+    the namespaces named in `scope`, each capped at the level the
+    user actually holds there.
+
+    This is a restriction, never a grant: a namespace/level present
+    in `scope` but not actually held by the user (or held at a lower
+    level) contributes nothing, or contributes at the lower level.
+
+    Note this checks `user_permissions.pset.check(...)` directly
+    rather than going through `Permissions.check()` - the latter
+    short-circuits to True for superusers via `grant_all`, which
+    would silently defeat scoping on a superuser's key. Operating on
+    the raw pset means a scoped key is bound by its declared scope
+    even when the owning user is a superuser.
+    """
+    from grainy.core import PermissionSet
+
+    restricted = PermissionSet()
+
+    for ns in scope.namespaces:
+        requested_level = scope.get_permissions(ns)
+
+        # Check bit-by-bit (rather than a single `get_permissions` call)
+        # so we also honor permissions the user holds on a *parent*
+        # namespace - e.g. user has CRUD on `org.1.network`, key scope
+        # names `org.1.network.5.poc_set.private` explicitly.
+        effective_level = 0
+        for flag in (
+            grainy_constant.PERM_READ,
+            grainy_constant.PERM_CREATE,
+            grainy_constant.PERM_UPDATE,
+            grainy_constant.PERM_DELETE,
+        ):
+            if requested_level & flag and user_permissions.pset.check(
+                ns, flag, explicit=False
+            ):
+                effective_level |= flag
+
+        if effective_level:
+            restricted[ns] = effective_level
+
+    return restricted
 
 
 def return_org_api_key_perms(key):

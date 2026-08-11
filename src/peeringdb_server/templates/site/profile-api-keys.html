@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load util %}
 <div class="panel api-keys">
     <h3><a name="api-keys">{% trans "API Keys" %}</a></h3>
 
@@ -37,6 +38,51 @@
       <a class="btn btn-default" data-edit-action="revoke">{% trans "Revoke" %}</a>
     </div>
   </div>
+
+  {% with kperms=key_perms|get_item:key.prefix %}
+  <div class="row marg-top item"
+       data-edit-module="user_key_perm_listing"
+       data-edit-template="user-key-scope-item"
+       data-edit-key-prefix="{{ key.prefix }}"
+       data-edit-target="/user_keys/permissions">
+    <div class="col-12 col-sm-11 col-md-11 offset-md-1">
+      <div class="alert alert-info marg-top" style="font-size: 0.9em;">
+        {% blocktrans trimmed %}
+        Optionally scope this key to specific objects (e.g. "net.5" for a
+        single network, "org.3" for a whole organization). A scoped key
+        can only read the objects listed here, regardless of what you
+        would otherwise have access to - and is always read-only.
+        Leave empty for the key to keep its normal (unscoped)
+        permissions.
+        {% endblocktrans %}
+      </div>
+
+      <div data-edit-component="list" data-edit-template="user-key-scope-item">
+        {% for entity, level in kperms.perms.items %}
+        <div class="row marg-top item"
+             data-edit-id="{{ entity }}"
+             data-edit-label="{{ entity }}">
+          <div class="col-8 col-sm-9 col-md-9">{{ entity }}</div>
+          <div class="col-4 col-sm-3 col-md-3 right">
+            <a class="btn-row-delete" data-edit-action="remove">&times;</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="row marg-top editable" data-edit-component="add">
+        <div class="col-8 col-sm-9 col-md-9">
+          <div data-edit-type="string" data-edit-name="entity"
+               data-edit-placeholder="net.5, org.3, ix.12, fac.4, carrier.1"></div>
+        </div>
+        <div class="col-4 col-sm-3 col-md-3 right">
+          <a class="btn btn-default" data-edit-action="add">{% trans "Scope" %}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+
   {% endif %}
   {% endfor %}
   </div>
@@ -82,5 +128,13 @@
     </div>
   </div>
 
+  <!-- KEY SCOPE ROW -->
+
+  <div id="user-key-scope-item" class="row item">
+    <div class="col-8 col-sm-9 col-md-9" data-edit-name="entity"></div>
+    <div class="col-4 col-sm-3 col-md-3 right">
+      <a class="btn-row-delete" data-edit-action="remove">&times;</a>
+    </div>
+  </div>
 
 </div>

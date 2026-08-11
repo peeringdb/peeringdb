@@ -1853,6 +1853,53 @@ twentyc.editable.module.register(
 );
 
 /**
+ * editable user api key scoping endpoint
+ */
+
+twentyc.editable.module.register(
+  "user_key_perm_listing",
+  {
+    loading_shim : true,
+
+    init : function() {
+      this.listing_init();
+    },
+
+    key_prefix : function() {
+      return this.container.data("edit-key-prefix");
+    },
+
+    // user key scoping has no read/write level to toggle - a scoped
+    // entry is always read-only - so unlike `key_perm_listing` this
+    // only ever needs to merge in the key_prefix before submitting.
+    prepare_data : function(extra) {
+      this.target.data.key_prefix = this.key_prefix();
+      if(extra)
+        $.extend(this.target.data, extra);
+    },
+
+    execute_add : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var data = this.target.data;
+      this.prepare_data();
+      this.target.execute("update", this.components.add, function(response) {
+        this.listing_add(data.entity, trigger, container, data);
+      }.bind(this));
+    },
+
+    execute_remove : function(trigger, container) {
+      var row = this.row(trigger);
+      this.prepare_data({entity: row.data("edit-id")});
+      this.target.execute("remove", trigger, function(response) {
+        this.listing_execute_remove(trigger, container);
+      }.bind(this));
+    }
+
+  },
+  "listing"
+);
+
+/**
  * editable uoar management endpoint
  */
 

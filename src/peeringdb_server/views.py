@@ -87,7 +87,10 @@ from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 import peeringdb_server.geo
 from peeringdb_server import settings
-from peeringdb_server.api_key_views import load_all_key_permissions
+from peeringdb_server.api_key_views import (
+    load_all_key_permissions,
+    load_all_user_key_permissions,
+)
 from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
 from peeringdb_server.forms import (
@@ -972,7 +975,11 @@ def view_verify(request):
     template = get_template(request, "site/verify.html")
     env = BASE_ENV.copy()
     env.update(
-        {"affiliations": request.user.organizations, "global_stats": global_stats()}
+        {
+            "affiliations": request.user.organizations,
+            "global_stats": global_stats(),
+            "key_perms": load_all_user_key_permissions(request.user),
+        }
     )
     return HttpResponse(template.render(env, request))
 

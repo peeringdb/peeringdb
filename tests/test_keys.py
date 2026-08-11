@@ -1,10 +1,14 @@
 import pytest
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
 from django.urls import reverse
 from django_grainy.models import UserPermission
 from grainy.const import PERM_CRUD, PERM_READ
 from rest_framework.test import APIClient
 
+from peeringdb_server.api_key_views import (
+    resolve_user_key_permission_id,
+    save_user_key_permissions,
+)
 from peeringdb_server.models import (
     Carrier,
     Facility,
@@ -16,6 +20,7 @@ from peeringdb_server.models import (
     OrganizationAPIPermission,
     User,
     UserAPIKey,
+    UserAPIPermission,
 )
 from peeringdb_server.permissions import (
     check_permissions,
@@ -617,3 +622,243 @@ def test_get_exchange_w_org_key(org, exchange, groups):
     ix_from_api = response.json()["data"][0]
     assert ix_from_api["name"] == exchange.name
     assert ix_from_api["org_id"] == exchange.org.id
+
+
+"""
+USER API KEY SCOPING (read-scoped keys)
+"""
+
+
+@pytest.mark.django_db
+def test_user_api_permission_model(user):
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+    UserAPIPermission.objects.create(
+        api_key=api_key,
+        namespace="peeringdb.organization.1.network.1",
+        permission=PERM_READ,
+    )
+    assert api_key.grainy_permissions.count() == 1
+    assert api_key.is_scoped is True
+
+
+@pytest.mark.django_db
+def test_user_api_key_unscoped_by_default(user):
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+    assert api_key.is_scoped is False
+
+
+@pytest.mark.django_db
+def test_resolve_user_key_permission_id_net(user, org, network):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    namespace, error = resolve_user_key_permission_id(user, f"net.{network.id}")
+    assert error is None
+    assert namespace == network.grainy_namespace
+
+
+@pytest.mark.django_db
+def test_resolve_user_key_permission_id_org(user, org):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_READ, user=user
+    )
+    namespace, error = resolve_user_key_permission_id(user, f"org.{org.id}")
+    assert error is None
+    assert namespace == org.grainy_namespace
+
+
+@pytest.mark.django_db
+def test_resolve_user_key_permission_id_denies_inaccessible_object(
+    user, org, network
+):
+    # user has no permissions on org/network at all
+    namespace, error = resolve_user_key_permission_id(user, f"net.{network.id}")
+    assert namespace is None
+    assert error is not None
+
+
+@pytest.mark.django_db
+def test_resolve_user_key_permission_id_invalid_format(user):
+    namespace, error = resolve_user_key_permission_id(user, "not-a-valid-id")
+    assert namespace is None
+    assert error is not None
+
+
+@pytest.mark.django_db
+def test_resolve_user_key_permission_id_unknown_object(user, org):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    namespace, error = resolve_user_key_permission_id(user, "net.999999")
+    assert namespace is None
+    assert error is not None
+
+
+@pytest.mark.django_db
+def test_user_api_key_scoping_restricts_to_named_object(user, org, network):
+    """
+    A key scoped to a single network can read that network but
+    nothing else under the org, and only ever read (never write) -
+    even though the underlying user has full CRUD on the whole org.
+    """
+
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    namespaces, errors = save_user_key_permissions(user, api_key, [f"net.{network.id}"])
+    assert errors == {}
+    assert namespaces == [network.grainy_namespace]
+
+    # can read the scoped network
+    assert check_permissions(api_key, network.grainy_namespace, "r")
+    # cannot write to it, despite the user having CRUD
+    assert check_permissions(api_key, network.grainy_namespace, "u") is False
+    # cannot see the org-wide namespace the user actually has CRUD on
+    assert check_permissions(api_key, org.grainy_namespace, "r") is False
+
+
+@pytest.mark.django_db
+def test_user_api_key_scoping_does_not_expand_access(user, org, network):
+    """
+    Scoping is a restriction, never a grant: if the user only has
+    read on the network, a scoped key pointed at it stays read-only
+    (this is also always true regardless, since scoping forces
+    PERM_READ - but the underlying intersection logic must not
+    accidentally grant more than the user has either).
+    """
+
+    UserPermission.objects.create(
+        namespace=network.grainy_namespace, permission=PERM_READ, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    namespaces, errors = save_user_key_permissions(user, api_key, [f"net.{network.id}"])
+    assert errors == {}
+
+    assert check_permissions(api_key, network.grainy_namespace, "r")
+    assert check_permissions(api_key, network.grainy_namespace, "u") is False
+
+
+@pytest.mark.django_db
+def test_user_api_key_scoping_rejects_inaccessible_object(user, org, network):
+    """
+    Attempting to scope a key to an object the user can't themselves
+    read fails outright rather than silently scoping to nothing.
+    """
+
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    namespaces, errors = save_user_key_permissions(user, api_key, [f"net.{network.id}"])
+    assert namespaces == []
+    assert f"net.{network.id}" in errors
+    assert api_key.grainy_permissions.count() == 0
+
+
+@pytest.mark.django_db
+def test_user_api_key_scoping_superuser_not_bypassed(admin_user, org, network):
+    """
+    Critical case: `Permissions.check` short-circuits to True for
+    superusers via `grant_all`. A scoped superuser key must still be
+    bound by its declared scope - the intersection logic must not
+    let grant_all leak through.
+    """
+
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=admin_user)
+
+    namespaces, errors = save_user_key_permissions(
+        admin_user, api_key, [f"net.{network.id}"]
+    )
+    assert errors == {}
+
+    # scoped network: readable
+    assert check_permissions(api_key, network.grainy_namespace, "r")
+    # anything outside the declared scope must NOT be reachable,
+    # despite the owning user being a superuser
+    assert check_permissions(api_key, org.grainy_namespace, "r") is False
+    assert check_permissions(api_key, "peeringdb.organization", "r") is False
+
+
+@pytest.mark.django_db
+def test_user_api_key_scoping_removal_restores_full_access(user, org, network):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    save_user_key_permissions(user, api_key, [f"net.{network.id}"])
+    assert api_key.is_scoped is True
+    assert check_permissions(api_key, org.grainy_namespace, "r") is False
+
+    # remove all scoping - key falls back to the user's full permissions
+    save_user_key_permissions(user, api_key, [])
+    api_key.refresh_from_db()
+    assert api_key.is_scoped is False
+    assert check_permissions(api_key, org.grainy_namespace, "u")
+
+
+@pytest.mark.django_db
+def test_user_key_permission_update_view(user, org, network):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+
+    client = Client()
+    client.login(username="user", password="user")
+
+    response = client.post(
+        "/user_keys/permissions/update",
+        {"key_prefix": api_key.prefix, "entity": f"net.{network.id}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_scoped"] is True
+    assert f"net.{network.id}" in data["permissions"]
+
+
+@pytest.mark.django_db
+def test_user_key_permission_update_view_rejects_other_users_key(user, org, network):
+    other_user = User.objects.create_user(
+        "other", "other@localhost", first_name="other", last_name="other"
+    )
+    other_user.set_password("other")
+    other_user.save()
+
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=other_user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=other_user)
+
+    client = Client()
+    client.login(username="user", password="user")
+
+    response = client.post(
+        "/user_keys/permissions/update",
+        {"key_prefix": api_key.prefix, "entity": f"net.{network.id}"},
+    )
+    # `user` doesn't own this key - lookup is scoped to request.user,
+    # so it should behave as "not found", not leak/modify another
+    # user's key
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_user_key_permission_remove_view(user, org, network):
+    UserPermission.objects.create(
+        namespace=org.grainy_namespace, permission=PERM_CRUD, user=user
+    )
+    api_key, key = UserAPIKey.objects.create_key(name="test key", user=user)
+    save_user_key_permissions(user, api_key, [f"net.{network.id}"])
+
+    client = Client()
+    client.login(username="user", password="user")
+
+    response = client.post(
+        "/user_keys/permissions/remove",
+        {"key_prefix": api_key.prefix, "entity": f"net.{network.id}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["is_scoped"] is False

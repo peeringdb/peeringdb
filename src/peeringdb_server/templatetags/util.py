@@ -145,6 +145,20 @@ def is_dict(value):
 
 
 @register.filter
+def get_item(mapping, key):
+    """
+    Dict lookup by a variable key, since the `dict.key` template
+    syntax only supports literal keys. Returns an empty dict rather
+    than None/KeyError when nothing matches, so callers can chain
+    `|get_item:x` straight into `.perms.items` without an extra
+    `{% if %}`.
+    """
+    if not mapping:
+        return {}
+    return mapping.get(key, {})
+
+
+@register.filter
 def is_bool(value):
     return isinstance(value, bool)
 

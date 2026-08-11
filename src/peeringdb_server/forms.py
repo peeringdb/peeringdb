@@ -35,6 +35,26 @@ class OrganizationAPIKeyForm(forms.Form):
     org_id = forms.IntegerField()
 
 
+class UserAPIKeyPermissionForm(forms.Form):
+    """
+    Validates a single scoping entry submitted for a UserAPIKey.
+
+    `entity` follows the same permissioning id format used for
+    organization API keys - "org.<id>" for a whole organization, or
+    "<reftag>.<id>" (net.5, ix.3, fac.7, carrier.2) for a single
+    object. Resolution of the id to an actual grainy namespace (and
+    the check that the requesting user is allowed to see that
+    object) happens in `api_key_views.resolve_user_key_permission_id`,
+    since it requires a database lookup this form isn't set up to do.
+
+    Scoped user keys are read-only by design - this form doesn't
+    accept a permission level at all, it only accepts the identifier
+    of what the key is being scoped to.
+    """
+
+    entity = forms.CharField()
+
+
 class OrgAdminUserPermissionForm(forms.Form):
     entity = forms.CharField()
     perms = forms.IntegerField()

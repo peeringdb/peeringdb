@@ -6951,10 +6951,40 @@ class UserAPIKey(AbstractAPIKey, StripFieldMixin):
 
     status = models.CharField(max_length=16, choices=API_KEY_STATUS, default="active")
 
+    @property
+    def is_scoped(self):
+        """
+        Returns True if this key has explicit grainy permission
+        scoping applied (as opposed to inheriting the full user
+        permission set).
+        """
+        return self.grainy_permissions.exists()
+
     class Meta(AbstractAPIKey.Meta):
         verbose_name = "User API key"
         verbose_name_plural = "User API keys"
         db_table = "peeringdb_user_api_key"
+
+
+class UserAPIPermission(Permission, StripFieldMixin):
+    """
+    Describes a scoped permission for a UserAPIKey.
+
+    Mirrors OrganizationAPIPermission. Presence of any rows here
+    restricts (never expands) the permission set the key would
+    otherwise inherit from its owning user - see
+    `permissions.return_user_api_key_perms`.
+    """
+
+    class Meta:
+        verbose_name = _("User API key Permission")
+        verbose_name_plural = _("User API key Permission")
+        base_manager_name = "objects"
+
+    api_key = models.ForeignKey(
+        UserAPIKey, related_name="grainy_permissions", on_delete=models.CASCADE
+    )
+    objects = PermissionManager()
 
 
 def password_reset_token():

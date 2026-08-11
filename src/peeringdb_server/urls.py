@@ -232,6 +232,18 @@ urlpatterns = [
     re_path(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
     re_path(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
     re_path(
+        r"^user_keys/permissions$",
+        peeringdb_server.api_key_views.user_key_permissions,
+    ),
+    re_path(
+        r"^user_keys/permissions/update$",
+        peeringdb_server.api_key_views.user_key_permission_update,
+    ),
+    re_path(
+        r"^user_keys/permissions/remove$",
+        peeringdb_server.api_key_views.user_key_permission_remove,
+    ),
+    re_path(
         r"^security_keys/request_registration$",
         security_keys_views.request_registration,
         name="security-keys-request-registration",
