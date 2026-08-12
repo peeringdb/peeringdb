@@ -221,7 +221,7 @@ def return_user_api_key_perms(key):
             user_permissions=permissions,
             scope=key.grainy_permissions.permission_set(),
         )
-
+        permissions.grant_all = False	
     return permissions
 
 
@@ -262,7 +262,7 @@ def intersect_permission_sets(user_permissions, scope):
             grainy_constant.PERM_UPDATE,
             grainy_constant.PERM_DELETE,
         ):
-            if requested_level & flag and user_permissions.pset.check(
+            if requested_level & flag and user_permissions.check(
                 ns, flag, explicit=False
             ):
                 effective_level |= flag

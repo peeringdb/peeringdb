@@ -793,7 +793,7 @@ def test_user_api_key_scoping_removal_restores_full_access(user, org, network):
 
     # remove all scoping - key falls back to the user's full permissions
     save_user_key_permissions(user, api_key, [])
-    api_key.refresh_from_db()
+    api_key = UserAPIKey.objects.get(prefix=api_key.prefix)
     assert api_key.is_scoped is False
     assert check_permissions(api_key, org.grainy_namespace, "u")
 
