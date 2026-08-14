@@ -1263,20 +1263,46 @@ AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 set_from_env("ELASTICSEARCH_URL", "")
 # same env var as used by ES server docker image
 set_from_env("ELASTIC_PASSWORD", "")
+set_option("ELASTICSEARCH_USER", "elastic")
+
+# ES is reached over the internal network and presents a self-signed cert
+# there, so verification is off by default - this keeps the behavior from when
+# the value was hardcoded. Deployments that terminate ES with a cert the app
+# trusts can turn it on.
+set_bool("ELASTICSEARCH_VERIFY_CERTS", False)
+
+# Index settings applied to every registered search document.
+#
+# This is the single point of control: django_elasticsearch_dsl's registry
+# merges this dict on top of each document's `class Index.settings` at
+# registration time (later keys win), so it covers all 6 search indexes and
+# every index create - including `search_index --rebuild`, which builds
+# indexes from the registered Index objects.
+#
+# number_of_replicas defaults to 1 because with 0 every primary shard lives on
+# a single ES pod, and losing that pod takes /search fully down (#2020). Green
+# cluster health needs >=2 ES data nodes; single-node setups (dev, CI) sit at
+# yellow unless they set this to 0. Search works either way.
+set_option("ELASTICSEARCH_NUMBER_OF_SHARDS", 1)
+set_option("ELASTICSEARCH_NUMBER_OF_REPLICAS", 1)
+ELASTICSEARCH_DSL_INDEX_SETTINGS = {
+    "number_of_shards": ELASTICSEARCH_NUMBER_OF_SHARDS,
+    "number_of_replicas": ELASTICSEARCH_NUMBER_OF_REPLICAS,
+}
 
 if ELASTICSEARCH_URL:
     INSTALLED_APPS.append("django_elasticsearch_dsl")
     ELASTICSEARCH_DSL = {
         "default": {
             "hosts": ELASTICSEARCH_URL,
-            "http_auth": ("elastic", ELASTIC_PASSWORD),
-            "verify_certs": False,
+            "http_auth": (ELASTICSEARCH_USER, ELASTIC_PASSWORD),
+            "verify_certs": ELASTICSEARCH_VERIFY_CERTS,
         }
     }
-    # stop ES from spamming about unsigned certs
-    urllib3.disable_warnings()
+    if not ELASTICSEARCH_VERIFY_CERTS:
+        # stop ES from spamming about unsigned certs
+        urllib3.disable_warnings()
 
-    ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
     ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
         "peeringdb_server.signals.ESSilentRealTimeSignalProcessor"
     )

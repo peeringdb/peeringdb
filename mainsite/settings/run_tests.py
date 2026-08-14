@@ -61,6 +61,9 @@ GUEST_GROUP_ID = 1
 USER_GROUP_ID = 2
 ELASTICSEARCH_DSL_AUTOSYNC = False
 ELASTICSEARCH_DSL_AUTO_REFRESH = False
+# tests/CI run a single-node elasticsearch, which cannot allocate a replica
+# shard and would report yellow index health with the production default of 1
+ELASTICSEARCH_NUMBER_OF_REPLICAS = 0
 IXF_REMOVE_STALE_NETIXLAN = True
 
 CACHES["negative"] = {

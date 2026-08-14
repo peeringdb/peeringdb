@@ -1,3 +1,14 @@
+"""
+Elasticsearch document definitions for the search indexes.
+
+Index settings (shards, replicas) are deliberately not declared on the `Index`
+classes here - they come from `ELASTICSEARCH_DSL_INDEX_SETTINGS` in
+`mainsite/settings/__init__.py`, which django_elasticsearch_dsl applies to
+every registered document. Declaring them per document would be dead config:
+the registry merges the global dict on top of `class Index.settings`, so the
+global value always wins.
+"""
+
 import re
 from datetime import timedelta
 from types import GeneratorType
@@ -311,7 +322,6 @@ class OrganizationDocument(AutoSuggestMixin, GeocodeMixin, Document):
 
     class Index:
         name = "org"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = Organization
@@ -405,7 +415,6 @@ class FacilityDocument(AutoSuggestMixin, GeocodeMixin, Document):
 
     class Index:
         name = "fac"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = Facility
@@ -509,7 +518,6 @@ class InternetExchangeDocument(
 
     class Index:
         name = "ix"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = InternetExchange
@@ -630,7 +638,6 @@ class NetworkDocument(GeocodeMixin, IpAddressMixin, Document):
 
     class Index:
         name = "net"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = Network
@@ -735,7 +742,6 @@ class CampusDocument(AutoSuggestMixin, GeocodeMixin, Document):
 
     class Index:
         name = "campus"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = Campus
@@ -786,7 +792,6 @@ class CarrierDocument(AutoSuggestMixin, GeocodeMixin, Document):
 
     class Index:
         name = "carrier"
-        settings = {"number_of_shards": 1, "number_of_replicas": 0}
 
     class Django:
         model = Carrier
