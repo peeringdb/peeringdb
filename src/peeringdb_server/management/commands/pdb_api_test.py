@@ -1176,6 +1176,28 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_user_001_GET_carrier_obj_count(self):
+        carrier = SHARED["carrier_r_ok"]
+        # need to modify objects for signals to propagate
+        carrierfac = carrier.carrierfac_set.first()
+
+        with reversion.create_revision():
+            carrierfac.status = "pending"
+            carrierfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "carrier", carrier.id)
+        self.assertEqual(data.get("fac_count"), 0)
+
+        # test that value is updated when we add a connection
+        with reversion.create_revision():
+            carrierfac.status = "ok"
+            carrierfac.save()
+
+        data = self.assert_get_handleref(self.db_user, "carrier", carrier.id)
+        self.assertEqual(data.get("fac_count"), 1)
+
+    ##########################################################################
+
     def test_user_001_GET_campus(self):
         self.assert_get_handleref(self.db_user, "campus", SHARED["campus_r_ok"].id)
 

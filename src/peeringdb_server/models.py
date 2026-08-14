@@ -6234,6 +6234,12 @@ class Carrier(
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="carrier_set"
     )
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities for this carrier"),
+        help_text=_("number of facilities for this carrier"),
+        null=False,
+        default=0,
+    )
 
     @staticmethod
     def autocomplete_search_fields():
