@@ -28,3 +28,11 @@ repos:
         # type-checking is adopted incrementally (see comments there)
         args: [--config-file=pyproject.toml]
         pass_filenames: false
+  # Validate the generated OpenAPI 3 schema for spec compliance (#1991).
+  - repo: https://github.com/python-openapi/openapi-spec-validator
+    rev: 0.9.0
+    hooks:
+      - id: openapi-spec-validator
+        # Default file pattern (`.*openapi.*`) doesn't match our filename,
+        # so target it explicitly or nothing gets checked.
+        files: ^src/peeringdb_server/static/api-schema\.yaml$
