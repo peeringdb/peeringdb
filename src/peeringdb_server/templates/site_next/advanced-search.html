@@ -726,32 +726,47 @@
                 center: {lat: 20, lng: 0},
                 zoom: 2,
                 mapTypeId: 'roadmap',
+                // google's own POI cards call places.googleapis.com, blocked by our CSP (#2017)
+                clickableIcons: false,
                 mapId: '{{ google_maps_map_id|escapejs }}'
               });
               var bounds = new LatLngBounds();
               var info = new InfoWindow();
               var any = false;
+              // facility fields are user supplied, escape before building info window html
+              var escapeHtml = PeeringDB.escape_html;
               resultsG.forEach(function(item) {
                 var lat = item.latitude;
                 var lon = item.longitude;
                 if (typeof lat !== 'number' || typeof lon !== 'number') return;
                 any = true;
                 var pos = {lat: lat, lng: lon};
-                var marker = new AdvancedMarkerElement({map: gmap, position: pos});
                 var name = item.name || '';
                 var org = item.org_name || (item.org && item.org.name) || '';
+                var address = item.address1 || '';
                 var city = item.city || '';
                 var country = item.country || '';
+                var marker = new AdvancedMarkerElement({
+                  map: gmap,
+                  position: pos,
+                  // advanced markers are inert without this, clicks fall through to the map (#2017)
+                  gmpClickable: true,
+                  title: name
+                });
+                // the header row renders regardless, so use it instead of leaving it blank (#2017)
+                var header = document.createElement('a');
+                header.href = '/fac/' + encodeURIComponent(item.id);
+                header.style.fontWeight = '600';
+                header.textContent = name;
                 var html = '<div style="min-width:220px">'
-                  + '<div style="font-weight:600;font-size:14px;margin-bottom:4px"><a href="/fac/' + item.id + '">' + name + '</a></div>'
-                  + '<div style="color:#555">' + org + '</div>'
-                  + '<div style="margin-top:6px">' + (city ? city + ', ' : '') + country + '</div>'
-                  + '<div style="margin-top:6px;display:flex;gap:10px;color:#666">'
-                  + '</div>'
+                  + '<div style="color:#555">' + escapeHtml(org) + '</div>'
+                  + (address ? '<div style="margin-top:6px">' + escapeHtml(address) + '</div>' : '')
+                  + '<div style="margin-top:' + (address ? '2px' : '6px') + '">' + (city ? escapeHtml(city) + ', ' : '') + escapeHtml(country) + '</div>'
                   + '</div>';
                 marker.addEventListener('gmp-click', function() {
+                  info.setHeaderContent(header);
                   info.setContent(html);
-                  info.open(gmap, marker);
+                  info.open({map: gmap, anchor: marker});
                 });
                 bounds.extend(pos);
               });
@@ -767,11 +782,18 @@
             (function loadG() {
               if (window._googleMapsLoading) return;
               window._googleMapsLoading = true;
-              var apiKey = '{{ google_maps_api_key|default:"" }}';
+              var apiKey = '{{ google_maps_api_key|default:""|escapejs }}';
               var s = document.createElement('script');
               window._googleMapsReady = function() { renderResultsMap(reftag); };
               s.src = 'https://maps.googleapis.com/maps/api/js?key=' + apiKey + '&loading=async&callback=_googleMapsReady';
               s.async = true;
+              // clear the flag so a blocked/failed load can be retried, not silently ignored
+              s.onerror = function() {
+                window._googleMapsLoading = false;
+                if (containerG) {
+                  containerG.textContent = 'Map failed to load.';
+                }
+              };
               document.body.appendChild(s);
             })();
             return;
