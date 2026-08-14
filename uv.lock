@@ -896,7 +896,7 @@ wheels = [
 [[package]]
 name = "django-peeringdb"
 version = "3.7.0"
-source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202604#a26f342d720a306ae25d997676d243af05c8f8fb" }
+source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202607#2c333e5ee6d4a9c813b8bab872bdcbeebe91ca9e" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
@@ -1811,7 +1811,7 @@ wheels = [
 [[package]]
 name = "peeringdb"
 version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/peeringdb/peeringdb-py?rev=support_202607#92e814cf782d621e42c40cd49d9ddbb25cfb543c" }
 dependencies = [
     { name = "confu" },
     { name = "django-peeringdb" },
@@ -1819,10 +1819,6 @@ dependencies = [
     { name = "munge", extra = ["toml", "tomlkit", "yaml"] },
     { name = "pyyaml" },
     { name = "twentyc-rpc" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/8f/085db35045b0f7421e4dea1cd299a7bf6368126a753fbfbe32fabbde827a/peeringdb-2.5.0.tar.gz", hash = "sha256:b828d841ef026d26c5af307eb9a4ccc5c262a2011f4d847768f18b99729133ed", size = 183644, upload-time = "2026-07-06T06:18:17.702Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/b7/ce766a72faf3126a805de6b7a37589a5f5fd4e620835103bfb0c83af0c6c/peeringdb-2.5.0-py3-none-any.whl", hash = "sha256:28de3f2c0f5b9f41b861d3c7042d36a5d7cc77248eb4cfa2634f68eee41f5f68", size = 32720, upload-time = "2026-07-06T06:18:16.267Z" },
 ]
 
 [[package]]
@@ -1936,7 +1932,7 @@ requires-dist = [
     { name = "django-import-export", specifier = ">=3" },
     { name = "django-inet", specifier = ">=1.1.1" },
     { name = "django-oauth-toolkit", specifier = ">=2" },
-    { name = "django-peeringdb", git = "https://github.com/peeringdb/django-peeringdb?rev=support_202604" },
+    { name = "django-peeringdb", git = "https://github.com/peeringdb/django-peeringdb?rev=support_202607" },
     { name = "django-phonenumber-field", specifier = ">=0.6" },
     { name = "django-ratelimit", specifier = ">=4.0.0" },
     { name = "django-read-only", specifier = ">=1.15.0" },
@@ -1961,7 +1957,7 @@ requires-dist = [
     { name = "markdown", specifier = ">=2.6.7" },
     { name = "mysqlclient", specifier = ">=2.1.1" },
     { name = "passlib", specifier = ">=1.7.1" },
-    { name = "peeringdb", specifier = ">=2.5.0" },
+    { name = "peeringdb", git = "https://github.com/peeringdb/peeringdb-py?rev=support_202607" },
     { name = "phonenumbers", specifier = ">=8.11.1" },
     { name = "pycountry", specifier = ">=23.12.11" },
     { name = "pyjwt", specifier = ">=2.8.0" },

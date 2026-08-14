@@ -144,7 +144,9 @@ dev = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202604" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202607" }
+# until released
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202607" }
 # from branch until passkey support is released
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202604-fixes" }
 # GH #2001: delegated-stats validation + RdapBootstrapError, until released
