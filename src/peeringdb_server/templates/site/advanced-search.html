@@ -624,19 +624,23 @@
       });
       // Map utilities
 
+      // profile option controls presentation, not availability (#2019)
+      // on -> map expanded, no button; off -> "Show Map" button
+      const mapAlwaysShow = "{{ map_visualization_enabled|yesno:'true,false' }}" === 'true';
+
+      // map stays a logged in feature, as before. ui only, the api key ships either way
+      const mapAvailable = "{{ request.user.is_authenticated|yesno:'true,false' }}" === 'true';
+
       function ensureMapControls(reftag) {
         if (reftag !== 'fac') return; // start with facilities only
+        if (!mapAvailable) return;
 
         const section = document.getElementById(reftag);
         if (!section) return;
 
-        // Only show map controls if user opted-in via profile option
-        const mapPrefEnabled = "{{ map_visualization_enabled|yesno:'true,false' }}" === 'true';
-        if (!mapPrefEnabled) return;
-
-        let controls = section.querySelector('.map-controls');
-        if (!controls) {
-          controls = document.createElement('div');
+        // no toggle button needed when the map is always shown
+        if (!mapAlwaysShow && !section.querySelector('.map-controls')) {
+          const controls = document.createElement('div');
           controls.className = 'map-controls d-flex align-items-center gap-2 mt-2';
           controls.innerHTML = `
             <button type="button" class="btn btn-default btn-sm" data-map-toggle="${reftag}">Show Map</button>
@@ -655,30 +659,48 @@
           mapContainer.style.cssText = 'width:100%;height:450px;margin-top:10px;display:none;border:1px solid #444;border-radius:6px;';
           section.appendChild(mapContainer);
         }
+
+        // renders empty, updateResults() re-renders it once the fetch lands
+        if (mapAlwaysShow) {
+          showResultsMap(reftag);
+        }
+      }
+
+      function showResultsMap(reftag) {
+        const section = document.getElementById(reftag);
+        if (!section) return;
+        const container = section.querySelector(`#map-${reftag}`);
+        if (!container) return;
+
+        container.style.display = 'block';
+        const btn = section.querySelector('[data-map-toggle]');
+        if (btn) btn.textContent = 'Hide Map';
+        // enable google maps (option 2) if desired
+        window.PDB_USE_GOOGLE_MAPS = true;
+        renderResultsMap(reftag);
+      }
+
+      function hideResultsMap(reftag) {
+        const section = document.getElementById(reftag);
+        if (!section) return;
+        const container = section.querySelector(`#map-${reftag}`);
+        if (!container) return;
+
+        container.style.display = 'none';
+        const btn = section.querySelector('[data-map-toggle]');
+        if (btn) btn.textContent = 'Show Map';
       }
 
       function toggleResultsMap(reftag) {
         const section = document.getElementById(reftag);
         if (!section) return;
         const container = section.querySelector(`#map-${reftag}`);
-        const btn = section.querySelector('[data-map-toggle]');
-        if (!container || !btn) return;
+        if (!container) return;
 
         if (container.style.display === 'none') {
-          container.style.display = 'block';
-          btn.textContent = 'Hide Map';
-          // enable google maps (option 2) if desired
-          window.PDB_USE_GOOGLE_MAPS = true;
-          renderResultsMap(reftag);
-          // give layout a moment, then fix leaflet sizing
-          setTimeout(function() {
-            if (container._leaflet_map) {
-              container._leaflet_map.invalidateSize();
-            }
-          }, 100);
+          showResultsMap(reftag);
         } else {
-          container.style.display = 'none';
-          btn.textContent = 'Show Map';
+          hideResultsMap(reftag);
         }
       }
 
@@ -691,7 +713,10 @@
           var containerG = sectionG && sectionG.querySelector('#map-' + reftag);
           const resultsG = (window.PeeringDB && PeeringDB.advanced_search_result && PeeringDB.advanced_search_result[reftag] && PeeringDB.advanced_search_result[reftag].data) || [];
 
-          if (typeof google !== 'undefined' && google.maps) {
+          // the loading=async bootstrap defines google.maps before it attaches
+          // importLibrary, so check for the function itself. with the map auto shown
+          // we land here mid load and google.maps alone would throw (#2019)
+          if (typeof google !== 'undefined' && google.maps && typeof google.maps.importLibrary === 'function') {
             try {
               const { Map, InfoWindow } = await google.maps.importLibrary("maps");
               const { LatLngBounds } = await google.maps.importLibrary("core");
