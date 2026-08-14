@@ -176,9 +176,7 @@ def create_users_and_vqi(users_to_generate, days_old):
     admin_user = admin_user()
 
     output = []
-    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
-        days=days_old
-    )
+    created_date = datetime.datetime.now(datetime.UTC) - timedelta(days=days_old)
 
     for i in range(users_to_generate):
         user = User.objects.create(
@@ -222,9 +220,7 @@ def create_ix_and_vqi(ix_to_generate, days_old, org=None):
 
     admin_user = admin_user()
     output = []
-    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
-        days=days_old
-    )
+    created_date = datetime.datetime.now(datetime.UTC) - timedelta(days=days_old)
 
     for i in range(ix_to_generate):
         ix = InternetExchange.objects.create(
@@ -267,9 +263,7 @@ def create_fac_and_vqi(fac_to_generate, days_old, org=None):
 
     admin_user = admin_user()
     output = []
-    created_date = datetime.datetime.now(datetime.timezone.utc) - timedelta(
-        days=days_old
-    )
+    created_date = datetime.datetime.now(datetime.UTC) - timedelta(days=days_old)
 
     for i in range(fac_to_generate):
         fac = Facility.objects.create(

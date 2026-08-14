@@ -2,8 +2,12 @@
 Assorted utility functions for peeringdb site templates.
 """
 
+from __future__ import annotations
+
 import ipaddress
+from collections.abc import Iterable, Sequence
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any, cast
 
 import django_peeringdb.const as const
 from django.conf import settings
@@ -16,8 +20,15 @@ from simplekml import OverlayXY, ScreenXY, Units
 
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
+if TYPE_CHECKING:
+    from django.db.models import Model
+    from django.http import HttpRequest, HttpResponse
+    from simplekml import Kml
 
-def disable_auto_now_and_save(entity, update_fields=None):
+
+def disable_auto_now_and_save(
+    entity: Model, update_fields: Sequence[str] | None = None
+) -> None:
     updated_field = entity._meta.get_field("updated")
     updated_field.auto_now = False
     try:
@@ -29,13 +40,13 @@ def disable_auto_now_and_save(entity, update_fields=None):
         updated_field.auto_now = True
 
 
-def round_decimal(value, places):
+def round_decimal(value: Decimal | None, places: int) -> Decimal | None:
     if value is not None:
         return value.quantize(Decimal(10) ** -places)
     return value
 
 
-def coerce_ipaddr(value):
+def coerce_ipaddr(value: str) -> str:
     """
     ipaddresses can have multiple formats that are equivalent.
     This function will standardize a ipaddress string.
@@ -50,7 +61,7 @@ def coerce_ipaddr(value):
     return value
 
 
-def v2_social_media_services():
+def v2_social_media_services() -> list[tuple[str, str]]:
     """
     Until v3 website is still set through the main `website` property
     of the object, we need to skip it here so it is not rendered to
@@ -59,7 +70,12 @@ def v2_social_media_services():
     return [x for x in const.SOCIAL_MEDIA_SERVICES if x[0] != "website"]
 
 
-def generate_social_media_render_data(data, social_media, insert_index, dismiss):
+def generate_social_media_render_data(
+    data: dict[str, Any],
+    social_media: list[dict[str, Any]],
+    insert_index: int,
+    dismiss: str,
+) -> dict[str, Any]:
     """
     Generate the data for rendering the social media in view.html.
     This function will insert the generated social media data to `data`.
@@ -89,15 +105,15 @@ def generate_social_media_render_data(data, social_media, insert_index, dismiss)
             "label_value": service,
         }
         # if i == len(social_media) - 1:
-        data.get("fields").insert(idx, soc_data)
+        cast("list[dict[str, Any]]", data.get("fields")).insert(idx, soc_data)
 
     soc_data = {"last_soc_field": True}
-    data.get("fields").insert(idx + 1, soc_data)
+    cast("list[dict[str, Any]]", data.get("fields")).insert(idx + 1, soc_data)
     return data
 
 
-def objfac_tupple(objfac_qset, obj):
-    data = {}
+def objfac_tupple(objfac_qset: Iterable[Model], obj: str) -> dict[Model, list[Model]]:
+    data: dict[Model, list[Model]] = {}
     for objfac in objfac_qset:
         if not data.get(getattr(objfac, obj)):
             data[getattr(objfac, obj)] = [objfac.facility]
@@ -106,8 +122,10 @@ def objfac_tupple(objfac_qset, obj):
     return data
 
 
-def objfac_tupple_ui_next(objfac_qset, obj, output):
-    data = {}
+def objfac_tupple_ui_next(
+    objfac_qset: Iterable[Model], obj: str, output: str
+) -> dict[Model, list[Model]]:
+    data: dict[Model, list[Model]] = {}
     for objfac in objfac_qset:
         if output == "mixed":
             if not data.get(getattr(objfac, obj)):
@@ -122,7 +140,7 @@ def objfac_tupple_ui_next(objfac_qset, obj, output):
     return data
 
 
-def generate_balloonstyle_text(keys):
+def generate_balloonstyle_text(keys: Iterable[str]) -> str:
     table_data = ""
     for key in keys:
         table_data += f"""
@@ -145,7 +163,7 @@ def generate_balloonstyle_text(keys):
     return ballon_text
 
 
-def add_kmz_overlay_watermark(kml):
+def add_kmz_overlay_watermark(kml: Kml) -> None:
     """
     add overlay watermark in kmz
 
@@ -166,7 +184,7 @@ def add_kmz_overlay_watermark(kml):
     )
 
 
-def resolve_template(request, template_name):
+def resolve_template(request: HttpRequest, template_name: str) -> str:
     """
     Resolves the template path based on user preferences for the UI version.
 
@@ -204,7 +222,13 @@ def resolve_template(request, template_name):
     return template_name
 
 
-def render(request, template_name, context=None, *args, **kwargs):
+def render(
+    request: HttpRequest,
+    template_name: str,
+    context: dict[str, Any] | None = None,
+    *args: Any,
+    **kwargs: Any,
+) -> HttpResponse:
     """
     Renders a template using UI version resolution based on request.
 
@@ -224,7 +248,9 @@ def render(request, template_name, context=None, *args, **kwargs):
     )
 
 
-def get_template(request, template_name):
+# return is Any: loader.get_template returns a backend-specific template wrapper
+# (django.template.backends.*.Template) with no clean shared public type.
+def get_template(request: HttpRequest, template_name: str) -> Any:
     """
     Loads a template using UI version resolution based on request.
 

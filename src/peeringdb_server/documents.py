@@ -7,7 +7,7 @@ from django.utils import timezone
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.fields import SearchAsYouTypeField
 from django_elasticsearch_dsl.registries import registry
-from elasticsearch_dsl import analyzer
+from elasticsearch.dsl import analyzer
 
 from peeringdb_server.context import incremental_period
 from peeringdb_server.models import (

@@ -2,7 +2,11 @@
 Utility functions for emailing users and admin staff.
 """
 
+from __future__ import annotations
+
 import logging
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail.message import EmailMultiAlternatives
@@ -11,10 +15,15 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import override
 
+if TYPE_CHECKING:
+    from django.core.mail.backends.base import BaseEmailBackend
+
+    from peeringdb_server.models import Network, Organization, User
+
 logger = logging.getLogger(__name__)
 
 
-def mail_sponsorship_admin(subj, msg):
+def mail_sponsorship_admin(subj: str, msg: str) -> None:
     mail = EmailMultiAlternatives(
         f"{settings.EMAIL_SUBJECT_PREFIX}{subj}",
         strip_tags(msg),
@@ -25,7 +34,9 @@ def mail_sponsorship_admin(subj, msg):
     mail.send(fail_silently=False)
 
 
-def mail_sponsorship_admin_merge(source_orgs, target_org):
+def mail_sponsorship_admin_merge(
+    source_orgs: list[Organization], target_org: Organization
+) -> None:
     msg = loader.get_template("email/notify-sponsorship-merge.txt").render(
         {"source_orgs": source_orgs, "target_org": target_org}
     )
@@ -33,7 +44,9 @@ def mail_sponsorship_admin_merge(source_orgs, target_org):
     return mail_sponsorship_admin("Organization merge - sponsorship transfered", msg)
 
 
-def mail_sponsorship_admin_merge_conflict(conflicting_orgs, target_org):
+def mail_sponsorship_admin_merge_conflict(
+    conflicting_orgs: list[Organization], target_org: Organization
+) -> None:
     if target_org in conflicting_orgs:
         conflicting_orgs.remove(target_org)
 
@@ -45,8 +58,13 @@ def mail_sponsorship_admin_merge_conflict(conflicting_orgs, target_org):
 
 
 def mail_admins_with_from(
-    subj, msg, from_addr, fail_silently=False, connection=None, html_message=None
-):
+    subj: str,
+    msg: str,
+    from_addr: str,
+    fail_silently: bool = False,
+    connection: BaseEmailBackend | None = None,
+    html_message: str | None = None,
+) -> None:
     """
     Mail admins but allow specifying of from address.
     """
@@ -69,7 +87,12 @@ def mail_admins_with_from(
     mail.send(fail_silently=fail_silently)
 
 
-def mail_users_entity_merge(users_source, users_target, entity_source, entity_target):
+def mail_users_entity_merge(
+    users_source: Iterable[User],
+    users_target: Iterable[User],
+    entity_source: Organization,
+    entity_target: Organization,
+) -> None:
     """
     Notify the users specified in users_source that their entity (entity_source) has
     been merged with another entity (entity_target).
@@ -106,7 +129,9 @@ def mail_users_entity_merge(users_source, users_target, entity_source, entity_ta
             )
 
 
-def mail_network_rir_status_flagged(net, recipients, days_until_deletion):
+def mail_network_rir_status_flagged(
+    net: Network, recipients: list[str], days_until_deletion: int
+) -> None:
     """
     Notify a network's contacts that the network has been flagged for
     automatic removal because its ASN is no longer registered as assigned by
@@ -153,7 +178,7 @@ def mail_network_rir_status_flagged(net, recipients, days_until_deletion):
     mail.send(fail_silently=False)
 
 
-def mail_username_retrieve(email, secret):
+def mail_username_retrieve(email: str, secret: str) -> None:
     """
     Send an email to the specified email address containing
     the url for username retrieval.

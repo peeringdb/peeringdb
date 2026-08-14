@@ -923,6 +923,9 @@ INSTALLED_APPS = [
     "reversion",
     "captcha",
     "django_handleref",
+    # not required for the middleware, but registers django-csp's system checks
+    # so a stale CSP settings format is reported by `manage.py check`
+    "csp",
 ]
 
 # allows us to regenerate the schema graph image for documentation
@@ -1015,14 +1018,19 @@ set_option("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
 set_option("SECURE_HSTS_SECONDS", 47304000)
 set_option("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
+# django-csp 4 reads a single CONTENT_SECURITY_POLICY dict instead of the
+# individual CSP_* settings. the per-directive set_option() calls are kept so
+# each source list stays env-overridable, but under CSP_POLICY_* names -- the
+# bare CSP_* names are the ones django-csp 4 flags as outdated (csp.E001), and
+# leaving them set would look live while doing nothing.
 set_option(
-    "CSP_DEFAULT_SRC",
+    "CSP_POLICY_DEFAULT_SRC",
     [
         "'self'",
     ],
 )
 set_option(
-    "CSP_STYLE_SRC",
+    "CSP_POLICY_STYLE_SRC",
     [
         "'self'",
         "fonts.googleapis.com",
@@ -1032,7 +1040,7 @@ set_option(
     ],
 )
 set_option(
-    "CSP_SCRIPT_SRC",
+    "CSP_POLICY_SCRIPT_SRC",
     [
         "'self'",
         "www.google.com",
@@ -1044,10 +1052,10 @@ set_option(
         "maps.googleapis.com",
     ],
 )
-set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
-set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
+set_option("CSP_POLICY_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
+set_option("CSP_POLICY_FONT_SRC", ["'self'", "fonts.gstatic.com"])
 set_option(
-    "CSP_IMG_SRC",
+    "CSP_POLICY_IMG_SRC",
     [
         "'self'",
         "cdn.redoc.ly",
@@ -1058,12 +1066,12 @@ set_option(
     ],
 )
 if AWS_MEDIA_BUCKET_NAME:
-    CSP_IMG_SRC.append(
+    CSP_POLICY_IMG_SRC.append(
         AWS_S3_CUSTOM_DOMAIN or f"{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com"
     )
-set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
+set_option("CSP_POLICY_WORKER_SRC", ["'self'", "blob:"])
 set_option(
-    "CSP_CONNECT_SRC",
+    "CSP_POLICY_CONNECT_SRC",
     [
         "*.google-analytics.com",
         "'self'",
@@ -1071,6 +1079,19 @@ set_option(
         "maps.googleapis.com",
     ],
 )
+
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": CSP_POLICY_DEFAULT_SRC,
+        "style-src": CSP_POLICY_STYLE_SRC,
+        "script-src": CSP_POLICY_SCRIPT_SRC,
+        "frame-src": CSP_POLICY_FRAME_SRC,
+        "font-src": CSP_POLICY_FONT_SRC,
+        "img-src": CSP_POLICY_IMG_SRC,
+        "worker-src": CSP_POLICY_WORKER_SRC,
+        "connect-src": CSP_POLICY_CONNECT_SRC,
+    },
+}
 
 MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
@@ -1563,7 +1584,6 @@ set_option("NON_ZIPCODE_COUNTRIES", non_zipcode_countries())
 LANGUAGE_CODE = "en-us"
 LANGUAGE_COOKIE_AGE = 31557600  # one year
 USE_I18N = True
-USE_L10N = True
 
 LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 

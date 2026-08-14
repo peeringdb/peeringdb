@@ -2,6 +2,10 @@
 Load and maintain global stats (displayed in peeringdb footer).
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.utils import timezone
 
@@ -17,10 +21,23 @@ from peeringdb_server.models import (
     User,
 )
 
-__STATS = {"data": {}, "mod": None}
+if TYPE_CHECKING:
+    from datetime import datetime
+    from typing import TypedDict
+
+    from django.db.models import QuerySet
+
+    from peeringdb_server.models import InternetExchangeFacility, IXLan
+
+    class GlobalStats(TypedDict):
+        data: dict[str, int]
+        mod: datetime | None
 
 
-def reset_stats():
+__STATS: GlobalStats = {"data": {}, "mod": None}
+
+
+def reset_stats() -> None:
     """
     Resets global stats to empty. Useful to reset for testing purposes.
     """
@@ -28,7 +45,7 @@ def reset_stats():
     __STATS["mod"] = None
 
 
-def gen_stats():
+def gen_stats() -> None:
     """
     Regenerates global statics to stats.__STATS['data']
     """
@@ -56,7 +73,7 @@ def gen_stats():
     __STATS["mod"] = timezone.now()
 
 
-def stats():
+def stats() -> dict[str, int]:
     """
     Returns dict of global statistics
 
@@ -72,14 +89,16 @@ def stats():
     return __STATS["data"]
 
 
-def get_fac_stats(netfac, ixfac):
+def get_fac_stats(
+    netfac: QuerySet[NetworkFacility], ixfac: QuerySet[InternetExchangeFacility]
+) -> dict[str, int]:
     return {
         "networks": netfac.filter(status="ok").count(),
         "ix": ixfac.filter(status="ok").count(),
     }
 
 
-def get_ix_stats(netixlan, ixlan):
+def get_ix_stats(netixlan: QuerySet[NetworkIXLan], ixlan: IXLan) -> dict[str, int]:
     peer_count = netixlan.values("network").distinct().filter(status="ok").count()
     connections_count = netixlan.filter(ixlan=ixlan, status="ok").count()
     open_peer_count = (

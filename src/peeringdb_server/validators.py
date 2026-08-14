@@ -2,8 +2,11 @@
 peeringdb model / field validators
 """
 
+from __future__ import annotations
+
 import ipaddress
 import re
+from typing import Any
 from urllib.parse import urlparse
 
 import phonenumbers
@@ -33,7 +36,7 @@ DANGEROUS_NAME_CHARS = re.compile(
 CONSECUTIVE_WHITESPACE = re.compile(r"\s{2,}")
 
 
-def validate_email_domains(text):
+def validate_email_domains(text: str | None) -> str:
     if not text:
         return ""
 
@@ -55,7 +58,7 @@ def validate_email_domains(text):
     return "\n".join(lines_out)
 
 
-def validate_poc_visible(visible):
+def validate_poc_visible(visible: str) -> str:
     # we no longer allow "Private" network contacts
     # however until all private network contacts have
     # been either changed or deleted we cannot remove
@@ -68,7 +71,7 @@ def validate_poc_visible(visible):
     return visible
 
 
-def validate_phonenumber(phonenumber, country=None):
+def validate_phonenumber(phonenumber: str, country: str | None = None) -> str:
     """
     Validate a phonenumber to E.164
 
@@ -96,7 +99,7 @@ def validate_phonenumber(phonenumber, country=None):
         raise ValidationError(_("Not a valid phone number (E.164)"))
 
 
-def validate_zipcode(zipcode, country):
+def validate_zipcode(zipcode: str | None, country: str) -> str:
     """
     Validate a zipcode for a country. If a country has zipcodes, a zipcode
     is required. If a country does not have zipcodes, it's not required.
@@ -120,7 +123,7 @@ def validate_zipcode(zipcode, country):
             return zipcode
 
 
-def validate_account_name(value):
+def validate_account_name(value: str | None) -> str:
     """
     Validate account name (first name or last name).
 
@@ -145,7 +148,7 @@ def validate_account_name(value):
     return value
 
 
-def validate_name(value):
+def validate_name(value: str | None) -> str | None:
     """
     Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
     whitespace is left to StripFieldMixin, so we check the stripped value.
@@ -161,7 +164,7 @@ def validate_name(value):
     return value
 
 
-def normalize_name(value):
+def normalize_name(value: str | None) -> str | None:
     """
     Collapse runs of 2+ whitespace to a single space and strip the ends - the
     collapse counterpart to validate_name (which rejects). Used by the
@@ -173,7 +176,7 @@ def normalize_name(value):
     return CONSECUTIVE_WHITESPACE.sub(" ", value).strip()
 
 
-def clean_ixp_update_exclude(value):
+def clean_ixp_update_exclude(value: object) -> tuple[list[str], str | None]:
     """
     Normalize and validate a list of IX-F field names that a network has
     opted to exclude from automatic import updates (#1943).
@@ -200,7 +203,9 @@ def clean_ixp_update_exclude(value):
     return list(dict.fromkeys(value)), None
 
 
-def validate_prefix(prefix):
+def validate_prefix(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> ipaddress.IPv4Network | ipaddress.IPv6Network:
     """
     Validate ip prefix.
 
@@ -222,7 +227,9 @@ def validate_prefix(prefix):
     return prefix
 
 
-def validate_address_space(prefix):
+def validate_address_space(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> None:
     """
     Validate an ip prefix according to peeringdb specs.
 
@@ -255,7 +262,7 @@ def validate_address_space(prefix):
         )
 
 
-def validate_info_prefixes4(value):
+def validate_info_prefixes4(value: int | None) -> int | None:
     if value is None or value == "":
         return None
 
@@ -276,7 +283,7 @@ def validate_info_prefixes4(value):
     return value
 
 
-def validate_info_prefixes6(value):
+def validate_info_prefixes6(value: int | None) -> int | None:
     if value is None or value == "":
         return None
 
@@ -297,7 +304,10 @@ def validate_info_prefixes6(value):
     return value
 
 
-def validate_prefix_overlap(prefix, instance=None):
+def validate_prefix_overlap(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+    instance: peeringdb_server.models.IXLanPrefix | None = None,
+) -> None:
     """
     Validate that a prefix does not overlap with another prefix on an already existing ixlan.
 
@@ -335,8 +345,11 @@ def validate_prefix_overlap(prefix, instance=None):
     for ixpfx in qs:
         # Skip overlap validation if same ixlan and handle special subnet case
         if instance and ixpfx.ixlan == instance.ixlan:
-            new_prefix = ipaddress.ip_network(prefix)
-            old_prefix = ipaddress.ip_network(ixpfx.prefix)
+            # `Any`: ipaddress.ip_network() returns a IPv4Network | IPv6Network
+            # union, and typeshed does not let `.subnet_of()` be called across
+            # that union (each side only accepts its own family). Kept as Any.
+            new_prefix: Any = ipaddress.ip_network(prefix)
+            old_prefix: Any = ipaddress.ip_network(ixpfx.prefix)
 
             # Allow if new prefix is a subnet and covers same netixlans
             if new_prefix.subnet_of(old_prefix):
@@ -388,10 +401,13 @@ def validate_prefix_overlap(prefix, instance=None):
         )
 
     if being_renumbered:
-        instance._being_renumbered = True
+        # `being_renumbered` is only ever set inside the `if instance and ...`
+        # branch above, so `instance` is guaranteed non-None here; mypy cannot
+        # correlate the two conditions, hence the narrow ignore.
+        instance._being_renumbered = True  # type: ignore[union-attr]
 
 
-def validate_irr_as_set(value):
+def validate_irr_as_set(value: str) -> str:
     """
     Validate irr as-set string.
 
@@ -491,7 +507,7 @@ def validate_irr_as_set(value):
     return " ".join(validated)
 
 
-def validate_bool(value):
+def validate_bool(value: str | int | bool) -> bool:
     """
     Validates a boolean value
 
@@ -521,7 +537,7 @@ def validate_bool(value):
         raise ValidationError(_("Needs to be 'True', 'False', 1 or 0"))
 
 
-def validate_api_rate(value):
+def validate_api_rate(value: str) -> str:
     """
     Validates a number/time-unit format used to determine rate limits
 
@@ -549,7 +565,7 @@ def validate_api_rate(value):
         )
 
 
-def validate_django_ratelimit_rate(value):
+def validate_django_ratelimit_rate(value: str) -> str:
     """
     Validates a rate string in django-ratelimit format.
 
@@ -579,7 +595,7 @@ def validate_django_ratelimit_rate(value):
         )
 
 
-def validate_identifier(service: str, identifier: str):
+def validate_identifier(service: str, identifier: str) -> None:
     """
     Validates a identifier based on the specific rules of different social media platforms.
     Raises a ValueError if the identifier is invalid for the given service.
@@ -684,7 +700,7 @@ def validate_identifier(service: str, identifier: str):
         raise ValueError(f"Invalid identifier {identifier} for service {service}!")
 
 
-def validate_url(url):
+def validate_url(url: str) -> None:
     try:
         URLValidator()(url)
         parsed = urlparse(url)
@@ -694,7 +710,9 @@ def validate_url(url):
         raise ValidationError("Invalid URL.")
 
 
-def validate_social_media(value):
+def validate_social_media(
+    value: list[Any] | None,
+) -> list[Any] | None:
     """
     Validates a social media value
 
@@ -772,7 +790,9 @@ def validate_social_media(value):
     return value
 
 
-def validate_website_override(website, org_website):
+def validate_website_override(
+    website: str | None, org_website: str | None
+) -> str | None:
     """
     Validates a website value
 
@@ -793,7 +813,13 @@ def validate_website_override(website, org_website):
     return website
 
 
-def validate_verified_update_data(ref_tag, obj_id, data):
+def validate_verified_update_data(
+    # `data` values are polymorphic: they arrive as strings but are coerced to
+    # bool/int below, so the mapping value stays `Any`.
+    ref_tag: str,
+    obj_id: int,
+    data: dict[str, Any],
+) -> tuple[bool, str | dict[str, Any]]:
     """
     Validates a VerifiedUpdate updates value
 
@@ -814,7 +840,10 @@ def validate_verified_update_data(ref_tag, obj_id, data):
         return False, _("Data is empty")
     if ref_tag not in const.SUPPORTED_FIELDS:
         return False, _(f"Unknown object type: {ref_tag}")
-    model = peeringdb_server.models.REFTAG_MAP[ref_tag]
+    # `Any`: REFTAG_MAP maps a ref tag to a concrete Django model class, but
+    # without django-stubs the mapping resolves to `type[object]`, which hides
+    # the `.objects` manager and `.DoesNotExist`. Kept as Any.
+    model: Any = peeringdb_server.models.REFTAG_MAP[ref_tag]
     try:
         obj = model.objects.get(id=obj_id)
     except model.DoesNotExist:
@@ -841,7 +870,7 @@ def validate_verified_update_data(ref_tag, obj_id, data):
     return True, result
 
 
-def validate_asn_prefix(asn):
+def validate_asn_prefix(asn: str | int) -> str:
     """
     Validates a ASN prefix value
 
@@ -864,7 +893,7 @@ def validate_asn_prefix(asn):
         raise RestValidationError({"asn": ["ASN contains invalid value"]})
 
 
-def validate_latitude(latitude):
+def validate_latitude(latitude: str | float | int) -> float:
     try:
         value = float(latitude)
         is_valid = -90 <= value <= 90
@@ -875,7 +904,7 @@ def validate_latitude(latitude):
     return value
 
 
-def validate_longitude(longitude):
+def validate_longitude(longitude: str | float | int) -> float:
     try:
         value = float(longitude)
         is_valid = -180 <= value <= 180
@@ -886,7 +915,12 @@ def validate_longitude(longitude):
     return value
 
 
-def validate_distance_geocode(current_geocode, new_geocode, current_city, new_city):
+def validate_distance_geocode(
+    current_geocode: tuple[float | None, float | None] | None,
+    new_geocode: tuple[float | None, float | None],
+    current_city: str | None,
+    new_city: str | None,
+) -> tuple[float | None, float | None]:
     if (
         current_geocode
         and type(tuple)
@@ -902,7 +936,7 @@ def validate_distance_geocode(current_geocode, new_geocode, current_city, new_ci
     else:
         # When no geocode currently exists or city change
         gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-        city_geocode = ()
+        city_geocode: tuple = ()
         max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_NOT_EXISTS
 
         try:
@@ -925,7 +959,7 @@ def validate_distance_geocode(current_geocode, new_geocode, current_city, new_ci
     return new_geocode
 
 
-def validate_status(value):
+def validate_status(value: str) -> str:
     """
     Validate that the status field only accepts allowed values.
 

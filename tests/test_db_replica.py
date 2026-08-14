@@ -246,9 +246,9 @@ def test_get_request_routes_orm_reads_to_read_alias(client, monkeypatch):
     # path through the middleware. (Some reads may go to "default" via
     # use_primary_db() inside outer middleware; we just need to confirm
     # the routing path is live.)
-    assert (
-        "read" in decisions
-    ), f"expected at least one read to route to 'read', got {decisions!r}"
+    assert "read" in decisions, (
+        f"expected at least one read to route to 'read', got {decisions!r}"
+    )
 
 
 # -- settings smoke -------------------------------------------------------

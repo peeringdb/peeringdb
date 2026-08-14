@@ -580,7 +580,7 @@ def ticket_queue_deletion_prevented(request, instance):
     # period defined in settings
 
     period = settings.PROTECTED_OBJECT_NOTIFICATION_PERIOD
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     max_age = now - datetime.timedelta(hours=period)
     ticket = DeskProTicket.objects.filter(
         subject=f"{settings.EMAIL_SUBJECT_PREFIX}{subject}"

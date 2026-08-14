@@ -1543,9 +1543,9 @@ def test_validate_status_field_serializer():
 
     # --- Verify status field is marked as read-only ---
     serializer = NetworkIXLanSerializer()
-    assert serializer.fields[
-        "status"
-    ].read_only, "status field should be marked as read_only"
+    assert serializer.fields["status"].read_only, (
+        "status field should be marked as read_only"
+    )
 
 
 @pytest.mark.parametrize(

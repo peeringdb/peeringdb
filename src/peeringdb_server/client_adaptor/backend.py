@@ -3,8 +3,11 @@ peeringdb sync backend to use for pdb_load_data
 command
 """
 
+from __future__ import annotations
+
 import re
 from collections import defaultdict
+from typing import TYPE_CHECKING, cast
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -14,6 +17,12 @@ from django_peeringdb.client_adaptor.backend import reftag_to_cls
 from peeringdb import resource
 
 import peeringdb_server.models as models
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from django.db.models import Field, Model
+    from django.db.models.fields.reverse_related import ForeignObjectRel
 
 __version__ = "1.0"
 
@@ -31,7 +40,7 @@ class Backend(BaseBackend):
 
     # map peeringdb_server models to peeringdb client resources
 
-    RESOURCE_MAP = {
+    RESOURCE_MAP: dict[type, type] = {
         resource.Carrier: models.Carrier,
         resource.CarrierFacility: models.CarrierFacility,
         resource.Campus: models.Campus,
@@ -48,17 +57,17 @@ class Backend(BaseBackend):
     }
 
     @classmethod
-    def setup(cls):
+    def setup(cls) -> None:
         # in order to copy updated / created times from server
         # we need to turn off auto updating of those fields
         # during update and add
         for model in cls.RESOURCE_MAP.values():
-            for field in model._meta.fields:
+            for field in cast("type[Model]", model)._meta.fields:
                 if field.name in ["created", "updated"]:
                     field.auto_now_add = False
                     field.auto_now = False
 
-    def get_resource(self, cls):
+    def get_resource(self, cls: type) -> type | None:
         """
         Override this so it doesn't hard fail on a non
         existing resource. As sync will try to obtain resources
@@ -69,7 +78,9 @@ class Backend(BaseBackend):
         return self.concrete_map.get(cls)
 
     @reftag_to_cls
-    def get_fields(self, concrete, ignore_fields=None):
+    def get_fields(
+        self, concrete: str | type, ignore_fields: list[str] | None = None
+    ) -> list[Field | ForeignObjectRel]:
         """
         Sync currently doesnt support OneToOne relationships
         and none of the ones that exist in peeringdb_server
@@ -92,7 +103,9 @@ class Backend(BaseBackend):
             fields.append(field)
         return fields
 
-    def set_relation_many_to_many(self, obj, field_name, objs):
+    def set_relation_many_to_many(
+        self, obj: Model, field_name: str, objs: Iterable[Model]
+    ) -> None:
         """
         Sync will try to process sponsorship_set off of `org`
         and run into an error, so we make sure to ignore it
@@ -103,7 +116,7 @@ class Backend(BaseBackend):
             return
         return super().set_relation_many_to_many(obj, field_name, objs)
 
-    def clean(self, obj):
+    def clean(self, obj: Model) -> None:
         """
         We override the object validation here to handle
         common validation issues that exist in the official production
@@ -120,18 +133,20 @@ class Backend(BaseBackend):
         - ipaddr6 out of prefix address space on netixlans (skip validation)
         """
 
+        # models.UTC is a concrete runtime tzinfo subclass (defined in the
+        # out-of-scope models.py); mypy/typeshed treats it as abstract.
         obj.updated = (
             obj._meta.get_field("updated")
             .to_python(obj.updated)
-            .replace(tzinfo=models.UTC())
+            .replace(tzinfo=models.UTC())  # type: ignore[abstract]
         )
         obj.created = (
             obj._meta.get_field("created")
             .to_python(obj.created)
-            .replace(tzinfo=models.UTC())
+            .replace(tzinfo=models.UTC())  # type: ignore[abstract]
         )
 
-    def save(self, obj):
+    def save(self, obj: Model) -> None:
         # make sure all datetime values have their timezone set
 
         for field in obj._meta.get_fields():
@@ -141,7 +156,7 @@ class Backend(BaseBackend):
                     continue
                 if isinstance(value, str):
                     value = field.to_python(value)
-                value = value.replace(tzinfo=models.UTC())
+                value = value.replace(tzinfo=models.UTC())  # type: ignore[abstract]  # concrete runtime tzinfo subclass (out-of-scope models.py)
                 setattr(obj, field.name, value)
 
             elif field.get_internal_type() == "DecimalField":
@@ -157,7 +172,7 @@ class Backend(BaseBackend):
         else:
             obj.save()
 
-    def detect_uniqueness_error(self, exc):
+    def detect_uniqueness_error(self, exc: Exception) -> list[str] | None:
         """
         Parse error, and if it describes any violations of a uniqueness constraint,
         return the corresponding fields, else None
@@ -176,12 +191,14 @@ class Backend(BaseBackend):
                 fields.append(name)
         return fields or None
 
-    def detect_missing_relations(self, obj, exc):
+    def detect_missing_relations(
+        self, obj: Model, exc: ValidationError
+    ) -> defaultdict[type | None, set[int]]:
         """
         Parse error messages and collect the missing-relationship errors
         as a dict of Resource -> {id set}
         """
-        missing = defaultdict(set)
+        missing: defaultdict[type | None, set[int]] = defaultdict(set)
 
         error_dict = getattr(exc, "error_dict", getattr(exc, "message_dict", {}))
 

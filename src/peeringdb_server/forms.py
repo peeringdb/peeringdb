@@ -7,10 +7,13 @@ at the REST api to handle updates (such as /net, /ix, /fac or /org endpoints).
 Look in rest.py and serializers.py for those.
 """
 
+from __future__ import annotations
+
 import json
 import os.path
 import re
 import uuid
+from typing import TYPE_CHECKING, Any
 
 import requests
 from captcha.fields import CaptchaField
@@ -28,6 +31,9 @@ from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
 from peeringdb_server.validators import validate_account_name, validate_name
 
+if TYPE_CHECKING:
+    from django.core.files.uploadedfile import UploadedFile
+
 
 class OrganizationAPIKeyForm(forms.Form):
     name = forms.CharField()
@@ -39,7 +45,7 @@ class OrgAdminUserPermissionForm(forms.Form):
     entity = forms.CharField()
     perms = forms.IntegerField()
 
-    def clean_perms(self):
+    def clean_perms(self) -> int:
         perms = self.cleaned_data.get("perms")
         if not perms & PERM_READ:
             perms = perms | PERM_READ
@@ -54,7 +60,7 @@ class AffiliateToOrgForm(forms.Form):
     asn = forms.CharField(required=False)
     org = forms.CharField(required=False)
 
-    def clean_org(self):
+    def clean_org(self) -> int:
         org_id = self.cleaned_data.get("org")
         if not org_id:
             return 0
@@ -78,7 +84,7 @@ class AffiliateToOrgForm(forms.Form):
 
         return org_id
 
-    def clean_asn(self):
+    def clean_asn(self) -> int:
         asn = self.cleaned_data.get("asn")
         if not asn:
             return 0
@@ -93,7 +99,7 @@ class PasswordChangeForm(forms.Form):
     password = forms.CharField()
     password_v = forms.CharField()
 
-    def clean_password(self):
+    def clean_password(self) -> str:
         password = self.cleaned_data.get("password")
         if len(password) < 10:
             raise forms.ValidationError(_("Needs to be at least 10 characters long"))
@@ -103,7 +109,7 @@ class PasswordChangeForm(forms.Form):
 
         return password
 
-    def clean_password_v(self):
+    def clean_password_v(self) -> str:
         password = self.cleaned_data.get("password")
         password_v = self.cleaned_data.get("password_v")
 
@@ -117,7 +123,7 @@ class PasswordChangeForm(forms.Form):
 class UsernameChangeForm(forms.Form):
     username = forms.CharField()
 
-    def clean_username(self):
+    def clean_username(self) -> str:
         username = self.cleaned_data.get("username")
 
         if User.objects.filter(username=username).exists():
@@ -129,11 +135,11 @@ class NameChangeForm(forms.Form):
     first_name = forms.CharField(label=_("First Name"), required=True)
     last_name = forms.CharField(label=_("Last Name"), required=True)
 
-    def clean_first_name(self):
+    def clean_first_name(self) -> str:
         first_name = self.cleaned_data.get("first_name")
         return validate_account_name(first_name)
 
-    def clean_last_name(self):
+    def clean_last_name(self) -> str:
         last_name = self.cleaned_data.get("last_name")
         return validate_account_name(last_name)
 
@@ -151,7 +157,7 @@ class UserCreationForm(auth_forms.UserCreationForm):
     captcha = forms.CharField(required=False)
     captcha_generator = CaptchaField(required=False)
 
-    require_captcha = True
+    require_captcha: bool = True
 
     class Meta:
         model = User
@@ -162,7 +168,7 @@ class UserCreationForm(auth_forms.UserCreationForm):
             "last_name",
         )
 
-    def clean(self):
+    def clean(self) -> None:
         super().clean()
         recaptcha = self.cleaned_data.get("recaptcha", "")
         captcha = self.cleaned_data.get("captcha", "")
@@ -194,7 +200,7 @@ class UserCreationForm(auth_forms.UserCreationForm):
             except CaptchaStore.DoesNotExist:
                 raise forms.ValidationError(_("captcha invalid"))
 
-    def delete_captcha(self):
+    def delete_captcha(self) -> None:
         captcha_object = getattr(self, "captcha_object", None)
         if captcha_object:
             captcha_object.delete()
@@ -203,7 +209,7 @@ class UserCreationForm(auth_forms.UserCreationForm):
 class UserLocaleForm(forms.Form):
     locale = forms.CharField()
 
-    def clean_locale(self):
+    def clean_locale(self) -> str | None:
         loc = self.cleaned_data.get("locale")
         # django.utils.translation.check_for_language() #lang_code
         if loc:
@@ -220,7 +226,7 @@ class VerifiedUpdateForm(forms.Form):
     reason = forms.CharField(required=False)
     updates = forms.JSONField(required=True)
 
-    def clean(self):
+    def clean(self) -> None:
         cleaned_data = super().clean()
         updates = cleaned_data.get("updates")
         schema = Schema([{"ref_tag": str, "obj_id": int, "data": dict}])
@@ -238,7 +244,7 @@ class UserOrgForm(forms.Form):
 
     organization = forms.CharField()
 
-    def clean_org(self):
+    def clean_org(self) -> str | None:
         org = self.cleaned_data.get("organization")
         if org:
             return org
@@ -255,7 +261,7 @@ class ObjectLogoUploadForm(forms.ModelForm):
     class Meta:
         fields = ["logo"]
 
-    def clean_logo(self):
+    def clean_logo(self) -> UploadedFile:
         logo = self.cleaned_data["logo"]
         max_size = dj_settings.ORG_LOGO_MAX_SIZE
 
@@ -287,7 +293,14 @@ class ObjectLogoUploadForm(forms.ModelForm):
 class PasskeyFlagFormMixin:
     """Mixin that adds passkey policy flag fields and logic to an Organization form."""
 
-    def __init__(self, *args, **kwargs):
+    if TYPE_CHECKING:
+        # attributes provided by the host Django ModelForm this mixin is mixed into
+        cleaned_data: dict[str, Any]
+        instance: Organization
+        fields: dict[str, Any]
+
+    # Any: passthrough *args/**kwargs forwarded to the Django form __init__
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields[
@@ -298,8 +311,8 @@ class PasskeyFlagFormMixin:
                 "passkey_require_mfa"
             ].initial = self.instance.passkey_require_mfa
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
+    def save(self, commit: bool = True) -> Organization:
+        instance = super().save(commit=False)  # type: ignore[misc]  # save provided by ModelForm at runtime
         instance.set_org_flag(
             dj_settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH,
             self.cleaned_data["passkey_disable_password_auth"],

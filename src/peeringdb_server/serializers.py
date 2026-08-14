@@ -13,7 +13,6 @@ method.
 
 import base64
 import datetime
-import imghdr
 import io
 import ipaddress
 import json
@@ -4307,7 +4306,16 @@ class AssetWriteSerializer(serializers.Serializer):
         except Exception:
             raise RestValidationError({"file_data": "Invalid base64 encoded data"})
 
-        detected_type = imghdr.what(None, h=file_content)
+        # Pillow replaces stdlib imghdr, which was removed in python 3.13.
+        # Image.format is the same identifier imghdr.what() returned ("png",
+        # "jpeg"), and anything Pillow cannot open is rejected below just as
+        # imghdr's None was.
+        try:
+            with Image.open(io.BytesIO(file_content)) as probe:
+                detected_type = (probe.format or "").lower()
+        except Exception:
+            detected_type = None
+
         if detected_type not in ["png", "jpeg"]:
             raise RestValidationError(
                 {"file_data": "Unsupported file type. Only PNG and JPEG are allowed"}

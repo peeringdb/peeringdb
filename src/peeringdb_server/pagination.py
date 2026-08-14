@@ -4,9 +4,18 @@ Shared pagination classes for the PeeringDB REST API.
 Extracted here to avoid circular imports between rest.py and api_cache.py.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from django.conf import settings as dj_settings
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 from rest_framework.response import Response
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+    from rest_framework.views import APIView
 
 
 class UnlimitedIfNoPagePagination(PageNumberPagination):
@@ -14,7 +23,14 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
     page_size_query_param = "per_page"
     max_page_size = 250
 
-    def paginate_queryset(self, queryset, request, view=None):
+    def paginate_queryset(
+        self,
+        queryset: QuerySet[Any] | list[Any],
+        request: Request,
+        view: APIView | None = None,
+        # list elements are model instances (live queryset) or cached JSON
+        # rows (list from api_cache), so the element type is unconstrained.
+    ) -> list[Any] | None:
         self.request = request
         if "page" in request.query_params:
             self.pagination_applied = True
@@ -23,7 +39,7 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
             self.pagination_applied = False
             return list(queryset)  # Return all without pagination
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self, data: list[Any]) -> Response:
         return Response(
             {
                 "count": len(data),
@@ -33,7 +49,9 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
             }
         )
 
-    def get_paginated_response_schema(self, schema):
+    def get_paginated_response_schema(self, schema: dict[str, Any]) -> dict[str, Any]:
+        # Both dicts are OpenAPI/JSON-schema fragments whose values are of
+        # arbitrary JSON shape, so dict values stay Any.
         return {
             "type": "object",
             "required": ["data", "meta"],
@@ -73,8 +91,9 @@ class UnlimitedIfNoPagePagination(PageNumberPagination):
             },
         }
 
-    def build_pagination_meta(self):
+    def build_pagination_meta(self) -> dict[str, Any]:
         """Build pagination metadata. Call after paginate_queryset() with pagination_applied=True."""
+        # Mixed value types (int / bool / str | None), so values stay Any.
         return {
             "count": self.page.paginator.count,
             "has_next": self.page.has_next(),

@@ -12,6 +12,10 @@ Read only user api key handling.
 Censor API output data according to permissions using grainy Applicators.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 # from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 import grainy.const as grainy_constant
 from django.conf import settings
@@ -31,8 +35,14 @@ from peeringdb_server.models import (
     UserAPIKey,
 )
 
+if TYPE_CHECKING:
+    from django.db.models import Model
+    from django.http import HttpRequest
+    from rdap.objects import RdapObject
+    from rest_framework.views import APIView
 
-def validate_rdap_user_or_key(request, rdap):
+
+def validate_rdap_user_or_key(request: HttpRequest, rdap: RdapObject) -> bool:
     user = get_user_from_request(request)
     if user:
         return user.validate_rdap_relationship(rdap)
@@ -44,7 +54,7 @@ def validate_rdap_user_or_key(request, rdap):
     return False
 
 
-def get_email_from_user_or_key(request):
+def get_email_from_user_or_key(request: HttpRequest) -> str | None:
     user = get_user_from_request(request)
     if user:
         return user.email
@@ -55,19 +65,21 @@ def get_email_from_user_or_key(request):
     return None
 
 
-def validate_rdap_org_key(org_key, rdap):
+def validate_rdap_org_key(org_key: OrganizationAPIKey, rdap: RdapObject) -> bool:
     for email in rdap.emails:
         if email and email.lower() == org_key.email.lower():
             return True
     return False
 
 
-def get_key_from_request(request):
+def get_key_from_request(request: HttpRequest) -> str | None:
     """Use the default KeyParser from drf-api-keys to pull the key out of the request."""
     return KeyParser().get(request)
 
 
-def get_permission_holder_from_request(request):
+def get_permission_holder_from_request(
+    request: HttpRequest,
+) -> OrganizationAPIKey | UserAPIKey | User | AnonymousUser:
     """Return either an API Key instance or User instance
     depending on how the request is Authenticated.
     """
@@ -102,7 +114,7 @@ def get_permission_holder_from_request(request):
     return anon
 
 
-def get_user_from_request(request):
+def get_user_from_request(request: HttpRequest) -> User | None:
     """
     Return a user from the request if the request
     was made with either a User or UserAPIKey.
@@ -120,7 +132,7 @@ def get_user_from_request(request):
     return None
 
 
-def get_org_key_from_request(request):
+def get_org_key_from_request(request: HttpRequest) -> OrganizationAPIKey | None:
     """
     Return an org key from the request if the request
     was made with an OrgKey.
@@ -135,7 +147,7 @@ def get_org_key_from_request(request):
     return None
 
 
-def get_user_key_from_request(request):
+def get_user_key_from_request(request: HttpRequest) -> UserAPIKey | None:
     """
     Return a user API key from the request if the request
     was made with an User API Key.
@@ -150,29 +162,40 @@ def get_user_key_from_request(request):
     return None
 
 
-def check_permissions_from_request(request, target, flag, **kwargs):
+def check_permissions_from_request(
+    request: HttpRequest, target: Any, flag: int, **kwargs: Any
+) -> bool:
     """Call the check_permissions util but takes a request as
     input, not a permission-holding object.
     """
+    # `target` and `kwargs` are forwarded verbatim to grainy's check(), which
+    # accepts an open-ended set of permission targets (namespace str, model
+    # instance, viewset, dict, ...) and options — genuinely unconstrained.
     perm_obj = get_permission_holder_from_request(request)
     return check_permissions(perm_obj, target, flag, **kwargs)
 
 
-def check_permissions(obj, target, permissions, **kwargs):
+def check_permissions(obj: Any, target: Any, permissions: int, **kwargs: Any) -> bool:
     """Use the provided permission holding object to initialize
     the Permissions Util, which then checks permissions.
     """
+    # `obj` stays Any: a dynamic `_permissions_util` attribute is cached on it,
+    # which the concrete permission-holder types (User, AnonymousUser, *APIKey)
+    # do not declare. `target`/`kwargs` are forwarded to grainy's open-ended
+    # check() (see check_permissions_from_request).
     if not hasattr(obj, "_permissions_util"):
         obj._permissions_util = init_permissions_helper(obj)
 
     return obj._permissions_util.check(target, permissions, **kwargs)
 
 
-def init_permissions_helper(obj):
+def init_permissions_helper(obj: Any) -> Permissions:
     """Initialize the Permission Util based on
     whether the provided object is a UserAPIKey, OrgAPIKey,
     or a different object.
     """
+    # `obj` stays Any: a dynamic `_permissions_util` attribute is cached on it,
+    # which the concrete permission-holder types do not declare.
 
     if hasattr(obj, "_permissions_util"):
         return obj._permissions_util
@@ -191,7 +214,7 @@ def init_permissions_helper(obj):
     return perms
 
 
-def return_user_api_key_perms(key):
+def return_user_api_key_perms(key: UserAPIKey) -> Permissions:
     """
     Initialize the Permissions Util with the
     permissions of the user linked to the User API
@@ -212,7 +235,7 @@ def return_user_api_key_perms(key):
     return permissions
 
 
-def return_org_api_key_perms(key):
+def return_org_api_key_perms(key: OrganizationAPIKey) -> Permissions:
     """
     Load Permissions util with OrgAPIKey perms
     and then add in that organization's user group perms
@@ -247,7 +270,7 @@ class ModelViewSetPermissions(BasePermission):
     - partial update
     """
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: HttpRequest, view: APIView) -> bool:
         if hasattr(view, "Grainy"):
             perm_obj = get_permission_holder_from_request(request)
             flag = request_method_to_flag(request.method)
@@ -256,7 +279,9 @@ class ModelViewSetPermissions(BasePermission):
         # view has not been grainy decorated
         return True
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(
+        self, request: HttpRequest, view: APIView, obj: Model
+    ) -> bool:
         perm_obj = get_permission_holder_from_request(request)
         flag = request_method_to_flag(request.method)
         return check_permissions(perm_obj, obj, flag)
@@ -264,13 +289,13 @@ class ModelViewSetPermissions(BasePermission):
 
 class APIPermissionsApplicator(NamespaceKeyApplicator):
     @property
-    def is_generating_api_cache(self):
+    def is_generating_api_cache(self) -> bool:
         try:
             return getattr(settings, "GENERATING_API_CACHE", False)
         except IndexError:
             return False
 
-    def __init__(self, request):
+    def __init__(self, request: HttpRequest | AnonymousUser) -> None:
         super().__init__(None)
 
         if isinstance(request, AnonymousUser):
@@ -285,7 +310,7 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
         if self.is_generating_api_cache:
             self.drop_namespace_key = False
 
-    def set_peeringdb_handlers(self):
+    def set_peeringdb_handlers(self) -> None:
         self.handler(
             "peeringdb.organization.*.network.*.poc_set.private", explicit=True
         )
@@ -294,7 +319,9 @@ class APIPermissionsApplicator(NamespaceKeyApplicator):
             "peeringdb.organization.*.internetexchange.*", fn=self.handle_ixlan
         )
 
-    def handle_ixlan(self, namespace, data):
+    def handle_ixlan(self, namespace: str, data: dict[str, Any]) -> None:
+        # `data` is a serialized entity dict whose values are heterogeneous
+        # field values (str, bool, nested dict, ...) — genuinely unconstrained.
         if "ixf_ixp_member_list_url" in data:
             visible = data["ixf_ixp_member_list_url_visible"].lower()
             _namespace = f"{namespace}.ixf_ixp_member_list_url.{visible}"

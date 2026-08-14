@@ -599,7 +599,7 @@ class GeocodeBaseMixin(models.Model):
 
         if geocode and (not use_melissa_coords or sanitized):
             self.geocode_status = True
-            self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+            self.geocode_date = datetime.datetime.now(datetime.UTC)
             if sanitized:
                 sanitized["geocode_status"] = True
                 sanitized["geocode_date"] = self.geocode_date
@@ -1832,7 +1832,7 @@ class Sponsorship(StripFieldMixin):
         mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
         mail.send(fail_silently=True)
 
-        self.notify_date = datetime.datetime.now(tz=datetime.timezone.utc)
+        self.notify_date = datetime.datetime.now(tz=datetime.UTC)
         self.save()
 
         return True
@@ -3706,7 +3706,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
     data = models.TextField(
         null=False,
         default="{}",
-        help_text=_("JSON snapshot of the IX-F member data that " "created this entry"),
+        help_text=_("JSON snapshot of the IX-F member data that created this entry"),
     )
 
     log = models.TextField(blank=True, help_text=_("Activity for this entry"))
@@ -5791,7 +5791,7 @@ def format_speed(value):
             return f"{value:.0f}T"
         return f"{value:.1f}T"
     elif value >= 1000:
-        return f"{value / 10 ** 3:.0f}G"
+        return f"{value / 10**3:.0f}G"
     else:
         return f"{value:.0f}M"
 

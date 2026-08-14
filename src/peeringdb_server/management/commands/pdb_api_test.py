@@ -28,12 +28,6 @@ from django.utils import timezone
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
-from twentyc.rpc import (
-    InvalidRequestException,
-    NotFoundException,
-    PermissionDeniedException,
-    RestClient,
-)
 
 import peeringdb_server.geo as geo
 from peeringdb_server import inet
@@ -61,6 +55,12 @@ from peeringdb_server.models import (
     User,
 )
 from peeringdb_server.rest import NetworkViewSet
+from peeringdb_server.rest_client import (
+    InvalidRequestException,
+    NotFoundException,
+    PermissionDeniedException,
+    RestClient,
+)
 from peeringdb_server.serializers import REFTAG_MAP as REFTAG_MAP_SLZ
 
 START_TIMESTAMP = time.time()
@@ -986,9 +986,9 @@ class TestJSON(unittest.TestCase):
         """
         Assert that the response is 403 Forbidden, with a helpful message.
         """
-        assert (
-            response.status_code == 403
-        ), f"Expected 403 Forbidden for Basic Auth with MFA_FORCE_HARD_START, got {response.status_code}"
+        assert response.status_code == 403, (
+            f"Expected 403 Forbidden for Basic Auth with MFA_FORCE_HARD_START, got {response.status_code}"
+        )
         self.assertEqual(
             response.json(),
             {
@@ -2478,9 +2478,9 @@ class TestJSON(unittest.TestCase):
                 .get("data")
             )
             for item in response:
-                assert (
-                    item["id"] in netixlan_ids
-                ), f"{port_name} {item['id']} not found in netixlan queryset"
+                assert item["id"] in netixlan_ids, (
+                    f"{port_name} {item['id']} not found in netixlan queryset"
+                )
 
         # Check ix_side and net_side
         check_side_response("ix_side", SHARED["fac_rw_ok"].id)

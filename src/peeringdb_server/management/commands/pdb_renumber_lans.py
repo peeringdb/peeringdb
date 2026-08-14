@@ -50,7 +50,7 @@ class Command(BaseCommand):
         if old_prefix.version != new_prefix.version:
             self.log(
                 "[error] {}".format(
-                    "New prefix needs to be of same " "protocol as old prefix"
+                    "New prefix needs to be of same protocol as old prefix"
                 )
             )
 
