@@ -896,7 +896,7 @@ wheels = [
 [[package]]
 name = "django-peeringdb"
 version = "3.7.0"
-source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202607#2c333e5ee6d4a9c813b8bab872bdcbeebe91ca9e" }
+source = { git = "https://github.com/peeringdb/django-peeringdb?rev=support_202607#197eb5f22bea6c4459e114d1f22a660702a383d0" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
@@ -1811,7 +1811,7 @@ wheels = [
 [[package]]
 name = "peeringdb"
 version = "2.5.0"
-source = { git = "https://github.com/peeringdb/peeringdb-py?rev=support_202607#92e814cf782d621e42c40cd49d9ddbb25cfb543c" }
+source = { git = "https://github.com/peeringdb/peeringdb-py?rev=support_202607#7f173372a83bd78c195e6da413ef36c6d6f9ebac" }
 dependencies = [
     { name = "confu" },
     { name = "django-peeringdb" },
