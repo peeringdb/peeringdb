@@ -1,9 +1,95 @@
 openapi: 3.0.2
 info:
   title: PeeringDB API
-  version: 2.80.1
+  version: 2.81.0
   description: PeeringDB REST API
 paths:
+  /data/irr_lookup:
+    get:
+      operationId: listIRRLookups
+      description: "Smart-editor completion helper (#1973).\n\nGET /data/irr_lookup?name=<set-name>\
+        \ returns which IRR registries actually\nhold the name, as {\"name\": ...,\
+        \ \"sources\": [...], \"ok\": <bool>}. The editor\nuses it to offer the registry\
+        \ prefixes for a typed set name. It is a\nconvenience only; the save-path\
+        \ check in the serializer is the enforcement.\n\nWebsite-only by design, so\
+        \ PeeringDB is not usable as a free IRR query proxy:\nsession auth only, and\
+        \ a per-user rate below what a debounced completion widget\nconsumes. Cache\
+        \ hits are free, so the rate bounds distinct names per account.\n\nIt is therefore\
+        \ routed under /data/ with the other editor JSON helpers rather\nthan under\
+        \ /api/ -- it is not part of the public API surface and carries none\nof its\
+        \ conventions (no reftag, no router registration, no envelope, no API key\n\
+        or basic auth). The class stays here because it is a DRF view: the throttle\
+        \ and\nthe session-only authentication are DRF machinery. The route lives\
+        \ in\npeeringdb_server/urls.py.\n\nok is False when the lookup pool could\
+        \ not answer definitively, so the editor\ncan distinguish \"found nowhere\"\
+        \ (ok, empty) from \"unknown\".\n\n## List objects\n\n### Querying\n\nYou\
+        \ may query the resultset by passing field names as url parameters\n\n###\
+        \ Numeric Queries\n\nOn numeric fields you can suffix the field names with\
+        \ the following filters:\n\n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n\
+        - \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n- \\_\\_in :\
+        \ value inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n\
+        \    ?<field_name>__in=1,10\n\n### String Queries\n\nOn string fields you\
+        \ can suffix the field names with the following filters:\n\n- \\_\\_contains\
+        \ : field value contains specified value\n- \\_\\_startswith : field value\
+        \ starts with specified value\n- \\_\\_in : value contained inside set of\
+        \ values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
+        \ responses by checking for the \"generated\" property inside the \"meta\"\
+        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
+        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
+        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
+        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
+        \ that does lookup queries and has it's **depth** parameter specified will\
+        \ have a result limit of 250 entries, any entries past this limit will be\
+        \ truncated, at which point you either should be more specific with your query\
+        \ or use the skip and limit parameters to page through the result set\n\n\
+        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
+        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
+        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
+        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
+        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
+        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
+        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
+        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
+        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ to page through results. Returns pagination metadata in the response under\
+        \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
+        \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
+        \ results per page\n\nThe response will include a `meta.pagination` object:\n\
+        \n    \"meta\": {\n        \"pagination\": {\n            \"count\": 500,\n\
+        \            \"has_next\": true,\n            \"has_previous\": false,\n \
+        \           \"next\": \"https://www.peeringdb.com/api/net?page=2\",\n    \
+        \        \"previous\": null,\n            \"page\": 1,\n            \"per_page\"\
+        : 250,\n            \"total_pages\": 2\n        }\n    }\n"
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+          description: ''
+      tags:
+      - data
   /api/org/{org_id}/users/:
     get:
       operationId: list user
@@ -5942,6 +6028,18 @@ paths:
           default: 0
           minimum: 0
           maximum: 2
+      - name: fac_count
+        in: query
+        description: 'number of facilities for this carrier
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -6888,7 +6986,10 @@ paths:
                   readOnly: true
                 fac_count:
                   type: integer
-                  readOnly: true
+                  maximum: 4294967295
+                  format: int64
+                  description: number of facilities for this carrier
+                  minimum: 0
                 logo:
                   type: string
                   format: binary
@@ -7431,7 +7532,10 @@ paths:
                   readOnly: true
                 fac_count:
                   type: integer
-                  readOnly: true
+                  maximum: 4294967295
+                  format: int64
+                  description: number of facilities for this carrier
+                  minimum: 0
                 logo:
                   type: string
                   format: binary
@@ -7927,7 +8031,10 @@ paths:
                   readOnly: true
                 fac_count:
                   type: integer
-                  readOnly: true
+                  maximum: 4294967295
+                  format: int64
+                  description: number of facilities for this carrier
+                  minimum: 0
                 logo:
                   type: string
                   format: binary
@@ -8073,6 +8180,18 @@ paths:
         schema:
           type: string
           format: date-time
+      - name: carrier__fac_count
+        in: query
+        description: 'number of facilities for this carrier
+
+
+          Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: integer
       - name: carrier__id
         in: query
         description: 'Filter results by matching a value against this field.
@@ -9212,7 +9331,10 @@ paths:
                       readOnly: true
                     fac_count:
                       type: integer
-                      readOnly: true
+                      maximum: 4294967295
+                      format: int64
+                      description: number of facilities for this carrier
+                      minimum: 0
                     logo:
                       type: string
                       format: binary
@@ -11084,7 +11206,10 @@ paths:
                       readOnly: true
                     fac_count:
                       type: integer
-                      readOnly: true
+                      maximum: 4294967295
+                      format: int64
+                      description: number of facilities for this carrier
+                      minimum: 0
                     logo:
                       type: string
                       format: binary
@@ -12909,7 +13034,10 @@ paths:
                       readOnly: true
                     fac_count:
                       type: integer
-                      readOnly: true
+                      maximum: 4294967295
+                      format: int64
+                      description: number of facilities for this carrier
+                      minimum: 0
                     logo:
                       type: string
                       format: binary
@@ -31340,8 +31468,7 @@ paths:
           type: boolean
       - name: irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -31351,6 +31478,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: ix
         in: query
         description: 'Find networks present at exchange (exchange id)
@@ -32538,8 +32746,8 @@ paths:
                   format: uri
                 irr_as_set:
                   type: string
-                  description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                    Registry (IRR)
+                  description: Reference to an AS-SET in Internet Routing Registry
+                    (IRR)
                   maxLength: 255
                 info_type:
                   type: string
@@ -33295,8 +33503,8 @@ paths:
                   format: uri
                 irr_as_set:
                   type: string
-                  description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                    Registry (IRR)
+                  description: Reference to an AS-SET in Internet Routing Registry
+                    (IRR)
                   maxLength: 255
                 info_type:
                   type: string
@@ -34000,8 +34208,8 @@ paths:
                   format: uri
                 irr_as_set:
                   type: string
-                  description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                    Registry (IRR)
+                  description: Reference to an AS-SET in Internet Routing Registry
+                    (IRR)
                   maxLength: 255
                 info_type:
                   type: string
@@ -34555,8 +34763,7 @@ paths:
           type: boolean
       - name: net__irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -34566,6 +34773,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -35469,8 +35757,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -36278,8 +36566,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -37039,8 +37327,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -38095,8 +38383,7 @@ paths:
           type: boolean
       - name: net__irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -38106,6 +38393,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -38970,8 +39338,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -41060,8 +41428,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -43102,8 +43470,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -45593,8 +45961,7 @@ paths:
           type: boolean
       - name: net__irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -45604,6 +45971,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: net__irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: net__irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: net__irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -46903,8 +47351,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -48624,8 +49072,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -50296,8 +50744,8 @@ paths:
                       format: uri
                     irr_as_set:
                       type: string
-                      description: Reference to an AS-SET or ROUTE-SET in Internet
-                        Routing Registry (IRR)
+                      description: Reference to an AS-SET in Internet Routing Registry
+                        (IRR)
                       maxLength: 255
                     info_type:
                       type: string
@@ -55838,8 +56286,7 @@ paths:
           type: boolean
       - name: irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -55849,6 +56296,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: ix
         in: query
         description: 'Find networks present at exchange (exchange id)
@@ -56725,8 +57253,7 @@ paths:
           type: boolean
       - name: irr_as_set
         in: query
-        description: 'Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-          (IRR)
+        description: 'Reference to an AS-SET in Internet Routing Registry (IRR)
 
 
           Filter results by matching a value against this field.
@@ -56736,6 +57263,87 @@ paths:
         required: false
         schema:
           type: string
+      - name: irr_as_set_auto_prefix_candidate
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_auto_prefix_checked
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_cap_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_missing_since
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_status
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          `unknown`, `ok`, `moved`, `gone`
+
+
+          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
+        required: false
+        schema:
+          type: string
+      - name: irr_as_set_verified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: irr_as_set_verify_notified
+        in: query
+        description: 'Filter results by matching a value against this field.
+
+
+          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
+        required: false
+        schema:
+          type: string
+          format: date-time
       - name: ix
         in: query
         description: 'Find networks present at exchange (exchange id)
@@ -60938,7 +61546,10 @@ components:
           readOnly: true
         fac_count:
           type: integer
-          readOnly: true
+          maximum: 4294967295
+          format: int64
+          description: number of facilities for this carrier
+          minimum: 0
         logo:
           type: string
           format: binary
@@ -61025,7 +61636,10 @@ components:
           readOnly: true
         fac_count:
           type: integer
-          readOnly: true
+          maximum: 4294967295
+          format: int64
+          description: number of facilities for this carrier
+          minimum: 0
         logo:
           type: string
           format: binary
@@ -61503,7 +62117,10 @@ components:
               readOnly: true
             fac_count:
               type: integer
-              readOnly: true
+              maximum: 4294967295
+              format: int64
+              description: number of facilities for this carrier
+              minimum: 0
             logo:
               type: string
               format: binary
@@ -68741,8 +69358,7 @@ components:
           format: uri
         irr_as_set:
           type: string
-          description: Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-            (IRR)
+          description: Reference to an AS-SET in Internet Routing Registry (IRR)
           maxLength: 255
         info_type:
           type: string
@@ -69016,8 +69632,7 @@ components:
           format: uri
         irr_as_set:
           type: string
-          description: Reference to an AS-SET or ROUTE-SET in Internet Routing Registry
-            (IRR)
+          description: Reference to an AS-SET in Internet Routing Registry (IRR)
           maxLength: 255
         info_type:
           type: string
@@ -69679,8 +70294,7 @@ components:
               format: uri
             irr_as_set:
               type: string
-              description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                Registry (IRR)
+              description: Reference to an AS-SET in Internet Routing Registry (IRR)
               maxLength: 255
             info_type:
               type: string
@@ -70455,8 +71069,7 @@ components:
               format: uri
             irr_as_set:
               type: string
-              description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                Registry (IRR)
+              description: Reference to an AS-SET in Internet Routing Registry (IRR)
               maxLength: 255
             info_type:
               type: string
@@ -72476,8 +73089,7 @@ components:
               format: uri
             irr_as_set:
               type: string
-              description: Reference to an AS-SET or ROUTE-SET in Internet Routing
-                Registry (IRR)
+              description: Reference to an AS-SET in Internet Routing Registry (IRR)
               maxLength: 255
             info_type:
               type: string

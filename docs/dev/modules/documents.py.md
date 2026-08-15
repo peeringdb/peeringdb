@@ -1,6 +1,15 @@
-Generated from documents.py on 2026-07-14 21:31:39.993597
+Generated from documents.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.documents
+
+Elasticsearch document definitions for the search indexes.
+
+Index settings (shards, replicas) are deliberately not declared on the `Index`
+classes here - they come from `ELASTICSEARCH_DSL_INDEX_SETTINGS` in
+`mainsite/settings/__init__.py`, which django_elasticsearch_dsl applies to
+every registered document. Declaring them per document would be dead config:
+the registry merges the global dict on top of `class Index.settings`, so the
+global value always wins.
 
 # Functions
 ---
@@ -126,18 +135,28 @@ Provides the default prepare_auto_suggest for name/aka/name_long/city entities.
 MultipleChoiceKeywordField(django_elasticsearch_dsl.fields.KeywordField)
 ```
 
-Base class for all DSL objects - queries, filters, aggregations etc. Wraps
-a dictionary representing the object's json.
-
-Provides several feature:
-    - attribute access to the wrapped dictionary (.field instead of ['field'])
-    - _clone method returning a copy of self
-    - to_dict method to serialize into dict (to be sent via elasticsearch-py)
-    - basic logical operators (&, | and ~) using a Bool(Filter|Query) TODO:
-      move into a class specific for Query/Filter
-    - respects the definition of the class and (de)serializes it's
-      attributes based on the `_param_defs` definition (for example turning
-      all values in the `must` attribute into Query objects)
+:arg boost:
+:arg eager_global_ordinals:
+:arg index:
+:arg index_options:
+:arg script:
+:arg on_script_error:
+:arg normalizer:
+:arg norms:
+:arg null_value:
+:arg similarity:
+:arg split_queries_on_whitespace:
+:arg time_series_dimension: For internal use by Elastic only. Marks
+    the field as a time series dimension. Defaults to false.
+:arg doc_values:
+:arg copy_to:
+:arg store:
+:arg meta: Metadata about the field.
+:arg properties:
+:arg ignore_above:
+:arg dynamic:
+:arg fields:
+:arg synthetic_source_keep:
 
 
 ### Methods

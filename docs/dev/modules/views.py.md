@@ -1,4 +1,4 @@
-Generated from views.py on 2026-07-14 21:31:39.993597
+Generated from views.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.views
 
@@ -90,6 +90,18 @@ Helper function return help_text of a model
 field.
 
 ---
+## format_datetime_field
+`def format_datetime_field(value)`
+
+Render a model DateTimeField the way format_last_updated_time renders the
+serializer's already-stringified timestamps.
+
+Needed because format_last_updated_time only handles `str` and `None` — handed
+a live `datetime` it falls off the end and returns None. The server-side-only
+fields (#1973) are read straight off the model, never through the
+serializer, so they arrive as datetimes.
+
+---
 ## get_page_range
 `def get_page_range(paginator, current_page, show_pages=5)`
 
@@ -163,6 +175,18 @@ Args:
 
 Returns:
     dict[str, Union[str, float]]: Updated geo dictionary.
+
+---
+## irr_as_set_status_display
+`def irr_as_set_status_display(net)`
+
+Human-readable irr_as_set verification state for the network record (#1973,
+which requires the state be shown here).
+
+`unknown` renders empty rather than "Not yet verified": until the
+pdb_irr_as_set_status cron has swept, every network is unknown, and a label on
+every record that says nothing is noise. A flagged value carries its
+missing_since inline, so "since when" costs no second row.
 
 ---
 ## perform_search
