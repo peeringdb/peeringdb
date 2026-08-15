@@ -21,6 +21,7 @@ import re
 import tempfile
 import time
 from collections import namedtuple
+from typing import TypedDict
 from urllib import request
 
 from django.conf import settings
@@ -35,10 +36,21 @@ _OBJECT_CLASSES = ("as-set", "route-set", "aut-num")
 
 _ATTR_RE = re.compile(r"^([a-z0-9-]+):\s*(.*)$")
 
+
+class DumpSource(TypedDict):
+    name: str
+    serial_url: str
+    # (local filename, download url) pairs
+    files: tuple[tuple[str, str], ...]
+
+
 # Registry-hosted dumps plus the smaller registries mirrored in RADB's dbase
 # directory. IDNIC is the only IRR_SOURCE without a self-serve dump; batch misses
 # for it are confirmed through the live pool before any outreach is sent.
-DUMP_SOURCES = (
+#
+# Annotated variable-length because the RADB mirrors below are appended to this
+# literal, which mypy would otherwise read as a fixed-arity tuple.
+DUMP_SOURCES: tuple[DumpSource, ...] = (
     {
         "name": "RIPE",
         "serial_url": "https://ftp.ripe.net/ripe/dbase/RIPE.CURRENTSERIAL",
