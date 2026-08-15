@@ -140,6 +140,9 @@ dev = [
     "mkdocs>=1.1.2",
     "markdown-include>=0.5",
     "pydot>=1.4.2",
+    # drf asserts on this when generating the openapi schema; the schema is a
+    # build-time artifact served as a static file, so it is not needed at runtime
+    "inflection>=0.5",
 ]
 
 [tool.uv.sources]
