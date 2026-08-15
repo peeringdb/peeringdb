@@ -5444,47 +5444,325 @@ twentyc.data.loaders.assign("enum/social_media_services", "data");
 const checkAsSet = () =>{
   // check the use of hierarchical AS-SET name and if a non-hierarchical AS-SET name is already in use
 
-  const isHierarchicalAsSet = (as_set) => /^[a-zA-Z0-9_-]+::[a-zA-Z0-9_-]+$/.test(as_set.trim());
+  const asSetTokens = (value) => value.trim().split(/[,\s]+/).filter(Boolean);
+  const hasSourcePrefixes = (value) => {
+    const tokens = asSetTokens(value);
+    return tokens.length > 0 && tokens.every(
+      (token) => /^[a-zA-Z0-9-]+::[a-zA-Z0-9_:-]+$/.test(token)
+    );
+  };
+  const hasRouteSet = (value) => asSetTokens(value).some(
+    (token) => /(^|::|:)RS-/i.test(token)
+  );
+  const completionToken = (value) => {
+    const tokens = asSetTokens(value);
+    if (tokens.length !== 1) return null;
+    const prefixed = tokens[0].match(/^([a-zA-Z0-9-]+)::([a-zA-Z0-9_:-]+)$/);
+    const name = prefixed ? prefixed[2] : tokens[0];
+    if (!/^(AS-[a-zA-Z0-9_:-]+|AS[0-9]+)$/i.test(name)) return null;
+    return {
+      source: prefixed ? prefixed[1].toUpperCase() : null,
+      name: name.toUpperCase()
+    };
+  };
+  // Every token parsed for lookup, or null when any of them is not a usable AS-SET
+  // or ASN name. completionToken() stays deliberately single-token: the suggestion
+  // dropdown rewrites the whole field, which only makes sense for a one-token value.
+  // This is the read-only status path instead: #1973 requires the editor to speak up
+  // before the form is submitted, which has to hold for a list too. A multi-token
+  // value used to get no lookup at all, and worse, the note was removed when every
+  // token carried a prefix, so it rendered nothing and read as approval while no
+  // existence check had run.
+  const completionTokens = (value) => {
+    const tokens = asSetTokens(value);
+    if (!tokens.length) return null;
+    const parsed = tokens.map((token) => {
+      const prefixed = token.match(/^([a-zA-Z0-9-]+)::([a-zA-Z0-9_:-]+)$/);
+      const name = prefixed ? prefixed[2] : token;
+      if (!/^(AS-[a-zA-Z0-9_:-]+|AS[0-9]+)$/i.test(name)) return null;
+      return {
+        raw: token,
+        source: prefixed ? prefixed[1].toUpperCase() : null,
+        name: name.toUpperCase()
+      };
+    });
+    return parsed.every(Boolean) ? parsed : null;
+  };
 
   const irr_as_set_container = $("div[data-edit-name='irr_as_set']");
   let debounceTimeout;
+  let lookupRequest;
+  let lookupRequests = [];
+  let lastLookupValue;
   const original_as_set = irr_as_set_container.text()
   if (irr_as_set_container.length) {
+    const setNote = (cls, msg, modifier) => {
+      irr_as_set_container.find("." + cls).remove();
+      if (!msg) return;
+      $("<small>")
+        .addClass(cls)
+        .addClass(modifier || "")
+        .attr("aria-live", "polite")
+        .text(msg)
+        .appendTo(irr_as_set_container);
+    };
+    const setSuggestions = (sources, name, message, target) => {
+      irr_as_set_container.find(".irr-hint-note").remove();
+      const note = $("<small>")
+        .addClass("irr-hint-note")
+        .attr("aria-live", "polite");
+      $("<span>").text(message).appendTo(note);
+      // #1973 wants the sole registry's prefixed form pre-selected. Rendered as a
+      // one-click apply rather than a literally pre-selected option, because a
+      // single-option <select> that already shows the answer can never fire
+      // `change` and would be a dead control.
+      if (sources.length === 1) {
+        const suggestion = `${sources[0]}::${name}`;
+        $("<button>")
+          .attr("type", "button")
+          .addClass("btn btn-sm btn-outline-primary irr-source-suggestion")
+          .text(gettext("Use") + " " + suggestion)
+          .on("click", () => {
+            target.value = suggestion;
+            $(target).trigger("input");
+          })
+          .appendTo(note);
+        note.appendTo(irr_as_set_container);
+        return;
+      }
+      const select = $("<select>")
+        .addClass("form-select form-select-sm irr-source-suggestion")
+        .attr("aria-label", gettext("IRR AS-SET suggestions"));
+      $("<option>")
+        .attr("value", "")
+        .text(gettext("Select an IRR source"))
+        .appendTo(select);
+      sources.forEach((source) => {
+        const suggestion = `${source}::${name}`;
+        $("<option>").attr("value", suggestion).text(suggestion).appendTo(select);
+      });
+      select.on("change", () => {
+        const suggestion = select.val();
+        if (!suggestion) return;
+        target.value = suggestion;
+        $(target).trigger("input");
+      });
+      select.appendTo(note);
+      note.appendTo(irr_as_set_container);
+    };
+    // One read-only line per token, for a value with more than one.
+    const setTokenStatuses = (statuses) => {
+      irr_as_set_container.find(".irr-hint-note").remove();
+      const note = $("<small>")
+        .addClass("irr-hint-note")
+        .attr("aria-live", "polite");
+      $("<span>").text(gettext("IRR check for each entry:")).appendTo(note);
+      statuses.forEach((status) => {
+        $("<div>")
+          .addClass("irr-token-status")
+          .addClass(status.ok ? "irr-hint-note-verified" : "")
+          .text(`${status.mark} ${status.raw} — ${status.message}`)
+          .appendTo(note);
+      });
+      note.appendTo(irr_as_set_container);
+    };
+    const tokenStatus = (token, request) => {
+      // Read the settled jqXHR rather than $.when's arguments: $.when rejects as soon
+      // as one request fails, while the others may still be in flight, so its argument
+      // shape cannot be trusted to describe every token.
+      const result = request.status === 200 ? request.responseJSON : null;
+      if (!result || !result.ok) {
+        return {
+          raw: token.raw,
+          ok: false,
+          mark: "?",
+          message: gettext("IRR lookup unavailable — checked when you save")
+        };
+      }
+      const sources = (result.sources || []).map((source) => source.toUpperCase());
+      if (!sources.length) {
+        return {
+          raw: token.raw,
+          ok: false,
+          mark: "✗",
+          message: gettext("not found in any IRR registry we checked")
+        };
+      }
+      if (token.source && sources.includes(token.source)) {
+        return {
+          raw: token.raw,
+          ok: true,
+          mark: "✓",
+          message: gettext("verified in") + " " + token.source
+        };
+      }
+      if (token.source) {
+        return {
+          raw: token.raw,
+          ok: false,
+          mark: "!",
+          message: gettext("not in") + " " + token.source + " — " +
+            gettext("found in") + " " + sources.join(", ")
+        };
+      }
+      return {
+        raw: token.raw,
+        ok: false,
+        mark: "!",
+        message: gettext("no IRR source prefix — found in") + " " + sources.join(", ")
+      };
+    };
+    const checkTokens = (value, tokens, input) => {
+      setNote("irr-hint-note", gettext("Checking IRR registries…"));
+      // Wait for every request to SETTLE, not for $.when to resolve: $.when rejects as
+      // soon as one request fails while the others may still be in flight, so its
+      // arguments cannot describe every token. Each verdict is read off its own jqXHR.
+      const requests = tokens.map((token) =>
+        $.ajax({
+          url: `/data/irr_lookup?name=${encodeURIComponent(token.name)}`
+        })
+      );
+      // Handlers are attached only after `requests` exists: a request that settled
+      // during the map above would otherwise index into an undefined array.
+      let pending = requests.length;
+      requests.forEach((request) => {
+        request.always(() => {
+          pending -= 1;
+          if (pending) return;
+          lookupRequests = [];
+          if (input.value.trim() !== value) return;
+          setTokenStatuses(
+            tokens.map((tok, index) => tokenStatus(tok, requests[index]))
+          );
+        });
+      });
+      lookupRequests = requests;
+    };
+    const clearLookup = () => {
+      // Any abort has to clear lastLookupValue, not just the single-token one: the
+      // aborted run leaves the "Checking IRR registries…" note on screen (its handler
+      // bails once the value has moved on), so if the field returns to the same value
+      // the lastLookupValue guard would short-circuit and that note would stick.
+      if (lookupRequests.length) {
+        lookupRequests.forEach((request) => request.abort());
+        lookupRequests = [];
+        lastLookupValue = null;
+      }
+      if (lookupRequest) {
+        lookupRequest.abort();
+        lookupRequest = null;
+        lastLookupValue = null;
+      }
+    };
+
     irr_as_set_container.on("input focus", "input", (e) => {
       clearTimeout(debounceTimeout);
+      clearLookup();
       debounceTimeout = setTimeout(() => {
         const irr_as_set = e.target.value.trim();
         if(irr_as_set == ""){
-          irr_as_set_container.tooltip('dispose');
+          irr_as_set_container.find(".irr-hint-note, .as-set-exists-note").remove();
+          lastLookupValue = null;
           return
         }
 
-        if (!isHierarchicalAsSet(irr_as_set)) {
-          const has_warning = irr_as_set_container.children().length > 1;
-          const url = `/api/net?irr_as_set=${irr_as_set}`;
-          const nonhierarchical_as_set_message = gettext("Clearly name your AS-SET with a hierarchical name, e.g. RIPE::AS-RIPENCC")
-
-          if (original_as_set.trim().toLowerCase() !== irr_as_set.toLowerCase() && irr_as_set !== ""){
-            // check the non-hierarchical AS-SET is already use or not
-            const nonhierarchical_as_set_already_exists_message = gettext(`An AS-SET with this name already exists, avoid ambiguity by specifying the name of the IRR you use e.g. "IRR::AS-MYNAME"`)
-            $.ajax({
-                url,
-                success: (data) => {
-                  const existing_data_length = data.data.length;
-                  const warning_message = `<small class="text-danger">${nonhierarchical_as_set_already_exists_message}</small>`;
-                  if (existing_data_length === 0 && has_warning) {
-                    irr_as_set_container.children().last().remove();
-                  } else if (existing_data_length !== 0 && !has_warning) {
-                    irr_as_set_container.append(warning_message);
-                  }
-                }
-            });
-          }
-          irr_as_set_container.tooltip({ 'title':  nonhierarchical_as_set_message }).tooltip('show');
-        }else{
-          irr_as_set_container.tooltip('dispose');
+        setNote("as-set-exists-note", null);
+        if (hasRouteSet(irr_as_set)) {
+          setNote(
+            "irr-hint-note",
+            gettext("Route-set names (RS-*) are not accepted. Publish an AS-SET instead.")
+          );
+          lastLookupValue = null;
+          return;
         }
-      }, 200);
+
+        // A value with more than one entry takes the read-only per-token path:
+        // the suggestion dropdown below can only rewrite a whole one-token value.
+        const tokens = completionTokens(irr_as_set);
+        if (tokens && tokens.length > 1) {
+          if (lastLookupValue === irr_as_set) return;
+          lastLookupValue = irr_as_set;
+          checkTokens(irr_as_set, tokens, e.target);
+          return;
+        }
+
+        const token = completionToken(irr_as_set);
+        if (!token) {
+          setNote(
+            "irr-hint-note",
+            hasSourcePrefixes(irr_as_set)
+              ? null
+              : gettext("Clearly name your AS-SET with a hierarchical name, e.g. RIPE::AS-RIPENCC")
+          );
+          lastLookupValue = null;
+          return;
+        }
+
+        const as_set_changed = original_as_set.trim().toLowerCase() !== irr_as_set.toLowerCase();
+        if (!token.source && as_set_changed) {
+          const already_exists_message = gettext(`An AS-SET with this name already exists, avoid ambiguity by specifying the name of the IRR you use e.g. "IRR::AS-MYNAME"`)
+          $.ajax({
+            url: `/api/net?irr_as_set=${encodeURIComponent(irr_as_set)}`,
+            success: (data) => {
+              if (e.target.value.trim() !== irr_as_set) return;
+              setNote(
+                "as-set-exists-note",
+                data.data.length ? already_exists_message : null
+              );
+            }
+          });
+        }
+
+        if (lastLookupValue === irr_as_set) return;
+        lastLookupValue = irr_as_set;
+        setNote("irr-hint-note", gettext("Checking IRR registries…"));
+        lookupRequest = $.ajax({
+          url: `/data/irr_lookup?name=${encodeURIComponent(token.name)}`,
+          success: (result) => {
+            lookupRequest = null;
+            if (e.target.value.trim() !== irr_as_set) return;
+            const sources = (result.sources || []).map(
+              (source) => source.toUpperCase()
+            );
+            if (!result.ok) {
+              lastLookupValue = null;
+              setNote(
+                "irr-hint-note",
+                gettext("IRR lookup is temporarily unavailable. The value will be checked when you save.")
+              );
+            } else if (!sources.length) {
+              setNote(
+                "irr-hint-note",
+                gettext("This AS-SET was not found in any IRR registry we checked. Check the name, or contact support if you believe this is a mistake.")
+              );
+            } else if (token.source && sources.includes(token.source)) {
+              setNote(
+                "irr-hint-note",
+                gettext("Verified: this AS-SET exists in the selected IRR source."),
+                "irr-hint-note-verified"
+              );
+            } else {
+              setSuggestions(
+                sources,
+                token.name,
+                token.source
+                  ? gettext("This AS-SET was not found in the selected IRR source. Choose a source where it exists:")
+                  : gettext("Choose the IRR source for this AS-SET:"),
+                e.target
+              );
+            }
+          },
+          error: (_xhr, status) => {
+            lookupRequest = null;
+            if (status === "abort" || e.target.value.trim() !== irr_as_set) return;
+            lastLookupValue = null;
+            setNote(
+              "irr-hint-note",
+              gettext("IRR lookup is temporarily unavailable. The value will be checked when you save.")
+            );
+          }
+        });
+      }, 750);
     });
   }
 }

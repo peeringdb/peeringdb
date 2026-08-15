@@ -23,6 +23,7 @@ from django_ratelimit.core import get_usage
 from peeringdb_server.context import current_request
 from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
+from peeringdb_server.settings_util import get_setting_time
 
 log = structlog.get_logger("django")
 
@@ -769,13 +770,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         return any(path.startswith(prefix) for prefix in self.EXCLUDED_PREFIXES)
 
     def get_setting_time(self, setting_name):
-        value = getattr(settings, setting_name, None)
-        if value and timezone.is_naive(value):
-            try:
-                return timezone.make_aware(value)
-            except Exception:
-                return None
-        return value
+        return get_setting_time(setting_name)
 
     def process_request(self, request):
         """

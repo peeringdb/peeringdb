@@ -112,7 +112,7 @@ from peeringdb_server.validators import (
     validate_distance_geocode,
     validate_info_prefixes4,
     validate_info_prefixes6,
-    validate_irr_as_set,
+    validate_irr_as_set_on_change,
     validate_latitude,
     validate_longitude,
     validate_name,
@@ -3267,10 +3267,13 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
             ticket_queue_rdap_error(request, *rdap_error)
 
     def validate_irr_as_set(self, value):
-        if value:
-            return validate_irr_as_set(value)
-        else:
+        if not value:
             return value
+        # #1973: enforce the unambiguous-name rules only when the value changes,
+        # so legacy values keep validating. self.instance has the stored value on
+        # update; on create there's nothing to preserve, so any value is a change.
+        old = getattr(self.instance, "irr_as_set", "") if self.instance else ""
+        return validate_irr_as_set_on_change(value, old)
 
     def validate_ixp_update_exclude(self, value):
         cleaned, error = clean_ixp_update_exclude(value)

@@ -45,14 +45,17 @@ from django_ratelimit.exceptions import Ratelimited
 from django_security_keys.models import SecurityKeyDevice
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import permissions, routers, status, viewsets
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action, api_view, permission_classes, schema
 from rest_framework.exceptions import APIException, ParseError
 from rest_framework.exceptions import ValidationError as RestValidationError
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.views import exception_handler
+from rest_framework.views import APIView, exception_handler
 from rest_framework.viewsets import GenericViewSet
 from two_factor.utils import devices_for_user
 
+from peeringdb_server import irr
 from peeringdb_server.api_cache import APICacheLoader, CacheRedirect
 from peeringdb_server.auth import enable_api_key_auth
 from peeringdb_server.deskpro import ticket_queue_deletion_prevented
@@ -83,6 +86,7 @@ from peeringdb_server.permissions import (
     get_user_key_from_request,
 )
 from peeringdb_server.rest_throttles import (
+    IRRLookupThrottle,
     IXFImportThrottle,
     OrganizationUsersThrottle,
     WriteRateThrottle,
@@ -2005,6 +2009,49 @@ def search_api_view(request):
 
 
 # set here in case we want to add more urls later
+class IRRLookupView(APIView):
+    """
+    Smart-editor completion helper (#1973).
+
+    GET /data/irr_lookup?name=<set-name> returns which IRR registries actually
+    hold the name, as {"name": ..., "sources": [...], "ok": <bool>}. The editor
+    uses it to offer the registry prefixes for a typed set name. It is a
+    convenience only; the save-path check in the serializer is the enforcement.
+
+    Website-only by design, so PeeringDB is not usable as a free IRR query proxy:
+    session auth only, and a per-user rate below what a debounced completion widget
+    consumes. Cache hits are free, so the rate bounds distinct names per account.
+
+    It is therefore routed under /data/ with the other editor JSON helpers rather
+    than under /api/ -- it is not part of the public API surface and carries none
+    of its conventions (no reftag, no router registration, no envelope, no API key
+    or basic auth). The class stays here because it is a DRF view: the throttle and
+    the session-only authentication are DRF machinery. The route lives in
+    peeringdb_server/urls.py.
+
+    ok is False when the lookup pool could not answer definitively, so the editor
+    can distinguish "found nowhere" (ok, empty) from "unknown".
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    # session only -- Basic auth would make this reachable with any account's
+    # credentials, and nothing outside the editor needs it
+    authentication_classes = [SessionAuthentication]
+    throttle_classes = [IRRLookupThrottle]
+    # plain JSON — this lookup helper is not a list resource, so bypass the API's
+    # default {"data": [...], "meta": {}} envelope for a flat {name, sources, ok}
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request):
+        name = (request.query_params.get("name") or "").strip()
+        if not name:
+            return Response({"name": "", "sources": [], "ok": False})
+        result = irr.sources_for(name)
+        return Response(
+            {"name": name, "sources": sorted(result.sources), "ok": result.ok}
+        )
+
+
 urlpatterns = [
     re_path("(net|ix|org|fac|carrier|campus)/self", view_self_entity),
     re_path(

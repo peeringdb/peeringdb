@@ -343,6 +343,14 @@ urlpatterns = [
         peeringdb_server.data_views.campus_facilities,
         name="data-campus-facilities",
     ),
+    # website-only editor helper (#1973), deliberately not under /api/ -- it is a
+    # DRF view (throttle + session-only auth) so the class lives in rest.py, but
+    # it is not part of the public API surface
+    re_path(
+        r"^data/irr_lookup$",
+        peeringdb_server.rest.IRRLookupView.as_view(),
+        name="data-irr-lookup",
+    ),
     re_path(r"^export/ix/(?P<ix_id>\d+)/ixp-member-list$", view_export_ixf_ix_members),
     re_path(
         r"^export/ixlan/(?P<ixlan_id>\d+)/ixp-member-list$",

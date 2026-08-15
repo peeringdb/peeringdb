@@ -391,6 +391,44 @@ class Mock:
     ) -> None:
         return None
 
+    def irr_as_set_auto_prefix_candidate(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> str:
+        return ""
+
+    def irr_as_set_auto_prefix_checked(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_cap_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_status(self, data: MockFieldData, reftag: str | None = None) -> str:
+        return "unknown"
+
+    def irr_as_set_verified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_missing_since(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_verify_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
     def periodic_reauth(self, data: MockFieldData, reftag: str | None = None) -> bool:
         return False
 

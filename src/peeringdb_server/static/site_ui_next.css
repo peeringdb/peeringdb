@@ -1353,6 +1353,34 @@ div.editable.mode-edit div.view_field {
   border-color: var(--alert-text);
 }
 
+/* #1973 irr_as_set editor advisory notes (pre-save hints, not save errors) */
+.irr-hint-note {
+  display: block;
+  margin-top: 3px;
+  font-weight: 600;
+  color: var(--alert-warning-text);
+}
+.irr-hint-note > span {
+  display: block;
+}
+.irr-hint-note.irr-hint-note-verified {
+  color: var(--alert-info-text);
+}
+.as-set-exists-note {
+  display: block;
+  margin-top: 3px;
+  color: var(--alert-text);
+}
+.irr-source-suggestion {
+  width: 100%;
+  max-width: 24rem;
+  margin-top: 0.35rem;
+}
+.irr-source-suggestion:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 
 .editable select.invalid-choice,
 .editable select option.invalid-choice {

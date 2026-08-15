@@ -449,6 +449,10 @@ set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 set_option("API_THROTTLE_ORGANIZATION_USERS", "1/second")
+# #1973: rate for the session-authenticated editor IRR lookup endpoint. Sized for a
+# debounced completion widget, not bulk querying -- PeeringDB must not become a free
+# IRR query proxy. Cache hits skip the pool, so this bounds distinct names per user.
+set_option("API_THROTTLE_IRR_LOOKUP", "20/minute")
 
 
 # Configuration for melissa request rate limiting in the api (#1124)
@@ -537,6 +541,96 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
+
+# #1973: on a changed irr_as_set, require a SOURCE:: prefix and reject route-sets;
+# runtime kill-switch for those rules (format-only validation always runs).
+set_option("IRR_AS_SET_REQUIRE_SOURCE", True)
+
+# #1973/#1974: cap on set names in a changed irr_as_set value; 0 = uncapped.
+# #1973 is the unambiguous SOURCE:: prefix rule only; the single-set cap is #1974
+# and ships wired-but-disabled (default 0) — it gets a dated soft/hard rollout, so
+# multiple properly-prefixed sets stay valid for now. Set to a positive integer to
+# enforce a cap.
+set_option("IRR_AS_SET_MAX_SETS", 0)
+
+# #1973: whether a changed irr_as_set is checked for live existence in its pinned
+# registry (via the irr.py lookup service). The syntactic rules above always run;
+# this gates only the network existence check, so it can be turned off
+# independently — in tests (see run_tests.py) or if IRR infra access is
+# unavailable — without weakening the format enforcement.
+set_bool("IRR_AS_SET_VERIFY_EXISTENCE", True)
+
+# #1973: the IRR lookup service — a pool of full-mirror IRRd servers tried in
+# order to answer "which registries hold object X?" / "does X exist in S?".
+# Each entry is a dict {host, port, timeout}; the transport is IRRd's port-43
+# whois query interface (source-pinned RPSL queries + the `!s-lc` mirror listing).
+# NTT mirrors all but one of the IRR_SOURCE registries and RADB carries REACH, so
+# the two together cover all of them (NESTEGG and PANIX were retired from the list
+# in the #1973 prune). This is deployment
+# config (which servers, ports, timeouts) — override in prod via the
+# IRR_LOOKUP_SERVERS env var as a Python-literal list of dicts.
+IRR_LOOKUP_SERVERS = [
+    {"host": "rr.ntt.net", "port": 43, "timeout": 5},
+    {"host": "whois.radb.net", "port": 43, "timeout": 5},
+]
+if os.environ.get("IRR_LOOKUP_SERVERS"):
+    IRR_LOOKUP_SERVERS = ast.literal_eval(os.environ["IRR_LOOKUP_SERVERS"])
+
+# how long (seconds) an IRR lookup result is cached in the "negative" Redis cache
+set_option("IRR_LOOKUP_CACHE_TTL", 300)
+
+# per-query timeout (seconds) used when a server dict omits its own "timeout"
+set_option("IRR_LOOKUP_DEFAULT_TIMEOUT", 5)
+
+# #1973: downloaded IRR dumps used by batch cleanup/checker jobs. The fetch
+# command refreshes this cache; interactive editor/save checks use irr.py.
+set_option("IRR_BULK_DUMP_DIR", os.path.join(API_CACHE_ROOT, "irr"))
+set_option("IRR_BULK_DUMP_MAX_AGE_HOURS", 24)
+set_option("IRR_BULK_DUMP_TIMEOUT", 30)
+# Compressed and expanded safety bounds for a single registry dump: sanity
+# ceilings against a pathological or hostile response, not a tight fit. Measured
+# 2026-07-30 the largest is radb.db.gz at 25 MB compressed / 411 MB expanded, so
+# these leave ~85x and ~40x headroom -- deliberate, since breaching either bound
+# makes the source refuse to refresh and these exports grow over time.
+set_option("IRR_BULK_DUMP_MAX_BYTES", 2 * 1024 * 1024 * 1024)
+set_option("IRR_BULK_DUMP_MAX_UNCOMPRESSED_BYTES", 16 * 1024 * 1024 * 1024)
+
+# #1973/#1974: which NetworkContact roles receive the irr_as_set outreach mail
+# (ambiguous / unresolvable value, and the single-set cap nudge) sent by
+# pdb_irr_as_set_cleanup / pdb_irr_as_set_notify. Matched case-insensitively
+# against NetworkContact.role; empty disables notifications. Defaults to the
+# operational roles (== NetworkContact.TECH_ROLES), same as RIR_STATUS_NOTIFY_ROLES.
+set_option(
+    "IRR_AS_SET_NOTIFY_ROLES",
+    [
+        "technical",
+        "noc",
+        "policy",
+    ],
+)
+
+# #1974: dated rollout of the single-set cap (IRR_AS_SET_MAX_SETS), staged like
+# MFA_FORCE_SOFT_START / _HARD_START. Both unset (default) = the cap is enforced
+# immediately whenever IRR_AS_SET_MAX_SETS > 0 (legacy on/off). With a hard date
+# the cap is enforced only on/after it; a soft date with no hard date is warn-only
+# (the nudge mail goes out, the save is still accepted). YYYY-MM-DD.
+set_option("IRR_AS_SET_CAP_SOFT_START", None, envvar_type=str)
+if IRR_AS_SET_CAP_SOFT_START:
+    try:
+        IRR_AS_SET_CAP_SOFT_START = datetime.strptime(
+            IRR_AS_SET_CAP_SOFT_START, "%Y-%m-%d"
+        )
+    except ValueError:
+        raise ValueError("IRR_AS_SET_CAP_SOFT_START must be a YYYY-MM-DD date")
+
+set_option("IRR_AS_SET_CAP_HARD_START", None, envvar_type=str)
+if IRR_AS_SET_CAP_HARD_START:
+    try:
+        IRR_AS_SET_CAP_HARD_START = datetime.strptime(
+            IRR_AS_SET_CAP_HARD_START, "%Y-%m-%d"
+        )
+    except ValueError:
+        raise ValueError("IRR_AS_SET_CAP_HARD_START must be a YYYY-MM-DD date")
 
 # minimum value to allow for speed on an netixlan (currently 50Mbit)
 set_option("DATA_QUALITY_MIN_SPEED", 50)
@@ -1371,6 +1465,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
                 "write_api": API_THROTTLE_RATE_WRITE,
                 "organization_users_ops": API_THROTTLE_ORGANIZATION_USERS,
+                "irr_lookup": API_THROTTLE_IRR_LOOKUP,
             },
         }
     )

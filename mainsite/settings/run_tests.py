@@ -36,6 +36,12 @@ IXF_REMOVE_STALE_NETIXLAN_PERIOD = 90
 IXF_SEND_TICKETS = False
 TUTORIAL_MODE = False
 CAPTCHA_TEST_MODE = True
+
+# #1973: keep the live IRR existence check off in the suite so tests never make
+# real network calls (the syntactic rules still run). The pdb_api_test payload
+# uses a synthetic as-set (RIPE::AS-ZZ-ZZZZZZ) that would otherwise be rejected;
+# a dedicated opt-in test exercises the live check against real IRR servers.
+IRR_AS_SET_VERIFY_EXISTENCE = False
 GLOBAL_STATS_CACHE_DURATION = 0
 CLIENT_COMPAT = {
     "client": {"min": (0, 6), "max": (0, 6, 5)},

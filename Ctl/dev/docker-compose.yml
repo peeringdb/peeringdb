@@ -163,6 +163,7 @@ services:
       - ../../tests:/srv/www.peeringdb.com/tests:Z
       - ../../docs:/srv/www.peeringdb.com/docs:Z
       - ../../Ctl/docker/entrypoint.sh:/srv/www.peeringdb.com/entrypoint.sh:Z
+      - peeringdb_api_cache:/srv/www.peeringdb.com/api-cache:Z
 
       # uncomment if you want indexed search data to be persistent
       # - ../../search-data:/srv/www.peeringdb.com/search-data
@@ -190,6 +191,7 @@ services:
 volumes:
   peeringdb_database:
   peeringdb_redis_data:
+  peeringdb_api_cache:
 
 networks:
   peeringdb_network:

@@ -26,6 +26,13 @@ RdapNetwork = rdap.objects.RdapNetwork  # noqa
 
 # Valid IRR Source values
 # reference: http://www.irr.net/docs/list.html
+#
+# #1973 prunes registries that no longer exist, on evidence of emptiness rather
+# than lack of PeeringDB usage -- RADB publishes a dump for every entry it mirrors,
+# so an unused source may just be unpopular. Removed 2026-08-04: NESTEGG and PANIX
+# (RADB dumps of 484 B and 812 B, header only, and no network pins either).
+# BELL / CANARIE / REACH are also unused but stay until measured.
+# irr_bulk.DUMP_SOURCES must be edited in the same change.
 IRR_SOURCE = (
     "AFRINIC",
     "ALTDB",
@@ -38,9 +45,7 @@ IRR_SOURCE = (
     "JPIRR",
     "LACNIC",
     "LEVEL3",
-    "NESTEGG",
     "NTTCOM",
-    "PANIX",
     "RADB",
     "REACH",
     "RIPE",

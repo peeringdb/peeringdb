@@ -110,6 +110,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
+    IRR_AS_SET_STATUS_UNKNOWN,
     IXP_UPDATE_EXCLUDE_FIELDS,
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
@@ -2855,6 +2856,40 @@ def format_last_updated_time(last_updated_time):
         return last_updated_time.split(".")[0].rstrip("Z") + "Z"
 
 
+def format_datetime_field(value):
+    """
+    Render a model DateTimeField the way format_last_updated_time renders the
+    serializer's already-stringified timestamps.
+
+    Needed because format_last_updated_time only handles `str` and `None` — handed
+    a live `datetime` it falls off the end and returns None. The server-side-only
+    fields (#1973) are read straight off the model, never through the
+    serializer, so they arrive as datetimes.
+    """
+    return format_last_updated_time(value.isoformat() if value else None)
+
+
+def irr_as_set_status_display(net):
+    """
+    Human-readable irr_as_set verification state for the network record (#1973,
+    which requires the state be shown here).
+
+    `unknown` renders empty rather than "Not yet verified": until the
+    pdb_irr_as_set_status cron has swept, every network is unknown, and a label on
+    every record that says nothing is noise. A flagged value carries its
+    missing_since inline, so "since when" costs no second row.
+    """
+    status = net.irr_as_set_status
+    if not status or status == IRR_AS_SET_STATUS_UNKNOWN:
+        return ""
+
+    label = net.get_irr_as_set_status_display()
+    since = format_datetime_field(net.irr_as_set_missing_since)
+    if since:
+        return f"{label} (since {since})"
+    return label
+
+
 @ensure_csrf_cookie
 def view_network(request, id):
     """
@@ -3136,6 +3171,24 @@ def view_network(request, id):
                 "label": _("RIR Status Updated"),
                 "type": "fmt-text",
                 "value": format_last_updated_time(network_d.get("rir_status_updated")),
+            },
+            # #1973: the verification state is server-side only, so it is read
+            # off `network` and not `network_d` -- these fields are deliberately
+            # absent from NetworkSerializer, and the public form of the flag arrives
+            # later as a #1742 metadata key.
+            {
+                "name": "irr_as_set_status",
+                "readonly": True,
+                "label": _("IRR AS-SET Status"),
+                "type": "fmt-text",
+                "value": irr_as_set_status_display(network),
+            },
+            {
+                "name": "irr_as_set_verified",
+                "readonly": True,
+                "label": _("IRR AS-SET Verified"),
+                "type": "fmt-text",
+                "value": format_datetime_field(network.irr_as_set_verified),
             },
             {
                 "name": "logo",
