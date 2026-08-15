@@ -2975,7 +2975,7 @@ def view_network(request, id):
             },
             {
                 "name": "irr_as_set",
-                "label": _("IRR as-set/route-set"),
+                "label": _("IRR as-set"),
                 "help_text": field_help(Network, "irr_as_set"),
                 "notify_incomplete": True,
                 "value": network_d.get("irr_as_set", dismiss),
