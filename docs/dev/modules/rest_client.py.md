@@ -45,4 +45,3 @@ PermissionDeniedException(builtins.OSError)
 ```
 
 Base class for I/O related errors.
-
