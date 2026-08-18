@@ -11,7 +11,7 @@ from contextlib import ExitStack
 
 import pytest
 from django.db import connections
-from django.test.utils import CaptureQueriesContext
+from django.test.utils import CaptureQueriesContext, override_settings
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import Organization
@@ -42,11 +42,16 @@ def _org_count_queries(client, path, params=None):
     ]
 
 
+# pdb_api_cache assigns settings.API_DEPTH_ROW_LIMIT = 0 without restoring it,
+# so any api-cache test that ran earlier in the same process would gate the
+# truncation count off; pin the setting so these tests are order-independent
+@override_settings(API_DEPTH_ROW_LIMIT=250)
 @pytest.mark.django_db
 def test_depth_zero_list_skips_count(orgs):
     assert _org_count_queries(APIClient(), "/api/org", {"depth": 0}) == []
 
 
+@override_settings(API_DEPTH_ROW_LIMIT=250)
 @pytest.mark.django_db
 def test_depth_list_still_counts_for_truncation(orgs):
     # the guard must not drop the count where the truncation decision needs it.
