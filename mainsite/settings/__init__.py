@@ -10,6 +10,7 @@ import django.conf.global_settings
 import django.conf.locale
 import structlog
 import urllib3
+from django.core.exceptions import ImproperlyConfigured
 from redis.backoff import NoBackoff
 from redis.retry import Retry
 
@@ -301,12 +302,19 @@ def get_cache_backend(cache_name):
 
     if cache_backend.startswith("DatabaseCache."):
         _, location = cache_backend.split(".", 1)
+        location = location.strip()
+        if location:
+            return {
+                "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+                "LOCATION": location,
+                "OPTIONS": options,
+            }
 
-        return {
-            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-            "LOCATION": location.strip(),
-            "OPTIONS": options,
-        }
+    # #2032: fail at startup on an unrecognized backend name instead of
+    # returning None, which boots fine and then breaks per-request
+    raise ImproperlyConfigured(
+        f"Unrecognized cache backend {cache_backend!r} for {cache_name}"
+    )
 
 
 _ = lambda s: s
@@ -782,6 +790,10 @@ for cache_name in cache_names:
 # rather than crashing the request
 set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", True)
 
+# Log the exceptions swallowed above — without this a cache outage is
+# indistinguishable from a client cookie problem (#2032)
+set_bool("DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS", True)
+
 # When the rate-limit cache is unreachable, allow requests through instead
 # of treating "unknown" as "over limit" (django-ratelimit defaults to closed).
 # Tradeoff: every per-IP/per-user django_ratelimit limiter — middleware
@@ -971,6 +983,13 @@ LOGGING = {
         "django_structlog": {
             "handlers": ["logfile", "console_json"],
             "level": "WARNING",
+            "propagate": False,
+        },
+        # ignored redis cache exceptions land here — there is no root
+        # logger, so without this entry they never reach a handler (#2032)
+        "django_redis": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
             "propagate": False,
         },
         "django.server": {

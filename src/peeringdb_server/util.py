@@ -5,7 +5,7 @@ Assorted utility functions for peeringdb site templates.
 from __future__ import annotations
 
 import ipaddress
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, cast
 
@@ -15,6 +15,7 @@ from django.contrib.staticfiles.finders import find
 from django.shortcuts import render as django_render
 from django.template import loader
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.cache import cache_control
 from django_grainy.util import Permissions, check_permissions, get_permissions  # noqa
 from simplekml import OverlayXY, ScreenXY, Units
 
@@ -24,6 +25,14 @@ if TYPE_CHECKING:
     from django.db.models import Model
     from django.http import HttpRequest, HttpResponse
     from simplekml import Kml
+
+# Session-bearing anonymous auth views must never be cached by shared
+# proxies, since their responses carry `Set-Cookie` / CSRF state (#2032).
+# Lives here rather than in `views` so `mainsite.urls` can import it
+# without pulling in the heavy views module.
+no_store_private: Callable[
+    [Callable[..., HttpResponse]], Callable[..., HttpResponse]
+] = cache_control(private=True, no_store=True)
 
 
 def disable_auto_now_and_save(

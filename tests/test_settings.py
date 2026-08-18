@@ -4,6 +4,7 @@ import os
 import pytest
 from allauth.account.signals import user_signed_up
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 
 import peeringdb_server.inet as pdbinet
 from mainsite.settings import _set_bool, _set_option
@@ -211,3 +212,31 @@ def test_set_options_none():
 
     _set_option("TEST_SETTING", None, context, envvar_type=str)
     assert context["TEST_SETTING"] == "0"
+
+
+@pytest.mark.django_db
+def test_redis_ignored_exceptions_logged():
+    """
+    Redis cache errors stay fail-open but must be logged, and the
+    `django_redis` logger needs an explicit LOGGING entry to reach
+    the handlers (#2032)
+    """
+    from django.conf import settings
+
+    assert settings.DJANGO_REDIS_IGNORE_EXCEPTIONS is True
+    assert settings.DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS is True
+    assert "django_redis" in settings.LOGGING["loggers"]
+
+
+@pytest.mark.django_db
+def test_get_cache_backend_rejects_unknown_backend():
+    # an unrecognized `*_CACHE_BACKEND` value must abort at startup instead of
+    # returning None and failing per-request (#2032)
+    import mainsite.settings as pdb_settings
+
+    pdb_settings.get_cache_backend.__globals__["PROBE_CACHE_BACKEND"] = "Redis"
+    try:
+        with pytest.raises(ImproperlyConfigured):
+            pdb_settings.get_cache_backend("probe")
+    finally:
+        del pdb_settings.get_cache_backend.__globals__["PROBE_CACHE_BACKEND"]

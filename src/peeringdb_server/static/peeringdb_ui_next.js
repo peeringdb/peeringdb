@@ -29,7 +29,11 @@ PeeringDB = {
           // Backend returned JSON (even if empty {}) = permission denied
           return gettext("You do not have permission to perform this action");
         }
-        // No JSON = WAF/content blocking
+        // No JSON = blocked upstream (WAF / content filter) - prefer the
+        // body's own explanation over guessing at the cause
+        var excerpt = PeeringDB.response_body_excerpt(response.responseText);
+        if (excerpt)
+          return excerpt;
         return gettext("The upload failed - This is not related to the apparent file size or type, but appears to be an issue with the file itself.");
       }
 
@@ -43,6 +47,23 @@ PeeringDB = {
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#039;");
+    },
+
+    // WAF/proxy error bodies arrive as full html pages - reduce them to a
+    // short plain-text excerpt so error messages can surface the actual
+    // reason instead of a canned one (#2032)
+    response_body_excerpt: function(body) {
+      var text = String(body || "")
+          // drop script/style subtrees wholesale first - regex tag-stripping
+          // alone would leave their contents (inline css/js) in the excerpt
+          .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+          .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+          .replace(/<[^>]*>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      if (text.length > 200)
+        text = text.substring(0, 200) + "...";
+      return text;
     },
 
     /**
@@ -96,7 +117,12 @@ PeeringDB = {
       twentyc.listutil.filter_input.init();
       twentyc.listutil.sortable.init();
 
-      this.csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      // the hidden csrfmiddlewaretoken input went away with the POST search
+    // form (#2032); the header template assigns `PeeringDB.csrf` from the
+    // request context instead, so only read the input when one exists
+    var csrf_input = document.querySelector('[name=csrfmiddlewaretoken]');
+    if(csrf_input)
+      this.csrf = csrf_input.value;
       $.ajaxSetup({
         beforeSend : function(xhr, settings) {
           if(!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
@@ -967,7 +993,14 @@ PeeringDB = {
             element.addClass('validation-error')
           }
         } else if(response.status == 403) {
-          info = [gettext("You do not have permissions to perform this action")]
+          // a 403 without json is likely a WAF block page - show what the
+          // server actually said instead of blaming permissions (#2032)
+          var excerpt = response.responseJSON ?
+            "" : PeeringDB.response_body_excerpt(response.responseText);
+          if(excerpt)
+            info = [excerpt];
+          else
+            info = [gettext("You do not have permissions to perform this action")]
         }
 
         if(response.responseJSON && response.responseJSON.non_field_errors) {
@@ -3761,6 +3794,14 @@ PeeringDB = {
       if (meta && meta.error) {
         return `${meta.error}<br />${message || ''}`;
       }
+    }
+    // no structured error - on a 403 append what the server actually said
+    // (e.g. a WAF block page); other statuses (502/503 during deploys) keep
+    // the plain status line. Escaped because this return is rendered as html.
+    const excerpt = (response.status == 403 && !response.responseJSON) ?
+      PeeringDB.response_body_excerpt(response.responseText) : "";
+    if (excerpt) {
+      return `${response.status} ${response.statusText}<br />${PeeringDB.escape_html(excerpt)}`;
     }
     return `${response.status} ${response.statusText}`;
   }

@@ -1,8 +1,7 @@
 {% load i18n %}
-<form action="/search" id="quick-search" method="POST">
-    {% csrf_token %}
+<form action="/search" id="quick-search" method="GET">
     <input placeholder="{% trans " Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}"
-        class="form-control search-input" name="term" id="search" type="text" />
+        class="form-control search-input" name="q" id="search" type="text" />
 </form>
 <div class="row">
     <div class="col-6 col-sm-6">

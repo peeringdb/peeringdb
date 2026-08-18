@@ -55,6 +55,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.middleware.csrf import REASON_NO_CSRF_COOKIE
 from django.shortcuts import redirect
 from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
@@ -161,6 +162,7 @@ from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import (
     generate_social_media_render_data,
     get_template,
+    no_store_private,
     objfac_tupple,
     objfac_tupple_ui_next,
     render,
@@ -331,17 +333,29 @@ def make_env(**data):
     return env
 
 
-def view_http_error_404(request):
+def view_http_error_404(request, exception=None):
+    # `exception` is passed by django when this runs as `handler404`; the
+    # direct call sites in the entity views pass only `request`
     template = get_template(request, "site/error_404.html")
     return HttpResponseNotFound(template.render(make_env(), request))
 
 
-def view_http_error_403(request):
+def view_http_error_403(request, exception=None):
     template = get_template(request, "site/error_403.html")
     return HttpResponseForbidden(template.render(make_env(), request))
 
 
 def view_http_error_csrf(request, reason):
+    # #2032: django's `REASON_NO_CSRF_COOKIE` ("CSRF cookie not set.") is
+    # misleading with `CSRF_USE_SESSIONS` enabled, where no CSRF cookie exists -
+    # the usual cause is an expired session or blocked cookies, so tell the
+    # user that instead. Every other rejection reason (bad origin, referer
+    # checks, token mismatch) is accurate and not fixed by reloading, so it
+    # passes through untouched.
+    if reason == REASON_NO_CSRF_COOKIE:
+        reason = translation.gettext(
+            "Your session expired or cookies are blocked; reload and retry."
+        )
     return JsonResponse({"non_field_errors": [reason]}, status=403)
 
 
@@ -1249,6 +1263,7 @@ def view_username_change(request):
         return JsonResponse({"status": "ok", "username": request.user.username})
 
 
+@no_store_private
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
 def view_username_retrieve(request):
@@ -1260,6 +1275,9 @@ def view_username_retrieve(request):
     return render(request, "site/username-retrieve.html", env)
 
 
+# `no_store_private` outermost so the header lands on every return
+# path, including rate-limited and form-error JsonResponses (#2032)
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
@@ -1332,6 +1350,7 @@ def view_username_retrieve_complete(request):
     return render(request, "site/username-retrieve-complete.html", env)
 
 
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @transaction.atomic
@@ -1408,6 +1427,7 @@ def view_password_reset(request):
         return JsonResponse({"status": "ok"})
 
 
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @transaction.atomic
@@ -4068,6 +4088,10 @@ def verify_token(self, token):
 EmailDevice.verify_token = verify_token
 
 
+# also covers `two_factor_ui_next.LoginView`, which subclasses this (#2032).
+# two_factor's own `never_cache` already emits `private` + `no-store` here;
+# this keeps the guarantee local rather than relying on the upstream decorator
+@method_decorator(no_store_private, name="dispatch")
 class LoginView(TwoFactorLoginView):
     """
     Extend the `LoginView` class provided
