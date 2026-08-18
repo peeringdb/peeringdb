@@ -16,7 +16,7 @@ class Command(BaseCommand):
         print(msg)
 
     def handle(self, *args, **options):
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(tz=datetime.UTC)
         for sponsorship in Sponsorship.objects.filter(end_date__lt=now):
             if (
                 sponsorship.notify_date is None

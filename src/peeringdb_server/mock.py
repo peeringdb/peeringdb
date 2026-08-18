@@ -2,13 +2,23 @@
 Handle generation of mock data for testing purposes.
 """
 
+from __future__ import annotations
+
 import ipaddress
 import uuid
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, cast
 
 from django.db import models
 from django.utils import timezone
 
 from peeringdb_server.models import REFTAG_MAP
+
+# Mock object field data; values are heterogeneous per field, hence Any.
+MockFieldData = dict[str, Any]
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class Mock:
@@ -19,12 +29,12 @@ class Mock:
     only be used to populate a dev instance.
     """
 
-    def __init__(self):
-        self._asn = 63311
+    def __init__(self) -> None:
+        self._asn: int = 63311
 
         # Pool of IPv4 Prefixes
         # TODO - automatic generation via ipaddress module
-        self.prefix_pool_v4 = [
+        self.prefix_pool_v4: list[str] = [
             "206.126.236.0/22",
             "208.115.136.0/23",
             "206.223.118.0/24",
@@ -34,7 +44,7 @@ class Mock:
 
         # Pool of IPv6 Prefixes
         # TODO - automatic generation via ipaddrsss module
-        self.prefix_pool_v6 = [
+        self.prefix_pool_v6: list[str] = [
             "2001:504:0:2::/64",
             "2001:504:0:4::/64",
             "2001:504:0:5::/64",
@@ -44,7 +54,10 @@ class Mock:
 
         # helper function that allows us to retrieve n valid
         # hosts from an ipaddress space (prefix)
-        def get_hosts(network, count=100):
+        def get_hosts(
+            network: ipaddress.IPv4Network | ipaddress.IPv6Network,
+            count: int = 100,
+        ) -> Iterator[ipaddress.IPv4Address | ipaddress.IPv6Address]:
             n = 0
             for host in network.hosts():
                 if n > count:
@@ -53,18 +66,24 @@ class Mock:
                 yield host
 
         # Pool of IPv4 addresses (100 per prefix)
-        self.ipaddr_pool_v4 = {
+        # get_hosts yields the address-family union, so the pools carry it too.
+        self.ipaddr_pool_v4: dict[
+            str, list[ipaddress.IPv4Address | ipaddress.IPv6Address]
+        ] = {
             prefix: list(get_hosts(ipaddress.IPv4Network(prefix)))
             for prefix in self.prefix_pool_v4
         }
 
         # Pool of IPv6 addresses (100 per prefix)
-        self.ipaddr_pool_v6 = {
+        self.ipaddr_pool_v6: dict[
+            str, list[ipaddress.IPv4Address | ipaddress.IPv6Address]
+        ] = {
             prefix: list(get_hosts(ipaddress.IPv6Network(prefix)))
             for prefix in self.prefix_pool_v6
         }
 
-    def create(self, reftag, **kwargs):
+    # kwargs/data hold arbitrary per-field override values (hence Any)
+    def create(self, reftag: str, **kwargs: Any) -> models.Model:
         """
         Create a new instance of model specified in `reftag`
 
@@ -76,8 +95,9 @@ class Mock:
         Returns: The created instance.
         """
 
-        model = REFTAG_MAP.get(reftag)
-        data = {}
+        # reftag is always a valid handleref tag; narrow to the model class
+        model = cast("type[models.Model]", REFTAG_MAP.get(reftag))
+        data: MockFieldData = {}
         data.update(**kwargs)
 
         # first we create any required parent relation ships
@@ -156,216 +176,277 @@ class Mock:
         obj.save()
         return obj
 
-    def id(self, data, reftag=None):
+    def id(self, data: MockFieldData, reftag: str | None = None) -> int | None:
         if reftag == "ixlan":
             return data["ix"].id
         return None
 
-    def status(self, data, reftag=None):
+    def status(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "ok"
 
-    def address1(self, data, reftag=None):
+    def address1(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Address line 1"
 
-    def address2(self, data, reftag=None):
+    def address2(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Address line 2"
 
-    def state(self, data, reftag=None):
+    def state(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Illinois"
 
-    def zipcode(self, data, reftag=None):
+    def zipcode(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "12345"
 
-    def website(self, data, reftag=None):
+    def website(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "https://www.peeringdb.com"
 
-    def social_media(self, data, reftag=None):
+    def social_media(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> list[dict[str, str]]:
         return [{"service": "website", "identifier": "https://www.peeringdb.com"}]
 
-    def notes(self, data, reftag=None):
+    def notes(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Some notes"
 
-    def city(self, data, reftag=None):
+    def city(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Chicago"
 
-    def suite(self, data, reftag=None):
+    def suite(self, data: MockFieldData, reftag: str | None = None) -> str:
         return ""
 
-    def floor(self, data, reftag=None):
+    def floor(self, data: MockFieldData, reftag: str | None = None) -> str:
         return ""
 
-    def netixlan_updated(self, data, reftag=None):
+    def netixlan_updated(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def poc_updated(self, data, reftag=None):
+    def poc_updated(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def netfac_updated(self, data, reftag=None):
+    def netfac_updated(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def latitude(self, data, reftag=None):
+    def latitude(self, data: MockFieldData, reftag: str | None = None) -> float:
         return 0.0
 
-    def longitude(self, data, reftag=None):
+    def longitude(self, data: MockFieldData, reftag: str | None = None) -> float:
         return 0.0
 
-    def country(self, data, reftag=None):
+    def country(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "US"
 
-    def name(self, data, reftag=None):
+    def name(self, data: MockFieldData, reftag: str | None = None) -> str:
         return f"{reftag} {str(uuid.uuid4())[:8]}"
 
-    def name_long(self, data, reftag=None):
+    def name_long(self, data: MockFieldData, reftag: str | None = None) -> str:
         return self.name(data, reftag=reftag)
 
-    def asn(self, data, reftag=None):
+    def asn(self, data: MockFieldData, reftag: str | None = None) -> int:
         if reftag == "netixlan":
             return data["network"].asn
         self._asn += 1
         return self._asn
 
-    def aka(self, data, reftag=None):
+    def aka(self, data: MockFieldData, reftag: str | None = None) -> str:
         return self.name(data, reftag=reftag)
 
-    def irr_as_set(self, data, reftag=None):
+    def irr_as_set(self, data: MockFieldData, reftag: str | None = None) -> str:
         return f"RIPE::AS-{str(uuid.uuid4())[:8].upper()}"
 
-    def looking_glass(self, data, reftag=None):
+    def looking_glass(self, data: MockFieldData, reftag: str | None = None) -> str:
         return f"{self.website(data, reftag=reftag)}/looking-glass"
 
-    def route_server(self, data, reftag=None):
+    def route_server(self, data: MockFieldData, reftag: str | None = None) -> str:
         return f"{self.website(data, reftag=reftag)}/route-server"
 
-    def notes_private(self, data, reftag=None):
+    def notes_private(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Private notes"
 
-    def info_types(self, data, reftag=None):
+    def info_types(self, data: MockFieldData, reftag: str | None = None) -> list[str]:
         return ["Content"]
 
-    def info_prefixes4(self, data, reftag=None):
+    def info_prefixes4(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 50000
 
-    def info_prefixes6(self, data, reftag=None):
+    def info_prefixes6(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 5000
 
-    def clli(self, data, reftag=None):
+    def clli(self, data: MockFieldData, reftag: str | None = None) -> str:
         return str(uuid.uuid4())[:6].upper()
 
-    def rencode(self, data, reftag=None):
+    def rencode(self, data: MockFieldData, reftag: str | None = None) -> str:
         return ""
 
-    def npanxx(self, data, reftag=None):
+    def npanxx(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "123-456"
 
-    def descr(self, data, reftag=None):
+    def descr(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Arbitrary description"
 
-    def mtu(self, data, reftag=None):
+    def mtu(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 1500
 
-    def vlan(self, data, reftag=None):
+    def vlan(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def rs_asn(self, data, reftag=None):
+    def rs_asn(self, data: MockFieldData, reftag: str | None = None) -> int:
         return self.asn(data, reftag=reftag)
 
-    def local_asn(self, data, reftag=None):
+    def local_asn(self, data: MockFieldData, reftag: str | None = None) -> int:
         return data["network"].asn
 
-    def arp_sponge(self, data, reftag=None):
+    def arp_sponge(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def prefix(self, data, reftag=None):
+    def prefix(self, data: MockFieldData, reftag: str | None = None) -> str | None:
         if data.get("protocol") == "IPv4":
             return f"{self.prefix_pool_v4.pop()}"
         elif data.get("protocol") == "IPv6":
             return f"{self.prefix_pool_v6.pop()}"
+        return None
 
-    def ipaddr4(self, data, reftag=None):
+    def ipaddr4(self, data: MockFieldData, reftag: str | None = None) -> str:
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv4").first().prefix
         return "{}".format(self.ipaddr_pool_v4[f"{prefix}"].pop())
 
-    def ipaddr6(self, data, reftag=None):
+    def ipaddr6(self, data: MockFieldData, reftag: str | None = None) -> str:
         prefix = data["ixlan"].ixpfx_set.filter(protocol="IPv6").first().prefix
         return "{}".format(self.ipaddr_pool_v6[f"{prefix}"].pop())
 
-    def speed(self, data, reftag=None):
+    def speed(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 1000
 
-    def ixp_update_exclude(self, data, reftag=None):
+    def ixp_update_exclude(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> list[str]:
         return []
 
-    def ixf_net_count(self, data, reftag=None):
+    def ixf_net_count(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def ixf_last_import(self, data, reftag=None):
+    def ixf_last_import(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def ixf_import_request(self, data, reftag=None):
+    def ixf_import_request(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
         return None
 
-    def ixf_import_request_status(self, data, reftag=None):
+    def ixf_import_request_status(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> str:
         return "queued"
 
-    def ixf_import_request_user(self, data, reftag=None):
+    def ixf_import_request_user(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
         return None
 
-    def ix_count(self, data, reftag=None):
+    def ix_count(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def fac_count(self, data, reftag=None):
+    def fac_count(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def net_count(self, data, reftag=None):
+    def net_count(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def carrier_count(self, data, reftag=None):
+    def carrier_count(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def role(self, data, reftag=None):
+    def role(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Abuse"
 
-    def diverse_serving_substations(self, data, reftag=None):
+    def diverse_serving_substations(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> bool:
         return False
 
-    def available_voltage_services(self, data, reftag=None):
+    def available_voltage_services(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
         return None
 
-    def property(self, data, reftag=None):
+    def property(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def flagged_date(self, data, reftag=None):
+    def flagged_date(self, data: MockFieldData, reftag: str | None = None) -> datetime:
         return timezone.now()
 
-    def flagged(self, data, reftag=None):
+    def flagged(self, data: MockFieldData, reftag: str | None = None) -> bool:
         return False
 
-    def status_dashboard(self, data, reftag=None):
+    def status_dashboard(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def rir_status(self, data, reftag=None):
+    def rir_status(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "assigned"
 
-    def rir_status_updated(self, data, reftag=None):
+    def rir_status_updated(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
         return None
 
-    def rir_status_notified(self, data, reftag=None):
+    def rir_status_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
         return None
 
-    def periodic_reauth(self, data, reftag=None):
+    def irr_as_set_auto_prefix_candidate(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> str:
+        return ""
+
+    def irr_as_set_auto_prefix_checked(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_cap_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_status(self, data: MockFieldData, reftag: str | None = None) -> str:
+        return "unknown"
+
+    def irr_as_set_verified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_missing_since(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def irr_as_set_verify_notified(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> None:
+        return None
+
+    def periodic_reauth(self, data: MockFieldData, reftag: str | None = None) -> bool:
         return False
 
-    def periodic_reauth_period(self, data, reftag=None):
+    def periodic_reauth_period(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> str:
         return "1y"
 
-    def restrict_user_emails(self, data, reftag=None):
+    def restrict_user_emails(
+        self, data: MockFieldData, reftag: str | None = None
+    ) -> bool:
         return False
 
-    def email_domains(self, data, reftag=None):
+    def email_domains(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None
 
-    def org_flags(self, data, reftag=None):
+    def org_flags(self, data: MockFieldData, reftag: str | None = None) -> int:
         return 0
 
-    def last_notified(self, data, reftag=None):
+    def last_notified(self, data: MockFieldData, reftag: str | None = None) -> None:
         return None

@@ -2,17 +2,25 @@
 django-peeringdb backend loader (needed for pdb_load_data command)
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from django_peeringdb.client_adaptor.load import database_settings
 
-__backend = None
+if TYPE_CHECKING:
+    from types import ModuleType
+
+__backend: ModuleType | None = None
 
 
-def load_backend(**orm_config):
+def load_backend(**orm_config: Any) -> ModuleType:  # Any: open-ended ORM config kwargs
     """
     Load the client adaptor module of django_peeringdb
     Assumes config is valid.
     """
-    settings = {}
+    # Any: heterogeneous values (str SECRET_KEY + nested DATABASES config dict)
+    settings: dict[str, Any] = {}
     settings["SECRET_KEY"] = orm_config.get("secret_key", "")
 
     db_config = orm_config["database"]

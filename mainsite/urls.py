@@ -19,6 +19,7 @@ from peeringdb_server.two_factor_ui_next import (
     TwoFactorDisableView,
     TwoFactorSetupView,
 )
+from peeringdb_server.util import no_store_private
 
 admin.autodiscover()
 
@@ -74,6 +75,15 @@ urlpatterns = [
     ),
     # grappelli admin interface improvements
     re_path(r"^grappelli/", include("grappelli.urls")),
+    # shadow allauth's confirm-email route (pattern copied verbatim from
+    # `allauth.account.urls`) so the session-bearing response is never
+    # cached by shared proxies; must precede the `allauth.urls` include
+    # and keep the name/shape that middleware and templates reverse (#2032)
+    re_path(
+        r"^accounts/confirm-email/(?P<key>[-:\w]+)/$",
+        no_store_private(allauth.account.views.confirm_email),
+        name="account_confirm_email",
+    ),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(
         r"^cp/peeringdb_server/organizationmerge/add/",
@@ -96,5 +106,7 @@ urlpatterns += peeringdb_server.urls.urlpatterns
 # append the login view again,so the name is available for reverse lookups
 urlpatterns += [tf_urls[0][0]]
 
-handler_404 = "peeringdb_server.views.view_http_error_404"
-handler_403 = "peeringdb_server.views.view_http_error_403"
+# django resolves these as `handler404` / `handler403` on the urlconf module;
+# they were spelled with an underscore since bff6f7f2 and therefore never read (#2032)
+handler404 = "peeringdb_server.views.view_http_error_404"
+handler403 = "peeringdb_server.views.view_http_error_403"

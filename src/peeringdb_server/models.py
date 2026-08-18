@@ -143,6 +143,26 @@ IXP_UPDATE_EXCLUDE_FIELDS = (
     ("operational", _("Operational")),
 )
 
+# #1973: outcome of the last pdb_irr_as_set_status re-verification run. Single
+# source of truth for the model field, the command that writes it and the label
+# shown on the network record. Not the admin form -- irr_as_set_status is
+# editable=False, so it never renders as an admin field.
+#
+# `unknown` is not a finding — it means the IRR pool could not answer, so the
+# value keeps whatever it had and is retried next run. Only `moved` and `gone`
+# are claims, and both require a definitive live answer.
+IRR_AS_SET_STATUS_UNKNOWN = "unknown"
+IRR_AS_SET_STATUS_OK = "ok"
+IRR_AS_SET_STATUS_MOVED = "moved"
+IRR_AS_SET_STATUS_GONE = "gone"
+
+IRR_AS_SET_STATUSES = (
+    (IRR_AS_SET_STATUS_UNKNOWN, _("Not yet verified")),
+    (IRR_AS_SET_STATUS_OK, _("Verified present")),
+    (IRR_AS_SET_STATUS_MOVED, _("Moved to another registry")),
+    (IRR_AS_SET_STATUS_GONE, _("Gone from every registry")),
+)
+
 
 if settings.TUTORIAL_MODE:
     COMMANDLINE_TOOLS += (("pdb_wipe", _("Reset Environment")),)
@@ -599,7 +619,7 @@ class GeocodeBaseMixin(models.Model):
 
         if geocode and (not use_melissa_coords or sanitized):
             self.geocode_status = True
-            self.geocode_date = datetime.datetime.now(datetime.timezone.utc)
+            self.geocode_date = datetime.datetime.now(datetime.UTC)
             if sanitized:
                 sanitized["geocode_status"] = True
                 sanitized["geocode_date"] = self.geocode_date
@@ -1832,7 +1852,7 @@ class Sponsorship(StripFieldMixin):
         mail.attach_alternative(msg.replace("\n", "<br />\n"), "text/html")
         mail.send(fail_silently=True)
 
-        self.notify_date = datetime.datetime.now(tz=datetime.timezone.utc)
+        self.notify_date = datetime.datetime.now(tz=datetime.UTC)
         self.save()
 
         return True
@@ -3706,7 +3726,7 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
     data = models.TextField(
         null=False,
         default="{}",
-        help_text=_("JSON snapshot of the IX-F member data that " "created this entry"),
+        help_text=_("JSON snapshot of the IX-F member data that created this entry"),
     )
 
     log = models.TextField(blank=True, help_text=_("Activity for this entry"))
@@ -5165,22 +5185,68 @@ class Network(
     # guaranteed delivery).
     rir_status_notified = models.DateTimeField(blank=True, null=True)
 
-    @property
-    def rir_status_notify_contacts(self):
-        """
-        Returns a deduplicated list of network contact email addresses that
-        should be notified when this network is flagged for RIR-status
-        deletion (GH #1942).
+    # #1973: the last auto-prefix candidate definitively contradicted by the live
+    # IRR pool, and when it was checked. Kept separate from outreach state because
+    # a network can be mailed for another reason or have no eligible contacts.
+    irr_as_set_auto_prefix_candidate = models.CharField(
+        blank=True, default="", editable=False, max_length=255
+    )
+    irr_as_set_auto_prefix_checked = models.DateTimeField(
+        blank=True, editable=False, null=True
+    )
 
-        The set of roles to notify is configured via the
-        `RIR_STATUS_NOTIFY_ROLES` setting (matched case-insensitively against
-        `NetworkContact.role`). An empty setting disables notifications.
+    # #1973: last irr_as_set data-quality mail from pdb_irr_as_set_cleanup. Makes
+    # --max-notifications a batch cursor across runs instead of a truncation that
+    # re-mails the same networks forever.
+    irr_as_set_notified = models.DateTimeField(blank=True, null=True)
+
+    # #1974: last single-set cap nudge from pdb_irr_as_set_notify. Separate field so
+    # a cleanup mail never suppresses the deadline warning, or vice versa.
+    irr_as_set_cap_notified = models.DateTimeField(blank=True, null=True)
+
+    # #1973: periodic re-verification state, written only by
+    # pdb_irr_as_set_status. Mirrors the rir_status* triad the spec names as the
+    # model — a status value, when the value was last confirmed good, and when it
+    # went bad — plus this command's own notify cursor.
+    #
+    # Server-side only, and deliberately absent from NetworkSerializer.Meta.fields:
+    # the public form of the flag is a registered `net` metadata key under #1742,
+    # and the checker does not wait for it.
+    irr_as_set_status = models.CharField(
+        blank=True,
+        choices=IRR_AS_SET_STATUSES,
+        default=IRR_AS_SET_STATUS_UNKNOWN,
+        editable=False,
+        max_length=16,
+    )
+
+    # last run that confirmed every token present in its pinned source
+    irr_as_set_verified = models.DateTimeField(blank=True, editable=False, null=True)
+
+    # first run that definitively observed a token absent from its pinned source;
+    # cleared on recovery. Set for both `moved` and `gone`, so it measures "how long
+    # has this value been wrong" for the PC report, and is the field a future
+    # escalation would read, which is why it exists now rather than with that ruling.
+    irr_as_set_missing_since = models.DateTimeField(
+        blank=True, editable=False, null=True
+    )
+
+    # last re-verification mail. Must stay separate from irr_as_set_notified (the
+    # cleanup campaign's cursor) or a campaign mail suppresses a disappearance
+    # notice, and vice versa — the same split irr_as_set_cap_notified needed.
+    irr_as_set_verify_notified = models.DateTimeField(
+        blank=True, editable=False, null=True
+    )
+
+    def _notify_contacts(self, roles):
         """
-        # Drop blank entries so an empty setting disables notifications; an
-        # empty env var yields [""] (via _set_list), not [].
-        roles = [
-            role.lower() for role in settings.RIR_STATUS_NOTIFY_ROLES if role.strip()
-        ]
+        Deduplicated active-contact email addresses whose role is in `roles`.
+
+        Shared by the notification-recipient properties below so the filtering rules
+        exist once. Blank entries in `roles` are dropped so an empty setting disables
+        notifications — an empty env var yields [""] (via _set_list), not [].
+        """
+        roles = [role.lower() for role in roles if role.strip()]
         if not roles:
             return []
 
@@ -5194,6 +5260,32 @@ class Network(
         ]
 
         return list(set(contacts))
+
+    @property
+    def rir_status_notify_contacts(self):
+        """
+        Returns a deduplicated list of network contact email addresses that
+        should be notified when this network is flagged for RIR-status
+        deletion (GH #1942).
+
+        The set of roles to notify is configured via the
+        `RIR_STATUS_NOTIFY_ROLES` setting (matched case-insensitively against
+        `NetworkContact.role`). An empty setting disables notifications.
+        """
+        return self._notify_contacts(settings.RIR_STATUS_NOTIFY_ROLES)
+
+    @property
+    def irr_as_set_notify_contacts(self):
+        """
+        Deduplicated network contact email addresses to notify about an
+        irr_as_set data-quality problem — an ambiguous or unresolvable value, or
+        the single-set cap (#1973 / #1974).
+
+        Roles come from the `IRR_AS_SET_NOTIFY_ROLES` setting (matched
+        case-insensitively against `NetworkContact.role`); an empty setting
+        disables notifications.
+        """
+        return self._notify_contacts(settings.IRR_AS_SET_NOTIFY_ROLES)
 
     @classmethod
     def automated_net_count(cls):
@@ -5791,7 +5883,7 @@ def format_speed(value):
             return f"{value:.0f}T"
         return f"{value:.1f}T"
     elif value >= 1000:
-        return f"{value / 10 ** 3:.0f}G"
+        return f"{value / 10**3:.0f}G"
     else:
         return f"{value:.0f}M"
 
@@ -6233,6 +6325,12 @@ class Carrier(
 
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="carrier_set"
+    )
+    fac_count = models.PositiveIntegerField(
+        _("number of facilities for this carrier"),
+        help_text=_("number of facilities for this carrier"),
+        null=False,
+        default=0,
     )
 
     @staticmethod

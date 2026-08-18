@@ -2,15 +2,26 @@
 Define custom context managers.
 """
 
+from __future__ import annotations
+
 import contextvars
+from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 # stores current request in a thread safe context aware
 # manner.
-_current_request = contextvars.ContextVar("current_request")
+_current_request: contextvars.ContextVar[HttpRequest | None] = contextvars.ContextVar(
+    "current_request"
+)
 
 # stores the current incremental update period
-_incremental_update = contextvars.ContextVar("incremental_update")
+_incremental_update: contextvars.ContextVar[int | None] = contextvars.ContextVar(
+    "incremental_update"
+)
 
 # signals a forced IXLan deletion (e.g. orphaned cleanup), bypassing
 # IXLanPrefix protection for active netixlans
@@ -18,7 +29,7 @@ _forced_ixlan_deletion = contextvars.ContextVar("forced_ixlan_deletion", default
 
 
 @contextmanager
-def current_request(request=None):
+def current_request(request: HttpRequest | None = None) -> Iterator[HttpRequest | None]:
     """
     Will yield the current request, if there is one.
 
@@ -40,7 +51,7 @@ def current_request(request=None):
 
 
 @contextmanager
-def forced_ixlan_deletion():
+def forced_ixlan_deletion() -> Iterator[None]:
     """
     Signals a forced IXLan deletion is in progress (e.g. orphaned cleanup).
 
@@ -60,13 +71,13 @@ def forced_ixlan_deletion():
         _forced_ixlan_deletion.reset(token)
 
 
-def is_forced_ixlan_deletion():
+def is_forced_ixlan_deletion() -> bool:
     """Returns True if currently inside a forced_ixlan_deletion context."""
     return _forced_ixlan_deletion.get()
 
 
 @contextmanager
-def incremental_period(max_age=None):
+def incremental_period(max_age: int | None = None) -> Iterator[int | None]:
     if max_age:
         token = _incremental_update.set(int(max_age))
     else:

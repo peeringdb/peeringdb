@@ -13,7 +13,6 @@ method.
 
 import base64
 import datetime
-import imghdr
 import io
 import ipaddress
 import json
@@ -113,7 +112,7 @@ from peeringdb_server.validators import (
     validate_distance_geocode,
     validate_info_prefixes4,
     validate_info_prefixes6,
-    validate_irr_as_set,
+    validate_irr_as_set_on_change,
     validate_latitude,
     validate_longitude,
     validate_name,
@@ -2207,8 +2206,6 @@ class CarrierSerializer(ModelSerializer):
         source="carrierfac_set_active_prefetched",
     )
 
-    fac_count = serializers.SerializerMethodField()
-
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
@@ -2278,9 +2275,6 @@ class CarrierSerializer(ModelSerializer):
                 qset = qset.filter(**filter_kwargs)
 
         return qset, filters
-
-    def get_fac_count(self, inst) -> int:
-        return inst.carrierfac_set.filter(status="ok").count()
 
     def get_facilities(self, obj):
         return ", ".join([cf.facility.name for cf in obj.carrierfac_set.all()])
@@ -3273,10 +3267,13 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
             ticket_queue_rdap_error(request, *rdap_error)
 
     def validate_irr_as_set(self, value):
-        if value:
-            return validate_irr_as_set(value)
-        else:
+        if not value:
             return value
+        # #1973: enforce the unambiguous-name rules only when the value changes,
+        # so legacy values keep validating. self.instance has the stored value on
+        # update; on create there's nothing to preserve, so any value is a change.
+        old = getattr(self.instance, "irr_as_set", "") if self.instance else ""
+        return validate_irr_as_set_on_change(value, old)
 
     def validate_ixp_update_exclude(self, value):
         cleaned, error = clean_ixp_update_exclude(value)
@@ -4307,7 +4304,16 @@ class AssetWriteSerializer(serializers.Serializer):
         except Exception:
             raise RestValidationError({"file_data": "Invalid base64 encoded data"})
 
-        detected_type = imghdr.what(None, h=file_content)
+        # Pillow replaces stdlib imghdr, which was removed in python 3.13.
+        # Image.format is the same identifier imghdr.what() returned ("png",
+        # "jpeg"), and anything Pillow cannot open is rejected below just as
+        # imghdr's None was.
+        try:
+            with Image.open(io.BytesIO(file_content)) as probe:
+                detected_type = (probe.format or "").lower()
+        except Exception:
+            detected_type = None
+
         if detected_type not in ["png", "jpeg"]:
             raise RestValidationError(
                 {"file_data": "Unsupported file type. Only PNG and JPEG are allowed"}

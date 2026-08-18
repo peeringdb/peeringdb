@@ -1,4 +1,4 @@
-Generated on 2026-07-14 21:31:39.993597
+Generated on 2026-08-15 04:17:12.049436
 
 ## _db_command.py
 
@@ -180,6 +180,92 @@ Normalize existing address fields based on Google Maps API response.
 
 DEPRECATED
 Sync latitude and longitude on all geocoding enabled entities.
+
+## pdb_irr_as_set_fetch.py
+
+Download and refresh the local IRR dump cache used by batch AS-SET jobs.
+
+The interactive editor and save path use the live IRR lookup pool. This command
+maintains the separate bulk cache used by pdb_irr_as_set_cleanup and the periodic
+checker so those jobs do not issue tens of thousands of per-object mirror queries.
+
+Dry-run by default, --commit to download, like every other command in this suite.
+A dry run reports what each source would do and touches nothing: it makes no
+request, and the dump directory and its staging area are left alone, so it also
+answers on a cold host. That offline rule is why any *usable* cache is reported
+conditionally, however old it is: once the cache is valid the real run decides on
+the published serial and ignores file age, so only the reason string can say what
+that source's outcome actually turns on.
+
+Under --commit every source is attempted independently: a refresh that failed but
+kept a usable cache is "stale", one with no usable dump at all is "failed", and the
+remaining sources are refreshed either way. The command then exits non-zero,
+because the run otherwise looks successful while a registry silently stops
+refreshing and pdb_irr_as_set_cleanup --commit auto-prefixes from an ageing index.
+
+Usage:
+  manage pdb_irr_as_set_fetch [--source SOURCE] [--force] [--commit]
+                              [--dump-dir PATH] [--max-age-hours HOURS]
+
+## pdb_irr_as_set_status.py
+
+Periodic re-verification of Network.irr_as_set (#1973).
+
+Save-path validation and pdb_irr_as_set_cleanup only ever look at values that are
+syntactically wrong -- bare, placeholder, route-set, invalid. A correctly prefixed
+value is never re-checked by either, so RIPE::AS-GONE, whose object was deleted
+from RIPE last month, is invisible to every other batch job. That is also the class
+of row the cleanup campaign is busy creating, which is why this command exists:
+without it the data starts rotting again the moment an operator's object is
+deleted.
+
+Modeled on pdb_rir_status (#1942), as the spec directs, and sharing
+pdb_irr_as_set_cleanup's conventions so ops muscle memory transfers: dry-run by
+default, --commit, --dump-dir, --allow-stale-index.
+
+Every status=ok network with a value is swept on every run, rather than tracking
+which rows were saved during a lookup outage. That covers the save path's
+fail-open accepts with no extra field to keep in sync, and it is the only design
+that also covers rows written by a non-clean() writer.
+
+Each prefixed token is resolved against the local bulk dump index first and goes
+to the live pool only when the index does not hold it in its pinned source. The
+dump narrows the candidate set; the live pool is what makes a claim. Nothing is
+ever flagged off a dump miss alone -- a dump up to IRR_BULK_DUMP_MAX_AGE_HOURS
+old, or one registry silently failing to refresh, would otherwise mail operators
+that their working as-set is gone.
+
+Four outcomes are recorded (see IRR_AS_SET_STATUSES), and two more are run-local:
+`skipped` for a value carrying a token with no verifiable pin, and `deferred` for
+one the run's --max-lookups budget did not reach. Neither writes state, and both
+are reported separately so they are not silently folded into `unknown`.
+
+Without --commit the command never modifies the database and sends no mail.
+--commit records each outcome and mails the moved and gone ones, bounded by
+--max-notifications with irr_as_set_verify_notified as the cursor and
+--renotify-after-days as the reminder cadence. `unknown` is never
+mailed: the pool failing to answer is not news, and mailing it would turn an IRR
+outage into a mass notification.
+
+What this command deliberately does NOT do is remove or rewrite an operator's
+value. Its model, pdb_rir_status, removes the record after KEEP_RIR_STATUS days;
+wiping an operator's irr_as_set silently degrades their peers' filters and needs a
+ruling (#1973, still open), not an implementation decision. irr_as_set_missing_since
+is the field such an escalation would read, so that ruling costs no migration. Its
+own verification columns it does clear, once the verdict they carry is no longer
+about the value the network holds (see _retract).
+
+Ordering, for whoever schedules this: pdb_irr_as_set_fetch --commit must have run
+first, or --commit refuses on the dump-health guard (--allow-stale-index overrides,
+at the cost of spending the live-lookup budget on tokens the index should have
+answered for free). The defaults cap a run at --max-lookups 1000 / --max-notifications 100
+and --commit refuses 0 for either, so a first sweep over the whole set takes
+several passes -- a partial first run is the design, not a failure.
+
+Usage:
+  manage pdb_irr_as_set_status [--detail] [--dump-dir PATH] [--commit]
+                               [--max-lookups N] [--max-notifications N]
+                               [--renotify-after-days N] [--allow-stale-index]
 
 ## pdb_ixf_ixp_member_import.py
 

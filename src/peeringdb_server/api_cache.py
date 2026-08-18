@@ -2,15 +2,37 @@
 Handle loading of api-cache data.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
+from typing import TYPE_CHECKING, Any, Protocol
 
 from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 
 from peeringdb_server.pagination import UnlimitedIfNoPagePagination
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+    from rest_framework.request import Request
+
+    class _CacheViewset(Protocol):
+        """Minimal structural view of the DRF viewset APICacheLoader reads.
+
+        The concrete viewsets are built dynamically in rest.py and carry a
+        ``model`` attribute (a peeringdb handleref model class) that no base
+        class declares, so a Protocol captures exactly the surface used here.
+        """
+
+        request: Request
+        # peeringdb handleref model class; ``.handleref`` is a dynamic manager,
+        # so the class itself stays unconstrained.
+        model: Any
+        kwargs: dict[str, Any]
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +45,7 @@ class CacheRedirect(Exception):
     Argument should be an APICacheLoader instance.
     """
 
-    def __init__(self, loader):
+    def __init__(self, loader: APICacheLoader) -> None:
         super().__init__(self, "Result to be loaded from cache")
         self.loader = loader
 
@@ -38,7 +60,13 @@ class APICacheLoader:
     and if it does allows you to provide the cached result.
     """
 
-    def __init__(self, viewset, qset, filters, query_adjusted=False):
+    def __init__(
+        self,
+        viewset: _CacheViewset,
+        qset: QuerySet[Any],
+        filters: dict[str, Any],
+        query_adjusted: bool = False,
+    ) -> None:
         request = viewset.request
         self.request = request
         self.qset = qset
@@ -59,7 +87,7 @@ class APICacheLoader:
             f"{viewset.model.handleref.tag}-{self.depth}.json",
         )
 
-    def qualifies(self):
+    def qualifies(self) -> bool:
         """
         Check if request qualifies for a cache load.
         """
@@ -95,7 +123,7 @@ class APICacheLoader:
 
         return True
 
-    def load(self):
+    def load(self) -> dict[str, Any] | Response:
         """
         Load the cached response according to tag and depth.
         """
@@ -114,7 +142,7 @@ class APICacheLoader:
                 data = data[: self.limit]
 
             # apply page-based pagination
-            meta = {"generated": os.path.getmtime(self.path)}
+            meta: dict[str, Any] = {"generated": os.path.getmtime(self.path)}
             if self.page:
                 paginator = UnlimitedIfNoPagePagination()
                 data = paginator.paginate_queryset(data, self.request)
@@ -139,7 +167,7 @@ class APICacheLoader:
                 },
             )
 
-    def filter_fields(self, row):
+    def filter_fields(self, row: dict[str, Any]) -> None:
         """
         Remove any unwanted fields from the resultset
         according to the `fields` filter specified in the request.

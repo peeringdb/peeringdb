@@ -73,9 +73,9 @@ class TestQueryDictImmutability(ClientCase):
             },
             format="multipart",
         )
-        assert (
-            r.status_code != 500
-        ), f"PUT with form data caused server error: {r.content}"
+        assert r.status_code != 500, (
+            f"PUT with form data caused server error: {r.content}"
+        )
 
     def test_network_post_with_form_data(self):
         """
@@ -97,9 +97,9 @@ class TestQueryDictImmutability(ClientCase):
             },
             format="multipart",
         )
-        assert (
-            r.status_code != 500
-        ), f"POST with form data caused server error: {r.content}"
+        assert r.status_code != 500, (
+            f"POST with form data caused server error: {r.content}"
+        )
 
     def test_facility_post_with_form_data_suggest(self):
         """
@@ -125,9 +125,9 @@ class TestQueryDictImmutability(ClientCase):
             format="multipart",
         )
         # Should not raise AttributeError
-        assert (
-            r.status_code != 500
-        ), f"POST suggest with form data caused server error: {r.content}"
+        assert r.status_code != 500, (
+            f"POST suggest with form data caused server error: {r.content}"
+        )
 
     def test_network_post_with_form_data_suggest(self):
         """
@@ -149,6 +149,6 @@ class TestQueryDictImmutability(ClientCase):
             format="multipart",
         )
         # Should not raise AttributeError
-        assert (
-            r.status_code != 500
-        ), f"POST suggest with form data caused server error: {r.content}"
+        assert r.status_code != 500, (
+            f"POST suggest with form data caused server error: {r.content}"
+        )

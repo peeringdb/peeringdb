@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.http import HttpRequest
 
 
-def theme_mode(request):
+def theme_mode(request: HttpRequest) -> dict[str, str | bool]:
     """
     Add theme preferences to all template contexts
     """
@@ -12,7 +15,7 @@ def theme_mode(request):
     return {"theme_mode": theme_mode, "prefers_dark_mode": is_dark_mode}
 
 
-def ui_version(request):
+def ui_version(request: HttpRequest) -> dict[str, bool]:
     """
     Context processor to determine the UI version to render
     based on user's opt-in/opt-out flags.
@@ -28,14 +31,14 @@ def ui_version(request):
     return context
 
 
-def admin_config(request):
+def admin_config(request: HttpRequest) -> dict[str, object]:
     """
     Context processor to provide suggest entity org configuration values
     """
     return {"SUGGEST_ENTITY_ORG": settings.SUGGEST_ENTITY_ORG}
 
 
-def notification_banner(request):
+def notification_banner(request: HttpRequest) -> dict[str, object]:
     """
     Context processor that exposes the site-wide notification banner
     content to every template.

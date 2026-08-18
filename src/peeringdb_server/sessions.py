@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 
 from django.contrib.sessions.backends.cache import SessionStore as CacheSessionStore
@@ -19,7 +21,7 @@ class SessionStore(CacheSessionStore):
 
     _PROBE_PREFIX = "__pdb_session_probe__"
 
-    def create(self):
+    def create(self) -> None:
         token = uuid.uuid4().hex
         probe_key = f"{self._PROBE_PREFIX}{token}"
         self._cache.set(probe_key, token, 5)

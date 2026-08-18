@@ -5,11 +5,16 @@ description = "source code for PeeringDB.com"
 readme = "README.md"
 authors = [{ name = "PeeringDB", email = "support@peeringdb.com" }]
 license = { text = "BSD-2-Clause" }
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 
 
 dependencies = [
     # core requirements
+    # deliberate: we stay on 5.2 LTS for now, 6.x is its own MR. prerequisites
+    # for that: django 6.x requires python >= 3.12 (declared floor here is
+    # 3.11; the runtime image is already 3.12), grappelli 4 -> 5, and for 6.1
+    # specifically djangorestframework 3.18.0, since 3.17.1 imports
+    # django.utils.cache.cc_delim_re which 6.1 removed.
     "django>=5.2,<6",
     "django-inet>=1.1.1",
     "django-handleref>=2",
@@ -33,25 +38,34 @@ dependencies = [
     "django-cors-headers>=3.14.0",
     "django-countries>=7.5.1",
     "django-crispy-forms>=2.0",
-    # v4 has breaking changes and needs to be migrated
+    # 4.x floor: anything older does not read the CONTENT_SECURITY_POLICY dict
+    # we now set at all -- it falls back to its own CSP_DEFAULT_SRC default and
+    # emits a bare default-src 'self', dropping every third-party source the
+    # site needs. the opposite pairing (4.x still reading the old CSP_* names)
+    # is the one that drops the header entirely; tests/test_csp.py covers it.
     # https://github.com/mozilla/django-csp/blob/main/CHANGES.md#40
-    "django-csp>=3.7,<4",
+    "django-csp>=4,<5",
     "django-debug-toolbar>=4.0.0",
 
-    # elasticsearch-dsl / django-elasticsearch-dsl version is
-    # synced to major elasticsearch version and needs to be upgraded
-    # when elasticsearch is upgraded
+    # the client major must not exceed the server major -- a 9.x client sends
+    # compatible-with=9, which an 8.x server rejects. Prod runs server 9.1.x;
+    # the dev/local compose stacks track the same major so the search tests
+    # exercise the pairing that actually ships.
     # https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
     #
-    # 8.18 has breaking changes for us it seems, returning empty "org" objects
-    # in the results at sq["_source"]["org"]["id"] for SOME entities.
-    "elasticsearch>=8,<8.18",
-    "elasticsearch-dsl>=8,<8.18",
-    "django-elasticsearch-dsl>=8,<8.18",
+    # elasticsearch-dsl is gone: the DSL lives in the client as
+    # elasticsearch.dsl and d-e-dsl imports it from there.
+    # <9.4 cap: with elasticsearch-py >= 9.4, d-e-dsl 9.0 silently indexes every
+    # document as an empty {} -- its field-preparer list is built in __init__
+    # from `_fields`, which the newer dsl ObjectBase leaves empty at that point.
+    # No error is raised anywhere; search just returns nothing. Re-test before
+    # raising the cap.
+    "elasticsearch>=9.1,<9.4",
+    "django-elasticsearch-dsl>=9,<10",
 
     "django-extensions>=1.3.3",
     "django-grainy>=2",
-    # grappelli 5.0 requires django 6
+    # grappelli 5.0 requires django 6, so this cap moves with the django one
     "django-grappelli>=2.10.1,<5",
     "django-import-export>=3",
     "django-oauth-toolkit>=2",
@@ -66,7 +80,7 @@ dependencies = [
     "django-vanilla-views>=1.0.2",
     "django-security-keys>=1.1",
     "googlemaps>=2.5.1",
-    "grainy>=1.7,<2",
+    "grainy>=1.7",
     "jsonschema>=2.6.0",
     "markdown>=2.6.7",
     "passlib>=1.7.1",
@@ -86,11 +100,17 @@ dependencies = [
     "django-reversion>=5",
     "certifi>=2017.11.5",
     "tld>=0.7.6",
-    # deprecated from drf -- used by rest swagger
+    # deprecated from drf -- used by rest swagger. imports pkg_resources, but
+    # is never actually imported at runtime; dropping it together with
+    # django-rest-swagger is its own ticket.
     "coreapi>=2.3.1",
 
-    # needed for pkg_resources used by some dependencies (removed in setuptools 82)
-    "setuptools>=80.9.0,<82",
+    # setuptools is deliberately NOT a direct dependency. it was only ever here
+    # for pkg_resources, which twentyc-rpc needed at import; that client is now
+    # vendored as peeringdb_server.rest_client, and nothing we import at
+    # runtime touches pkg_resources or distutils. the remaining importers are
+    # all unreachable: passlib.pwd and coreapi are never imported, and
+    # django_countries and cffi both guard their imports.
 ]
 
 [project.urls]
@@ -111,18 +131,29 @@ dev = [
     "selenium>=4.4.3",
     "webdriver-manager>=3.8.3",
     # linting
-    "ruff>=0.6",
-    "pre-commit>=2.13",
+    # keep the floor in step with .pre-commit-config.yaml's ruff-pre-commit rev --
+    # pre-commit builds hooks in an isolated env and ignores uv.lock, so a loose
+    # floor lets the two drift and produce conflicting formatting
+    "ruff>=0.16,<0.17",
+    # pre-commit-hooks v6.0.0 declares minimum_pre_commit_version: 3.2.0 on
+    # check-added-large-files / end-of-file-fixer / trailing-whitespace
+    "pre-commit>=3.2",
+    "mypy>=2.3",
     # docs
     "pymdgen>=1.1.0",
     "mkdocs>=1.1.2",
-    "markdown-include>=0.5,<1",
+    "markdown-include>=0.5",
     "pydot>=1.4.2",
+    # drf asserts on this when generating the openapi schema; the schema is a
+    # build-time artifact served as a static file, so it is not needed at runtime
+    "inflection>=0.5",
 ]
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202604" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202607" }
+# until released
+peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202607" }
 # from branch until passkey support is released
 django-security-keys = { git = "https://github.com/20c/django-security-keys.git", rev = "202604-fixes" }
 # GH #2001: delegated-stats validation + RdapBootstrapError, until released
@@ -161,3 +192,78 @@ ignore = ["UP031"]
     "PLR2004", # Magic value used in comparison, ...
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
+
+# Type-checking is adopted incrementally (#1933): lenient by default,
+# strictly enforced on the fully-typed modules listed below.
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "src"
+files = ["src/peeringdb_server"]
+explicit_package_bases = true
+ignore_missing_imports = true
+follow_imports = "silent"  # only check listed files, not their imports
+exclude = ['/migrations/']
+
+# Fully-typed modules: annotations enforced, so a new untyped/incomplete def
+# fails the check. Grow this list as more modules are annotated.
+[[tool.mypy.overrides]]
+module = [
+    "peeringdb_server.api_cache",
+    "peeringdb_server.api_key_views",
+    "peeringdb_server.apps",
+    "peeringdb_server.auth",
+    "peeringdb_server.auto_approval",
+    "peeringdb_server.client_adaptor.backend",
+    "peeringdb_server.client_adaptor.load",
+    "peeringdb_server.context",
+    "peeringdb_server.context_processors",
+    "peeringdb_server.data_views",
+    "peeringdb_server.db_replica",
+    "peeringdb_server.db_router",
+    "peeringdb_server.exceptions",
+    "peeringdb_server.export_kmz",
+    "peeringdb_server.forms",
+    "peeringdb_server.gendocs",
+    "peeringdb_server.geo",
+    "peeringdb_server.import_views",
+    "peeringdb_server.inet",
+    "peeringdb_server.log",
+    "peeringdb_server.mail",
+    "peeringdb_server.maintenance",
+    "peeringdb_server.managers",
+    "peeringdb_server.mock",
+    "peeringdb_server.oauth_views",
+    "peeringdb_server.pagination",
+    "peeringdb_server.permissions",
+    "peeringdb_server.renderers",
+    "peeringdb_server.request",
+    "peeringdb_server.sessions",
+    "peeringdb_server.settings",
+    "peeringdb_server.stats",
+    "peeringdb_server.templatetags.pdb_two_factor_ext",
+    "peeringdb_server.templatetags.util",
+    "peeringdb_server.two_factor_ui_next",
+    "peeringdb_server.util",
+    "peeringdb_server.validators",
+    "peeringdb_server.verified_update.const",
+    "peeringdb_server.verified_update.views",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+
+# Legacy modules with pre-existing findings; exempted until annotated later.
+[[tool.mypy.overrides]]
+module = [
+    "peeringdb_server.admin",
+    "peeringdb_server.admin_commandline_tools",
+    "peeringdb_server.deskpro",
+    "peeringdb_server.management.commands.pdb_api_test",
+    "peeringdb_server.management.commands.pdb_load_data",
+    "peeringdb_server.models",
+    "peeringdb_server.rest_throttles",
+    "peeringdb_server.search_v2",
+    "peeringdb_server.serializers",
+    "peeringdb_server.views",
+]
+ignore_errors = true

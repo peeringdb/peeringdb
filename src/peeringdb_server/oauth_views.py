@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import json
 import logging
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import resolve_url
 from django.urls import reverse
 from django.utils import timezone
@@ -19,13 +22,16 @@ from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
 from oauth2_provider.views.mixins import OAuthLibMixin
 
-log = logging.getLogger("oauth2_provider")
+if TYPE_CHECKING:
+    from oauth2_provider.models import AbstractApplication
+
+log: logging.Logger = logging.getLogger("oauth2_provider")
 
 
 class LoginRequiredMixin(AccessMixin):
     """Verify that the current user is authenticated."""
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         try:
             request.get_signed_cookie("oauth_session")
         except (KeyError, BadSignature):
@@ -33,7 +39,7 @@ class LoginRequiredMixin(AccessMixin):
         response = super().dispatch(request, *args, **kwargs)
         return response
 
-    def handle_no_permission(self):
+    def handle_no_permission(self) -> HttpResponseRedirect:
         if self.raise_exception:
             raise PermissionDenied(self.get_permission_denied_message())
 
@@ -65,11 +71,17 @@ class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
 
     """
 
-    def dispatch(self, request, *args, **kwargs):
-        self.oauth2_data = {}
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        # heterogeneous OAuth request data (scopes, uris, app instance, claims)
+        self.oauth2_data: dict[str, Any] = {}
         return super().dispatch(request, *args, **kwargs)
 
-    def error_response(self, error, application, **kwargs):
+    def error_response(
+        self,
+        error: OAuthToolkitError,
+        application: AbstractApplication | None,
+        **kwargs: Any,
+    ) -> HttpResponse:
         """
         Handle errors either by redirecting to redirect_uri with a json in the body containing
         error details or providing an error response
@@ -82,7 +94,9 @@ class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
         status = error_response["error"].status_code
         return self.render_to_response(error_response, status=status)
 
-    def redirect(self, redirect_to, application):
+    def redirect(
+        self, redirect_to: str, application: AbstractApplication | None
+    ) -> OAuth2ResponseRedirect:
         if application is None:
             # The application can be None in case of an error during app validation
             # In such cases, fall back to default ALLOWED_REDIRECT_URI_SCHEMES
@@ -92,7 +106,7 @@ class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
         return OAuth2ResponseRedirect(redirect_to, allowed_schemes)
 
 
-RFC3339 = "%Y-%m-%dT%H:%M:%SZ"
+RFC3339: str = "%Y-%m-%dT%H:%M:%SZ"
 
 
 class AuthorizationView(BaseAuthorizationView, FormView):
@@ -121,7 +135,8 @@ class AuthorizationView(BaseAuthorizationView, FormView):
 
     skip_authorization_completely = False
 
-    def get_initial(self):
+    def get_initial(self) -> dict[str, Any]:
+        # idiomatic Django form-initial mapping of mixed value types
         # TODO: move this scopes conversion from and to string into a utils function
         scopes = self.oauth2_data.get("scope", self.oauth2_data.get("scopes", []))
         initial_data = {
@@ -139,7 +154,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         }
         return initial_data
 
-    def form_valid(self, form):
+    def form_valid(self, form: AllowForm) -> HttpResponse:
         client_id = form.cleaned_data["client_id"]
         application = get_application_model().objects.get(client_id=client_id)
         credentials = {
@@ -176,7 +191,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         log.debug(f"Success url for the request: {self.success_url}")
         return self.redirect(self.success_url, application)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         try:
             scopes, credentials = self.validate_authorization_request(request)
         except OAuthToolkitError as error:
@@ -263,7 +278,7 @@ class AuthorizationView(BaseAuthorizationView, FormView):
 
         return self.render_to_response(self.get_context_data(**kwargs))
 
-    def handle_prompt_login(self):
+    def handle_prompt_login(self) -> HttpResponseRedirect:
         path = self.request.build_absolute_uri()
         resolved_login_url = resolve_url(self.get_login_url())
 
@@ -290,11 +305,11 @@ class AuthorizationView(BaseAuthorizationView, FormView):
         )
 
 
-Application = get_application_model()
+Application: type[AbstractApplication] = get_application_model()
 
 
 class OAuthMetadataView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         issuer_url = oauth2_settings.OIDC_ISS_ENDPOINT
 
         if not issuer_url:

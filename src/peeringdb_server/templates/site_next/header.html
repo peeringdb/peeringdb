@@ -115,8 +115,10 @@ $(window).bind("load", function() {
   }
 
   function getCSRFToken() {
+    // the hidden csrfmiddlewaretoken input went away with the POST search
+    // form (#2032); PeeringDB.csrf is the same token, set above
     var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    return csrfToken ? csrfToken.value : '';
+    return csrfToken ? csrfToken.value : (PeeringDB.csrf || '');
   }
 });
 </script>

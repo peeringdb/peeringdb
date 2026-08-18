@@ -5,16 +5,23 @@ These are needed for filling form-selects for editable
 mode in UX.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import django_countries
 import django_peeringdb.const as const
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
 from peeringdb_server.models import Network, Organization, Sponsorship
 
 from . import models
+
+if TYPE_CHECKING:
+    from django.utils.functional import Promise
 
 # def _(x):
 #    return x
@@ -60,10 +67,13 @@ const.ORG_GROUPS = (("member", "member"), ("admin", "admin"))
 const.POC_ROLES = sorted(const.POC_ROLES, key=lambda x: x[1])
 const.POC_VISIBILITY = [r for r in const.VISIBILITY if r[0] != "Private"]
 
-BOOL_CHOICE = ((False, _("No")), (True, _("Yes")))
+BOOL_CHOICE: tuple[tuple[bool, str | Promise], ...] = (
+    (False, _("No")),
+    (True, _("Yes")),
+)
 const.BOOL_CHOICE_STR = (("False", _("No")), ("True", _("Yes")))
 
-BOOL_CHOICE_WITH_OPT_OUT = (
+BOOL_CHOICE_WITH_OPT_OUT: tuple[tuple[bool | None, str | Promise], ...] = (
     (None, _("Not Disclosed")),
     (False, _("No")),
     (True, _("Yes")),
@@ -77,7 +87,7 @@ const.BOOL_CHOICE_WITH_OPT_OUT_STR = (
 const.REAUTH_PERIODS = models.REAUTH_PERIODS
 
 
-def countries_w_blank(request):
+def countries_w_blank(request: HttpRequest) -> JsonResponse:
     """
     Return all valid countries and their country codes with a blank field.
 
@@ -96,7 +106,7 @@ def countries_w_blank(request):
     )
 
 
-def countries(request):
+def countries(request: HttpRequest) -> JsonResponse:
     """
     Return all valid countries and their country codes.
 
@@ -114,7 +124,7 @@ def countries(request):
     )
 
 
-def sponsorships(request):
+def sponsorships(request: HttpRequest) -> JsonResponse:
     """
     Return all sponsorships.
     """
@@ -135,7 +145,7 @@ def sponsorships(request):
 
 
 @login_required
-def facilities(request):
+def facilities(request: HttpRequest) -> JsonResponse:
     """
     Return all valid facilities with id and name.
     """
@@ -150,7 +160,7 @@ def facilities(request):
     )
 
 
-def enum(request, name):
+def enum(request: HttpRequest, name: str) -> JsonResponse:
     """
     Return the list of valid values for the given enum type.
 
@@ -208,7 +218,7 @@ def enum(request, name):
     )
 
 
-def asns(request):
+def asns(request: HttpRequest) -> JsonResponse:
     """
     Return a JSON response with a list of asns that the user's
     organizations own to use for selecting asn in netixlan
@@ -226,7 +236,7 @@ def asns(request):
     return JsonResponse({"asns": rv})
 
 
-def my_organizations(request):
+def my_organizations(request: HttpRequest) -> JsonResponse:
     """
     Return a JSON response with a list of organization names and ids
     that the requesting user is a member of.
@@ -243,7 +253,7 @@ def my_organizations(request):
     )
 
 
-def organizations(request):
+def organizations(request: HttpRequest) -> JsonResponse:
     """
     Return a JSON response with a list of organization names and ids.
     This is currently only used by the org-merge-tool which is only
@@ -263,7 +273,7 @@ def organizations(request):
     )
 
 
-def languages(request):
+def languages(request: HttpRequest) -> JsonResponse:
     """
     Return all available languages/locales.
 
@@ -282,7 +292,7 @@ def languages(request):
     return JsonResponse({"locales": locales})
 
 
-def campus_facilities(request):
+def campus_facilities(request: HttpRequest) -> JsonResponse:
     """
     Returns a JSON response with a dict of facilities that are part
     of a campus

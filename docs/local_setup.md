@@ -46,6 +46,7 @@ Currently automatic api cache updates aren't scheduled on local instances, as th
 import subprocess
 import time
 
+
 def run_commands():
     """
     Run the specified shell commands every 5 minutes.
@@ -53,6 +54,7 @@ def run_commands():
     while True:
         subprocess.run(["Ctl/local/exec.sh", "pdb_api_cache", "--depth", "0"])
         time.sleep(1000)
+
 
 run_commands()
 ```

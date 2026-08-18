@@ -5,6 +5,8 @@ This is mostly DEPRECATED at this point and any new settings should be directly
 defined in mainsite/settings.
 """
 
+from __future__ import annotations
+
 from django.conf import settings
 
 PEERINGDB_VERSION = getattr(settings, "PEERINGDB_VERSION", "")

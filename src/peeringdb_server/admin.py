@@ -108,7 +108,11 @@ from peeringdb_server.models import (
     VerificationQueueItem,
 )
 from peeringdb_server.util import coerce_ipaddr, round_decimal
-from peeringdb_server.validators import validate_account_name, validate_name
+from peeringdb_server.validators import (
+    validate_account_name,
+    validate_irr_as_set_on_change,
+    validate_name,
+)
 
 from . import forms
 
@@ -1651,6 +1655,15 @@ class NetworkAdminForm(StatusForm):
             self.cleaned_data["name"] = None
             raise ValidationError(_("Name is already in use by another network"))
         return name
+
+    def clean_irr_as_set(self):
+        # #1973: change-gated like the serializer -- enforce only when the value
+        # changes; mgmt/bulk/import paths bypass the form and stay format-only.
+        value = self.cleaned_data.get("irr_as_set", "")
+        if not value:
+            return value
+        old = self.instance.irr_as_set if self.instance and self.instance.pk else ""
+        return validate_irr_as_set_on_change(value, old)
 
 
 class NetworkAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin):

@@ -55,6 +55,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.middleware.csrf import REASON_NO_CSRF_COOKIE
 from django.shortcuts import redirect
 from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
@@ -110,6 +111,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.mail import mail_username_retrieve
 from peeringdb_server.models import (
+    IRR_AS_SET_STATUS_UNKNOWN,
     IXP_UPDATE_EXCLUDE_FIELDS,
     PARTNERSHIP_LEVELS,
     REFTAG_MAP,
@@ -160,6 +162,7 @@ from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import (
     generate_social_media_render_data,
     get_template,
+    no_store_private,
     objfac_tupple,
     objfac_tupple_ui_next,
     render,
@@ -330,17 +333,29 @@ def make_env(**data):
     return env
 
 
-def view_http_error_404(request):
+def view_http_error_404(request, exception=None):
+    # `exception` is passed by django when this runs as `handler404`; the
+    # direct call sites in the entity views pass only `request`
     template = get_template(request, "site/error_404.html")
     return HttpResponseNotFound(template.render(make_env(), request))
 
 
-def view_http_error_403(request):
+def view_http_error_403(request, exception=None):
     template = get_template(request, "site/error_403.html")
     return HttpResponseForbidden(template.render(make_env(), request))
 
 
 def view_http_error_csrf(request, reason):
+    # #2032: django's `REASON_NO_CSRF_COOKIE` ("CSRF cookie not set.") is
+    # misleading with `CSRF_USE_SESSIONS` enabled, where no CSRF cookie exists -
+    # the usual cause is an expired session or blocked cookies, so tell the
+    # user that instead. Every other rejection reason (bad origin, referer
+    # checks, token mismatch) is accurate and not fixed by reloading, so it
+    # passes through untouched.
+    if reason == REASON_NO_CSRF_COOKIE:
+        reason = translation.gettext(
+            "Your session expired or cookies are blocked; reload and retry."
+        )
     return JsonResponse({"non_field_errors": [reason]}, status=403)
 
 
@@ -1248,6 +1263,7 @@ def view_username_change(request):
         return JsonResponse({"status": "ok", "username": request.user.username})
 
 
+@no_store_private
 @ensure_csrf_cookie
 @require_http_methods(["GET"])
 def view_username_retrieve(request):
@@ -1259,6 +1275,9 @@ def view_username_retrieve(request):
     return render(request, "site/username-retrieve.html", env)
 
 
+# `no_store_private` outermost so the header lands on every return
+# path, including rate-limited and form-error JsonResponses (#2032)
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
@@ -1331,6 +1350,7 @@ def view_username_retrieve_complete(request):
     return render(request, "site/username-retrieve-complete.html", env)
 
 
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @transaction.atomic
@@ -1407,6 +1427,7 @@ def view_password_reset(request):
         return JsonResponse({"status": "ok"})
 
 
+@no_store_private
 @csrf_protect
 @ensure_csrf_cookie
 @transaction.atomic
@@ -2855,6 +2876,40 @@ def format_last_updated_time(last_updated_time):
         return last_updated_time.split(".")[0].rstrip("Z") + "Z"
 
 
+def format_datetime_field(value):
+    """
+    Render a model DateTimeField the way format_last_updated_time renders the
+    serializer's already-stringified timestamps.
+
+    Needed because format_last_updated_time only handles `str` and `None` — handed
+    a live `datetime` it falls off the end and returns None. The server-side-only
+    fields (#1973) are read straight off the model, never through the
+    serializer, so they arrive as datetimes.
+    """
+    return format_last_updated_time(value.isoformat() if value else None)
+
+
+def irr_as_set_status_display(net):
+    """
+    Human-readable irr_as_set verification state for the network record (#1973,
+    which requires the state be shown here).
+
+    `unknown` renders empty rather than "Not yet verified": until the
+    pdb_irr_as_set_status cron has swept, every network is unknown, and a label on
+    every record that says nothing is noise. A flagged value carries its
+    missing_since inline, so "since when" costs no second row.
+    """
+    status = net.irr_as_set_status
+    if not status or status == IRR_AS_SET_STATUS_UNKNOWN:
+        return ""
+
+    label = net.get_irr_as_set_status_display()
+    since = format_datetime_field(net.irr_as_set_missing_since)
+    if since:
+        return f"{label} (since {since})"
+    return label
+
+
 @ensure_csrf_cookie
 def view_network(request, id):
     """
@@ -2975,7 +3030,7 @@ def view_network(request, id):
             },
             {
                 "name": "irr_as_set",
-                "label": _("IRR as-set/route-set"),
+                "label": _("IRR as-set"),
                 "help_text": field_help(Network, "irr_as_set"),
                 "notify_incomplete": True,
                 "value": network_d.get("irr_as_set", dismiss),
@@ -3136,6 +3191,24 @@ def view_network(request, id):
                 "label": _("RIR Status Updated"),
                 "type": "fmt-text",
                 "value": format_last_updated_time(network_d.get("rir_status_updated")),
+            },
+            # #1973: the verification state is server-side only, so it is read
+            # off `network` and not `network_d` -- these fields are deliberately
+            # absent from NetworkSerializer, and the public form of the flag arrives
+            # later as a #1742 metadata key.
+            {
+                "name": "irr_as_set_status",
+                "readonly": True,
+                "label": _("IRR AS-SET Status"),
+                "type": "fmt-text",
+                "value": irr_as_set_status_display(network),
+            },
+            {
+                "name": "irr_as_set_verified",
+                "readonly": True,
+                "label": _("IRR AS-SET Verified"),
+                "type": "fmt-text",
+                "value": format_datetime_field(network.irr_as_set_verified),
             },
             {
                 "name": "logo",
@@ -4015,6 +4088,10 @@ def verify_token(self, token):
 EmailDevice.verify_token = verify_token
 
 
+# also covers `two_factor_ui_next.LoginView`, which subclasses this (#2032).
+# two_factor's own `never_cache` already emits `private` + `no-store` here;
+# this keeps the guarantee local rather than relying on the upstream decorator
+@method_decorator(no_store_private, name="dispatch")
 class LoginView(TwoFactorLoginView):
     """
     Extend the `LoginView` class provided

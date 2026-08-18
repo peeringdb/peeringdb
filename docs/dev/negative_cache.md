@@ -54,6 +54,7 @@ When making changes to the settings above:
 
 ```python
 from django.core.cache import cache
+
 ...
 cache.clear()
 ```

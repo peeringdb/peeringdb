@@ -136,7 +136,9 @@ therefore the value of `"my_organizations"` in the response is NOT arbitrary.
 URL routing needs to be set up:
 
 ```py
+urlpatterns = [
     url(r"^data/my_organizations$", peeringdb_server.data_views.my_organizations),
+]
 ```
 
 #### `static/peeringdb.js`

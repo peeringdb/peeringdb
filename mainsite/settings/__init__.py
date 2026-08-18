@@ -10,6 +10,7 @@ import django.conf.global_settings
 import django.conf.locale
 import structlog
 import urllib3
+from django.core.exceptions import ImproperlyConfigured
 from redis.backoff import NoBackoff
 from redis.retry import Retry
 
@@ -301,12 +302,19 @@ def get_cache_backend(cache_name):
 
     if cache_backend.startswith("DatabaseCache."):
         _, location = cache_backend.split(".", 1)
+        location = location.strip()
+        if location:
+            return {
+                "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+                "LOCATION": location,
+                "OPTIONS": options,
+            }
 
-        return {
-            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-            "LOCATION": location.strip(),
-            "OPTIONS": options,
-        }
+    # #2032: fail at startup on an unrecognized backend name instead of
+    # returning None, which boots fine and then breaks per-request
+    raise ImproperlyConfigured(
+        f"Unrecognized cache backend {cache_backend!r} for {cache_name}"
+    )
 
 
 _ = lambda s: s
@@ -449,6 +457,10 @@ set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 set_option("API_THROTTLE_ORGANIZATION_USERS", "1/second")
+# #1973: rate for the session-authenticated editor IRR lookup endpoint. Sized for a
+# debounced completion widget, not bulk querying -- PeeringDB must not become a free
+# IRR query proxy. Cache hits skip the pool, so this bounds distinct names per user.
+set_option("API_THROTTLE_IRR_LOOKUP", "20/minute")
 
 
 # Configuration for melissa request rate limiting in the api (#1124)
@@ -537,6 +549,96 @@ set_option("DATA_QUALITY_MAX_PREFIXLEN_V6", 116)
 
 # maximum value to allow for irr set hierarchy depth
 set_option("DATA_QUALITY_MAX_IRR_DEPTH", 3)
+
+# #1973: on a changed irr_as_set, require a SOURCE:: prefix and reject route-sets;
+# runtime kill-switch for those rules (format-only validation always runs).
+set_option("IRR_AS_SET_REQUIRE_SOURCE", True)
+
+# #1973/#1974: cap on set names in a changed irr_as_set value; 0 = uncapped.
+# #1973 is the unambiguous SOURCE:: prefix rule only; the single-set cap is #1974
+# and ships wired-but-disabled (default 0) — it gets a dated soft/hard rollout, so
+# multiple properly-prefixed sets stay valid for now. Set to a positive integer to
+# enforce a cap.
+set_option("IRR_AS_SET_MAX_SETS", 0)
+
+# #1973: whether a changed irr_as_set is checked for live existence in its pinned
+# registry (via the irr.py lookup service). The syntactic rules above always run;
+# this gates only the network existence check, so it can be turned off
+# independently — in tests (see run_tests.py) or if IRR infra access is
+# unavailable — without weakening the format enforcement.
+set_bool("IRR_AS_SET_VERIFY_EXISTENCE", True)
+
+# #1973: the IRR lookup service — a pool of full-mirror IRRd servers tried in
+# order to answer "which registries hold object X?" / "does X exist in S?".
+# Each entry is a dict {host, port, timeout}; the transport is IRRd's port-43
+# whois query interface (source-pinned RPSL queries + the `!s-lc` mirror listing).
+# NTT mirrors all but one of the IRR_SOURCE registries and RADB carries REACH, so
+# the two together cover all of them (NESTEGG and PANIX were retired from the list
+# in the #1973 prune). This is deployment
+# config (which servers, ports, timeouts) — override in prod via the
+# IRR_LOOKUP_SERVERS env var as a Python-literal list of dicts.
+IRR_LOOKUP_SERVERS = [
+    {"host": "rr.ntt.net", "port": 43, "timeout": 5},
+    {"host": "whois.radb.net", "port": 43, "timeout": 5},
+]
+if os.environ.get("IRR_LOOKUP_SERVERS"):
+    IRR_LOOKUP_SERVERS = ast.literal_eval(os.environ["IRR_LOOKUP_SERVERS"])
+
+# how long (seconds) an IRR lookup result is cached in the "negative" Redis cache
+set_option("IRR_LOOKUP_CACHE_TTL", 300)
+
+# per-query timeout (seconds) used when a server dict omits its own "timeout"
+set_option("IRR_LOOKUP_DEFAULT_TIMEOUT", 5)
+
+# #1973: downloaded IRR dumps used by batch cleanup/checker jobs. The fetch
+# command refreshes this cache; interactive editor/save checks use irr.py.
+set_option("IRR_BULK_DUMP_DIR", os.path.join(API_CACHE_ROOT, "irr"))
+set_option("IRR_BULK_DUMP_MAX_AGE_HOURS", 24)
+set_option("IRR_BULK_DUMP_TIMEOUT", 30)
+# Compressed and expanded safety bounds for a single registry dump: sanity
+# ceilings against a pathological or hostile response, not a tight fit. Measured
+# 2026-07-30 the largest is radb.db.gz at 25 MB compressed / 411 MB expanded, so
+# these leave ~85x and ~40x headroom -- deliberate, since breaching either bound
+# makes the source refuse to refresh and these exports grow over time.
+set_option("IRR_BULK_DUMP_MAX_BYTES", 2 * 1024 * 1024 * 1024)
+set_option("IRR_BULK_DUMP_MAX_UNCOMPRESSED_BYTES", 16 * 1024 * 1024 * 1024)
+
+# #1973/#1974: which NetworkContact roles receive the irr_as_set outreach mail
+# (ambiguous / unresolvable value, and the single-set cap nudge) sent by
+# pdb_irr_as_set_cleanup / pdb_irr_as_set_notify. Matched case-insensitively
+# against NetworkContact.role; empty disables notifications. Defaults to the
+# operational roles (== NetworkContact.TECH_ROLES), same as RIR_STATUS_NOTIFY_ROLES.
+set_option(
+    "IRR_AS_SET_NOTIFY_ROLES",
+    [
+        "technical",
+        "noc",
+        "policy",
+    ],
+)
+
+# #1974: dated rollout of the single-set cap (IRR_AS_SET_MAX_SETS), staged like
+# MFA_FORCE_SOFT_START / _HARD_START. Both unset (default) = the cap is enforced
+# immediately whenever IRR_AS_SET_MAX_SETS > 0 (legacy on/off). With a hard date
+# the cap is enforced only on/after it; a soft date with no hard date is warn-only
+# (the nudge mail goes out, the save is still accepted). YYYY-MM-DD.
+set_option("IRR_AS_SET_CAP_SOFT_START", None, envvar_type=str)
+if IRR_AS_SET_CAP_SOFT_START:
+    try:
+        IRR_AS_SET_CAP_SOFT_START = datetime.strptime(
+            IRR_AS_SET_CAP_SOFT_START, "%Y-%m-%d"
+        )
+    except ValueError:
+        raise ValueError("IRR_AS_SET_CAP_SOFT_START must be a YYYY-MM-DD date")
+
+set_option("IRR_AS_SET_CAP_HARD_START", None, envvar_type=str)
+if IRR_AS_SET_CAP_HARD_START:
+    try:
+        IRR_AS_SET_CAP_HARD_START = datetime.strptime(
+            IRR_AS_SET_CAP_HARD_START, "%Y-%m-%d"
+        )
+    except ValueError:
+        raise ValueError("IRR_AS_SET_CAP_HARD_START must be a YYYY-MM-DD date")
 
 # minimum value to allow for speed on an netixlan (currently 50Mbit)
 set_option("DATA_QUALITY_MIN_SPEED", 50)
@@ -687,6 +789,10 @@ for cache_name in cache_names:
 # When enabled, redis cache errors will be silently ignored
 # rather than crashing the request
 set_bool("DJANGO_REDIS_IGNORE_EXCEPTIONS", True)
+
+# Log the exceptions swallowed above — without this a cache outage is
+# indistinguishable from a client cookie problem (#2032)
+set_bool("DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS", True)
 
 # When the rate-limit cache is unreachable, allow requests through instead
 # of treating "unknown" as "over limit" (django-ratelimit defaults to closed).
@@ -879,6 +985,13 @@ LOGGING = {
             "level": "WARNING",
             "propagate": False,
         },
+        # ignored redis cache exceptions land here — there is no root
+        # logger, so without this entry they never reach a handler (#2032)
+        "django_redis": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "django.server": {
             "handlers": ["logfile"],
             "level": "DEBUG",
@@ -923,6 +1036,9 @@ INSTALLED_APPS = [
     "reversion",
     "captcha",
     "django_handleref",
+    # not required for the middleware, but registers django-csp's system checks
+    # so a stale CSP settings format is reported by `manage.py check`
+    "csp",
 ]
 
 # allows us to regenerate the schema graph image for documentation
@@ -1015,14 +1131,19 @@ set_option("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
 set_option("SECURE_HSTS_SECONDS", 47304000)
 set_option("SECURE_REFERRER_POLICY", "strict-origin-when-cross-origin")
 
+# django-csp 4 reads a single CONTENT_SECURITY_POLICY dict instead of the
+# individual CSP_* settings. the per-directive set_option() calls are kept so
+# each source list stays env-overridable, but under CSP_POLICY_* names -- the
+# bare CSP_* names are the ones django-csp 4 flags as outdated (csp.E001), and
+# leaving them set would look live while doing nothing.
 set_option(
-    "CSP_DEFAULT_SRC",
+    "CSP_POLICY_DEFAULT_SRC",
     [
         "'self'",
     ],
 )
 set_option(
-    "CSP_STYLE_SRC",
+    "CSP_POLICY_STYLE_SRC",
     [
         "'self'",
         "fonts.googleapis.com",
@@ -1032,7 +1153,7 @@ set_option(
     ],
 )
 set_option(
-    "CSP_SCRIPT_SRC",
+    "CSP_POLICY_SCRIPT_SRC",
     [
         "'self'",
         "www.google.com",
@@ -1044,10 +1165,10 @@ set_option(
         "maps.googleapis.com",
     ],
 )
-set_option("CSP_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
-set_option("CSP_FONT_SRC", ["'self'", "fonts.gstatic.com"])
+set_option("CSP_POLICY_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
+set_option("CSP_POLICY_FONT_SRC", ["'self'", "fonts.gstatic.com"])
 set_option(
-    "CSP_IMG_SRC",
+    "CSP_POLICY_IMG_SRC",
     [
         "'self'",
         "cdn.redoc.ly",
@@ -1058,12 +1179,12 @@ set_option(
     ],
 )
 if AWS_MEDIA_BUCKET_NAME:
-    CSP_IMG_SRC.append(
+    CSP_POLICY_IMG_SRC.append(
         AWS_S3_CUSTOM_DOMAIN or f"{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com"
     )
-set_option("CSP_WORKER_SRC", ["'self'", "blob:"])
+set_option("CSP_POLICY_WORKER_SRC", ["'self'", "blob:"])
 set_option(
-    "CSP_CONNECT_SRC",
+    "CSP_POLICY_CONNECT_SRC",
     [
         "*.google-analytics.com",
         "'self'",
@@ -1071,6 +1192,19 @@ set_option(
         "maps.googleapis.com",
     ],
 )
+
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": CSP_POLICY_DEFAULT_SRC,
+        "style-src": CSP_POLICY_STYLE_SRC,
+        "script-src": CSP_POLICY_SCRIPT_SRC,
+        "frame-src": CSP_POLICY_FRAME_SRC,
+        "font-src": CSP_POLICY_FONT_SRC,
+        "img-src": CSP_POLICY_IMG_SRC,
+        "worker-src": CSP_POLICY_WORKER_SRC,
+        "connect-src": CSP_POLICY_CONNECT_SRC,
+    },
+}
 
 MIDDLEWARE = (
     "django.middleware.security.SecurityMiddleware",
@@ -1242,20 +1376,46 @@ AUTHENTICATION_BACKENDS += ("django_grainy.backends.GrainyBackend",)
 set_from_env("ELASTICSEARCH_URL", "")
 # same env var as used by ES server docker image
 set_from_env("ELASTIC_PASSWORD", "")
+set_option("ELASTICSEARCH_USER", "elastic")
+
+# ES is reached over the internal network and presents a self-signed cert
+# there, so verification is off by default - this keeps the behavior from when
+# the value was hardcoded. Deployments that terminate ES with a cert the app
+# trusts can turn it on.
+set_bool("ELASTICSEARCH_VERIFY_CERTS", False)
+
+# Index settings applied to every registered search document.
+#
+# This is the single point of control: django_elasticsearch_dsl's registry
+# merges this dict on top of each document's `class Index.settings` at
+# registration time (later keys win), so it covers all 6 search indexes and
+# every index create - including `search_index --rebuild`, which builds
+# indexes from the registered Index objects.
+#
+# number_of_replicas defaults to 1 because with 0 every primary shard lives on
+# a single ES pod, and losing that pod takes /search fully down (#2020). Green
+# cluster health needs >=2 ES data nodes; single-node setups (dev, CI) sit at
+# yellow unless they set this to 0. Search works either way.
+set_option("ELASTICSEARCH_NUMBER_OF_SHARDS", 1)
+set_option("ELASTICSEARCH_NUMBER_OF_REPLICAS", 1)
+ELASTICSEARCH_DSL_INDEX_SETTINGS = {
+    "number_of_shards": ELASTICSEARCH_NUMBER_OF_SHARDS,
+    "number_of_replicas": ELASTICSEARCH_NUMBER_OF_REPLICAS,
+}
 
 if ELASTICSEARCH_URL:
     INSTALLED_APPS.append("django_elasticsearch_dsl")
     ELASTICSEARCH_DSL = {
         "default": {
             "hosts": ELASTICSEARCH_URL,
-            "http_auth": ("elastic", ELASTIC_PASSWORD),
-            "verify_certs": False,
+            "http_auth": (ELASTICSEARCH_USER, ELASTIC_PASSWORD),
+            "verify_certs": ELASTICSEARCH_VERIFY_CERTS,
         }
     }
-    # stop ES from spamming about unsigned certs
-    urllib3.disable_warnings()
+    if not ELASTICSEARCH_VERIFY_CERTS:
+        # stop ES from spamming about unsigned certs
+        urllib3.disable_warnings()
 
-    ELASTICSEARCH_DSL_INDEX_SETTINGS = {"number_of_shards": 1}
     ELASTICSEARCH_DSL_SIGNAL_PROCESSOR = (
         "peeringdb_server.signals.ESSilentRealTimeSignalProcessor"
     )
@@ -1324,6 +1484,7 @@ if API_THROTTLE_ENABLED:
                 "melissa_admin": API_THROTTLE_MELISSA_RATE_ADMIN,
                 "write_api": API_THROTTLE_RATE_WRITE,
                 "organization_users_ops": API_THROTTLE_ORGANIZATION_USERS,
+                "irr_lookup": API_THROTTLE_IRR_LOOKUP,
             },
         }
     )
@@ -1563,7 +1724,6 @@ set_option("NON_ZIPCODE_COUNTRIES", non_zipcode_countries())
 LANGUAGE_CODE = "en-us"
 LANGUAGE_COOKIE_AGE = 31557600  # one year
 USE_I18N = True
-USE_L10N = True
 
 LOCALE_PATHS = (os.path.join(BASE_DIR, "locale"),)
 

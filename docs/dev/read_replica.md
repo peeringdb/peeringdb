@@ -119,6 +119,7 @@ GET handler that needs to read its own writes synchronously:
 ```python
 from peeringdb_server.db_replica import use_primary_db
 
+
 def my_view(request):
     with use_primary_db():
         thing = Thing.objects.get(pk=request.GET["pk"])

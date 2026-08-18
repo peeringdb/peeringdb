@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 
 from django.conf import settings
@@ -9,7 +11,7 @@ from simplekml import Kml, Style
 from peeringdb_server.util import add_kmz_overlay_watermark, generate_balloonstyle_text
 
 
-def collect_exchanges(path=None):
+def collect_exchanges(path: str | None = None) -> dict[int, list[str]]:
     """
     This function collects all the exchanges and relates them to facilities.
     """
@@ -19,7 +21,7 @@ def collect_exchanges(path=None):
 
     cached_ix_path = f"{path}/ix-1.json"
     # relate ix to facilities
-    mapping = {}
+    mapping: dict[int, list[str]] = {}
     with open(cached_ix_path) as file:
         data = json.load(file)
         for ix in data.get("data"):
@@ -30,7 +32,7 @@ def collect_exchanges(path=None):
     return mapping
 
 
-def collect_networks(path=None):
+def collect_networks(path: str | None = None) -> dict[int, list[str]]:
     """
     This function collects all the networks and relates them to facilities.
     """
@@ -40,7 +42,7 @@ def collect_networks(path=None):
 
     cached_net_path = f"{path}/net-2.json"
     # relate net to facilities
-    mapping = {}
+    mapping: dict[int, list[str]] = {}
     with open(cached_net_path) as file:
         data = json.load(file)
         for net in data.get("data"):
@@ -52,7 +54,7 @@ def collect_networks(path=None):
     return mapping
 
 
-def collect_carriers(path=None):
+def collect_carriers(path: str | None = None) -> dict[int, list[str]]:
     """
     This function collects all the carriers and relates them to facilities.
     """
@@ -62,7 +64,7 @@ def collect_carriers(path=None):
     cached_carrier_path = f"{path}/carrier-2.json"
 
     # relate carrier to facilities
-    mapping = {}
+    mapping: dict[int, list[str]] = {}
     with open(cached_carrier_path) as file:
         data = json.load(file)
         for carrier in data.get("data"):
@@ -74,7 +76,9 @@ def collect_carriers(path=None):
     return mapping
 
 
-def fac_export_kmz(limit=None, path=None, output_dir=None):
+def fac_export_kmz(
+    limit: int | None = None, path: str | None = None, output_dir: str | None = None
+) -> None:
     """
     This function exports facility data to a KMZ file.
     It reads the facility data from a JSON file, creates a KML object, and adds points to a folder in the KML.
