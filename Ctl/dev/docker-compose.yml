@@ -21,7 +21,7 @@ services:
           - database_replica
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.4
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.5
     env_file: .env
     ports:
       - "127.0.0.1:9200:9200"

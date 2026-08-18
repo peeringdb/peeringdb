@@ -47,17 +47,21 @@ dependencies = [
     "django-csp>=4,<5",
     "django-debug-toolbar>=4.0.0",
 
-    # client major must match the elasticsearch server major -- the 9.x client
-    # sends compatible-with=9, which our 8.x server rejects
+    # the client major must not exceed the server major -- a 9.x client sends
+    # compatible-with=9, which an 8.x server rejects. Prod runs server 9.1.x;
+    # the dev/local compose stacks track the same major so the search tests
+    # exercise the pairing that actually ships.
     # https://elasticsearch-dsl.readthedocs.io/en/latest/index.html#compatibility
     #
-    # d-e-dsl 8.2 floor: 8.1 indexed empty nested objects (the empty "org" at
-    # sq["_source"]["org"]["id"]) once Properties.to_dict() started returning
-    # serialized dicts in 8.18.
-    # elasticsearch-dsl is gone: the DSL moved into the client as
-    # elasticsearch.dsl in 8.18 and d-e-dsl 8.2 imports it from there.
-    "elasticsearch>=8.19,<9",
-    "django-elasticsearch-dsl>=8.2,<9",
+    # elasticsearch-dsl is gone: the DSL lives in the client as
+    # elasticsearch.dsl and d-e-dsl imports it from there.
+    # <9.4 cap: with elasticsearch-py >= 9.4, d-e-dsl 9.0 silently indexes every
+    # document as an empty {} -- its field-preparer list is built in __init__
+    # from `_fields`, which the newer dsl ObjectBase leaves empty at that point.
+    # No error is raised anywhere; search just returns nothing. Re-test before
+    # raising the cap.
+    "elasticsearch>=9.1,<9.4",
+    "django-elasticsearch-dsl>=9,<10",
 
     "django-extensions>=1.3.3",
     "django-grainy>=2",
