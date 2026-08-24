@@ -2,10 +2,13 @@
 Define IX-F import preview, review and post-mortem views.
 """
 
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django_ratelimit.decorators import ratelimit
 
@@ -14,14 +17,19 @@ from peeringdb_server.auth import enable_api_key_auth, enable_basic_auth
 from peeringdb_server.models import IXLan, Network
 from peeringdb_server.util import check_permissions
 
-RATELIMITS = settings.RATELIMITS
+if TYPE_CHECKING:
+    from django.utils.functional import Promise
+
+RATELIMITS: dict[str, str] = settings.RATELIMITS
 
 
-def pretty_response(data):
+def pretty_response(data: dict[str, Any]) -> HttpResponse:
+    # Any value: importer log is an arbitrary JSON-serializable payload
     return HttpResponse(json.dumps(data, indent=2), content_type="application/json")
 
 
-def error_response(msg, status=400):
+def error_response(msg: str | Promise, status: int = 400) -> JsonResponse:
+    # msg is usually a lazy gettext proxy (Promise), sometimes a plain str.
     return JsonResponse({"non_field_errors": [msg]}, status=status)
 
 
@@ -33,7 +41,7 @@ def error_response(msg, status=400):
 )
 @enable_api_key_auth
 @enable_basic_auth
-def view_import_ixlan_ixf_preview(request, ixlan_id):
+def view_import_ixlan_ixf_preview(request: HttpRequest, ixlan_id: str) -> HttpResponse:
     # Check if request was blocked by rate limiting
     was_limited = getattr(request, "limited", False)
     if was_limited:
@@ -66,13 +74,13 @@ def view_import_ixlan_ixf_preview(request, ixlan_id):
     block=False,
 )
 @enable_basic_auth
-def view_import_net_ixf_postmortem(request, net_id):
+def view_import_net_ixf_postmortem(request: HttpRequest, net_id: str) -> HttpResponse:
     # check if request was blocked by rate limiting
 
     was_limited = getattr(request, "limited", False)
     if was_limited:
         return error_response(
-            _("Please wait a bit before requesting " "another IX-F import postmortem."),
+            _("Please wait a bit before requesting another IX-F import postmortem."),
             status=400,
         )
 
@@ -93,7 +101,7 @@ def view_import_net_ixf_postmortem(request, net_id):
     except Exception:
         limit = 25
 
-    errors = []
+    errors: list[str] = []
 
     if limit < 1:
         limit = 1
@@ -118,12 +126,12 @@ def view_import_net_ixf_postmortem(request, net_id):
     block=False,
 )
 @enable_basic_auth
-def view_import_net_ixf_preview(request, net_id):
+def view_import_net_ixf_preview(request: HttpRequest, net_id: str) -> HttpResponse:
     # check if request was blocked by rate limiting
     was_limited = getattr(request, "limited", False)
     if was_limited:
         return error_response(
-            _("Please wait a bit before requesting " "another ixf import preview."),
+            _("Please wait a bit before requesting another ixf import preview."),
             status=400,
         )
 
@@ -135,7 +143,8 @@ def view_import_net_ixf_preview(request, net_id):
     if not check_permissions(request.user, net, "u"):
         return error_response(_("Permission denied"), status=403)
 
-    total_log = {"data": [], "errors": []}
+    # list[Any]: "data" holds importer log-entry dicts, "errors" holds strings.
+    total_log: dict[str, list[Any]] = {"data": [], "errors": []}
 
     for ixlan in net.ixlan_set_ixf_enabled:
         importer = ixf.Importer()

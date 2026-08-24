@@ -1,4 +1,4 @@
-Generated from rest.py on 2026-07-14 21:31:39.993597
+Generated from rest.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.rest
 
@@ -336,6 +336,34 @@ FacilityViewSet(peeringdb_server.rest.ModelViewSet)
 
 Generic ModelViewSet Base Class.
 This should probably be moved to a common lib ?
+
+
+## IRRLookupView
+
+```
+IRRLookupView(rest_framework.views.APIView)
+```
+
+Smart-editor completion helper (#1973).
+
+GET /data/irr_lookup?name=<set-name> returns which IRR registries actually
+hold the name, as {"name": ..., "sources": [...], "ok": <bool>}. The editor
+uses it to offer the registry prefixes for a typed set name. It is a
+convenience only; the save-path check in the serializer is the enforcement.
+
+Website-only by design, so PeeringDB is not usable as a free IRR query proxy:
+session auth only, and a per-user rate below what a debounced completion widget
+consumes. Cache hits are free, so the rate bounds distinct names per account.
+
+It is therefore routed under /data/ with the other editor JSON helpers rather
+than under /api/ -- it is not part of the public API surface and carries none
+of its conventions (no reftag, no router registration, no envelope, no API key
+or basic auth). The class stays here because it is a DRF view: the throttle and
+the session-only authentication are DRF machinery. The route lives in
+peeringdb_server/urls.py.
+
+ok is False when the lookup pool could not answer definitively, so the editor
+can distinguish "found nowhere" (ok, empty) from "unknown".
 
 
 ## IXFilterMixin

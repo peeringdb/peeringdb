@@ -10,6 +10,7 @@
   --hyperlink-color-2: #1c3f28;
   --special-text-color: #ffffff;
   --alert-text: #9e1e1e;
+  --alert-warning-text: #8a5a00;
   --alert-info-border: #b6effb;
   --alert-info-text: #055160;
   --alert-info-bg: #cff4fc;
@@ -46,6 +47,7 @@
   --hyperlink-color-2: #B7B7B7;
   --special-text-color: #282c24;
   --alert-text: #fd5050;
+  --alert-warning-text: #e0a53f;
   --alert-info-border: #5c686b;
   --alert-info-text: #b1c7cb;
   --alert-info-bg: #4e5a5d;
@@ -81,6 +83,7 @@
   --hyperlink-color: #1c3f28;
   --special-text-color: #ffffff;
   --alert-text: #9e1e1e;
+  --alert-warning-text: #8a5a00;
   --alert-info-border: #b6effb;
   --alert-info-text: #055160;
   --alert-info-bg: #cff4fc;

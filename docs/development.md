@@ -23,29 +23,10 @@ munge json:https://rdap.arin.net/registry/autnum/2914 yaml:
 
 ### Whois Server
 
-- To locally test whois, setup `/etc/xinetd.d/pdb-whois` with similar:
-
-```
-service whois
-{
-        disable         = no
-        socket_type     = stream
-        wait            = no
-        user            = $USER
-
-        passenv =
-
-        server          = /home/$USER/srv/dev.peeringdb.com/peeringdb/in.whoisd
-        log_on_failure  = HOST
-}
-
-```
-
-- Deploy and test against local
+- To locally test whois output, run the management command directly:
 
 ```sh
-facs peeringdb dev --src-dir=. ; whois -h 127.0.0.1 as63311
-pytest -v -rxs --cov-report term-missing --cov=peeringdb_server/ --capture=sys tests/
+python manage.py pdb_whois as63311
 ```
 
 ## Dependencies

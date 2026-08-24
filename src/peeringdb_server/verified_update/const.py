@@ -1,4 +1,6 @@
-SUPPORTED_FIELDS = {
+from __future__ import annotations
+
+SUPPORTED_FIELDS: dict[str, list[str]] = {
     "net": [
         "irr_as_set",
         "route_server",

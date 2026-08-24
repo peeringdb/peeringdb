@@ -2,8 +2,11 @@
 Utilities for geocoding and geo normalization.
 """
 
+from __future__ import annotations
+
 import copy
 import re
+from typing import TYPE_CHECKING, Any
 
 import googlemaps
 import requests
@@ -16,16 +19,30 @@ from geopy.distance import geodesic
 
 from peeringdb_server.context import current_request
 
+if TYPE_CHECKING:
+    from typing import TypedDict
+
+    from peeringdb_server.models import GeocodeBaseMixin
+
+    class GoogleAddressComponent(TypedDict):
+        long_name: str
+        short_name: str
+        types: list[str]
+
+    class GoogleGeocodeResult(TypedDict):
+        address_components: list[GoogleAddressComponent]
+
+
 logger = structlog.getLogger(__name__)
 
 
 class Timeout(IOError):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("Geo location lookup has timed out")
 
 
 class RequestError(IOError):
-    def __init__(self, exc):
+    def __init__(self, exc: Exception | str) -> None:
         super().__init__(f"{exc}")
 
 
@@ -34,16 +51,18 @@ class NotFound(IOError):
 
 
 class GoogleMaps:
-    def __init__(self, key, timeout=5):
+    def __init__(self, key: str, timeout: int = 5) -> None:
         self.key = key
         self.client = googlemaps.Client(key, timeout=timeout)
 
-    def geocode(self, instance):
+    def geocode(self, instance: GeocodeBaseMixin) -> None:
         geocode = self.geocode_address(instance.geocode_address, instance.country.code)
         instance.latitude = geocode.get("lat")
         instance.longitude = geocode.get("lng")
 
-    def geocode_address(self, address, country, typ="premise"):
+    def geocode_address(
+        self, address: str, country: str, typ: str = "premise"
+    ) -> dict[str, float]:
         """
         Return the latitude, longitude field values of the specified
         address.
@@ -109,7 +128,7 @@ class GoogleMaps:
         else:
             raise NotFound(_("Error in forward geocode: No results found"))
 
-    def geocode_freeform(self, location):
+    def geocode_freeform(self, location: str | None) -> dict[str, float]:
         """
         Return the latitude, longitude field values of the specified
         location.
@@ -133,14 +152,16 @@ class GoogleMaps:
 
         return result[0].get("geometry").get("location")
 
-    def build_location_dict(self, address_components):
+    def build_location_dict(
+        self, address_components: list[GoogleAddressComponent]
+    ) -> dict[str, str | None]:
         """
         Returns a dict containing location, state and country name
         from the address components.
         """
 
         locality = ""
-        admin_area_level_1 = ""
+        admin_area_level_1: str | None = ""
         country = ""
 
         for component in address_components:
@@ -160,14 +181,16 @@ class GoogleMaps:
             "country": country,
         }
 
-    def distance_from_bounds(self, bounds):
+    def distance_from_bounds(self, bounds: dict[str, dict[str, float]]) -> float:
         northeast = bounds["northeast"]
         southwest = bounds["southwest"]
         point1 = (northeast["lat"], northeast["lng"])
         point2 = (southwest["lat"], southwest["lng"])
         return geodesic(point1, point2).kilometers
 
-    def parse_results_get_country(self, results) -> str | None:
+    def parse_results_get_country(
+        self, results: list[GoogleGeocodeResult]
+    ) -> str | None:
         """
         Parse the results and return the country code.
         """
@@ -186,14 +209,14 @@ class Melissa:
     service used for geocoding and address normalization.
     """
 
-    global_address_url = (
+    global_address_url: str = (
         "https://address.melissadata.net/v3/WEB/GlobalAddress/doGlobalAddress"
     )
 
     # maps peeringdb address model field to melissa
     # global address result fields
 
-    field_map = {
+    field_map: dict[str, str] = {
         "address1": "AddressLine1",
         "address2": "AddressLine2",
         "latitude": "Latitude",
@@ -203,11 +226,11 @@ class Melissa:
         "city": "Locality",
     }
 
-    def __init__(self, key, timeout=5):
+    def __init__(self, key: str, timeout: int = 5) -> None:
         self.key = key
         self.timeout = timeout
 
-    def log_request(self, url, **kwargs):
+    def log_request(self, url: str, **kwargs: Any) -> None:
         with current_request() as request:
             if request:
                 source_url = request.build_absolute_uri()[:255]
@@ -219,7 +242,7 @@ class Melissa:
             else:
                 logger.info("MELISSA", url=url)
 
-    def sanitize(self, **kwargs):
+    def sanitize(self, **kwargs: Any) -> dict[str, str]:
         """
         Take an international address and sanitize it
         using the melissa global address service.
@@ -233,7 +256,7 @@ class Melissa:
 
         return self.apply_global_address(kwargs, best)
 
-    def sanitize_address_model(self, instance):
+    def sanitize_address_model(self, instance: GeocodeBaseMixin) -> dict[str, str]:
         """
         Take an instance of AddressModel and
         run its address through the normalization
@@ -254,7 +277,12 @@ class Melissa:
             country=f"{instance.country}",
         )
 
-    def apply_global_address(self, pdb_data, melissa_data):
+    def apply_global_address(
+        self,
+        pdb_data: dict[str, str],
+        # melissa_data is a raw record from the Melissa JSON response (open-ended)
+        melissa_data: dict[str, Any],
+    ) -> dict[str, str]:
         # map peeringdb address fields to melissa result fields
         faddr = melissa_data["FormattedAddress"].split(";")
         for key in self.field_map.keys():
@@ -287,7 +315,7 @@ class Melissa:
 
         return pdb_data
 
-    def global_address_params(self, **kwargs):
+    def global_address_params(self, **kwargs: Any) -> dict[str, str | None]:
         return {
             "a1": kwargs.get("address1"),
             "a2": kwargs.get("address2"),
@@ -296,7 +324,8 @@ class Melissa:
             "postal": kwargs.get("zipcode"),
         }
 
-    def global_address(self, **kwargs):
+    # returns the decoded Melissa JSON response, whose shape is open-ended
+    def global_address(self, **kwargs: Any) -> dict[str, Any]:
         """
         Send request to the global address service.
 
@@ -335,14 +364,17 @@ class Melissa:
 
         return response.json()
 
-    def usable_result(self, codes):
+    def usable_result(self, codes: list[str]) -> bool:
         for code in codes:
             if code[:2] == "AV":
                 if int(code[3]) > 3:
                     return True
         return False
 
-    def global_address_best_result(self, result):
+    # result / return value are raw Melissa JSON payloads (open-ended shape)
+    def global_address_best_result(
+        self, result: dict[str, Any]
+    ) -> dict[str, Any] | None:
         if not result:
             return None
 
@@ -356,7 +388,7 @@ class Melissa:
         except (KeyError, IndexError):
             return None
 
-    def normalize_state(self, country_code, state):
+    def normalize_state(self, country_code: str, state: str | None) -> str | None:
         """
         Takes a 2-digit country code and a state name (e.g., "Wisconsin")
         and returns a normalized state name (e.g., "WI")

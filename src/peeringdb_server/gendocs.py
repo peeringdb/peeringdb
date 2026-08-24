@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import os
 
@@ -6,17 +8,17 @@ from pymdgen import doc_module
 
 django.setup()
 
-module_index = {}
-command_index = {}
+module_index: dict[str, str] = {}
+command_index: dict[str, str] = {}
 
-now = datetime.datetime.now()
+now: datetime.datetime = datetime.datetime.now()
 
 for entry in os.scandir("peeringdb_server"):
     if entry.name == "__init__.py":
         continue
     if entry.name[0] == ".":
         continue
-    if entry.is_file and entry.name.find(".py") > -1:
+    if entry.is_file() and entry.name.find(".py") > -1:
         outfile = f"docs/dev/modules/{entry.name}.md"
         print(f"Generating {outfile}")
         with open(outfile, "w") as fh:
@@ -34,7 +36,7 @@ for entry in os.scandir("peeringdb_server/management/commands"):
         continue
     if entry.name[0] == ".":
         continue
-    if entry.is_file and entry.name.find(".py") > -1:
+    if entry.is_file() and entry.name.find(".py") > -1:
         try:
             doc_text = doc_module(
                 f"peeringdb_server/management/commands/{entry.name}", section_level=1

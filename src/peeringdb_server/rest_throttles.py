@@ -23,6 +23,12 @@ class IXFImportThrottle(throttling.UserRateThrottle):
         return f"{key}.{ix.id}"
 
 
+class IRRLookupThrottle(throttling.UserRateThrottle):
+    # #1973: the editor's IRR lookup endpoint is authenticated and rate-limited
+    # so PeeringDB can't be used as a free IRR query proxy.
+    scope = "irr_lookup"
+
+
 class TargetedRateThrottle(throttling.SimpleRateThrottle):
     """
     Base class for targeted rate throttling depending

@@ -81,8 +81,8 @@ def new_elasticsearch() -> Elasticsearch:
         Elasticsearch: An Elasticsearch instance connected to the configured URL.
     """
     es_kwargs = dict(
-        http_auth=("elastic", ELASTIC_PASSWORD),
-        verify_certs=False,
+        http_auth=(settings.ELASTICSEARCH_USER, ELASTIC_PASSWORD),
+        verify_certs=settings.ELASTICSEARCH_VERIFY_CERTS,
     )
 
     es = Elasticsearch(ELASTICSEARCH_URL, **es_kwargs)

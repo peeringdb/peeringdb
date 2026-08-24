@@ -1,4 +1,10 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
+
 from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.generic import FormView
@@ -21,8 +27,12 @@ class UIAwareMixin:
     of the template dynamically, depending on user flags or default settings.
     """
 
-    def get_template_names(self):
-        original_templates = super().get_template_names()
+    if TYPE_CHECKING:
+        # borrowed from the concrete Django View this mixin is combined with
+        request: HttpRequest
+
+    def get_template_names(self) -> list[str]:
+        original_templates: Iterable[str] = super().get_template_names()  # type: ignore[misc]  # get_template_names provided by the base View at runtime
         return [resolve_template(self.request, t) for t in original_templates]
 
 
@@ -39,7 +49,7 @@ class BackupTokensView(UIAwareMixin, BaseBackupTokensView):
     """
 
     @method_decorator([never_cache, login_required])
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         # Bypass otp_required for users who completed MFA via the
         # login wizard (passkey or U2F security key), as these are
         # strong 2FA methods that don't go through django_otp's
@@ -55,7 +65,8 @@ class ProfileView(UIAwareMixin, BaseProfileView):
     Override of ProfileView that supports template switching based on UI version.
     """
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        # dict[str, Any]: idiomatic Django template-context mapping.
         context = super().get_context_data(**kwargs)
         context["passkey_mfa_error"] = self.request.session.pop(
             "passkey_mfa_error", None

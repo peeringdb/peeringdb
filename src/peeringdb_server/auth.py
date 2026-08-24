@@ -5,20 +5,25 @@ Provides decorators to enforce Basic Authentication or API Key Authentication on
 
 """
 
+from __future__ import annotations
+
 import base64
+from collections.abc import Callable
+from typing import Any
 
 from django.contrib.auth import authenticate
-from django.http import JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 
 from peeringdb_server.models import OrganizationAPIKey, UserAPIKey
 
 
-def enable_basic_auth(fn):
+def enable_basic_auth(fn: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
     """
     A simple decorator to enable Basic Auth for a specific view.
     """
 
-    def wrapped(request, *args, **kwargs):
+    # *args/**kwargs are an opaque passthrough to the wrapped view.
+    def wrapped(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if "HTTP_AUTHORIZATION" in request.META:
             auth = request.META["HTTP_AUTHORIZATION"].split()
             if len(auth) == 2:
@@ -38,12 +43,13 @@ def enable_basic_auth(fn):
     return wrapped
 
 
-def enable_api_key_auth(fn):
+def enable_api_key_auth(fn: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
     """
     A simple decorator to enable API Key for a specific view.
     """
 
-    def wrapped(request, *args, **kwargs):
+    # *args/**kwargs are an opaque passthrough to the wrapped view.
+    def wrapped(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
         if auth_header:
             auth = auth_header.split()

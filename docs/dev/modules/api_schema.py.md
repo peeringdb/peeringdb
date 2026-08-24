@@ -1,4 +1,4 @@
-Generated from api_schema.py on 2026-07-14 21:31:39.993597
+Generated from api_schema.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.api_schema
 
@@ -135,6 +135,12 @@ Always annotate get_* methods that return non-string types, e.g.:
 
 Supported annotations: int -> integer, float -> number,
                         bool -> boolean, str -> string.
+
+---
+#### map_field_validators
+`def map_field_validators(self, field, schema)`
+
+map field validators
 
 ---
 #### request_body_schema

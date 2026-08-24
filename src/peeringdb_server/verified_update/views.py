@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import base64
 import json
 import os
+from typing import Any, cast
 
 import jsonschema
 import reversion
@@ -8,7 +11,7 @@ from django.conf import settings as dj_settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template import loader
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt, csrf_protect, ensure_csrf_cookie
@@ -22,12 +25,15 @@ from peeringdb_server.permissions import check_permissions
 from peeringdb_server.validators import validate_verified_update_data
 from peeringdb_server.views import view_http_error_invalid
 
-RATELIMITS = dj_settings.RATELIMITS
+RATELIMITS: dict[str, str] = dj_settings.RATELIMITS
 
 # load json schema from file
-schema_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.json")
+schema_path: str = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "schema.json"
+)
 
-JSON_SCHEMA = None
+# Any: an arbitrary JSON Schema document (open-ended structure loaded from schema.json)
+JSON_SCHEMA: dict[str, Any] | None = None
 
 with open(schema_path) as f:
     JSON_SCHEMA = json.load(f)
@@ -43,7 +49,7 @@ with open(schema_path) as f:
     block=False,
 )
 @require_http_methods(["GET"])
-def view_verified_update(request):
+def view_verified_update(request: HttpRequest) -> HttpResponse | JsonResponse:
     """
     View verified update, to present all proposed updates data.
     """
@@ -95,8 +101,11 @@ def view_verified_update(request):
             )
         ref_tag = update.get("ref_tag")
         obj_id = update.get("obj_id")
-        data = data
-        model = REFTAG_MAP[ref_tag]
+        # status is truthy here (early-return above), so validate returned the dict
+        data = cast("dict[str, Any]", data)
+        # Any: model class resolves to type[object] without django-stubs,
+        # hiding .objects/.DoesNotExist/._meta.
+        model: Any = REFTAG_MAP[ref_tag]
         try:
             obj = model.objects.get(id=obj_id)
         except model.DoesNotExist:
@@ -188,7 +197,9 @@ def view_verified_update(request):
     block=False,
 )
 @require_http_methods(["POST"])
-def view_verified_update_accept(request):
+def view_verified_update_accept(
+    request: HttpRequest,
+) -> HttpResponse | HttpResponseRedirect | JsonResponse:
     """
     View verified update accept, to update the objects from proposed updates.
     """
@@ -237,8 +248,8 @@ def view_verified_update_accept(request):
     invalid_permissions = {}
 
     for payload in payloads:
-        ref_tag = payload.get("ref_tag")
-        obj_id = payload.get("obj_id")
+        ref_tag = cast("str", payload.get("ref_tag"))
+        obj_id = cast("int", payload.get("obj_id"))
         updates = json.loads(json.dumps(payload.get("updates")))
         status, data = validate_verified_update_data(
             ref_tag=ref_tag,
@@ -248,10 +259,13 @@ def view_verified_update_accept(request):
 
         if status:
             if data:
-                model = REFTAG_MAP[ref_tag]
+                # Any: model class resolves to type[object] without django-stubs,
+                # hiding .objects/._meta.
+                model: Any = REFTAG_MAP[ref_tag]
                 obj = model.objects.get(id=obj_id)
                 if check_permissions(user, obj, PERM_UPDATE):
-                    for field, value in data.items():
+                    # status is truthy here, so validate returned the dict
+                    for field, value in cast("dict[str, Any]", data).items():
                         setattr(obj, field, value)
                     obj.full_clean()
                     obj.save()

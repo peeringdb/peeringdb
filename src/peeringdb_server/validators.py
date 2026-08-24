@@ -2,14 +2,18 @@
 peeringdb model / field validators
 """
 
+from __future__ import annotations
+
 import ipaddress
 import re
+from typing import Any
 from urllib.parse import urlparse
 
 import phonenumbers
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from geopy.distance import geodesic
 from rest_framework.exceptions import ValidationError as RestValidationError
@@ -19,6 +23,7 @@ import peeringdb_server.geo as geo
 import peeringdb_server.models
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
+from peeringdb_server.settings_util import get_setting_time
 from peeringdb_server.verified_update import const
 
 # Characters that could be used for URL building or injection attacks
@@ -32,8 +37,13 @@ DANGEROUS_NAME_CHARS = re.compile(
 # two or more consecutive whitespace characters (spaces, tabs, or mixed) - #1984
 CONSECUTIVE_WHITESPACE = re.compile(r"\s{2,}")
 
+# a token in SOURCE::NAME form. Lives here with tokenize_irr_as_set for the same
+# reason: the validator and the batch jobs must agree on what a source prefix is,
+# and they cannot if each carries its own copy of this.
+_SOURCE_PREFIX_RE = re.compile(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$")
 
-def validate_email_domains(text):
+
+def validate_email_domains(text: str | None) -> str:
     if not text:
         return ""
 
@@ -55,7 +65,7 @@ def validate_email_domains(text):
     return "\n".join(lines_out)
 
 
-def validate_poc_visible(visible):
+def validate_poc_visible(visible: str) -> str:
     # we no longer allow "Private" network contacts
     # however until all private network contacts have
     # been either changed or deleted we cannot remove
@@ -68,7 +78,7 @@ def validate_poc_visible(visible):
     return visible
 
 
-def validate_phonenumber(phonenumber, country=None):
+def validate_phonenumber(phonenumber: str, country: str | None = None) -> str:
     """
     Validate a phonenumber to E.164
 
@@ -96,7 +106,7 @@ def validate_phonenumber(phonenumber, country=None):
         raise ValidationError(_("Not a valid phone number (E.164)"))
 
 
-def validate_zipcode(zipcode, country):
+def validate_zipcode(zipcode: str | None, country: str) -> str:
     """
     Validate a zipcode for a country. If a country has zipcodes, a zipcode
     is required. If a country does not have zipcodes, it's not required.
@@ -120,7 +130,7 @@ def validate_zipcode(zipcode, country):
             return zipcode
 
 
-def validate_account_name(value):
+def validate_account_name(value: str | None) -> str:
     """
     Validate account name (first name or last name).
 
@@ -145,7 +155,7 @@ def validate_account_name(value):
     return value
 
 
-def validate_name(value):
+def validate_name(value: str | None) -> str | None:
     """
     Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
     whitespace is left to StripFieldMixin, so we check the stripped value.
@@ -161,7 +171,7 @@ def validate_name(value):
     return value
 
 
-def normalize_name(value):
+def normalize_name(value: str | None) -> str | None:
     """
     Collapse runs of 2+ whitespace to a single space and strip the ends - the
     collapse counterpart to validate_name (which rejects). Used by the
@@ -173,7 +183,7 @@ def normalize_name(value):
     return CONSECUTIVE_WHITESPACE.sub(" ", value).strip()
 
 
-def clean_ixp_update_exclude(value):
+def clean_ixp_update_exclude(value: object) -> tuple[list[str], str | None]:
     """
     Normalize and validate a list of IX-F field names that a network has
     opted to exclude from automatic import updates (#1943).
@@ -200,7 +210,9 @@ def clean_ixp_update_exclude(value):
     return list(dict.fromkeys(value)), None
 
 
-def validate_prefix(prefix):
+def validate_prefix(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> ipaddress.IPv4Network | ipaddress.IPv6Network:
     """
     Validate ip prefix.
 
@@ -222,7 +234,9 @@ def validate_prefix(prefix):
     return prefix
 
 
-def validate_address_space(prefix):
+def validate_address_space(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> None:
     """
     Validate an ip prefix according to peeringdb specs.
 
@@ -255,7 +269,7 @@ def validate_address_space(prefix):
         )
 
 
-def validate_info_prefixes4(value):
+def validate_info_prefixes4(value: int | None) -> int | None:
     if value is None or value == "":
         return None
 
@@ -276,7 +290,7 @@ def validate_info_prefixes4(value):
     return value
 
 
-def validate_info_prefixes6(value):
+def validate_info_prefixes6(value: int | None) -> int | None:
     if value is None or value == "":
         return None
 
@@ -297,7 +311,10 @@ def validate_info_prefixes6(value):
     return value
 
 
-def validate_prefix_overlap(prefix, instance=None):
+def validate_prefix_overlap(
+    prefix: str | ipaddress.IPv4Network | ipaddress.IPv6Network,
+    instance: peeringdb_server.models.IXLanPrefix | None = None,
+) -> None:
     """
     Validate that a prefix does not overlap with another prefix on an already existing ixlan.
 
@@ -335,8 +352,11 @@ def validate_prefix_overlap(prefix, instance=None):
     for ixpfx in qs:
         # Skip overlap validation if same ixlan and handle special subnet case
         if instance and ixpfx.ixlan == instance.ixlan:
-            new_prefix = ipaddress.ip_network(prefix)
-            old_prefix = ipaddress.ip_network(ixpfx.prefix)
+            # `Any`: ipaddress.ip_network() returns a IPv4Network | IPv6Network
+            # union, and typeshed does not let `.subnet_of()` be called across
+            # that union (each side only accepts its own family). Kept as Any.
+            new_prefix: Any = ipaddress.ip_network(prefix)
+            old_prefix: Any = ipaddress.ip_network(ixpfx.prefix)
 
             # Allow if new prefix is a subnet and covers same netixlans
             if new_prefix.subnet_of(old_prefix):
@@ -388,10 +408,81 @@ def validate_prefix_overlap(prefix, instance=None):
         )
 
     if being_renumbered:
-        instance._being_renumbered = True
+        # `being_renumbered` is only ever set inside the `if instance and ...`
+        # branch above, so `instance` is guaranteed non-None here; mypy cannot
+        # correlate the two conditions, hence the narrow ignore.
+        instance._being_renumbered = True  # type: ignore[union-attr]
 
 
-def validate_irr_as_set(value):
+def tokenize_irr_as_set(value: str, keep_empty: bool = False) -> list[str]:
+    """
+    Split an irr_as_set value into its upper-cased set-name tokens (#1973).
+
+    The single home for this field's separator handling — comma, space, or both. The
+    validator, the cap and the batch jobs (pdb_irr_as_set_cleanup, the nudge in
+    pdb_irr_as_set_notify) must all tokenize the same way, or the warning and the
+    enforcement drift apart.
+
+    `keep_empty` retains the empty strings a stray separator produces, which the
+    validator needs so its per-token format check rejects them; every other caller
+    is counting or resolving real names.
+    """
+    normalized = value.replace(", ", ",").replace(" ", ",")
+    tokens = normalized.split(",")
+    return [token.upper() for token in tokens if keep_empty or token]
+
+
+def split_irr_as_set_token(token: str) -> tuple[str | None, str]:
+    """
+    (source, name) for one irr_as_set token; source is None when the token carries
+    no SOURCE:: prefix at all.
+
+    Shape only. A prefix naming a registry that is not in IRR_SOURCE is still
+    returned as a source, because validate_irr_as_set has to reject it by name
+    ("Unknown IRR source: X") and cannot do that if the split hides it. Callers
+    that mean "prefixed with a registry I recognize" want
+    irr_as_set_pinned_source() instead.
+    """
+    match = _SOURCE_PREFIX_RE.match(token)
+    if match:
+        return match.group(1), match.group(2)
+    return None, token
+
+
+def irr_as_set_pinned_source(token: str) -> tuple[str | None, str]:
+    """
+    (source, name) where source is None unless the token pins a registry that
+    PeeringDB knows.
+
+    What the batch jobs (pdb_irr_as_set_cleanup, pdb_irr_as_set_status) mean by
+    "prefixed": an unrecognized prefix is not a pin anything can be verified
+    against, so it reads as unprefixed and the whole token stays the name.
+    """
+    source, name = split_irr_as_set_token(token)
+    if source is not None and source in IRR_SOURCE:
+        return source, name
+    return None, token
+
+
+def _cap_enforced_now() -> bool:
+    """
+    Whether the #1974 single-set cap (IRR_AS_SET_MAX_SETS) is enforced right now.
+
+    Staged like MFA (#1810): with a hard-start date the cap rejects only on/after
+    it; a soft-start with no hard date is warn-only (never rejects — the
+    pdb_irr_as_set_notify nudge does the warning); with neither date set it is a
+    plain immediate cap (legacy on/off behavior).
+    """
+    soft = get_setting_time("IRR_AS_SET_CAP_SOFT_START")
+    hard = get_setting_time("IRR_AS_SET_CAP_HARD_START")
+    if soft is None and hard is None:
+        return True
+    if hard is None:
+        return False
+    return timezone.now() >= hard
+
+
+def validate_irr_as_set(value: str, strict: bool = False) -> str:
     """
     Validate irr as-set string.
 
@@ -399,9 +490,23 @@ def validate_irr_as_set(value):
     - the source may be specified by SOURCE::AS-SET
     - multiple values must be separated by either comma, space or comma followed by space
 
+    When `strict` (#1973) the extra "unambiguous name" rules apply, superusers
+    excepted (#741): every token needs a known `SOURCE::` prefix and route-sets
+    are rejected (both gated by `settings.IRR_AS_SET_REQUIRE_SOURCE`), and the
+    set count is capped at `settings.IRR_AS_SET_MAX_SETS` (0 = uncapped). Pass
+    `strict` only when the value changes (change-gated by the callers) so legacy
+    values keep validating; the default `strict=False` is the historical
+    format-only behavior.
+
+    Under `strict` a live existence check then confirms each token's object
+    actually exists in its pinned registry via the IRR lookup service (`irr.py`).
+    Only a provably-absent object is rejected; when the lookup infrastructure
+    cannot answer the save is accepted (fail open).
+
     Arguments:
 
     - value: irr as-set string
+    - strict: apply the #1973 unambiguous-name rules
 
     Returns:
 
@@ -412,36 +517,42 @@ def validate_irr_as_set(value):
     if not isinstance(value, str):
         raise ValueError(_("IRR AS-SET value must be string type"))
 
-    # split multiple values
-
-    # normalize value separation to commas
-    value = value.replace(", ", ",")
-    value = value.replace(" ", ",")
+    # superusers bypass the strict rules, as with the existing depth check (#741)
+    strict_rules = strict and not bypass_validation()
 
     validated = []
+    # (source, name) pairs to confirm live in their pinned registry (#1973)
+    existence_checks = []
 
-    # validate
-    for item in value.split(","):
-        item = item.upper()
-        source = None
-        as_set = None
-
+    # validate each set name (separator handling lives in tokenize_irr_as_set;
+    # keep_empty so a stray separator still fails the format check below)
+    for item in tokenize_irr_as_set(value, keep_empty=True):
         # <source>::<name>
-        parts_match = re.match(r"^([A-Z0-9-]+)::([A-Z0-9_:-]+)$", item)
-        if parts_match:
-            source = parts_match.group(1)
-            as_set = parts_match.group(2)
-        else:
+        source, as_set = split_irr_as_set_token(item)
+        if source is None:
             if not re.match(r"^[A-Z0-9_:-]+$", item):
                 raise ValidationError(
                     _(
                         "Invalid formatting: {} - should be AS-SET, ASx, or SOURCE::AS-SET"
                     ).format(item)
                 )
-            as_set = item
 
-        if source and source not in IRR_SOURCE:
+        # Change-gated like the other #1973 rules. IRR_SOURCE is pruned over time as
+        # registries die, and an unconditional check here would make every value
+        # naming a retired registry unsaveable through clean() -- a network could
+        # not update its phone number. A newly typed unknown source is still
+        # rejected, because typing one is a change. `validated` keeps the original
+        # token, so a legacy value's prefix is preserved, not silently rewritten.
+        if strict_rules and source and source not in IRR_SOURCE:
             raise ValidationError(_("Unknown IRR source: {}").format(source))
+
+        # #1973: require an unambiguous SOURCE:: prefix on every token
+        if strict_rules and settings.IRR_AS_SET_REQUIRE_SOURCE and not source:
+            raise ValidationError(
+                _(
+                    "An IRR source prefix is required: {} - use SOURCE::AS-SET (e.g. RIPE::AS-EXAMPLE)"
+                ).format(item)
+            )
 
         # validate set name and as hierarchy
         as_parts = as_set.split(":")
@@ -486,12 +597,113 @@ def validate_irr_as_set(value):
                 _("At least one component must be an actual set name")
             )
 
+        # #1973: route-set (RS-*) names are no longer accepted on new updates
+        if strict_rules and settings.IRR_AS_SET_REQUIRE_SOURCE and "RS" in types:
+            raise ValidationError(
+                _("Route-set names (RS-*) are not accepted: {}").format(item)
+            )
+
         validated.append(item)
+        if strict_rules and source:
+            existence_checks.append((source, as_set))
+
+    # #1973/#1974: cap the number of set names on a changed value. Staged like
+    # MFA — the cap only rejects once its hard-start date has passed; in the soft
+    # window multiple sets are still accepted (pdb_irr_as_set_notify warns of the
+    # deadline). With no dates configured it is a plain immediate cap.
+    max_sets = settings.IRR_AS_SET_MAX_SETS
+    if strict_rules and max_sets and len(validated) > max_sets and _cap_enforced_now():
+        raise ValidationError(
+            _("At most {} IRR set name(s) may be listed").format(max_sets)
+        )
+
+    # On a changed value, verify each token's object actually exists in its
+    # pinned registry (#1973).
+    if strict_rules and settings.IRR_AS_SET_VERIFY_EXISTENCE and existence_checks:
+        _verify_irr_existence(existence_checks)
 
     return " ".join(validated)
 
 
-def validate_bool(value):
+def _verify_irr_existence(existence_checks: list[tuple[str, str]]) -> None:
+    """
+    #1973 live existence check + rejection hints, split out of
+    `validate_irr_as_set` to keep that function's shape manageable.
+
+    Each entry of `existence_checks` is a `(source, name)` pair that has already
+    passed format validation and carries an explicit `SOURCE::` prefix. For each,
+    confirm the named object exists in its pinned registry via the IRR lookup
+    service (`irr.py`). Only a provably absent object (a definitive `False` from
+    the lookup pool) is rejected; when the IRR infrastructure cannot answer
+    (`None`) the value is accepted and left for the periodic checker, so a
+    third-party outage never locks the field.
+
+    On rejection the error lists, per missing token, the registries that *do*
+    hold the object (best effort — omitted when the lookup pool is unreachable),
+    pointing the user at the correct prefix.
+
+    The local import avoids import-time coupling and keeps format-only callers of
+    `validate_irr_as_set` free of the network dependency.
+
+    Raises ValidationError when at least one token is provably absent.
+    """
+    from peeringdb_server import irr
+
+    missing = [
+        (source, name)
+        for source, name in existence_checks
+        if irr.exists_in(source, name) is False
+    ]
+    if not missing:
+        return
+
+    hints = []
+    for source, name in missing:
+        found = irr.sources_for(name)
+        if found.ok and found.sources:
+            hints.append(
+                _("{}::{} (found in: {})").format(
+                    source, name, ", ".join(sorted(found.sources))
+                )
+            )
+        else:
+            hints.append(f"{source}::{name}")
+    raise ValidationError(
+        _("IRR object does not exist in the specified registry: {}").format(
+            "; ".join(hints)
+        )
+    )
+
+
+def validate_irr_as_set_on_change(value: str, old: str) -> str:
+    """
+    Change-gated `irr_as_set` validation (#1973).
+
+    Apply the strict unambiguous-name rules only when `value` differs from the
+    stored `old` (the comparison ignores case and separator differences via
+    `_normalize_irr_as_set`), so legacy values keep validating on a no-op save
+    and the rules bite only on a genuine edit. Shared by the DRF serializer
+    (`NetworkSerializer.validate_irr_as_set`) and the admin form
+    (`NetworkAdminForm.clean_irr_as_set`) so the change-gate semantics live in
+    one place instead of being duplicated across those call sites.
+    """
+    strict = _normalize_irr_as_set(value) != _normalize_irr_as_set(old)
+    return validate_irr_as_set(value, strict=strict)
+
+
+def _normalize_irr_as_set(value: object) -> str:
+    """
+    Canonicalize an irr_as_set value (separator/case) WITHOUT validating, so
+    callers can tell whether a submitted value differs from the stored one (the
+    #1973 change-gate). Tolerates legacy / invalid stored values by design.
+    """
+    if not isinstance(value, str):
+        return ""
+    normalized = value.replace(", ", ",").replace(" ", ",")
+    return " ".join(token.upper() for token in normalized.split(",") if token)
+
+
+def validate_bool(value: str | int | bool) -> bool:
     """
     Validates a boolean value
 
@@ -521,7 +733,7 @@ def validate_bool(value):
         raise ValidationError(_("Needs to be 'True', 'False', 1 or 0"))
 
 
-def validate_api_rate(value):
+def validate_api_rate(value: str) -> str:
     """
     Validates a number/time-unit format used to determine rate limits
 
@@ -549,7 +761,7 @@ def validate_api_rate(value):
         )
 
 
-def validate_django_ratelimit_rate(value):
+def validate_django_ratelimit_rate(value: str) -> str:
     """
     Validates a rate string in django-ratelimit format.
 
@@ -579,7 +791,7 @@ def validate_django_ratelimit_rate(value):
         )
 
 
-def validate_identifier(service: str, identifier: str):
+def validate_identifier(service: str, identifier: str) -> None:
     """
     Validates a identifier based on the specific rules of different social media platforms.
     Raises a ValueError if the identifier is invalid for the given service.
@@ -684,7 +896,7 @@ def validate_identifier(service: str, identifier: str):
         raise ValueError(f"Invalid identifier {identifier} for service {service}!")
 
 
-def validate_url(url):
+def validate_url(url: str) -> None:
     try:
         URLValidator()(url)
         parsed = urlparse(url)
@@ -694,7 +906,9 @@ def validate_url(url):
         raise ValidationError("Invalid URL.")
 
 
-def validate_social_media(value):
+def validate_social_media(
+    value: list[Any] | None,
+) -> list[Any] | None:
     """
     Validates a social media value
 
@@ -772,7 +986,9 @@ def validate_social_media(value):
     return value
 
 
-def validate_website_override(website, org_website):
+def validate_website_override(
+    website: str | None, org_website: str | None
+) -> str | None:
     """
     Validates a website value
 
@@ -793,7 +1009,13 @@ def validate_website_override(website, org_website):
     return website
 
 
-def validate_verified_update_data(ref_tag, obj_id, data):
+def validate_verified_update_data(
+    # `data` values are polymorphic: they arrive as strings but are coerced to
+    # bool/int below, so the mapping value stays `Any`.
+    ref_tag: str,
+    obj_id: int,
+    data: dict[str, Any],
+) -> tuple[bool, str | dict[str, Any]]:
     """
     Validates a VerifiedUpdate updates value
 
@@ -814,7 +1036,10 @@ def validate_verified_update_data(ref_tag, obj_id, data):
         return False, _("Data is empty")
     if ref_tag not in const.SUPPORTED_FIELDS:
         return False, _(f"Unknown object type: {ref_tag}")
-    model = peeringdb_server.models.REFTAG_MAP[ref_tag]
+    # `Any`: REFTAG_MAP maps a ref tag to a concrete Django model class, but
+    # without django-stubs the mapping resolves to `type[object]`, which hides
+    # the `.objects` manager and `.DoesNotExist`. Kept as Any.
+    model: Any = peeringdb_server.models.REFTAG_MAP[ref_tag]
     try:
         obj = model.objects.get(id=obj_id)
     except model.DoesNotExist:
@@ -841,7 +1066,7 @@ def validate_verified_update_data(ref_tag, obj_id, data):
     return True, result
 
 
-def validate_asn_prefix(asn):
+def validate_asn_prefix(asn: str | int) -> str:
     """
     Validates a ASN prefix value
 
@@ -864,7 +1089,7 @@ def validate_asn_prefix(asn):
         raise RestValidationError({"asn": ["ASN contains invalid value"]})
 
 
-def validate_latitude(latitude):
+def validate_latitude(latitude: str | float | int) -> float:
     try:
         value = float(latitude)
         is_valid = -90 <= value <= 90
@@ -875,7 +1100,7 @@ def validate_latitude(latitude):
     return value
 
 
-def validate_longitude(longitude):
+def validate_longitude(longitude: str | float | int) -> float:
     try:
         value = float(longitude)
         is_valid = -180 <= value <= 180
@@ -886,7 +1111,12 @@ def validate_longitude(longitude):
     return value
 
 
-def validate_distance_geocode(current_geocode, new_geocode, current_city, new_city):
+def validate_distance_geocode(
+    current_geocode: tuple[float | None, float | None] | None,
+    new_geocode: tuple[float | None, float | None],
+    current_city: str | None,
+    new_city: str | None,
+) -> tuple[float | None, float | None]:
     if (
         current_geocode
         and type(tuple)
@@ -902,7 +1132,7 @@ def validate_distance_geocode(current_geocode, new_geocode, current_city, new_ci
     else:
         # When no geocode currently exists or city change
         gmaps = geo.GoogleMaps(settings.GOOGLE_GEOLOC_API_KEY, timeout=5)
-        city_geocode = ()
+        city_geocode: tuple = ()
         max_distance = settings.FACILITY_MAX_DISTANCE_GEOCODE_NOT_EXISTS
 
         try:
@@ -925,7 +1155,7 @@ def validate_distance_geocode(current_geocode, new_geocode, current_city, new_ci
     return new_geocode
 
 
-def validate_status(value):
+def validate_status(value: str) -> str:
     """
     Validate that the status field only accepts allowed values.
 

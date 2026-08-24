@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+import logging
+
 from django.conf import settings
 from django.core.cache import caches
+from django.core.cache.backends.base import BaseCache
 from django.utils.log import AdminEmailHandler
 
 
@@ -11,20 +16,20 @@ class ThrottledAdminEmailHandler(AdminEmailHandler):
     CACHE_KEY = "THROTTLE_ERROR_EMAILS"
 
     @property
-    def cache(self):
+    def cache(self) -> BaseCache:
         """
         returns the specific cache handler set up for this purpose
         """
         return caches["error_emails"]
 
-    def increment_counter(self):
+    def increment_counter(self) -> int | None:
         try:
             self.cache.incr(self.CACHE_KEY)
         except ValueError:
             self.cache.set(self.CACHE_KEY, 1, settings.ERROR_EMAILS_PERIOD)
         return self.cache.get(self.CACHE_KEY)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             counter = self.increment_counter()
         except Exception:

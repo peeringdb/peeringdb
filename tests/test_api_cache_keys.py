@@ -225,7 +225,8 @@ class APICacheTests(TestCase, api_test.TestJSON, api_test.Command):
         fail
         """
         import pytest
-        from twentyc.rpc.client import PermissionDeniedException
+
+        from peeringdb_server.rest_client import PermissionDeniedException
 
         data = self.make_data_net(asn=9000900)
 

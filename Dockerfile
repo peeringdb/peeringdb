@@ -1,4 +1,4 @@
-ARG python_version=3.12
+ARG python_version=3.14
 
 ARG build_deps=" \
     build-essential \
@@ -7,7 +7,7 @@ ARG build_deps=" \
     pkg-config \
     python3-setuptools \
     python${python_version}-dev \
-    libfreetype6-dev \
+    libfreetype-dev \
     libjpeg-turbo8-dev \
     linux-headers-generic \
     libmariadb-dev \
@@ -19,8 +19,8 @@ ARG build_deps=" \
 ARG run_deps=" \
     python${python_version} \
     libpython${python_version} \
-    libpcre3 \
-    libxml2 \
+    libpcre2-8-0 \
+    libxml2-16 \
     libfreetype6 \
     fonts-freefont-ttf \
     gettext \
@@ -32,7 +32,7 @@ ARG run_deps=" \
     curl \
     "
 
-FROM ubuntu:24.04 AS base
+FROM ubuntu:26.04 AS base
 
 ARG virtual_env=/srv/www.peeringdb.com/venv
 ARG python_version

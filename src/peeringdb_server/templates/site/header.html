@@ -114,8 +114,10 @@ $(window).bind("load", function() {
   }
 
   function getCSRFToken() {
+    // the hidden csrfmiddlewaretoken input went away with the POST search
+    // form (#2032); PeeringDB.csrf is the same token, set above
     var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    return csrfToken ? csrfToken.value : '';
+    return csrfToken ? csrfToken.value : (PeeringDB.csrf || '');
   }
 });
 </script>
@@ -136,9 +138,8 @@ $(window).bind("load", function() {
         <a href="/"><img id="logo" class="logo img-fluid" src="{{ STATIC_URL }}pdb-logo-coloured{% if prefers_dark_mode %}-dark{% endif %}.png"/></a>
       </div>
       <div class="col-lg-5 col-md-5 col-sm-5 col-12 search-container">
-        <form action="/search" id="quick-search" method="POST">
-          {% csrf_token %}
-          <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="term" id="search" type="text" />
+        <form action="/search" id="quick-search" method="GET">
+          <input placeholder="{% trans "Search here for a network, IX, or facility." %}" value="{{ request.GET.q }}" class="form-control" name="q" id="search" type="text" />
         </form>
         <div class="row">
           <div class="col-6 col-sm-6">

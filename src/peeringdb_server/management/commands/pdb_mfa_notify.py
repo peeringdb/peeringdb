@@ -4,6 +4,7 @@ from django.template import loader
 from django.utils import timezone
 
 from peeringdb_server.models import User
+from peeringdb_server.settings_util import get_setting_time
 
 
 class Command(BaseCommand):
@@ -18,13 +19,7 @@ class Command(BaseCommand):
         parser.add_argument("--limit", type=int, default=100)
 
     def get_setting_time(self, setting_name):
-        value = getattr(settings, setting_name, None)
-        if value and timezone.is_naive(value):
-            try:
-                return timezone.make_aware(value)
-            except Exception:
-                return None
-        return value
+        return get_setting_time(setting_name)
 
     def build_subject(self, needs_mfa=False, needs_api_key=False):
         if needs_mfa and needs_api_key:

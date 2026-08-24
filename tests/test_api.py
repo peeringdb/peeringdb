@@ -19,11 +19,11 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from django_grainy.models import GroupPermission
 from rest_framework.test import APIClient, APIRequestFactory
-from twentyc.rpc.client import RestClient
 
 import peeringdb_server.inet as pdbinet
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
+from peeringdb_server.rest_client import RestClient
 
 from .elasticsearch_test_mixin import ElasticsearchAPIMixin
 from .util import reset_group_ids
@@ -125,7 +125,7 @@ class DummyResponse:
 
 class DummyRestClient(RestClient):
     """
-    An extension of the twentyc.rpc RestClient that goes to the
+    An extension of the peeringdb_server.rest_client RestClient that goes to the
     django rest framework testing api instead
     """
 

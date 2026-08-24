@@ -20,11 +20,11 @@ from peeringdb_server.models import (
 
 
 def now():
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 def two_weeks_ago():
-    return datetime.datetime.now(datetime.timezone.utc) - timedelta(days=14)
+    return datetime.datetime.now(datetime.UTC) - timedelta(days=14)
 
 
 def assert_same_time(time1, time2, eps=100):

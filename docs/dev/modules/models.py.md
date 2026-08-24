@@ -1,4 +1,4 @@
-Generated from models.py on 2026-07-14 21:31:39.993597
+Generated from models.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.models
 
@@ -1442,6 +1442,13 @@ These attributes / properties will be available on instances of the class
 - info_type (`@property`): None
 - ipv4_support (`@property`): None
 - ipv6_support (`@property`): None
+- irr_as_set_notify_contacts (`@property`): Deduplicated network contact email addresses to notify about an
+irr_as_set data-quality problem — an ambiguous or unresolvable value, or
+the single-set cap (#1973 / #1974).
+
+Roles come from the `IRR_AS_SET_NOTIFY_ROLES` setting (matched
+case-insensitively against `NetworkContact.role`); an empty setting
+disables notifications.
 - ixlan_set_active (`@property`): Returns IXLan queryset for ixlans connected to this network
 through NetworkIXLan.
 - ixlan_set_ixf_enabled (`@property`): Returns IXLan queryset for IX-F import enabled ixlans connected
@@ -1577,6 +1584,16 @@ The new owner rebuilds their network data from scratch.
 
 ### Methods
 
+#### _notify_contacts
+`def _notify_contacts(self, roles)`
+
+Deduplicated active-contact email addresses whose role is in `roles`.
+
+Shared by the notification-recipient properties below so the filtering rules
+exist once. Blank entries in `roles` are dropped so an empty setting disables
+notifications — an empty env var yields [""] (via _set_list), not [].
+
+---
 #### clean
 `def clean(self)`
 

@@ -5,17 +5,34 @@ exclude: |
     )$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-yaml
+      - id: check-added-large-files
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.6.9
+    rev: v0.16.2
     hooks:
     # Run the linter.
-    - id: ruff
+    - id: ruff-check
       args: [ --fix ]
     # Run the formatter.
     - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.3.0
+    hooks:
+      - id: mypy
+        # config (files/excludes/overrides) lives in pyproject [tool.mypy];
+        # type-checking is adopted incrementally (see comments there)
+        args: [--config-file=pyproject.toml]
+        pass_filenames: false
+  # Validate the generated OpenAPI 3 schema for spec compliance (#1991).
+  - repo: https://github.com/python-openapi/openapi-spec-validator
+    rev: 0.9.0
+    hooks:
+      - id: openapi-spec-validator
+        # Default file pattern (`.*openapi.*`) doesn't match our filename,
+        # so target it explicitly or nothing gets checked.
+        files: ^src/peeringdb_server/static/api-schema\.yaml$

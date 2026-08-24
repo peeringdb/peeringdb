@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-07-14 21:31:39.993597
+Generated from validators.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.validators
 
@@ -7,6 +7,49 @@ peeringdb model / field validators
 # Functions
 ---
 
+## _cap_enforced_now
+`def _cap_enforced_now()`
+
+Whether the #1974 single-set cap (IRR_AS_SET_MAX_SETS) is enforced right now.
+
+Staged like MFA (#1810): with a hard-start date the cap rejects only on/after
+it; a soft-start with no hard date is warn-only (never rejects — the
+pdb_irr_as_set_notify nudge does the warning); with neither date set it is a
+plain immediate cap (legacy on/off behavior).
+
+---
+## _normalize_irr_as_set
+`def _normalize_irr_as_set(value)`
+
+Canonicalize an irr_as_set value (separator/case) WITHOUT validating, so
+callers can tell whether a submitted value differs from the stored one (the
+#1973 change-gate). Tolerates legacy / invalid stored values by design.
+
+---
+## _verify_irr_existence
+`def _verify_irr_existence(existence_checks)`
+
+#1973 live existence check + rejection hints, split out of
+`validate_irr_as_set` to keep that function's shape manageable.
+
+Each entry of `existence_checks` is a `(source, name)` pair that has already
+passed format validation and carries an explicit `SOURCE::` prefix. For each,
+confirm the named object exists in its pinned registry via the IRR lookup
+service (`irr.py`). Only a provably absent object (a definitive `False` from
+the lookup pool) is rejected; when the IRR infrastructure cannot answer
+(`None`) the value is accepted and left for the periodic checker, so a
+third-party outage never locks the field.
+
+On rejection the error lists, per missing token, the registries that *do*
+hold the object (best effort — omitted when the lookup pool is unreachable),
+pointing the user at the correct prefix.
+
+The local import avoids import-time coupling and keeps format-only callers of
+`validate_irr_as_set` free of the network dependency.
+
+Raises ValidationError when at least one token is provably absent.
+
+---
 ## clean_ixp_update_exclude
 `def clean_ixp_update_exclude(value)`
 
@@ -20,6 +63,17 @@ this helper stays framework-agnostic - it is shared by `Network.clean()`
 and `NetworkSerializer.validate_ixp_update_exclude()`.
 
 ---
+## irr_as_set_pinned_source
+`def irr_as_set_pinned_source(token)`
+
+(source, name) where source is None unless the token pins a registry that
+PeeringDB knows.
+
+What the batch jobs (pdb_irr_as_set_cleanup, pdb_irr_as_set_status) mean by
+"prefixed": an unrecognized prefix is not a pin anything can be verified
+against, so it reads as unprefixed and the whole token stays the name.
+
+---
 ## normalize_name
 `def normalize_name(value)`
 
@@ -27,6 +81,34 @@ Collapse runs of 2+ whitespace to a single space and strip the ends - the
 collapse counterpart to validate_name (which rejects). Used by the
 pdb_normalize_name_whitespace backfill to fix rows that predate the
 validator.
+
+---
+## split_irr_as_set_token
+`def split_irr_as_set_token(token)`
+
+(source, name) for one irr_as_set token; source is None when the token carries
+no SOURCE:: prefix at all.
+
+Shape only. A prefix naming a registry that is not in IRR_SOURCE is still
+returned as a source, because validate_irr_as_set has to reject it by name
+("Unknown IRR source: X") and cannot do that if the split hides it. Callers
+that mean "prefixed with a registry I recognize" want
+irr_as_set_pinned_source() instead.
+
+---
+## tokenize_irr_as_set
+`def tokenize_irr_as_set(value, keep_empty=False)`
+
+Split an irr_as_set value into its upper-cased set-name tokens (#1973).
+
+The single home for this field's separator handling — comma, space, or both. The
+validator, the cap and the batch jobs (pdb_irr_as_set_cleanup, the nudge in
+pdb_irr_as_set_notify) must all tokenize the same way, or the warning and the
+enforcement drift apart.
+
+`keep_empty` retains the empty strings a stray separator produces, which the
+validator needs so its per-token format check rejects them; every other caller
+is counting or resolving real names.
 
 ---
 ## validate_account_name
@@ -137,7 +219,7 @@ Raises:
 
 ---
 ## validate_irr_as_set
-`def validate_irr_as_set(value)`
+`def validate_irr_as_set(value, strict=False)`
 
 Validate irr as-set string.
 
@@ -145,13 +227,41 @@ Validate irr as-set string.
 - the source may be specified by SOURCE::AS-SET
 - multiple values must be separated by either comma, space or comma followed by space
 
+When `strict` (#1973) the extra "unambiguous name" rules apply, superusers
+excepted (#741): every token needs a known `SOURCE::` prefix and route-sets
+are rejected (both gated by `settings.IRR_AS_SET_REQUIRE_SOURCE`), and the
+set count is capped at `settings.IRR_AS_SET_MAX_SETS` (0 = uncapped). Pass
+`strict` only when the value changes (change-gated by the callers) so legacy
+values keep validating; the default `strict=False` is the historical
+format-only behavior.
+
+Under `strict` a live existence check then confirms each token's object
+actually exists in its pinned registry via the IRR lookup service (`irr.py`).
+Only a provably-absent object is rejected; when the lookup infrastructure
+cannot answer the save is accepted (fail open).
+
 Arguments:
 
 - value: irr as-set string
+- strict: apply the #1973 unambiguous-name rules
 
 Returns:
 
 - str: validated irr as-set string
+
+---
+## validate_irr_as_set_on_change
+`def validate_irr_as_set_on_change(value, old)`
+
+Change-gated `irr_as_set` validation (#1973).
+
+Apply the strict unambiguous-name rules only when `value` differs from the
+stored `old` (the comparison ignores case and separator differences via
+`_normalize_irr_as_set`), so legacy values keep validating on a no-op save
+and the rules bite only on a genuine edit. Shared by the DRF serializer
+(`NetworkSerializer.validate_irr_as_set`) and the admin form
+(`NetworkAdminForm.clean_irr_as_set`) so the change-gate semantics live in
+one place instead of being duplicated across those call sites.
 
 ---
 ## validate_name

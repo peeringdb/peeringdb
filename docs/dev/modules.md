@@ -1,4 +1,4 @@
-Generated on 2026-07-14 21:31:39.993597
+Generated on 2026-08-15 04:17:12.049436
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -112,7 +112,14 @@ from the deskpro API.
 
 ## [documents.py](/docs/dev/modules/documents.py.md)
 
-# Functions
+Elasticsearch document definitions for the search indexes.
+
+Index settings (shards, replicas) are deliberately not declared on the `Index`
+classes here - they come from `ELASTICSEARCH_DSL_INDEX_SETTINGS` in
+`mainsite/settings/__init__.py`, which django_elasticsearch_dsl applies to
+every registered document. Declaring them per document would be dead config:
+the registry merges the global dict on top of `class Index.settings`, so the
+global value always wins.
 
 ## [exceptions.py](/docs/dev/modules/exceptions.py.md)
 
@@ -150,6 +157,52 @@ RDAP lookup and validation.
 Network validation.
 
 Prefix renumbering.
+
+## [irr.py](/docs/dev/modules/irr.py.md)
+
+IRR lookup service (#1973).
+
+The format-only `validate_irr_as_set` (validators.py) cannot answer the two
+questions the unambiguous-as-set work needs:
+
+- sources_for(name)      — which registries hold object X? (editor completions
+                           and the cleanup's found-in-one / many / nowhere split)
+- exists_in(source, name) — does object X exist in registry S? (the save-path
+                           live check and the periodic re-verification)
+
+Both are answered against a configurable pool of full-mirror IRRd servers
+(settings.IRR_LOOKUP_SERVERS), queried over the port-43 whois interface.
+Existence checks pin one source; source completion first uses one explicit
+multi-source query per mirror and falls back to pinned checks if a response is too large or
+unrecognized. Results are cached in the "negative" (Redis) cache for
+settings.IRR_LOOKUP_CACHE_TTL seconds.
+
+Every outbound path fails open: a query that errors, times out, or returns an
+unrecognized response yields an "unknown" result — exists_in returns None and
+sources_for returns ok=False — and never raises. A third-party IRR outage must
+not block a save or the editor. Callers decide policy: the save path rejects only
+a definitive False (provably absent), accepting None.
+
+Correctness note: a source-pinned query against a server that does not mirror
+that source returns "no entries" — a false absent. So a server's answer for a
+given source is trusted only when the server actually carries it, per the
+server's !s-lc mirror list (also the basis of coverage_report()).
+
+## [irr_bulk.py](/docs/dev/modules/irr_bulk.py.md)
+
+Bulk IRR dump index (#1973) — the batch backend for the cleanup / periodic
+checker.
+
+Those two jobs must answer "which registries hold object X?" for ~20-30k names.
+Doing that with per-name live queries would hammer the mirrors, so the batch path
+builds a local {name -> {sources}} index from downloaded IRR dump files and
+answers every lookup in memory. (Transiently ingesting registry dumps for private
+checking is fine; PeeringDB is not running or republishing an IRR.)
+
+This module owns the download/cache lifecycle plus the parser and index. Registry
+dumps are refreshed into settings.IRR_BULK_DUMP_DIR, validated, and atomically
+replaced. A failed refresh keeps a valid older cache. The interactive save-path /
+editor use the live irr.py pool instead — this is only for the batch sweeps.
 
 ## [ixf.py](/docs/dev/modules/ixf.py.md)
 
@@ -260,6 +313,14 @@ peeringdb-py client compatibility checking.
 
 The peeringdb REST API is implemented through django-rest-framework.
 
+## [rest_client.py](/docs/dev/modules/rest_client.py.md)
+
+Minimal REST client used by the API test harness (pdb_api_test, tests/).
+
+Vendored from twentyc.rpc (https://github.com/20c/twentyc.rpc), which is
+unmaintained and calls pkg_resources.declare_namespace at import -- that made
+it fail on setuptools >= 82, where pkg_resources is gone.
+
 ## [rest_throttles.py](/docs/dev/modules/rest_throttles.py.md)
 
 Custom rate limit handlers for the REST API.
@@ -296,6 +357,14 @@ method.
 
 This is mostly DEPRECATED at this point and any new settings should be directly
 defined in mainsite/settings.
+
+## [settings_util.py](/docs/dev/modules/settings_util.py.md)
+
+Helpers for reading and coercing Django settings.
+
+Deliberately free of peeringdb_server imports: `validators` is imported by
+`models`, so anything `validators` depends on must not reach back into the model
+layer.
 
 ## [signals.py](/docs/dev/modules/signals.py.md)
 

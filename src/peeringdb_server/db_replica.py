@@ -19,12 +19,23 @@ router (``peeringdb_server.db_router.DatabaseRouter``) defaults to
 ``default``, so importing this module is always safe.
 """
 
+from __future__ import annotations
+
 import contextvars
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from functools import wraps
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from django.conf import settings
 from django.db.models.signals import post_delete, post_save
+from django.http import HttpRequest, HttpResponse
+
+if TYPE_CHECKING:
+    from django.db.models import Model
+
+# Preserves the decorated callable's exact signature through primary_db().
+F = TypeVar("F", bound=Callable[..., Any])
 
 # Cookie name follows the django-multidb-router convention verbatim.
 # We evaluated adopting the library directly and chose to vendor the
@@ -47,13 +58,13 @@ _request_wrote = contextvars.ContextVar("peeringdb_request_wrote", default=False
 _request_active = contextvars.ContextVar("peeringdb_request_active", default=False)
 
 
-def use_replica_for_read():
+def use_replica_for_read() -> bool:
     """Returns True if the current context opted to read from the replica."""
     return _use_replica.get()
 
 
 @contextmanager
-def use_primary_db():
+def use_primary_db() -> Iterator[None]:
     """
     Force reads to hit the primary database for this context.
 
@@ -73,18 +84,20 @@ def use_primary_db():
         _use_replica.reset(token)
 
 
-def primary_db(func):
+def primary_db(func: F) -> F:
     """Decorator form of ``use_primary_db()``."""
 
     @wraps(func)
-    def _wrapped(*args, **kwargs):
+    def _wrapped(*args: Any, **kwargs: Any) -> Any:
+        # args/kwargs and the return value are an opaque passthrough to the
+        # wrapped callable, so they are genuinely unconstrained here.
         with use_primary_db():
             return func(*args, **kwargs)
 
-    return _wrapped
+    return cast(F, _wrapped)
 
 
-def mark_request_wrote():
+def mark_request_wrote() -> None:
     """
     Force a pin cookie on the current request's response.
 
@@ -105,7 +118,8 @@ def mark_request_wrote():
         _request_wrote.set(True)
 
 
-def _on_write(sender, **kwargs):
+def _on_write(sender: type[Model], **kwargs: Any) -> None:
+    # kwargs is the arbitrary Django signal payload (only "using" is read).
     if not _request_active.get():
         return
     # A write through .using("read") would be a bug elsewhere, but
@@ -132,10 +146,10 @@ class ReadReplicaRouterMiddleware:
 
     SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
-    def __init__(self, get_response):
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> HttpResponse:
         wrote_token = _request_wrote.set(False)
         active_token = _request_active.set(True)
 

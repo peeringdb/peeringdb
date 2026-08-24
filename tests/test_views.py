@@ -244,6 +244,51 @@ def test_adv_search_google_maps_key():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("ui_next", [False, True])
+def test_adv_search_map_visualization(ui_next):
+    """
+    The "always show map" profile option controls how the advanced search map is
+    presented, not whether it is available at all (#2019).
+
+    anonymous             -> no map
+    logged in, opt-in off -> "Show Map" button, map starts collapsed
+    logged in, opt-in on  -> map opens right away, no button
+
+    Parametrized over both UI versions because site/ and site_next/ carry the
+    same map javascript and have to stay in lockstep.
+    """
+    reset_group_ids()
+    client = Client()
+
+    # anonymous visitors get no map at all, same as before the fix
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
+    assert b'const mapAvailable = "false"' in response.content
+
+    user = User.objects.create(username="test", email="test@localhost")
+    user.set_password("test1234")
+    if ui_next:
+        user.set_opt_flag(settings.USER_OPT_FLAG_UI_NEXT, True)
+    user.save()
+    client.login(username="test", password="test1234")
+
+    # the regression #2019 reports: without the profile opt-in a logged in user
+    # still gets the map, behind the "Show Map" button
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
+    assert b'const mapAvailable = "true"' in response.content
+    assert b'const mapAlwaysShow = "false"' in response.content
+
+    user.set_opt_flag(settings.USER_OPT_FLAG_MAP_VISUALIZATION, True)
+    user.save()
+
+    response = client.get("/advanced_search")
+    assert response.status_code == 200
+    assert b'const mapAvailable = "true"' in response.content
+    assert b'const mapAlwaysShow = "true"' in response.content
+
+
+@pytest.mark.django_db
 def test_signup_page():
     client = Client()
 

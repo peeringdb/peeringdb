@@ -121,7 +121,7 @@ def test_resolve_local_ixf(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -183,7 +183,7 @@ def test_resolve_local_ixf_stale_netixlan(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -300,7 +300,7 @@ def test_resolve_local_ixf_stale_netixlan_import_disabled(entities, use_ip, save
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -421,7 +421,7 @@ def test_resolve_local_ixf_stale_netixlan_removal_disabled(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:1",
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -494,7 +494,7 @@ def test_resolve_local_ixf_stale_netixlan_renotification(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:1",
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -613,7 +613,7 @@ def test_resolve_local_ixf_stale_netixlan_renotification_import_disabled(
         ipaddr6="2001:7f8:1::a500:2906:1",
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -812,28 +812,28 @@ def test_update_speed_and_rs_peer_attributes(entities, use_ip, save):
     # Check the network with allow_ixp_update=True
     # Speed and is_rs_peer should be updated only if protocols are compatible
     if protocol_compatible:
-        assert (
-            netixlan_update_enabled.speed == 10000
-        ), "Speed should be updated for network with allow_ixp_update=True"
-        assert (
-            netixlan_update_enabled.is_rs_peer is True
-        ), "is_rs_peer should be updated for network with allow_ixp_update=True"
+        assert netixlan_update_enabled.speed == 10000, (
+            "Speed should be updated for network with allow_ixp_update=True"
+        )
+        assert netixlan_update_enabled.is_rs_peer is True, (
+            "is_rs_peer should be updated for network with allow_ixp_update=True"
+        )
     else:
         # If protocols are incompatible, we expect no updates to occur
-        assert (
-            netixlan_update_enabled.speed == 20000
-        ), "Speed should NOT be updated when protocols are incompatible"
-        assert (
-            netixlan_update_enabled.is_rs_peer is False
-        ), "is_rs_peer should NOT be updated when protocols are incompatible"
+        assert netixlan_update_enabled.speed == 20000, (
+            "Speed should NOT be updated when protocols are incompatible"
+        )
+        assert netixlan_update_enabled.is_rs_peer is False, (
+            "is_rs_peer should NOT be updated when protocols are incompatible"
+        )
 
     # For the network with allow_ixp_update=False, values should never update
-    assert (
-        netixlan_update_disabled.speed == 20000
-    ), "Speed should NOT be updated for network with allow_ixp_update=False"
-    assert (
-        netixlan_update_disabled.is_rs_peer is False
-    ), "is_rs_peer should NOT be updated for network with allow_ixp_update=False"
+    assert netixlan_update_disabled.speed == 20000, (
+        "Speed should NOT be updated for network with allow_ixp_update=False"
+    )
+    assert netixlan_update_disabled.is_rs_peer is False, (
+        "is_rs_peer should NOT be updated for network with allow_ixp_update=False"
+    )
 
     assert_idempotent(importer, ixlan, data)
 
@@ -919,7 +919,7 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -1278,7 +1278,7 @@ def test_add_netixlan_conflict_local_ixf(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -1483,7 +1483,7 @@ def test_suggest_add_local_ixf(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         data=json.dumps({"foo": "bar"}),
@@ -1804,7 +1804,7 @@ def test_suggest_add_no_netixlan_local_ixf(entities, use_ip, save):
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2370,7 +2370,7 @@ def test_suggest_delete_local_ixf_has_flag(entities, save):
         ipaddr6=None,
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2460,7 +2460,7 @@ def test_suggest_delete_local_ixf_no_flag(entities, save):
         ipaddr6=None,
         ixlan=ixlan,
         speed=20000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2780,7 +2780,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:2",
         ixlan=ixlan,
         speed=0,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2793,7 +2793,7 @@ def test_mark_invalid_remote_w_local_ixf_auto_update(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:4",
         ixlan=ixlan,
         speed=0,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2930,7 +2930,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:2",
         ixlan=ixlan,
         speed=0,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -2947,7 +2947,7 @@ def test_mark_invalid_remote_w_local_ixf_no_auto_update(entities, save):
         ipaddr6="2001:7f8:1::a500:2906:4",
         ixlan=ixlan,
         speed=0,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -3052,7 +3052,7 @@ def test_mark_invalid_remote_no_auto_update(entities, save):
 def test_notify_duplicate_ip(entities, save):
     data = setup_test_data("ixf.member.dupe.ip")
     ixlan = entities["ixlan"][0]
-    start = datetime.datetime.now(datetime.timezone.utc)
+    start = datetime.datetime.now(datetime.UTC)
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
@@ -3089,7 +3089,7 @@ def test_mark_invalid_multiple_vlans(entities, save):
     data = setup_test_data("ixf.member.invalid.vlan")
     entities["net"]["UPDATE_DISABLED"]
     ixlan = entities["ixlan"][0]
-    start = datetime.datetime.now(datetime.timezone.utc)
+    start = datetime.datetime.now(datetime.UTC)
 
     importer = ixf.Importer()
     data = importer.sanitize(data)
@@ -3351,9 +3351,9 @@ def test_create_deskpro_tickets_after_x_days(entities):
 
     for ixfmd in IXFMemberData.objects.all():
         # Edit so that they've been created two weeks ago
-        ixfmd.created = datetime.datetime.now(
-            datetime.timezone.utc
-        ) - datetime.timedelta(days=14)
+        ixfmd.created = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+            days=14
+        )
         ixfmd.save()
         print(ixfmd.ixf_id, ixfmd.action)
 
@@ -3575,9 +3575,9 @@ def test_resolve_deskpro_ticket(entities):
     assert not ixf_member_data.deskpro_ref
 
     # Edit so that they've been created two weeks ago
-    ixf_member_data.created = datetime.datetime.now(
-        datetime.timezone.utc
-    ) - datetime.timedelta(days=14)
+    ixf_member_data.created = datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        days=14
+    )
     ixf_member_data.save_without_update()
 
     # re run importer to create tickets
@@ -3735,7 +3735,7 @@ def test_chained_consolidate_add_del(entities):
         ipaddr6="2001:7f8:1::a500:2906:2",
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -3750,7 +3750,7 @@ def test_chained_consolidate_add_del(entities):
         ipaddr6=None,
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -5380,9 +5380,9 @@ def test_ixp_update_exclude_speed(entities, save):
     netixlan = entities["netixlan"][-1]
     netixlan.refresh_from_db()
 
-    assert (
-        netixlan.speed == 20000
-    ), "speed should NOT be updated when in ixp_update_exclude"
+    assert netixlan.speed == 20000, (
+        "speed should NOT be updated when in ixp_update_exclude"
+    )
     assert netixlan.is_rs_peer is True, "is_rs_peer should be updated normally"
     assert netixlan.operational is True, "operational should be updated normally"
 
@@ -5433,9 +5433,9 @@ def test_ixp_update_exclude_is_rs_peer(entities, save):
     netixlan.refresh_from_db()
 
     assert netixlan.speed == 10000, "speed should be updated normally"
-    assert (
-        netixlan.is_rs_peer is False
-    ), "is_rs_peer should NOT be updated when in ixp_update_exclude"
+    assert netixlan.is_rs_peer is False, (
+        "is_rs_peer should NOT be updated when in ixp_update_exclude"
+    )
     assert netixlan.operational is True, "operational should be updated normally"
 
     assert IXFMemberData.objects.count() == 0
@@ -5486,9 +5486,9 @@ def test_ixp_update_exclude_operational(entities, save):
 
     assert netixlan.speed == 10000, "speed should be updated normally"
     assert netixlan.is_rs_peer is True, "is_rs_peer should be updated normally"
-    assert (
-        netixlan.operational is False
-    ), "operational should NOT be updated when in ixp_update_exclude"
+    assert netixlan.operational is False, (
+        "operational should NOT be updated when in ixp_update_exclude"
+    )
 
     assert IXFMemberData.objects.count() == 0
     assert_no_emails(network, ixlan.ix)
@@ -5574,9 +5574,9 @@ def test_ixp_update_exclude_speed_on_add(entities, save):
 
     netixlan = NetworkIXLan.objects.filter(network=network, status="ok").first()
     assert netixlan is not None, "netixlan should have been added"
-    assert (
-        netixlan.speed == 0
-    ), "speed should NOT be set from IX-F when in ixp_update_exclude"
+    assert netixlan.speed == 0, (
+        "speed should NOT be set from IX-F when in ixp_update_exclude"
+    )
     assert netixlan.is_rs_peer is True, "is_rs_peer should be set from IX-F normally"
     assert netixlan.operational is True, "operational should be set from IX-F normally"
 
@@ -5629,9 +5629,9 @@ def test_ixp_update_exclude_no_notification_when_only_blocked_field_differs(
     netixlan = entities["netixlan"][-1]
     netixlan.refresh_from_db()
 
-    assert (
-        netixlan.speed == 20000
-    ), "speed should NOT be updated when in ixp_update_exclude"
+    assert netixlan.speed == 20000, (
+        "speed should NOT be updated when in ixp_update_exclude"
+    )
     assert IXFMemberData.objects.count() == 0
     assert_no_emails(network, ixlan.ix)
 
@@ -5723,7 +5723,7 @@ def test_ixp_update_exclude_add_preserves_non_excluded_when_update_disabled():
         ipaddr6="2001:7f8:1::a500:2906:1",
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=True,
         status="ok",
@@ -5739,12 +5739,12 @@ def test_ixp_update_exclude_add_preserves_non_excluded_when_update_disabled():
     assert netixlan.speed == 0, "excluded speed must not be taken from IX-F"
     # not excluded -> taken from IX-F even though allow_ixp_update is False
     # (pre-#1943 add behavior preserved by the modify_* / take_* split)
-    assert (
-        netixlan.is_rs_peer is True
-    ), "non-excluded is_rs_peer must be taken from IX-F"
-    assert (
-        netixlan.operational is True
-    ), "non-excluded operational must be taken from IX-F"
+    assert netixlan.is_rs_peer is True, (
+        "non-excluded is_rs_peer must be taken from IX-F"
+    )
+    assert netixlan.operational is True, (
+        "non-excluded operational must be taken from IX-F"
+    )
 
 
 @pytest.mark.django_db
@@ -5819,7 +5819,7 @@ def test_ixf_import_does_not_create_addressless_netixlan():
         ipaddr6=None,
         ixlan=ixlan,
         speed=10000,
-        fetched=datetime.datetime.now(datetime.timezone.utc),
+        fetched=datetime.datetime.now(datetime.UTC),
         operational=True,
         is_rs_peer=False,
         status="ok",
@@ -5835,9 +5835,9 @@ def test_ixf_import_does_not_create_addressless_netixlan():
     blank = NetworkIXLan.objects.filter(
         status="ok", ipaddr4__isnull=True, ipaddr6__isnull=True
     )
-    assert (
-        blank.count() == 0
-    ), f"importer created {blank.count()} netixlan(s) with no IPv4 or IPv6 address"
+    assert blank.count() == 0, (
+        f"importer created {blank.count()} netixlan(s) with no IPv4 or IPv6 address"
+    )
 
     # the suppressed hint must be resolved (deleted), not left as a
     # perpetual, unactionable "add" proposal

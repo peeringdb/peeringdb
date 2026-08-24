@@ -6,7 +6,10 @@ Network validation.
 Prefix renumbering.
 """
 
+from __future__ import annotations
+
 import ipaddress
+from typing import TYPE_CHECKING
 
 import rdap
 from django.conf import settings as django_settings
@@ -15,11 +18,21 @@ from rdap.exceptions import RdapException, RdapNotFoundError
 
 from peeringdb_server import settings
 
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
 RdapAsn = rdap.RdapAsn  # noqa
 RdapNetwork = rdap.objects.RdapNetwork  # noqa
 
 # Valid IRR Source values
 # reference: http://www.irr.net/docs/list.html
+#
+# #1973 prunes registries that no longer exist, on evidence of emptiness rather
+# than lack of PeeringDB usage -- RADB publishes a dump for every entry it mirrors,
+# so an unused source may just be unpopular. Removed 2026-08-04: NESTEGG and PANIX
+# (RADB dumps of 484 B and 812 B, header only, and no network pins either).
+# BELL / CANARIE / REACH are also unused but stay until measured.
+# irr_bulk.DUMP_SOURCES must be edited in the same change.
 IRR_SOURCE = (
     "AFRINIC",
     "ALTDB",
@@ -32,9 +45,7 @@ IRR_SOURCE = (
     "JPIRR",
     "LACNIC",
     "LEVEL3",
-    "NESTEGG",
     "NTTCOM",
-    "PANIX",
     "RADB",
     "REACH",
     "RIPE",
@@ -104,9 +115,9 @@ class BogonAsn(rdap.RdapAsn):
     private and documentation ranges.
     """
 
-    def __init__(self, asn):
+    def __init__(self, asn: int) -> None:
         name = f"AS{asn}"
-        self._parsed = {
+        self._parsed: dict[str, str | list[str] | None] = {
             "name": name,
             "org_name": name,
             "org_address": None,
@@ -119,7 +130,7 @@ class RdapLookup(rdap.RdapClient):
     Does RDAP lookups against defined URL.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # create rdap config
         config = dict(
             bootstrap_url=settings.RDAP_URL.rstrip("/"),
@@ -131,7 +142,7 @@ class RdapLookup(rdap.RdapClient):
         )
         super().__init__(config)
 
-    def get_asn(self, asn):
+    def get_asn(self, asn: int) -> rdap.RdapAsn:
         """
         Handle asns that fall into the private/documentation ranges
         manually - others are processed normally through rdap lookup.
@@ -163,7 +174,7 @@ def rir_status_is_ok(rir_status: str) -> bool:
     ]
 
 
-def rdap_pretty_error_message(exc):
+def rdap_pretty_error_message(exc: Exception) -> str:
     """
     Take an RdapException instance and return a customer friendly
     error message (str).
@@ -183,7 +194,7 @@ def rdap_pretty_error_message(exc):
     )
 
 
-def asn_is_bogon(asn):
+def asn_is_bogon(asn: int) -> bool:
     """
     Test if an asn is bogon by being either in the documentation
     or private asn ranges.
@@ -197,7 +208,7 @@ def asn_is_bogon(asn):
     return asn_is_in_ranges(asn, BOGON_ASN_RANGES)
 
 
-def asn_is_in_ranges(asn, ranges):
+def asn_is_in_ranges(asn: int, ranges: list[tuple[int, int]]) -> bool:
     """
     Test if an asn falls within any of the ranges provided.
 
@@ -215,7 +226,9 @@ def asn_is_in_ranges(asn, ranges):
     return False
 
 
-def network_is_bogon(network):
+def network_is_bogon(
+    network: ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> bool:
     """
     Return if the passed ipaddress network is a bogon.
 
@@ -229,7 +242,9 @@ def network_is_bogon(network):
     return not network.is_global or network.is_reserved
 
 
-def network_is_pdb_valid(network):
+def network_is_pdb_valid(
+    network: ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> bool:
     """
     Return if the passed ipaddress network is in pdb valid
     address space.
@@ -265,7 +280,7 @@ def network_is_pdb_valid(network):
     return True
 
 
-def get_prefix_protocol(prefix):
+def get_prefix_protocol(prefix: str) -> str:
     """
     Take a network address space prefix string and return
     a string describing the protocol.
@@ -287,7 +302,11 @@ def get_prefix_protocol(prefix):
             raise ValueError("Prefix invalid")
 
 
-def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
+def renumber_ipaddress(
+    ipaddr: ipaddress.IPv4Address | ipaddress.IPv6Address,
+    old_prefix: ipaddress.IPv4Network | ipaddress.IPv6Network,
+    new_prefix: ipaddress.IPv4Network | ipaddress.IPv6Network,
+) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
     """
     Renumber an ipaddress from old prefix to new prefix.
 
@@ -341,7 +360,7 @@ def renumber_ipaddress(ipaddr, old_prefix, new_prefix):
     return new_ip
 
 
-def get_client_ip(request):
+def get_client_ip(request: HttpRequest) -> str | None:
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
     if x_forwarded_for:
         ip = x_forwarded_for.split(",")[0]

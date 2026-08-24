@@ -1,17 +1,23 @@
 import ipaddress
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.forms import modelform_factory
 from django.test import RequestFactory, override_settings
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
 import peeringdb_server.geo as geo
+from peeringdb_server import irr as irr_module
+from peeringdb_server.admin import NetworkAdminForm
 from peeringdb_server.context import current_request
+from peeringdb_server.inet import IRR_SOURCE
+from peeringdb_server.irr_bulk import DUMP_SOURCES
 from peeringdb_server.models import (
     Facility,
     InternetExchange,
@@ -28,6 +34,9 @@ from peeringdb_server.serializers import (
     NetworkSerializer,
 )
 from peeringdb_server.validators import (
+    irr_as_set_pinned_source,
+    split_irr_as_set_token,
+    tokenize_irr_as_set,
     validate_account_name,
     validate_address_space,
     validate_asn_prefix,
@@ -48,6 +57,24 @@ from peeringdb_server.validators import (
 from tests.test_ixf_member_import_protocol import setup_test_data
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture(autouse=True)
+def _irr_lookup_exists():
+    """
+    By default every looked-up object "exists", so the #1973 strict format tests
+    are not gated on the live existence check. Tests that exercise the live check
+    itself override peeringdb_server.irr.exists_in inline.
+    """
+    with (
+        patch("peeringdb_server.irr.exists_in", return_value=True),
+        patch(
+            "peeringdb_server.irr.sources_for",
+            return_value=irr_module.LookupResult(frozenset(), True),
+        ),
+    ):
+        yield
+
 
 INVALID_ADDRESS_SPACES = [
     "0.0.0.0/1",
@@ -401,7 +428,11 @@ def test_validate_prefix_overlap_error():
         # ("ARIN-NONAUTH::AS-20C", "ARIN-NONAUTH::AS-20C"),
         # fail validation
         ("AS-Resound Networks,LLC", False),
-        ("UNKNOWN::AS-FOO", False),
+        # #1973: the unknown-source rule is change-gated, so a legacy value
+        # naming a retired (or mistyped) registry still validates non-strict --
+        # otherwise retiring a registry would make those networks unsaveable.
+        # The prefix is preserved, not silently stripped.
+        ("UNKNOWN::AS-FOO", "UNKNOWN::AS-FOO"),
         # postfix @SOURCE notation is no longer supported #1894
         ("AS-FOO@RIPE", False),
         ("AS-FOO-BAR@RIPE", False),
@@ -426,6 +457,366 @@ def test_validate_irr_as_set(value, validated):
             validate_irr_as_set(value)
     else:
         assert validate_irr_as_set(value) == validated
+
+
+@pytest.mark.parametrize(
+    "value,validated",
+    [
+        # every token carries a known SOURCE:: prefix -> accepted
+        ("RIPE::AS-FOO", "RIPE::AS-FOO"),
+        ("ripe::as-foo", "RIPE::AS-FOO"),
+        ("RIPE::AS12345", "RIPE::AS12345"),
+        ("RIPE::AS12345:AS-FOO", "RIPE::AS12345:AS-FOO"),
+        # missing source prefix -> rejected (#1973)
+        ("AS-FOO", False),
+        ("as-foo", False),
+        # bare ASN token also needs a source (#1973)
+        ("AS15562", False),
+        # one prefixed + one bare -> rejected (the bare token fails)
+        ("RIPE::AS-FOO AS-BAR", False),
+        # route-set names rejected on strict updates (#1973)
+        ("RIPE::RS-FOO", False),
+        ("RIPE::AS123456:RS-FOO", False),
+        # IRR_AS_SET_MAX_SETS defaults to 0 (uncapped) -- the single-set cap is #1974
+        # and ships disabled -- so several properly prefixed sets are accepted (the
+        # cap is exercised in the count-cap tests below)
+        ("RIPE::AS-FOO RADB::AS-BAR", "RIPE::AS-FOO RADB::AS-BAR"),
+        # unknown source rejected on a CHANGED value -- typing a bad registry name
+        # is a change, so this is where a typo or a retired source gets caught
+        ("UNKNOWN::AS-FOO", False),
+    ],
+)
+def test_validate_irr_as_set_strict(value, validated):
+    """The #1973 strict rules: source required, no route-sets, count capped."""
+    if not validated:
+        with pytest.raises(ValidationError):
+            validate_irr_as_set(value, strict=True)
+    else:
+        assert validate_irr_as_set(value, strict=True) == validated
+
+
+@override_settings(IRR_AS_SET_MAX_SETS=2)
+def test_validate_irr_as_set_strict_count_cap_configurable():
+    # cap raised to 2 -> two prefixed sets now accepted
+    assert (
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+        == "RIPE::AS-FOO RADB::AS-BAR"
+    )
+    # three still over the cap
+    with pytest.raises(ValidationError):
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR ARIN::AS-BAZ", strict=True)
+
+
+@override_settings(IRR_AS_SET_MAX_SETS=0)
+def test_validate_irr_as_set_strict_count_cap_disabled():
+    # 0 disables the cap (wire-but-don't-enforce, #1973) -- the shipped default; the
+    # cap is #1974 and gets a dated soft/hard rollout later
+    assert (
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+        == "RIPE::AS-FOO RADB::AS-BAR"
+    )
+
+
+@override_settings(
+    IRR_AS_SET_MAX_SETS=1, IRR_AS_SET_CAP_HARD_START=datetime(2999, 1, 1)
+)
+def test_validate_irr_as_set_cap_not_enforced_before_hard_start():
+    # #1974 dated rollout: cap configured but the hard-start date is in the
+    # future -> multiple prefixed sets are still accepted (soft window)
+    assert (
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+        == "RIPE::AS-FOO RADB::AS-BAR"
+    )
+
+
+@override_settings(
+    IRR_AS_SET_MAX_SETS=1, IRR_AS_SET_CAP_HARD_START=datetime(2000, 1, 1)
+)
+def test_validate_irr_as_set_cap_enforced_after_hard_start():
+    # once the hard-start date has passed the cap rejects over-cap values
+    with pytest.raises(ValidationError):
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+
+
+@override_settings(
+    IRR_AS_SET_MAX_SETS=1,
+    IRR_AS_SET_CAP_SOFT_START=datetime(2000, 1, 1),
+    IRR_AS_SET_CAP_HARD_START=None,
+)
+def test_validate_irr_as_set_cap_soft_window_warn_only():
+    # a soft-start with no hard date is warn-only -> the save is still accepted
+    # (the pdb_irr_as_set_notify nudge does the warning)
+    assert (
+        validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+        == "RIPE::AS-FOO RADB::AS-BAR"
+    )
+
+
+@override_settings(IRR_AS_SET_REQUIRE_SOURCE=False, IRR_AS_SET_MAX_SETS=1)
+def test_validate_irr_as_set_strict_source_kill_switch():
+    # the source/route-set rules can be turned off at runtime; the count cap
+    # (a separate knob -- explicitly set here since it defaults to 0/uncapped)
+    # still applies
+    assert validate_irr_as_set("AS-FOO", strict=True) == "AS-FOO"
+    assert validate_irr_as_set("RIPE::RS-FOO", strict=True) == "RIPE::RS-FOO"
+    with pytest.raises(ValidationError):
+        validate_irr_as_set("AS-FOO AS-BAR", strict=True)
+
+
+def test_validate_irr_as_set_default_is_not_strict():
+    # default (strict=False) keeps the historical format-only behavior
+    assert validate_irr_as_set("AS-FOO") == "AS-FOO"
+    assert validate_irr_as_set("RS-FOO") == "RS-FOO"
+    assert validate_irr_as_set("AS-FOO AS-BAR") == "AS-FOO AS-BAR"
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("AS-FOO", ["AS-FOO"]),
+        ("as-foo", ["AS-FOO"]),
+        ("AS-FOO AS-BAR", ["AS-FOO", "AS-BAR"]),
+        ("AS-FOO,AS-BAR", ["AS-FOO", "AS-BAR"]),
+        ("AS-FOO, AS-BAR", ["AS-FOO", "AS-BAR"]),
+        ("RIPE::AS-FOO, RADB::AS-BAR", ["RIPE::AS-FOO", "RADB::AS-BAR"]),
+        ("", []),
+        ("AS-FOO,", ["AS-FOO"]),
+    ],
+)
+@pytest.mark.django_db
+def test_tokenize_irr_as_set(value, expected):
+    # the one home for this field's separator handling: the cap counts these
+    # tokens, and the batch jobs (cleanup, cap nudge) must count identically or
+    # the warning and the enforcement drift apart
+    assert tokenize_irr_as_set(value) == expected
+
+
+@pytest.mark.django_db
+def test_tokenize_irr_as_set_keep_empty_for_the_validator():
+    # the validator wants the empty tokens a stray separator produces so its
+    # per-token format check still rejects them
+    assert tokenize_irr_as_set("AS-FOO,", keep_empty=True) == ["AS-FOO", ""]
+    with pytest.raises(ValidationError):
+        validate_irr_as_set("AS-FOO,")
+    with pytest.raises(ValidationError):
+        validate_irr_as_set("")
+
+
+@pytest.mark.parametrize(
+    "token,expected",
+    [
+        ("RIPE::AS-FOO", ("RIPE", "AS-FOO")),
+        ("RADB::AS64496", ("RADB", "AS64496")),
+        # a nested name keeps its colons; only the first :: separates
+        ("RIPE::AS-FOO:AS-BAR", ("RIPE", "AS-FOO:AS-BAR")),
+        ("AS-FOO", (None, "AS-FOO")),
+        # shape only: an unknown registry is still reported as a source, because
+        # validate_irr_as_set has to name it in "Unknown IRR source: X"
+        ("NOTAREGISTRY::AS-FOO", ("NOTAREGISTRY", "AS-FOO")),
+        # not the SOURCE::NAME shape at all -> the whole token is the name
+        ("RIPE::", (None, "RIPE::")),
+        ("", (None, "")),
+    ],
+)
+@pytest.mark.django_db
+def test_split_irr_as_set_token(token, expected):
+    assert split_irr_as_set_token(token) == expected
+
+
+@pytest.mark.parametrize(
+    "token,expected",
+    [
+        ("RIPE::AS-FOO", ("RIPE", "AS-FOO")),
+        ("AS-FOO", (None, "AS-FOO")),
+        # the difference from split_irr_as_set_token: a prefix naming a registry
+        # PeeringDB does not know is not a pin anything can be verified against,
+        # so the batch jobs read the whole token as the name
+        ("NOTAREGISTRY::AS-FOO", (None, "NOTAREGISTRY::AS-FOO")),
+    ],
+)
+@pytest.mark.django_db
+def test_irr_as_set_pinned_source(token, expected):
+    assert irr_as_set_pinned_source(token) == expected
+
+
+@pytest.mark.django_db
+def test_split_helpers_agree_with_the_validator_on_the_prefix_shape():
+    """
+    The regex behind these helpers is the same one validate_irr_as_set applies, so
+    a token the helpers see as prefixed with a known source must also be one the
+    validator accepts without a source-prefix complaint. The batch jobs decide
+    what to re-verify off the helpers; if the two drifted, they would either skip
+    values enforcement accepts or act on values it rejects.
+    """
+    for token in ("RIPE::AS-FOO", "RADB::AS64496", "RIPE::AS-FOO:AS-BAR"):
+        source, _name = irr_as_set_pinned_source(token)
+        assert source is not None
+        validate_irr_as_set(token, strict=True)
+
+
+@pytest.mark.django_db
+def test_network_serializer_irr_as_set_change_gated():
+    """
+    #1973: the serializer enforces the unambiguous-name rules only when the
+    value actually changes, so legacy values keep working (change-gate).
+    """
+    org = Organization.objects.create(name="IRR Org", status="ok")
+    # legacy row with a bare (ambiguous) value; save() bypasses validation
+    net = Network.objects.create(
+        name="IRR Net", asn=64500, irr_as_set="AS-FOO", status="ok", org=org
+    )
+
+    # --- create path (no instance): any non-empty value is strict-checked ---
+    with pytest.raises(ValidationError):
+        NetworkSerializer().validate_irr_as_set("AS-NEW")  # bare -> rejected
+    assert NetworkSerializer().validate_irr_as_set("RIPE::AS-NEW") == "RIPE::AS-NEW"
+    # empty is always allowed
+    assert NetworkSerializer().validate_irr_as_set("") == ""
+
+    ser = NetworkSerializer(instance=net)
+    # unchanged legacy value passes even though it is bare
+    assert ser.validate_irr_as_set("AS-FOO") == "AS-FOO"
+    # a no-op re-submit differing only in case/separators is not a change
+    assert ser.validate_irr_as_set("as-foo") == "AS-FOO"
+    # changing to another bare value is rejected
+    with pytest.raises(ValidationError):
+        ser.validate_irr_as_set("AS-BAR")
+    # changing to a properly prefixed value is accepted
+    assert ser.validate_irr_as_set("RIPE::AS-FOO") == "RIPE::AS-FOO"
+
+
+@pytest.mark.django_db
+def test_network_admin_form_irr_as_set_change_gated():
+    """
+    #1973: the admin form (NetworkAdminForm.clean_irr_as_set) is change-gated
+    exactly like the serializer -- the strict unambiguous-name rules bite only on
+    a genuine edit, so legacy values keep working, and superusers bypass them
+    (#741). Mirrors test_network_serializer_irr_as_set_change_gated for the admin
+    path, including the superuser bypass in an admin request context.
+    """
+    # NetworkAdminForm gets its model from the ModelAdmin at runtime; bind one
+    # here so the form can be instantiated standalone in the test.
+    form_class = modelform_factory(
+        Network, form=NetworkAdminForm, fields=["irr_as_set"]
+    )
+
+    org = Organization.objects.create(name="IRR Admin Org", status="ok")
+    # legacy row with a bare (ambiguous) value; save() bypasses validation
+    net = Network.objects.create(
+        name="IRR Admin Net", asn=64600, irr_as_set="AS-FOO", status="ok", org=org
+    )
+
+    def clean(instance, value):
+        # exercise clean_irr_as_set directly (as the serializer test does),
+        # setting cleaned_data so no full form validation is required
+        form = form_class(instance=instance)
+        form.cleaned_data = {"irr_as_set": value}
+        return form.clean_irr_as_set()
+
+    # --- create path (blank instance, no pk): any non-empty value is strict ---
+    with pytest.raises(ValidationError):
+        clean(None, "AS-NEW")  # bare -> rejected
+    assert clean(None, "RIPE::AS-NEW") == "RIPE::AS-NEW"
+    # empty is always allowed
+    assert clean(net, "") == ""
+
+    # --- update path ---
+    # unchanged legacy value passes even though it is bare
+    assert clean(net, "AS-FOO") == "AS-FOO"
+    # a no-op re-submit differing only in case/separators is not a change
+    assert clean(net, "as-foo") == "AS-FOO"
+    # changing to another bare value is rejected
+    with pytest.raises(ValidationError):
+        clean(net, "AS-BAR")
+    # changing to a properly prefixed value is accepted
+    assert clean(net, "RIPE::AS-FOO") == "RIPE::AS-FOO"
+
+    # --- superuser bypass (#741): strict rules skipped in a superuser request ---
+    User = get_user_model()
+    superuser = User.objects.create_user(
+        username="irr_admin_su",
+        password="x",
+        email="irr_su@localhost",
+        is_superuser=True,
+    )
+    request = RequestFactory().get("/cp/")
+    request.user = superuser
+    with current_request(request):
+        # a changed bare value would normally be rejected; the superuser bypasses
+        assert clean(net, "AS-BRAND-NEW") == "AS-BRAND-NEW"
+
+
+@override_settings(IRR_AS_SET_VERIFY_EXISTENCE=True)
+def test_validate_irr_as_set_strict_rejects_absent_object():
+    # strict + object provably absent in its pinned registry -> rejected
+    with (
+        patch("peeringdb_server.irr.exists_in", return_value=False),
+        patch(
+            "peeringdb_server.irr.sources_for",
+            return_value=irr_module.LookupResult(frozenset({"ARIN"}), True),
+        ),
+    ):
+        with pytest.raises(ValidationError) as exc:
+            validate_irr_as_set("RIPE::AS-GHOST", strict=True)
+        # the error points the user at where the object *does* live
+        assert "ARIN" in str(exc.value)
+
+
+@override_settings(IRR_AS_SET_VERIFY_EXISTENCE=True)
+def test_validate_irr_as_set_strict_fail_open_on_unknown():
+    # lookup infrastructure can't answer (None) -> accepted, left for the checker
+    with patch("peeringdb_server.irr.exists_in", return_value=None):
+        assert validate_irr_as_set("RIPE::AS-GHOST", strict=True) == "RIPE::AS-GHOST"
+
+
+@override_settings(IRR_AS_SET_VERIFY_EXISTENCE=True, IRR_AS_SET_MAX_SETS=2)
+def test_validate_irr_as_set_strict_multi_token_one_absent():
+    # cap raised to 2 so both tokens pass syntactically; the live check then
+    # rejects because one token's object is absent. sources_for returns ok=False,
+    # so the error carries the plain token (the "found in: ..." hint is omitted).
+    def exists(source, name, object_class=None):
+        return name != "AS-BAR"  # AS-FOO exists, AS-BAR absent
+
+    with (
+        patch("peeringdb_server.irr.exists_in", side_effect=exists),
+        patch(
+            "peeringdb_server.irr.sources_for",
+            return_value=irr_module.LookupResult(frozenset(), False),
+        ),
+    ):
+        with pytest.raises(ValidationError) as exc:
+            validate_irr_as_set("RIPE::AS-FOO RADB::AS-BAR", strict=True)
+    msg = str(exc.value)
+    assert "AS-BAR" in msg
+    assert "found in" not in msg
+
+
+def test_validate_irr_as_set_no_live_check_when_not_strict():
+    # format-only (strict=False) must never trigger a live lookup
+    with patch("peeringdb_server.irr.exists_in") as m_exists:
+        assert validate_irr_as_set("RIPE::AS-FOO") == "RIPE::AS-FOO"
+        m_exists.assert_not_called()
+
+
+@pytest.mark.django_db
+@override_settings(IRR_AS_SET_VERIFY_EXISTENCE=True)
+def test_network_serializer_irr_as_set_live_check_rejects_absent():
+    # the serializer change-gate + live check reject a *changed* value whose
+    # object does not exist in the pinned registry
+    org = Organization.objects.create(name="IRR Org Live", status="ok")
+    net = Network.objects.create(
+        name="IRR Net Live", asn=64501, irr_as_set="RIPE::AS-OLD", status="ok", org=org
+    )
+    ser = NetworkSerializer(instance=net)
+    with (
+        patch("peeringdb_server.irr.exists_in", return_value=False),
+        patch(
+            "peeringdb_server.irr.sources_for",
+            return_value=irr_module.LookupResult(frozenset(), True),
+        ),
+    ):
+        with pytest.raises(ValidationError):
+            ser.validate_irr_as_set("RIPE::AS-CHANGED")
 
 
 @pytest.mark.django_db
@@ -572,6 +963,9 @@ def test_bypass_validation():
         NetworkIXLan(speed=1, network=net, ixlan=ix.ixlan, status="ok").clean()
         NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan, status="ok").clean()
         validate_irr_as_set("ripe::as-foo:as123:as345:as678")
+        # #1973 strict rules are also bypassed by superusers (#741)
+        validate_irr_as_set("as-foo", strict=True)
+        validate_irr_as_set("ripe::rs-foo", strict=True)
 
     # user should NOT bypass validation
 
@@ -596,6 +990,11 @@ def test_bypass_validation():
             NetworkIXLan(speed=1000, network=net, ixlan=ix.ixlan).clean()
         with pytest.raises(ValidationError):
             validate_irr_as_set("ripe::as-foo:as123:as345:as678")
+        # #1973 strict rules are enforced for non-superusers
+        with pytest.raises(ValidationError):
+            validate_irr_as_set("as-foo", strict=True)
+        with pytest.raises(ValidationError):
+            validate_irr_as_set("ripe::rs-foo", strict=True)
 
 
 @pytest.mark.django_db
@@ -1543,9 +1942,9 @@ def test_validate_status_field_serializer():
 
     # --- Verify status field is marked as read-only ---
     serializer = NetworkIXLanSerializer()
-    assert serializer.fields[
-        "status"
-    ].read_only, "status field should be marked as read_only"
+    assert serializer.fields["status"].read_only, (
+        "status field should be marked as read_only"
+    )
 
 
 @pytest.mark.parametrize(
@@ -1579,3 +1978,80 @@ def test_validate_django_ratelimit_rate_valid(value):
 def test_validate_django_ratelimit_rate_invalid(value):
     with pytest.raises(ValidationError):
         validate_django_ratelimit_rate(value)
+
+
+@pytest.mark.django_db
+def test_pruned_irr_sources_are_no_longer_accepted():
+    """
+    the #1973 prune: NESTEGG and PANIX were removed from IRR_SOURCE on evidence
+    their registries hold nothing (RADB dumps of 484 B and 812 B, header only), so a
+    value naming them can never pass an existence check and must be rejected as an
+    unknown source rather than silently pinned to a dead registry.
+    """
+    for pruned in ("NESTEGG", "PANIX"):
+        assert pruned not in IRR_SOURCE
+        # rejected the moment anyone edits the value...
+        with pytest.raises(ValidationError):
+            validate_irr_as_set(f"{pruned}::AS-FOO", strict=True)
+        # ...but a stored legacy value still validates, so retiring the registry
+        # does not make the network unsaveable (the point of change-gating it)
+        assert validate_irr_as_set(f"{pruned}::AS-FOO") == f"{pruned}::AS-FOO"
+        # and it is not a pin the batch jobs will try to verify
+        assert irr_as_set_pinned_source(f"{pruned}::AS-FOO") == (
+            None,
+            f"{pruned}::AS-FOO",
+        )
+
+
+@pytest.mark.django_db
+def test_zero_usage_sources_were_deliberately_kept():
+    """
+    Guards the reasoning, not just the list. BELL / CANARIE / REACH also have no
+    PeeringDB usage, but zero usage is not evidence a registry is gone and their
+    dumps were never measured — so they stay until someone measures them. Without
+    this test the next reader sees an arbitrary-looking prune and "tidies up".
+    """
+    for kept in ("BELL", "CANARIE", "REACH"):
+        assert kept in IRR_SOURCE
+        validate_irr_as_set(f"{kept}::AS-FOO")
+
+
+@pytest.mark.django_db
+def test_bulk_dump_sources_track_irr_source():
+    """
+    The two lists must be pruned together: build_index filters to set(IRR_SOURCE),
+    so a dump source left behind costs a download and contributes nothing — and
+    dump_health would still demand it, which blocks pdb_irr_as_set_cleanup --commit.
+    """
+    for spec in DUMP_SOURCES:
+        assert spec["name"] in IRR_SOURCE, (
+            f"{spec['name']} has a dump but is not in IRR_SOURCE, so its dump is "
+            "downloaded and then discarded by build_index"
+        )
+
+
+@pytest.mark.django_db
+def test_retired_source_does_not_block_an_unrelated_edit():
+    """
+    The failure mode change-gating exists to prevent (#1973): Network.clean()
+    validates irr_as_set on every save, so an unconditional unknown-source check
+    would mean a network holding a retired registry's prefix could not update its
+    phone number until it fixed the as-set.
+    """
+    org = Organization.objects.create(name="Retired Source Org", status="ok")
+    net = Network.objects.create(
+        name="Legacy Net",
+        asn=64497,
+        irr_as_set="NESTEGG::AS-LEGACY",
+        status="ok",
+        org=org,
+    )
+
+    net.website = "https://example.com"
+    net.full_clean()  # must not raise
+    net.save()
+
+    net.refresh_from_db()
+    # the legacy prefix survives untouched -- clean() assigns the validator's
+    # return value back to the field, so a rewrite here would be silent data loss
+    assert net.irr_as_set == "NESTEGG::AS-LEGACY"

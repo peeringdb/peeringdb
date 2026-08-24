@@ -33,3 +33,18 @@ The `name_search` filter uses `search_v2()` from `search_v2.py` to find matching
 The advanced-search UI is wired directly to the REST API, so whatever the REST api is capable of the advanced-search UI can make use of.
 
 New form elements should be added as necessary.
+
+## Elasticsearch index settings
+
+Shard and replica counts for all 6 search indexes (`org`, `fac`, `ix`, `net`, `campus`, `carrier`) are configured in one place, `ELASTICSEARCH_DSL_INDEX_SETTINGS` in `mainsite/settings/__init__.py`, and are tunable per environment:
+
+| Env var | Default | Notes |
+|---|---|---|
+| `ELASTICSEARCH_NUMBER_OF_SHARDS` | `1` | |
+| `ELASTICSEARCH_NUMBER_OF_REPLICAS` | `1` | Set to `0` on single-node clusters |
+| `ELASTICSEARCH_USER` | `elastic` | Paired with `ELASTIC_PASSWORD` |
+| `ELASTICSEARCH_VERIFY_CERTS` | `false` | Enable where ES presents a cert the app trusts |
+
+django_elasticsearch_dsl applies these to every registered document, so they take effect on every index create — including `pdb_search_index --rebuild`. Do **not** add a `settings` dict to the `class Index` blocks in `documents.py`: the global dict is merged on top of it, so a per-document value is silently ignored.
+
+`number_of_replicas` defaults to `1` so that each primary shard has a copy on another node. With `0`, losing the single node holding a shard takes `/search` down completely. Green cluster health requires at least 2 ES data nodes; a single-node cluster (dev, CI) reports yellow index health with replicas enabled, which is why `dev.py` and `run_tests.py` set it to `0`. Search itself works in either state.

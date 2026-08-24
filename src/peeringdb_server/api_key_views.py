@@ -2,9 +2,13 @@
 Views for organization api key management.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
+
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 from grainy.const import PERM_READ
@@ -17,8 +21,13 @@ from peeringdb_server.models import (
 )
 from peeringdb_server.org_admin_views import load_entity_permissions, org_admin_required
 
+if TYPE_CHECKING:
+    from peeringdb_server.models import Organization
 
-def save_key_permissions(org, key, perms):
+
+def save_key_permissions(
+    org: Organization, key: OrganizationAPIKey, perms: dict[str, int]
+) -> dict[str, int]:
     """
     Save key permissions for the specified org and key.
 
@@ -31,7 +40,7 @@ def save_key_permissions(org, key, perms):
 
     # collect permissioning namespaces from the provided permissioning ids
 
-    grainy_perms = {}
+    grainy_perms: dict[str, int] = {}
 
     for id, permissions in list(perms.items()):
         if not permissions & PERM_READ:
@@ -56,20 +65,27 @@ def save_key_permissions(org, key, perms):
         elif id == "carrier":
             grainy_perms[f"{org.grainy_namespace}.carrier"] = permissions
         elif id.find(".") > -1:
-            id = id.split(".")
-            if id[0] == "net":
-                grainy_perms[f"{org.grainy_namespace}.network.{id[1]}"] = permissions
-                grainy_perms[
-                    f"{org.grainy_namespace}.network.{id[1]}.poc_set.private"
-                ] = permissions
-            elif id[0] == "ix":
-                grainy_perms[f"{org.grainy_namespace}.internetexchange.{id[1]}"] = (
+            # separate list[str] variable so the str-typed `id` isn't rebound
+            id_parts = id.split(".")
+            if id_parts[0] == "net":
+                grainy_perms[f"{org.grainy_namespace}.network.{id_parts[1]}"] = (
                     permissions
                 )
-            elif id[0] == "fac":
-                grainy_perms[f"{org.grainy_namespace}.facility.{id[1]}"] = permissions
-            elif id[0] == "carrier":
-                grainy_perms[f"{org.grainy_namespace}.carrier.{id[1]}"] = permissions
+                grainy_perms[
+                    f"{org.grainy_namespace}.network.{id_parts[1]}.poc_set.private"
+                ] = permissions
+            elif id_parts[0] == "ix":
+                grainy_perms[
+                    f"{org.grainy_namespace}.internetexchange.{id_parts[1]}"
+                ] = permissions
+            elif id_parts[0] == "fac":
+                grainy_perms[f"{org.grainy_namespace}.facility.{id_parts[1]}"] = (
+                    permissions
+                )
+            elif id_parts[0] == "carrier":
+                grainy_perms[f"{org.grainy_namespace}.carrier.{id_parts[1]}"] = (
+                    permissions
+                )
 
     # save
     for ns, p in list(grainy_perms.items()):
@@ -80,13 +96,14 @@ def save_key_permissions(org, key, perms):
     return grainy_perms
 
 
-def load_all_key_permissions(org):
+def load_all_key_permissions(org: Organization) -> dict[str, dict[str, Any]]:
     """
     Returns dict of all users with all their permissions for
     the given org.
     """
 
-    rv = {}
+    # heterogeneous per-key record: prefix/name (str), perms (mapping), is_readonly (bool)
+    rv: dict[str, dict[str, Any]] = {}
     for key in org.api_keys.filter(revoked=False):
         kperms, perms = load_entity_permissions(org, key)
         rv[key.prefix] = {
@@ -101,7 +118,7 @@ def load_all_key_permissions(org):
 @login_required
 @transaction.atomic
 @org_admin_required
-def manage_key_add(request, **kwargs):
+def manage_key_add(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Create a new Organization API key.
 
@@ -138,13 +155,14 @@ def manage_key_add(request, **kwargs):
 @login_required
 @transaction.atomic
 @org_admin_required
-def manage_key_update(request, **kwargs):
+def manage_key_update(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Updated existing Organization API key.
     """
 
     prefix = request.POST.get("prefix")
-    org = kwargs.get("org")
+    # org is injected (non-None) by the @org_admin_required decorator
+    org = cast("Organization", kwargs.get("org"))
 
     api_key_form = OrganizationAPIKeyForm(request.POST)
 
@@ -181,12 +199,13 @@ def manage_key_update(request, **kwargs):
 @login_required
 @transaction.atomic
 @org_admin_required
-def manage_key_revoke(request, **kwargs):
+def manage_key_revoke(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Revoke an existing API key.
     """
 
-    org = kwargs.get("org")
+    # org is injected (non-None) by the @org_admin_required decorator
+    org = cast("Organization", kwargs.get("org"))
     prefix = request.POST.get("prefix")
 
     try:
@@ -206,7 +225,7 @@ def manage_key_revoke(request, **kwargs):
 
 @login_required
 @org_admin_required
-def key_permissions(request, **kwargs):
+def key_permissions(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Returns JsonResponse with list of key permissions for the targeted
     org an entities under it.
@@ -219,7 +238,8 @@ def key_permissions(request, **kwargs):
     them to set permissioning namespaces directly.
     """
 
-    org = kwargs.get("org")
+    # org is injected (non-None) by the @org_admin_required decorator
+    org = cast("Organization", kwargs.get("org"))
     perms_rv = {}
     for key in org.api_keys.filter(revoked=False).all():
         kperms, perms = load_entity_permissions(org, key)
@@ -232,7 +252,7 @@ def key_permissions(request, **kwargs):
 @csrf_protect
 @transaction.atomic
 @org_admin_required
-def key_permission_update(request, **kwargs):
+def key_permission_update(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Update/Add a user's permission.
 
@@ -240,7 +260,8 @@ def key_permission_update(request, **kwargs):
     entity = permission id
     """
 
-    org = kwargs.get("org")
+    # org is injected (non-None) by the @org_admin_required decorator
+    org = cast("Organization", kwargs.get("org"))
     prefix = request.POST.get("key_prefix")
     key = OrganizationAPIKey.objects.get(prefix=prefix)
     kperms, perms = load_entity_permissions(org, key)
@@ -260,14 +281,15 @@ def key_permission_update(request, **kwargs):
 @csrf_protect
 @transaction.atomic
 @org_admin_required
-def key_permission_remove(request, **kwargs):
+def key_permission_remove(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Remove a keys permission.
 
     entity = permission id
     """
 
-    org = kwargs.get("org")
+    # org is injected (non-None) by the @org_admin_required decorator
+    org = cast("Organization", kwargs.get("org"))
     prefix = request.POST.get("key_prefix")
     key = OrganizationAPIKey.objects.get(prefix=prefix)
 
@@ -285,7 +307,7 @@ USER API KEY MANAGEMENT
 """
 
 
-def convert_to_bool(data):
+def convert_to_bool(data: str | None) -> bool:
     if data is None:
         return False
 
@@ -294,7 +316,7 @@ def convert_to_bool(data):
 
 @login_required
 @transaction.atomic
-def add_user_key(request, **kwargs):
+def add_user_key(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Create a new User API key.
 
@@ -327,7 +349,7 @@ def add_user_key(request, **kwargs):
 
 @login_required
 @transaction.atomic
-def remove_user_key(request, **kwargs):
+def remove_user_key(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Revoke user api key.
     """

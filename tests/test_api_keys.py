@@ -7,10 +7,10 @@ from django.contrib.auth.models import Group
 from django.test import TestCase
 from django_grainy.models import GroupPermission
 from rest_framework.test import APIClient, APIRequestFactory
-from twentyc.rpc.client import PermissionDeniedException, RestClient
 
 import peeringdb_server.management.commands.pdb_api_test as api_test
 import peeringdb_server.models as models
+from peeringdb_server.rest_client import PermissionDeniedException, RestClient
 
 from .elasticsearch_test_mixin import ElasticsearchAPIMixin
 from .test_api import setup_module, teardown_module
@@ -43,7 +43,7 @@ class DummyResponse:
 
 class DummyRestClientWithKeyAuth(RestClient):
     """
-    An extension of the twentyc.rpc RestClient that goes to the
+    An extension of the peeringdb_server.rest_client RestClient that goes to the
     django rest framework testing api instead
     """
 

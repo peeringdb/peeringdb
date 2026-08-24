@@ -1,4 +1,4 @@
-Generated from signals.py on 2026-07-14 21:31:39.993597
+Generated from signals.py on 2026-08-15 04:17:12.049436
 
 # peeringdb_server.signals
 
@@ -127,7 +127,8 @@ Attempt to derive the targeted organization from the ASN the user provided.
 ## update_counts_for_carrierfac
 `def update_counts_for_carrierfac(carrierfac)`
 
-Whenever a carrierfac is saved, update carrier_count for the related Facility.
+Whenever a carrierfac is saved, update carrier_count for the related Facility,
+and update fac_count for the related Carrier.
 
 ---
 ## update_counts_for_ixfac

@@ -175,6 +175,16 @@ class BaseSchema(AutoSchema):
             return mapping
         return super().map_field(field)
 
+    def map_field_validators(self, field, schema):
+        super().map_field_validators(field, schema)
+
+        # DRF emits Django's URLValidator regex as a `pattern` on URL fields,
+        # but rewrites `\Z` to `\z` — invalid in both Python `re` and ECMA-262
+        # — and `default: ""` can't match it either, so the spec fails
+        # validation (#1991).
+        if schema.get("format") == "uri":
+            schema.pop("pattern", None)
+
     def get_components(self, path, method):
         """
         Override to add list-specific components to the schema

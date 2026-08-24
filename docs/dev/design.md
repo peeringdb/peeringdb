@@ -80,9 +80,9 @@ Note that `django-handleref` overrides the model's `delete` method to do this au
 
 ```py
 net = Network.objects.get(id=20)
-print(net.status) # ok
+print(net.status)  # ok
 net.delete()
-print(net.status) # deleted
+print(net.status)  # deleted
 ```
 
 ### Version history

@@ -60,8 +60,7 @@ REASON_VALUES_CHANGED = _(
 )
 
 REASON_IP_REASSIGNED_TO_DIFFERENT_ASN = _(
-    "The IP address has been reassigned to a different ASN "
-    "in the exchange's IX-F data"
+    "The IP address has been reassigned to a different ASN in the exchange's IX-F data"
 )
 
 
@@ -201,7 +200,7 @@ class Importer:
         self.vlan = None
         self.save = save
         self.asn = asn
-        self.now = datetime.datetime.now(datetime.timezone.utc)
+        self.now = datetime.datetime.now(datetime.UTC)
         self.invalid_ip_errors = []
         self.notifications = []
         self.protocol_conflict = 0
@@ -1615,7 +1614,7 @@ class Importer:
         if prod_mail_mode:
             self._send_email(subject, message, recipients)
             if email_log:
-                email_log.sent = datetime.datetime.now(datetime.timezone.utc)
+                email_log.sent = datetime.datetime.now(datetime.UTC)
 
         if email_log:
             email_log.save()
@@ -1695,7 +1694,7 @@ class Importer:
 
         try:
             client.create_ticket(ticket)
-            ticket.published = datetime.datetime.now(datetime.timezone.utc)
+            ticket.published = datetime.datetime.now(datetime.UTC)
             ticket.save()
         except Exception as exc:
             ticket.subject = f"[FAILED]{ticket.subject}"
@@ -1737,7 +1736,7 @@ class Importer:
 
         try:
             client.create_ticket(ticket)
-            ticket.published = datetime.datetime.now(datetime.timezone.utc)
+            ticket.published = datetime.datetime.now(datetime.UTC)
             ticket.save()
         except Exception as exc:
             ticket.subject = f"[FAILED]{ticket.subject}"
@@ -2327,7 +2326,7 @@ class Importer:
 
         reversion.set_user(self.ticket_user)
 
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         notified = self.ixlan.ixf_ixp_import_error_notified
         previous_error = self.ixlan.ixf_ixp_import_error
 
@@ -2431,7 +2430,7 @@ class Importer:
 
         if prod_mail_mode and prod_resend_mode:
             self._send_email(subject, message, recipients)
-            email.sent = datetime.datetime.now(datetime.timezone.utc)
+            email.sent = datetime.datetime.now(datetime.UTC)
             email.message = strip_tags(message)
             email.save()
         else:

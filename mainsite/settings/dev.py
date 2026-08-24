@@ -29,3 +29,7 @@ DESKPRO_KEY = ""
 DESKPRO_URL = ""
 
 OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH = ""
+
+# dev runs a single-node elasticsearch, which cannot allocate a replica shard
+# and would report yellow index health with the production default of 1
+ELASTICSEARCH_NUMBER_OF_REPLICAS = 0

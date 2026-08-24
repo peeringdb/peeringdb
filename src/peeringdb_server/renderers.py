@@ -4,7 +4,10 @@ REST API renderer.
 Ensure valid json output of the REST API.
 """
 
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from rest_framework import renderers
 from rest_framework.utils import encoders
@@ -21,8 +24,10 @@ class JSONEncoder(encoders.JSONEncoder):
     may need to be tidied up a bit.
     """
 
-    def default(self, obj):
+    def default(self, obj: object) -> Any:
         """Default JSON serializer."""
+        # Return stays Any: our branches return str, but the parent
+        # encoder's default() returns an unconstrained JSON-encodable value.
         import datetime
 
         import django_countries.fields
@@ -41,14 +46,30 @@ class MungeRenderer(renderers.BaseRenderer):
     format = "txt"
     charset = "utf-8"
 
-    def render(self, data, media_type=None, renderer_context=None, file_name=None):
+    def render(
+        self,
+        data: object,
+        media_type: str | None = None,
+        # renderer_context is DRF's context mapping; it is used here without a
+        # None guard yet defaults to None per the base signature, so Any is the
+        # only annotation that is both accurate and keeps the body type-clean.
+        renderer_context: Any = None,
+        file_name: str | None = None,
+        # Return stays Any: this returns str (json.dumps) or None (json.dump
+        # file path). Narrowing to `str | None` makes MetaJSONRenderer's
+        # `len(super().render(...))` a None error, unfixable without a
+        # behavior change, and breaks the subclass override (which returns
+        # bytes). So the base signature is left permissive on purpose.
+    ) -> Any:
         indent = None
         if "request" in renderer_context:
             request = renderer_context.get("request")
             if "pretty" in request.GET:
                 indent = 2
         if file_name:
-            return json.dump(data, open(file_name, "w"), cls=JSONEncoder, indent=indent)
+            # json.dump writes to the file and returns None.
+            json.dump(data, open(file_name, "w"), cls=JSONEncoder, indent=indent)
+            return None
         return json.dumps(data, cls=JSONEncoder, indent=indent)
 
 
@@ -65,12 +86,19 @@ class MetaJSONRenderer(MungeRenderer):
 
     def render(
         self,
-        data,
-        accepted_media_type=None,
-        renderer_context=None,
-        file_name=None,
-        default_meta=None,
-    ):
+        # data is the arbitrary serialized payload: a dict, a list, or None.
+        # It is inspected (membership tests, .pop, iteration), so it cannot be
+        # narrowed to object and stays Any.
+        data: Any,
+        accepted_media_type: str | None = None,
+        # See MungeRenderer.render: used without a None guard but defaults to
+        # None, so Any is the accurate green annotation.
+        renderer_context: Any = None,
+        file_name: str | None = None,
+        default_meta: dict[str, Any] | None = None,
+        # Return stays Any: returns bytes (b"") or the parent's str/None. See
+        # MungeRenderer.render for why this is not narrowed.
+    ) -> Any:
         """
         Tweak output rendering and pass to parent.
         """

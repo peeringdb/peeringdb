@@ -1,0 +1,36 @@
+{% load i18n %}
+{% language 'en' %}{% blocktrans with asn=net.asn name=net.name %}This is a notice about the IRR AS-SET published for your network AS{{ asn }} - {{ name }} in PeeringDB.{% endblocktrans %}
+
+{% trans "Current value:" %} {{ net.irr_as_set }}
+
+{% if reason == "unresolved" %}{% blocktrans %}One or more of the entries you publish here could not be found in any of the IRR registries we check. Networks use this field to build their prefix filters, so a value that resolves nowhere can cause your routes to be filtered out by peers.{% endblocktrans %}
+
+{% blocktrans %}Please update it to an AS-SET (or ASN) that exists in an IRR registry, written in unambiguous SOURCE::NAME form — for example RADB::AS-EXAMPLE for an as-set, or RIPE::AS64496 for an ASN.{% endblocktrans %}{% endif %}{% if reason == "ambiguous" %}{% blocktrans %}One or more of the entries you publish here exists in more than one IRR registry, so it is ambiguous — a peer cannot tell which registry's object you mean when building filters.{% endblocktrans %}
+
+{% blocktrans %}Please rewrite it in unambiguous SOURCE::NAME form, naming the registry the object belongs to — for example RADB::AS-EXAMPLE for an as-set, or RIPE::AS64496 for an ASN.{% endblocktrans %}{% endif %}{% if reason == "placeholder" %}{% blocktrans %}The value you publish here is a generic placeholder such as AS-SET or RS-SET. It does not identify your network's routing-policy object, so peers cannot use it to build prefix filters for your network.{% endblocktrans %}
+
+{% blocktrans %}Please replace it with your network's actual AS-SET in unambiguous SOURCE::AS-SET form (for example RADB::AS-EXAMPLE).{% endblocktrans %}{% endif %}{% if reason == "route_set" %}{% blocktrans %}The value you publish here includes a route-set (an RS-... name). PeeringDB no longer accepts route-set names in this field — peers expect an AS-SET (an as-set macro) to build their prefix filters from.{% endblocktrans %}
+
+{% blocktrans %}Please replace it with an AS-SET in unambiguous SOURCE::AS-SET form (for example RADB::AS-EXAMPLE).{% endblocktrans %}{% endif %}{% if reason == "invalid" %}{% blocktrans %}The value you publish here is not a valid AS-SET reference — it does not follow the format PeeringDB accepts for this field, so peers cannot use it to build prefix filters for your network. Common causes are a registry name we do not recognize, punctuation or free text in the value, or a name nested more levels deep than is allowed.{% endblocktrans %}
+
+{% blocktrans %}Please replace it with your network's AS-SET in unambiguous SOURCE::AS-SET form (for example RADB::AS-EXAMPLE).{% endblocktrans %}{% endif %}{% if reason == "multi_set" %}{% blocktrans %}Your network currently lists more than one IRR AS-SET. PeeringDB is moving to a single AS-SET per network so that peers have one unambiguous source to build filters from.{% endblocktrans %}
+
+{% if deadline %}{% blocktrans %}From {{ deadline }}, only a single AS-SET will be accepted. Please consolidate your AS-SETs before then.{% endblocktrans %}{% else %}{% blocktrans %}Please consolidate to a single AS-SET.{% endblocktrans %}{% endif %}{% endif %}{% if reason == "auto_prefixed" %}{% blocktrans %}PeeringDB has added the IRR source prefix to this value for you. The name you published was found in exactly one IRR registry, so the registry it refers to could be determined without ambiguity, and peers can now build filters from it without having to guess.{% endblocktrans %}
+{% if previous %}
+{% trans "Previous value:" %} {{ previous }}
+{% endif %}
+{% if remaining %}{% blocktrans %}The change is recorded in your network's version history. If this is not the registry you intended, please edit the value in PeeringDB.{% endblocktrans %}
+
+{% blocktrans %}Not every entry could be resolved automatically. At least one still needs you:{% endblocktrans %}{% if remaining == "ambiguous" %} {% blocktrans %}it exists in more than one IRR registry, so please rewrite it in SOURCE::NAME form naming the registry you mean.{% endblocktrans %}{% endif %}{% if remaining == "unresolved" %} {% blocktrans %}it could not be found in any IRR registry we check, so please replace it with an AS-SET (or ASN) that exists, in SOURCE::NAME form.{% endblocktrans %}{% endif %}{% if remaining == "placeholder" %} {% blocktrans %}it is a generic placeholder such as AS-SET, which does not identify your routing-policy object, so please replace it with your network's actual AS-SET in SOURCE::NAME form.{% endblocktrans %}{% endif %}{% if remaining == "route_set" %} {% blocktrans %}it is a route-set (an RS-... name), which PeeringDB no longer accepts, so please replace it with an AS-SET in SOURCE::NAME form.{% endblocktrans %}{% endif %}{% else %}{% blocktrans %}No action is needed, and the change is recorded in your network's version history. If this is not the registry you intended, please edit the value in PeeringDB.{% endblocktrans %}{% endif %}{% endif %}{% if reason == "moved" %}{% blocktrans %}The object you publish here is no longer in the IRR registry this value names, so peers building filters from it will not find it.{% endblocktrans %}
+{% if found_in %}
+{% blocktrans %}We did find it in: {{ found_in }}.{% endblocktrans %}
+
+{% blocktrans %}If you moved it there deliberately, please update the value in PeeringDB to name that registry, in SOURCE::NAME form — for example RIPE::AS-EXAMPLE.{% endblocktrans %}{% else %}
+{% blocktrans %}Please update the value to name the registry the object now belongs to, in SOURCE::NAME form — for example RIPE::AS-EXAMPLE.{% endblocktrans %}{% endif %}{% endif %}{% if reason == "gone" %}{% blocktrans %}The object you publish here could no longer be found in any of the IRR registries we check. Networks use this field to build their prefix filters, so a value that resolves nowhere can cause your routes to be filtered out by peers.{% endblocktrans %}
+
+{% blocktrans %}If the object was deleted or expired, please publish an AS-SET (or ASN) that does exist, in unambiguous SOURCE::NAME form — for example RADB::AS-EXAMPLE for an as-set, or RIPE::AS64496 for an ASN.{% endblocktrans %}{% endif %}
+
+{% trans "Network:" %} {{ net.view_url }}
+
+{% blocktrans with email=support_email %}If you believe this is a mistake or you have any questions, please contact us at {{ email }}.{% endblocktrans %}
+{% endlanguage %}

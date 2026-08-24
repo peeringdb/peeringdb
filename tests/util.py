@@ -1,3 +1,4 @@
+import gzip
 import json
 import os
 from importlib import import_module
@@ -5,10 +6,11 @@ from importlib import import_module
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.middleware.csrf import CSRF_SESSION_KEY, _get_new_csrf_string
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django_grainy.models import GroupPermission
 
 import peeringdb_server.models as models
+from peeringdb_server import irr_bulk
 from peeringdb_server import settings as pdb_settings
 
 
@@ -104,8 +106,6 @@ def reset_group_ids():
 
 
 def override_group_id():
-    from django.test import override_settings
-
     return override_settings(
         USER_GROUP_ID=Group.objects.get(name="user").id,
         GUEST_GROUP_ID=Group.objects.get(name="guest").id,
@@ -134,3 +134,23 @@ def mock_csrf_session(request):
     request.session = engine.SessionStore("deadbeef")
     request.session[CSRF_SESSION_KEY] = _get_new_csrf_string()
     request._dont_enforce_csrf_checks = True
+
+
+def write_irr_dump_set(tmp_path, content):
+    """
+    Write `content` as the dump file of every configured IRR source (#1973).
+
+    Both irr batch commands refuse --commit against an incomplete dump set, so a
+    --commit test needs the whole set present. Each RPSL object declares its own
+    `source:`, so identical content in every file yields the same index as one file
+    would. Shared by the cleanup and status command tests, which need it identically.
+    """
+    for spec in irr_bulk.DUMP_SOURCES:
+        for filename, _url in spec["files"]:
+            path = tmp_path / filename
+            if filename.endswith(".gz"):
+                with gzip.open(path, "wt") as handle:
+                    handle.write(content)
+            else:
+                path.write_text(content)
+    return tmp_path

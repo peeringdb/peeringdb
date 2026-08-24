@@ -57,11 +57,14 @@ case "$1" in
     shift
     source venv/bin/activate
     export DJANGO_SETTINGS_MODULE=mainsite.settings
-    ln -s /srv/www.peeringdb.com/peeringdb_server /srv/www.peeringdb.com/venv/lib/python3.12/site-packages/peeringdb_server
-    ln -s /srv/www.peeringdb.com/mainsite /srv/www.peeringdb.com/venv/lib/python3.12/site-packages/mainsite
-    mkdir /srv/www.peeringdb.com/venv/lib/python3.12/site-packages/etc/
-    mkdir /srv/www.peeringdb.com/venv/lib/python3.12/site-packages/var/log -p
-    cp etc/VERSION /srv/www.peeringdb.com/venv/lib/python3.12/site-packages/etc/
+    # ask the venv where site-packages is rather than hardcoding the python
+    # minor version, so this survives interpreter upgrades
+    site_packages=$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')
+    ln -s /srv/www.peeringdb.com/peeringdb_server $site_packages/peeringdb_server
+    ln -s /srv/www.peeringdb.com/mainsite $site_packages/mainsite
+    mkdir $site_packages/etc/
+    mkdir $site_packages/var/log -p
+    cp etc/VERSION $site_packages/etc/
     echo generating module documentation files
     python peeringdb_server/gendocs.py
     echo generating schema visualization

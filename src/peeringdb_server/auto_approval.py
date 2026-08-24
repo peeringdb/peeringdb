@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import structlog
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -6,10 +10,17 @@ from peeringdb_server.inet import RdapLookup
 from peeringdb_server.ixf import Importer
 from peeringdb_server.models import EnvironmentSetting, Network
 
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from peeringdb_server.models import Organization
+
 log = structlog.get_logger("django")
 
 
-def _validate_ixf_feed(ixf_ixp_member_list_url, submitting_org):
+def _validate_ixf_feed(
+    ixf_ixp_member_list_url: str | None, submitting_org: Organization | None
+) -> tuple[bool, str]:
     """
     Validate the IX-F feed at the given URL for auto-approval eligibility.
 
@@ -63,7 +74,12 @@ def _validate_ixf_feed(ixf_ixp_member_list_url, submitting_org):
     return True, ""
 
 
-def auto_approve_ix(request, prefix, ixf_ixp_member_list_url=None, submitting_org=None):
+def auto_approve_ix(
+    request: HttpRequest,
+    prefix: str,
+    ixf_ixp_member_list_url: str | None = None,
+    submitting_org: Organization | None = None,
+) -> tuple[bool, str, str]:
     if not EnvironmentSetting.get_setting_value("AUTO_IX_APPROVAL_ENABLED"):
         return False, "pending", ""
 

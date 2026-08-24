@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from rest_framework.exceptions import Throttled
+from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 
-def format_wait_time(wait_time):
+def format_wait_time(wait_time: int) -> str:
     """
     Format wait time in seconds to human readable format
     """
@@ -15,7 +18,9 @@ def format_wait_time(wait_time):
         return f"{wait_time // 3600} hours"
 
 
-def rest_exception_handler(exc, context):
+def rest_exception_handler(
+    exc: Exception, context: dict[str, object]
+) -> Response | None:
     response = exception_handler(exc, context)
     request = context.get("request")
 

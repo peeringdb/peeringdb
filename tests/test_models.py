@@ -269,9 +269,9 @@ def test_facility_delete_cascades_to_carrierfac():
     carrierfac.refresh_from_db()
 
     assert fac.status == "deleted"
-    assert (
-        carrierfac.status == "deleted"
-    ), "CarrierFacility should be soft-deleted when its parent Facility is deleted."
+    assert carrierfac.status == "deleted", (
+        "CarrierFacility should be soft-deleted when its parent Facility is deleted."
+    )
 
 
 @pytest.mark.django_db
@@ -482,9 +482,9 @@ def test_org_delete_cascades():
     assert fac.status == "deleted"
     assert net.status == "deleted"
     assert ix.status == "deleted"
-    assert (
-        carrier.status == "deleted"
-    ), "Carrier should be soft-deleted when its parent Organization is deleted."
+    assert carrier.status == "deleted", (
+        "Carrier should be soft-deleted when its parent Organization is deleted."
+    )
 
 
 @pytest.mark.django_db
@@ -503,3 +503,97 @@ def test_netfac_save_will_sync_asn(entities):
 
     assert netfac.local_asn == new_asn
     assert netfac.local_asn == netfac.network.asn
+
+
+def _carrier_fac_count_entities():
+    """
+    Helper: create an org, a carrier and two facilities (inside a revision so
+    the counts stay at their initial backfilled value of 0).
+    """
+    with reversion.create_revision():
+        org = Organization.objects.create(name="Carrier Count Org", status="ok")
+        carrier = Carrier.objects.create(
+            name="Carrier Count Carrier", status="ok", org=org
+        )
+        fac1 = Facility.objects.create(
+            name="Carrier Count Fac 1",
+            org=org,
+            status="ok",
+            city="City",
+            country="US",
+        )
+        fac2 = Facility.objects.create(
+            name="Carrier Count Fac 2",
+            org=org,
+            status="ok",
+            city="City",
+            country="US",
+        )
+    return org, carrier, fac1, fac2
+
+
+@pytest.mark.django_db
+def test_carrier_fac_count_increments_on_carrierfac_add():
+    """
+    Adding an active CarrierFacility updates the denormalized fac_count on the
+    related Carrier (and carrier_count on the related Facility) via the
+    update_counts_for_carrierfac signal.
+    """
+    org, carrier, fac1, fac2 = _carrier_fac_count_entities()
+
+    assert carrier.fac_count == 0
+
+    with reversion.create_revision():
+        CarrierFacility.objects.create(carrier=carrier, facility=fac1, status="ok")
+
+    carrier.refresh_from_db()
+    fac1.refresh_from_db()
+    assert carrier.fac_count == 1
+    assert fac1.carrier_count == 1
+
+    with reversion.create_revision():
+        CarrierFacility.objects.create(carrier=carrier, facility=fac2, status="ok")
+
+    carrier.refresh_from_db()
+    assert carrier.fac_count == 2
+
+
+@pytest.mark.django_db
+def test_carrier_fac_count_decrements_on_carrierfac_delete():
+    """
+    Soft-deleting a CarrierFacility decrements the Carrier.fac_count back down.
+    """
+    org, carrier, fac1, fac2 = _carrier_fac_count_entities()
+
+    with reversion.create_revision():
+        cf = CarrierFacility.objects.create(carrier=carrier, facility=fac1, status="ok")
+
+    carrier.refresh_from_db()
+    assert carrier.fac_count == 1
+
+    with reversion.create_revision():
+        cf.delete()
+
+    carrier.refresh_from_db()
+    assert carrier.fac_count == 0
+
+
+@pytest.mark.django_db
+def test_carrier_fac_count_only_counts_active():
+    """
+    fac_count reflects only active (status="ok") CarrierFacility rows; a
+    deleted relationship is not counted.
+    """
+    org, carrier, fac1, fac2 = _carrier_fac_count_entities()
+
+    with reversion.create_revision():
+        CarrierFacility.objects.create(carrier=carrier, facility=fac1, status="ok")
+        deleted = CarrierFacility.objects.create(
+            carrier=carrier, facility=fac2, status="ok"
+        )
+
+    with reversion.create_revision():
+        deleted.delete()
+
+    carrier.refresh_from_db()
+    assert carrier.fac_count == 1
