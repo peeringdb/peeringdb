@@ -499,6 +499,48 @@ class AdminTests(TestCase):
         assert netixlan.ipaddr4 is None
         assert "IP already exists" in response.content.decode("utf-8")
 
+    def test_netixlan_change_side(self):
+        """
+        test that saving a netixlan from the admin resolves the `*_side`
+        choice fields to facilities (#2043)
+
+        they are plain choice fields, so their cleaned value is a facility id
+        string - handing that to the fk raises ValueError, which is not a
+        ValidationError and so leaves the change view as a 500
+        """
+
+        netixlan = self.entities["netixlan"][0]
+        fac = self.entities["fac"][0]
+
+        models.InternetExchangeFacility.objects.get_or_create(
+            ix=netixlan.ixlan.ix, facility=fac, defaults={"status": "ok"}
+        )
+
+        url = reverse(
+            f"admin:{netixlan._meta.app_label}_{netixlan._meta.object_name}_change".lower(),
+            args=(netixlan.id,),
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        # post the form back unchanged apart from ix_side, so the test does
+        # not have to track the model's full field list
+        data = {
+            name: "" if value is None else value
+            for name, value in response.context["adminform"].form.initial.items()
+        }
+        data.update(status=netixlan.status, net_side="", ix_side=fac.id)
+
+        response = client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+        netixlan.refresh_from_db()
+        self.assertEqual(netixlan.ix_side, fac)
+
     def _run_regex_search(self, model, search_term):
         c = Client()
         c.login(username="admin", password="admin")
