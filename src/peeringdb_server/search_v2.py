@@ -145,6 +145,10 @@ def autocomplete_v2(term: str, user=None) -> dict[str, list[dict[str, str | int]
     """
     indexes = ["fac", "ix", "net", "org", "campus", "carrier"]
 
+    # strip surrounding whitespace: trailing whitespace makes bool_prefix match
+    # the last token as a whole term instead of a prefix (#2002)
+    term = (term or "").strip()
+
     if not term or len(term) > 255:
         return {tag: [] for tag in indexes}
 

@@ -2042,3 +2042,167 @@ class SearchV2SpecificTestCase(TestCase):
 
         ix_names = [item["name"] for item in result["ix"]]
         self.assertIn(ix.name, ix_names, "Accented name should match unaccented query")
+
+    def test_autocomplete_ignores_surrounding_whitespace(self):
+        """
+        Surrounding whitespace must not change autocomplete results (#2002).
+
+        Uses a partially typed token, which only matches as a prefix query -
+        with a trailing space bool_prefix matches it as a whole term and finds
+        nothing.
+        """
+        org = models.Organization.objects.create(name="Whitespace Org", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="Whitespaceanomaly Exchange",
+            status="ok",
+            org=org,
+            city="Frankfurt",
+            country="DE",
+            region_continent="Europe",
+        )
+        self.reindex_for_search()
+
+        # partial token - only matches as a prefix query
+        baseline = autocomplete_v2("Whitespaceanomal")
+        self.assertIn(
+            ix.name,
+            [item["name"] for item in baseline["ix"]],
+            "sanity: partial token should match as a prefix",
+        )
+
+        for term in (
+            "Whitespaceanomal ",
+            " Whitespaceanomal",
+            "  Whitespaceanomal  ",
+            "Whitespaceanomal\t",
+        ):
+            self.assertEqual(
+                autocomplete_v2(term),
+                baseline,
+                f"{term!r} should return the same results as 'Whitespaceanomal'",
+            )
+
+    def test_autocomplete_whitespace_only_term(self):
+        """A whitespace-only term returns empty categories instead of hitting ES."""
+        with patch("peeringdb_server.search_v2.new_elasticsearch") as mock_es:
+            result = autocomplete_v2("   ")
+            mock_es.assert_not_called()
+
+        for tag in ["fac", "ix", "net", "org", "campus", "carrier"]:
+            self.assertEqual(result[tag], [])
+
+    def test_autocomplete_term_length_limit(self):
+        """Terms over 255 characters are rejected without hitting ES."""
+        with patch("peeringdb_server.search_v2.new_elasticsearch") as mock_es:
+            result = autocomplete_v2("x" * 256)
+            mock_es.assert_not_called()
+
+        for tag in ["fac", "ix", "net", "org", "campus", "carrier"]:
+            self.assertEqual(result[tag], [])
+
+        # the limit is applied after stripping, so padding does not trip it
+        with patch("peeringdb_server.search_v2.new_elasticsearch") as mock_es:
+            autocomplete_v2(" " * 100 + "x" * 255 + " " * 100)
+            mock_es.assert_called_once()
+
+    def test_autocomplete_excludes_non_ok_status(self):
+        """Only status=ok objects are indexed, so pending ones never autocomplete."""
+        org = models.Organization.objects.create(name="Statusedge Org", status="ok")
+        live_ix = models.InternetExchange.objects.create(
+            name="Statusedge Live Exchange",
+            status="ok",
+            org=org,
+            city="Berlin",
+            country="DE",
+            region_continent="Europe",
+        )
+        pending_ix = models.InternetExchange.objects.create(
+            name="Statusedge Pending Exchange",
+            status="ok",
+            org=org,
+            city="Berlin",
+            country="DE",
+            region_continent="Europe",
+        )
+        # set via update() so the verification queue / deskpro signals that a
+        # pending create fires stay out of this test
+        models.InternetExchange.objects.filter(pk=pending_ix.pk).update(
+            status="pending"
+        )
+        self.reindex_for_search()
+
+        ix_names = [item["name"] for item in autocomplete_v2("Statusedge")["ix"]]
+        self.assertIn(live_ix.name, ix_names)
+        self.assertNotIn(pending_ix.name, ix_names)
+
+    def test_autocomplete_matches_campus_and_carrier(self):
+        """
+        Campus and carrier entities are searchable.
+
+        Carrier has no city attribute at all and campus only derives one from
+        its facilities, which is why prepare_auto_suggest() reads city with
+        getattr().
+        """
+        org = models.Organization.objects.create(name="Nonfac Org", status="ok")
+        campus = models.Campus.objects.create(
+            name="Nonfacentity Campus", status="ok", org=org
+        )
+        # campus_status() keeps a campus pending (and so unindexed) until it has
+        # two ok facilities, and they need coordinates within CAMPUS_MAX_DISTANCE
+        for i, (lat, long) in enumerate([(52.5200, 13.4050), (52.5210, 13.4060)]):
+            models.Facility.objects.create(
+                name=f"Nonfacentity Member {i}",
+                status="ok",
+                org=org,
+                campus=campus,
+                city="Berlin",
+                country="DE",
+                latitude=lat,
+                longitude=long,
+            )
+        campus.refresh_from_db()
+        self.assertEqual(campus.status, "ok", "sanity: campus must be ok to index")
+
+        carrier = models.Carrier.objects.create(
+            name="Nonfacentity Carrier", status="ok", org=org
+        )
+        self.reindex_for_search()
+
+        result = autocomplete_v2("Nonfacentity")
+        self.assertIn(campus.name, [item["name"] for item in result["campus"]])
+        self.assertIn(carrier.name, [item["name"] for item in result["carrier"]])
+
+    def test_api_search_annotates_campus_facilities(self):
+        """A facility in a campus carries its campus id in the /api_search payload."""
+        org = models.Organization.objects.create(name="Campusedge Org", status="ok")
+        campus = models.Campus.objects.create(
+            name="Campusedge Campus", status="ok", org=org
+        )
+        # set_campus_to_facility() rejects a campus member without coordinates
+        in_campus = models.Facility.objects.create(
+            name="Campusedge Facility In",
+            status="ok",
+            org=org,
+            campus=campus,
+            city="Berlin",
+            country="DE",
+            latitude=52.5200,
+            longitude=13.4050,
+        )
+        standalone = models.Facility.objects.create(
+            name="Campusedge Facility Out",
+            status="ok",
+            org=org,
+            city="Berlin",
+            country="DE",
+        )
+        self.reindex_for_search()
+
+        response = self.client.get("/api_search?q=Campusedge Facility")
+        self.assertEqual(response.status_code, 200)
+        facilities = {
+            item["name"]: item for item in json.loads(response.content)["fac"]
+        }
+
+        self.assertEqual(facilities[in_campus.name]["campus"], campus.id)
+        self.assertNotIn("campus", facilities[standalone.name])
