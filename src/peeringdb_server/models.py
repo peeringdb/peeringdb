@@ -860,6 +860,15 @@ class UserOrgAffiliationRequest(StripFieldMixin):
                 # member
                 self.org.admin_usergroup.user_set.add(self.user)
 
+            # the user held no role here a moment ago, so anything they still
+            # hold for this org is a leftover that would shadow the new role's
+            # group grant (#2038). Imported late: org_admin_views imports this
+            # module.
+
+            from peeringdb_server.org_admin_views import save_user_permissions
+
+            save_user_permissions(self.org, self.user, {})
+
             # we set user to verified
             if not self.user.is_verified_user:
                 self.user.set_verified()

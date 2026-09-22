@@ -107,6 +107,8 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequestHistory,
     VerificationQueueItem,
 )
+from peeringdb_server.org_admin_views import save_user_permissions
+from peeringdb_server.permissions import org_namespace_filter
 from peeringdb_server.util import coerce_ipaddr, round_decimal
 from peeringdb_server.validators import (
     validate_account_name,
@@ -2290,26 +2292,69 @@ class UserPermissionAdmin(UserAdmin):
     def clean_password(self):
         pass
 
-    def save_formset(self, request, form, formset, change):
-        # get user
-        user = None
-        for inline_form in formset.forms:
-            user = inline_form.cleaned_data.get("user")
-            if user:
-                break
+    def save_related(self, request, form, formsets, change):
+        # not in save_formset, which took the user from a bound inline form and
+        # so did nothing when only `groups` changed (#2038)
 
-        # save the form
-        result = super().save_formset(request, form, formset, change)
+        # `groups` is written by super() below, so the orgs to clean have to be
+        # read on both sides of it: after, for a promotion; before, for a
+        # demotion or a removal. Reading only the post-change set would leave
+        # django-admin as the one transition path in #2038 that cleans up in
+        # the promote direction only -- the org UI and the REST API both scrub
+        # a demotion, and every other path scrubs a removal.
+
+        user = User.objects.get(id=form.instance.id)
+        was_admin_of = {org.id for org in user.admin_organizations}
+        was_member_of = user.organizations
+
+        # the demotion wipe below may only take rows that predate this POST;
+        # the inline's own additions are deliberate input. The formset cannot
+        # say which is which -- `has_changed()` is always True for its
+        # permission field, so an echoed leftover looks changed too.
+
+        preexisting = (
+            set(user.grainy_permissions.values_list("id", flat=True))
+            if was_admin_of
+            else set()
+        )
+
+        super().save_related(request, form, formsets, change)
+
+        # reloaded so a cached group m2m cannot hide the role just granted
+
+        user = User.objects.get(id=form.instance.id)
 
         # remove unmanageable permission namespaces for all the organizations
         # the user is an administrator of (#1157)
-        if user:
-            for org in user.admin_organizations:
-                user.grainy_permissions.filter(
-                    namespace__startswith=f"peeringdb.organization.{org.id}."
-                ).delete()
 
-        return result
+        is_admin_of = user.admin_organizations
+
+        for org in is_admin_of:
+            save_user_permissions(org, user, {})
+
+        still_admin = {org.id for org in is_admin_of}
+        still_member = {org.id for org in user.organizations}
+
+        for org in was_member_of:
+            if org.id not in still_member:
+                # dropped from the org entirely. Grainy rows outlive group
+                # membership, so without this the removed user keeps working
+                # permissions on the org's entities -- and unlike a demotion
+                # nothing this POST added is legitimate either, since the user
+                # is no longer in the org to hold it. `manage_user_delete` and
+                # `remove_organization_user` wipe on removal the same way,
+                # without consulting the role.
+
+                save_user_permissions(org, user, {})
+
+            elif org.id in was_admin_of and org.id not in still_admin:
+                # demoted to plain member, and a member may legitimately be
+                # permissioned, so only what they carried over from the admin
+                # role goes
+
+                user.grainy_permissions.filter(
+                    org_namespace_filter(org), id__in=preexisting
+                ).delete()
 
 
 ## COMMANDLINE TOOL ADMIN

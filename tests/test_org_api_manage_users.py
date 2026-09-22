@@ -3,7 +3,14 @@ import json
 from allauth.account.models import EmailAddress
 from django.test import TestCase
 from django.urls import reverse
-from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
+from django_grainy.util import Permissions
+from grainy.const import (
+    PERM_CREATE,
+    PERM_CRUD,
+    PERM_DELETE,
+    PERM_READ,
+    PERM_UPDATE,
+)
 from rest_framework.test import APIClient
 
 from peeringdb_server.models import (
@@ -59,6 +66,42 @@ class OrganizationUsersViewSetTests(TestCase):
         }
 
         self.namespace = f"peeringdb.organization.{self.org.id}.users"
+
+    def _org_namespaces(self, user, org):
+        """
+        The namespaces `user` holds that belong to `org`, boundary-tested in
+        python rather than through the filter under test.
+        """
+
+        root = org.grainy_namespace
+        prefix = f"{root}."
+        return {
+            perm.namespace
+            for perm in user.grainy_permissions.all()
+            if perm.namespace == root or perm.namespace.startswith(prefix)
+        }
+
+    def _seed_org_permissions(self, user, org, permission):
+        """
+        Give `user` their own grainy rows for `org`: the org root grant plus one
+        row below it. Written directly, so the test does not depend on the
+        helper the fix routes through.
+        """
+
+        user.grainy_permissions.create(
+            namespace=org.grainy_namespace, permission=permission
+        )
+        user.grainy_permissions.create(
+            namespace=f"{org.grainy_namespace}.network", permission=permission
+        )
+
+    def _can(self, user, namespace, flag):
+        """
+        Effective permission for `user` at `namespace`, own rows merged with
+        group rows as at request time.
+        """
+
+        return Permissions(User.objects.get(id=user.id)).check(namespace, flag)
 
     def test_admin_api_list_users_(self):
         url = reverse("api:organization-users-list", kwargs={"org_id": self.org.id})
@@ -238,6 +281,149 @@ class OrganizationUsersViewSetTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 204)
+
+    def test_admin_api_update_role_clears_user_permissions(self):
+        """
+        Test that promoting a member over the API clears their own grainy rows
+        for the org (#2038)
+
+        The role change only moved group membership, so the member's org root
+        row survived and shadowed the admin group's CRUD grant.
+        """
+
+        self._seed_org_permissions(self.member1, self.org, PERM_CREATE | PERM_READ)
+        self.assertFalse(
+            self._can(self.member1, self.org.grainy_namespace, PERM_UPDATE)
+        )
+
+        url = reverse(
+            "api:organization-users-update-role",
+            kwargs={"org_id": self.org.id, "user_id": self.member1.id},
+        )
+        response = self.client.put(
+            url,
+            data=json.dumps({"role": "admin"}),
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._org_namespaces(self.member1, self.org), set())
+        self.assertTrue(self._can(self.member1, self.org.grainy_namespace, PERM_CRUD))
+
+    def test_admin_api_update_role_demote_clears_user_permissions(self):
+        """
+        Test the demotion direction of the same wipe (#2038): an admin moved
+        back to member must not keep the capabilities their own rows granted.
+        """
+
+        self.org.usergroup.user_set.remove(self.member1)
+        self.org.admin_usergroup.user_set.add(self.member1)
+        self._seed_org_permissions(self.member1, self.org, PERM_CRUD)
+
+        url = reverse(
+            "api:organization-users-update-role",
+            kwargs={"org_id": self.org.id, "user_id": self.member1.id},
+        )
+        response = self.client.put(
+            url,
+            data=json.dumps({"role": "member"}),
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._org_namespaces(self.member1, self.org), set())
+        self.assertTrue(self._can(self.member1, self.org.grainy_namespace, PERM_READ))
+        self.assertFalse(
+            self._can(self.member1, self.org.grainy_namespace, PERM_UPDATE)
+        )
+
+    def test_admin_api_update_role_member_to_member_keeps_permissions(self):
+        """
+        Test that a role update that changes nothing leaves the member's
+        granular permissions alone (#2038)
+
+        An API client that sets every user's role on each run would otherwise
+        wipe an org's per-entity permissioning wholesale.
+        """
+
+        self._seed_org_permissions(self.member1, self.org, PERM_CRUD)
+        expected = self._org_namespaces(self.member1, self.org)
+
+        url = reverse(
+            "api:organization-users-update-role",
+            kwargs={"org_id": self.org.id, "user_id": self.member1.id},
+        )
+        response = self.client.put(
+            url,
+            data=json.dumps({"role": "member"}),
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._org_namespaces(self.member1, self.org), expected)
+
+    def test_admin_api_add_user_clears_user_permissions(self):
+        """
+        Test that adding a user over the API clears any grainy rows they still
+        hold for the org (#2038)
+
+        A user already in either group is refused, so whoever gets added held
+        no role here -- and `pdb_fix_org_admin_perms --list-unaffiliated`
+        exists because that population does hold rows. Without the wipe such a
+        row shadows the group grant the new role is supposed to give them.
+        """
+
+        member = User.objects.create_user(
+            "member2", "member2@localhost", first_name="member2", last_name="member"
+        )
+        EmailAddress.objects.create(
+            user=member, email="member2@localhost", primary=True, verified=True
+        )
+        self._seed_org_permissions(member, self.org, PERM_CRUD)
+
+        url = reverse("api:organization-users-add", kwargs={"org_id": self.org.id})
+        response = self.client.post(
+            url,
+            data=json.dumps({"user_email": "member2@localhost", "role": "member"}),
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(self._org_namespaces(member, self.org), set())
+
+        # the member group's READ grant is all that is left
+
+        self.assertTrue(self._can(member, self.org.grainy_namespace, PERM_READ))
+        self.assertFalse(self._can(member, self.org.grainy_namespace, PERM_UPDATE))
+
+    def test_admin_api_remove_user_clears_user_permissions(self):
+        """
+        Test that removing a user over the API clears their own grainy rows for
+        the org (#2038)
+
+        Grainy rows outlive group membership, so a user removed this way kept
+        working permissions on the org's entities. The UI's
+        `manage_user_delete` has always wiped them.
+        """
+
+        self._seed_org_permissions(self.member1, self.org, PERM_CRUD)
+        self.assertTrue(self._can(self.member1, self.org.grainy_namespace, PERM_DELETE))
+
+        url = reverse("api:organization-users-remove", kwargs={"org_id": self.org.id})
+        response = self.client.delete(
+            url,
+            data=json.dumps({"user_email": "member@localhost"}),
+            content_type="application/json",
+            **self.headers_admin,
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(self._org_namespaces(self.member1, self.org), set())
+        self.assertFalse(self._can(self.member1, self.org.grainy_namespace, PERM_READ))
 
     def test_org_api_list_users_no_permission(self):
         url = reverse("api:organization-users-list", kwargs={"org_id": self.org.id})

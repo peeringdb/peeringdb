@@ -75,6 +75,7 @@ from peeringdb_server.models import (
     User,
     UserAPIKey,
 )
+from peeringdb_server.org_admin_views import save_user_permissions
 from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
@@ -1829,6 +1830,15 @@ class OrganizationUsersViewSet(GenericViewSet):
             else:
                 organization.usergroup.user_set.add(user)
 
+            # a user already in either group is refused above, so whoever
+            # reaches this point held no role here a moment ago and anything
+            # they still carry for this org is a leftover that would shadow the
+            # group grant their new role gives them (#2038). Nothing legitimate
+            # can exist yet either: a non-member cannot be permissioned through
+            # the org UI (`target_user_validate`).
+
+            save_user_permissions(organization, user, {})
+
             return Response(
                 UserSerializer(user, context={"organization": organization}).data,
                 status=status.HTTP_201_CREATED,
@@ -1877,6 +1887,8 @@ class OrganizationUsersViewSet(GenericViewSet):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
+            was_admin = user.is_org_admin(organization)
+
             organization.admin_usergroup.user_set.remove(user)
             organization.usergroup.user_set.remove(user)
 
@@ -1884,6 +1896,13 @@ class OrganizationUsersViewSet(GenericViewSet):
                 organization.admin_usergroup.user_set.add(user)
             else:
                 organization.usergroup.user_set.add(user)
+
+            # drop what the old role left behind, as the org UI does. A member
+            # left at member changed no role, so nothing of theirs is a
+            # leftover (#2038)
+
+            if role == "admin" or was_admin:
+                save_user_permissions(organization, user, {})
 
             return Response(
                 UserSerializer(user, context={"organization": organization}).data,
@@ -1929,6 +1948,11 @@ class OrganizationUsersViewSet(GenericViewSet):
 
             organization.admin_usergroup.user_set.remove(user)
             organization.usergroup.user_set.remove(user)
+
+            # grainy rows outlive group membership, so without this the removed
+            # user keeps working permissions on the org's entities (#2038)
+
+            save_user_permissions(organization, user, {})
 
             return Response(status=status.HTTP_204_NO_CONTENT)
         except PermissionDenied as e:

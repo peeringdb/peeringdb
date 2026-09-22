@@ -997,8 +997,9 @@
 
       <div class="editable note info">
         {%blocktrans trimmed %}
-        Here you can grant permissions to regular members of your organization.
-        Administrative users are not listed here as they have access to everything by default.
+        Here you can grant permissions to members of your organization.
+        Administrative users are listed, but they already have full access
+        through their role, so permissions cannot be assigned to them here.
         {%endblocktrans%}
         <div class="marg-top">
           {% trans "Additionally, entities that are pending review cannot be permissioned out to users, and will not appear in the entity list." %}
