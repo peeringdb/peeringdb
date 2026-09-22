@@ -1,4 +1,4 @@
-Generated on 2026-08-15 04:17:12.049436
+Generated on 2026-09-22 17:40:35.243351
 
 ## _db_command.py
 
@@ -42,6 +42,10 @@ Usage:
 
     # Apply changes
     ./Ctl/dev/run.sh manage pdb_convert_irr_as_set_postfix --commit
+
+## pdb_data_change_notify.py
+
+Run the IX-F Importer.
 
 ## pdb_delete_addressless_netixlan.py
 
@@ -150,6 +154,14 @@ to fix any inconsistencies caused by issue #1607.
 net_count: Number of unique networks actually peering at the exchange
 ixf_net_count: Number of unique networks in the IX-F export data
 
+## pdb_fix_org_admin_perms.py
+
+Remove the user-level grainy permissions that shadow an org role's group grant.
+
+Several role transitions used to leave a user's own `UserPermission` rows in
+place, where they replace rather than widen the role's grant at the same
+namespace (#2038).
+
 ## pdb_fix_orphaned_objects.py
 
 Fix orphaned objects where a child has status="ok" but its parent FK
@@ -163,6 +175,10 @@ Usage:
 
     # Apply fixes — soft-deletes all orphaned records
     python manage.py pdb_fix_orphaned_objects --commit
+
+## pdb_fix_status_history.py
+
+Fix object status in reversion archived data (#558).
 
 ## pdb_generate_test_data.py
 
@@ -180,6 +196,63 @@ Normalize existing address fields based on Google Maps API response.
 
 DEPRECATED
 Sync latitude and longitude on all geocoding enabled entities.
+
+## pdb_irr_as_set_cleanup.py
+
+One-time cleanup of Network.irr_as_set (#1973 / #1974).
+
+The dry-run classifies every status=ok network's irr_as_set and prints the
+Product-Committee error-rate report. Two layers:
+
+  syntactic (always) : prefixed / bare / placeholder / invalid, plus multi-set
+                       and route-set counts. Needs no lookups.
+  registry split     : when a bulk IRR dump index is available
+                       (settings.IRR_BULK_DUMP_DIR or --dump-dir), each bare
+                       network is further split into found-in-one (auto-prefix
+                       candidate) / found-in-many / found-nowhere.
+
+--commit does two things:
+  auto-prefix : each bare token that resolves to exactly one IRR source is rewritten
+                to SOURCE::NAME form (under a reversion revision), bounded by
+                --max-changes. Per token, not all-or-nothing: a value mixing
+                an unambiguous token with an ambiguous one comes back partly fixed,
+                and its disclosure mail names what is left rather than claiming no
+                action is needed -- one mail, not two. Each rewrite is re-validated and
+                live-confirmed against the lookup pool before it is written; a
+                rewrite the pool contradicts is ambiguous after all and joins
+                outreach instead of being dropped. The network is then told what
+                changed -- PeeringDB does not edit operator data silently, even
+                when the edit is provably unambiguous.
+  outreach    : the ones that cannot be auto-fixed are emailed to their network
+                contacts — found-in-many ("disambiguate with a source prefix"),
+                found-nowhere ("not in any registry", confirmed against the live
+                pool first), placeholder, route-set and outright invalid values.
+                Sent on commit, bounded by --max-notifications.
+Without --commit the command never modifies the database and sends no mail. It
+supersedes the earlier standalone pdb_audit_irr_as_set, whose classifier is
+folded in here (its permanent home).
+
+Because --commit writes operator data off the bulk index, it refuses to run unless
+every registry has a readable dump within IRR_BULK_DUMP_MAX_AGE_HOURS: an index
+missing one registry makes an ambiguous name look unambiguous and writes the wrong
+prefix. --allow-stale-index overrides that for a deliberate run.
+
+Both caps are batch cursors, not truncations. irr_as_set_notified records who was
+mailed. A successful auto-prefix leaves the bare bucket, while a proposed rewrite
+the live pool contradicts is recorded against that exact candidate so later runs
+skip it and advance. Both default to 100 and --commit refuses 0 ("no cap") because
+each candidate costs at least one live pool query (and can cost one per changed
+token); uncapped over the ~11k current candidates is at least ~10h, past any job
+deadline, and since the writes land after that loop a killed run would commit
+nothing and repeat forever. --max-changes bounds the candidates confirmed, not just
+the writes: a cap on writes alone still lets a run with a poor confirm rate walk
+every candidate. It also bounds the disclosure mail, one per rewrite;
+--max-notifications governs outreach only.
+
+Usage:
+  manage pdb_irr_as_set_cleanup [--detail] [--dump-dir PATH] [--commit]
+                                [--max-changes N] [--max-notifications N]
+                                [--renotify-after-days N] [--allow-stale-index]
 
 ## pdb_irr_as_set_fetch.py
 
@@ -206,6 +279,34 @@ refreshing and pdb_irr_as_set_cleanup --commit auto-prefixes from an ageing inde
 Usage:
   manage pdb_irr_as_set_fetch [--source SOURCE] [--force] [--commit]
                               [--dump-dir PATH] [--max-age-hours HOURS]
+
+## pdb_irr_as_set_notify.py
+
+Soft-window nudge for the #1974 single-set IRR as-set cap.
+
+While the cap (IRR_AS_SET_MAX_SETS) is announced but not yet enforced — i.e.
+IRR_AS_SET_CAP_SOFT_START has passed and IRR_AS_SET_CAP_HARD_START has not — this
+warns each status=ok network that still lists more than the cap, citing the
+hard-start deadline, so operators can consolidate before enforcement kicks in.
+It reuses the irr_as_set outreach mail (reason "multi_set").
+
+Scheduled for the length of the soft window, so it must not re-mail on every run:
+irr_as_set_cap_notified records who was warned and --renotify-after-days sets the
+reminder cadence (default 30 days). --max-notifications bounds the per-run burst;
+networks beyond it keep the marker unset and are picked up by a later run. As in
+the sibling commands, --commit refuses --max-notifications 0: 0 is not "no cap"
+anywhere in this family, so a cron entry copied from one command cannot quietly
+mean the opposite in another.
+
+Dry-run by default; --commit stamps the marker and sends the mail on commit of
+that same transaction, so a network is never recorded as warned without the send
+having been attempted. Once the hard-start date is reached the cap is enforced by
+the save-path validator and this nudge stops (the Phase 3 checker sweeps the
+rest).
+
+Usage:
+  manage pdb_irr_as_set_notify [--commit] [--max-notifications N]
+                               [--renotify-after-days N]
 
 ## pdb_irr_as_set_status.py
 
@@ -283,6 +384,10 @@ Load initial data from another peeringdb instance using the REST API.
 
 Put peeringdb in or out of maintenance mode.
 
+## pdb_mfa_notify.py
+
+# Classes
+
 ## pdb_migrate_ixlans.py
 
 DEPRECATED
@@ -303,6 +408,10 @@ Usage:
     ./Ctl/dev/run.sh manage pdb_normalize_name_whitespace --commit  # apply
 
 ## pdb_notify_geocoords.py
+
+# Classes
+
+## pdb_org_cleanup.py
 
 # Classes
 
@@ -393,6 +502,10 @@ Options:
 ## pdb_search_index.py
 
 # Classes
+
+## pdb_sponsorship_notify.py
+
+Look for expired sponsorships and sends a notification to sponsorship admin for recently expired sponsorships.
 
 ## pdb_stats.py
 

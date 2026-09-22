@@ -375,9 +375,8 @@ class APIThrottleTests(TestCase):
         for ip-block with HTTP_X_FORWARDED_FOR set
         """
 
-        request = self.factory.get("/")
+        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
         mock_csrf_session(request)
-        request.META.update({"HTTP_X_FORWARDED_FOR": "10.10.10.10,77.77.77.77"})
 
         # by default ip-block response size rate limiting is disabled
         # ip 10.10.10.10 requesting 10 times (all should be ok)
@@ -409,12 +408,14 @@ class APIThrottleTests(TestCase):
         assert response.status_code == 429
 
         # ip 10.10.10.11 requesting 1st time (rate limited)
-        request.META.update(HTTP_X_FORWARDED_FOR="10.10.10.11,77.77.77.77")
+        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.11,77.77.77.77")
+        mock_csrf_session(request)
         response = ResponseSizeMockView.as_view({"get": "get"})(request)
         assert response.status_code == 429
 
         # ip 20.10.10.10 requesting 1st time (ok)
-        request.META.update(HTTP_X_FORWARDED_FOR="20.10.10.10,77.77.77.77")
+        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="20.10.10.10,77.77.77.77")
+        mock_csrf_session(request)
         response = ResponseSizeMockView.as_view({"get": "get"})(request)
         assert response.status_code == 200
 
@@ -423,7 +424,8 @@ class APIThrottleTests(TestCase):
         thold.save()
 
         # 10.10.10.10 requesting 3 times (all should be ok)
-        request.META.update(HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
+        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
+        mock_csrf_session(request)
         for dummy in range(3):
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200

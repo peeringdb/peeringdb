@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-08-15 04:17:12.354099
+Generated from admin.py on 2026-09-22 17:40:35.596979
 
 # peeringdb_server.admin
 
@@ -18,6 +18,19 @@ Version history is implemented through django-handleref.
 # Functions
 ---
 
+## _status_vocabulary
+`def _status_vocabulary(model)`
+
+The live status values a model's `status` field may hold.
+
+#1742: on netixlan that is "ok" *and* "not-operational". Both the admin
+status select and the status list filter have to know about the second
+one -- a select whose options do not contain the row's current value
+silently posts back "ok", and since netixlans are an inline on the
+Network admin page that would discard a network's non-operational
+declaration on any unrelated save of its parent.
+
+---
 ## fk_handleref_filter
 `def fk_handleref_filter(form, field, tag=None)`
 
@@ -1204,6 +1217,17 @@ These attributes / properties will be available on instances of the class
 Initialize self.  See help(type(self)) for accurate signature.
 
 ---
+#### _clean_side
+`def _clean_side(self, field_name)`
+
+Resolve a `*_side` choice to the `Facility` the model field expects.
+
+Both sides are plain ChoiceFields, so `cleaned_data` carries the
+facility id as a string. Handing that to the fk raises ValueError
+during `construct_instance`, which is not a ValidationError and so
+escapes the form as a 500 instead of a field error (#2043).
+
+---
 
 ## NetworkIXLanForm
 
@@ -1909,10 +1933,14 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
-#### save_formset
-`def save_formset(self, request, form, formset, change)`
+#### save_related
+`def save_related(self, request, form, formsets, change)`
 
-Given an inline formset save it to the database.
+Given the ``HttpRequest``, the parent ``ModelForm`` instance, the
+list of inline formsets and a boolean value based on whether the
+parent is being added or changed, save the related objects to the
+database. Note that at this point save_form() and save_model() have
+already been called.
 
 ---
 

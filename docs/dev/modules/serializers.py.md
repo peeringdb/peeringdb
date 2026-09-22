@@ -1,4 +1,4 @@
-Generated from serializers.py on 2026-08-15 04:17:12.049436
+Generated from serializers.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.serializers
 
@@ -16,6 +16,50 @@ method.
 # Functions
 ---
 
+## _check_multipart_complete
+`def _check_multipart_complete(document, spec, submitted)`
+
+Every multi-part key touched through its flat fields must be whole
+once folded -- or gone. Raises RestValidationError keyed by flat field.
+
+Errors land on the key's LAST part in `spec` order (for
+`planned_status_change` the date): whatever went wrong, that is the
+input the user fills in or clears -- a change type set back to None
+with a date left behind, a change type chosen without a date, a date
+typed without a change type. Pointing at it lets the dashboard
+highlight one field with one instruction.
+
+---
+## fold_meta_flat_fields
+`def fold_meta_flat_fields(data, instance, spec)`
+
+Fold flat write-only metadata fields into the `meta` document.
+
+`spec` is an iterable of (field_name, json_path, clear_value). A field
+whose submitted value equals its clear_value removes its key from the
+document -- and for a multi-part key such as `planned_status_change`,
+clearing any one part clears the whole object, since "blank it out" is
+what a user means by emptying either half and a half-plan is not a legal
+value anyway.
+
+Only fields actually present in the payload are consulted, and the
+resulting document is left for `meta_registry.validate_meta` to check --
+this function never decides whether a value is legal. The one shape
+check it does make is completeness of a multi-part key written through
+its flat fields: a half-written key is reported against the flat field
+the user has to act on, not against `meta`, so the dashboard can
+highlight that input (#1742: clearing the change type while leaving a
+date behind).
+
+---
+## model_help_text
+`def model_help_text(serializer, field, field_name)`
+
+Return the help_text of the model field backing `field`, or "" if there
+isn't one. Used to keep model documentation from being lost when a
+serializer declares a field explicitly.
+
+---
 ## nested
 `def nested(serializer, exclude=[], getter=None, through=None, **kwargs)`
 
@@ -206,6 +250,29 @@ Validate entity reference and file data
 
 ---
 
+## BlankableIntegerField
+
+```
+BlankableIntegerField(rest_framework.fields.IntegerField)
+```
+
+IntegerField whose "no value" is also the empty string.
+
+The dashboard submits every field of a form as JSON, and an emptied
+number input arrives as "" -- which stock IntegerField rejects with
+"A valid integer is required", making an optional metadata key look
+mandatory. Blank means the same thing null does here: clear the key.
+
+
+### Methods
+
+#### to_internal_value
+`def to_internal_value(self, data)`
+
+Transform the *incoming* primitive data into a native value.
+
+---
+
 ## CampusSerializer
 
 ```
@@ -304,6 +371,14 @@ with only `name_search` by deriving city/country (and coordinates) from ES.
 Initialize self.  See help(type(self)) for accurate signature.
 
 ---
+#### create
+`def create(self, validated_data)`
+
+Entities created via the API should go into the verification
+queue with status pending if they are in the QUEUE_ENABLED
+list or suggest is True.
+
+---
 #### to_internal_value
 `def to_internal_value(self, data)`
 
@@ -322,6 +397,13 @@ Object instance -> Dict of primitive datatypes.
 When updating a geo-enabled object,
 update the model first
 and then normalize the geofields.
+
+---
+#### validate_floor
+`def validate_floor(self, floor)`
+
+As per #1482 the floor field is being deprecated
+and only empty values are allowed.
 
 ---
 
@@ -741,6 +823,14 @@ Possible relationship queries:
 
 ### Class Methods
 
+#### finalize_query_params
+`def finalize_query_params(cls, qset, query_params)`
+
+Rewrites `meta__<path>` filter parameters onto the typed generated
+columns declared by the metadata key registry (#1751), so filtered
+metadata lookups are real, indexed database queries.
+
+---
 #### prepare_query
 `def prepare_query(cls, qset, **kwargs)`
 
@@ -757,6 +847,14 @@ Currently supports: ix_id
 
 Per github ticket #826, a Netixlan is only allowed to be added
 if there is a network contact that the AC can contact to resolve issues.
+
+---
+#### create
+`def create(self, validated_data, auto_approve=False, suggest=False)`
+
+Entities created via the API should go into the verification
+queue with status pending if they are in the QUEUE_ENABLED
+list or suggest is True.
 
 ---
 #### run_validation
