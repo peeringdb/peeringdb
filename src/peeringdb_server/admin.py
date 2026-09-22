@@ -1807,11 +1807,28 @@ class NetworkIXLanAdminForm(StatusForm):
         self.fields["net_side"].choices = net_side_choices
         self.fields["ix_side"].choices = ix_side_choices
 
+    def _clean_side(self, field_name):
+        """
+        Resolve a `*_side` choice to the `Facility` the model field expects.
+
+        Both sides are plain ChoiceFields, so `cleaned_data` carries the
+        facility id as a string. Handing that to the fk raises ValueError
+        during `construct_instance`, which is not a ValidationError and so
+        escapes the form as a 500 instead of a field error (#2043).
+        """
+        value = self.cleaned_data[field_name]
+        if not value:
+            return None
+        try:
+            return Facility.objects.get(pk=value)
+        except Facility.DoesNotExist:
+            raise ValidationError(_("Facility not found"))
+
     def clean_net_side(self):
-        net_side = self.cleaned_data["net_side"]
-        if net_side:
-            return Facility.objects.get(pk=net_side)
-        return None
+        return self._clean_side("net_side")
+
+    def clean_ix_side(self):
+        return self._clean_side("ix_side")
 
 
 class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):

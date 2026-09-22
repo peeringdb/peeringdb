@@ -111,25 +111,27 @@ PeeringDB = {
       return $('<span/>').text(identifier);
     },
 
+    /**
+     * Current csrf token, or "" when the page has none.
+     *
+     * A rendered form input wins over `PeeringDB.csrf` (the header template's
+     * assignment from the request context), since a form carries the token for
+     * the request that rendered it. Resolved per call so a request always sends
+     * whatever token is in the dom when it goes out, rather than a value latched
+     * at some earlier point in page setup (#2043).
+     */
+    csrf_token : function() {
+      var csrf_input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if(csrf_input && csrf_input.value)
+        return csrf_input.value;
+      return this.csrf || "";
+    },
+
     init : function() {
       this.InlineSearch.init_search();
 
       twentyc.listutil.filter_input.init();
       twentyc.listutil.sortable.init();
-
-      // the hidden csrfmiddlewaretoken input went away with the POST search
-    // form (#2032); the header template assigns `PeeringDB.csrf` from the
-    // request context instead, so only read the input when one exists
-    var csrf_input = document.querySelector('[name=csrfmiddlewaretoken]');
-    if(csrf_input)
-      this.csrf = csrf_input.value;
-      $.ajaxSetup({
-        beforeSend : function(xhr, settings) {
-          if(!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", PeeringDB.csrf);
-          }
-        }
-      });
 
       $('#form-create-account').on('export', function(e, data) {
         if(this.recaptcha_loaded()){
@@ -193,7 +195,11 @@ PeeringDB = {
       // render markdown content
       $('[data-render-markdown="yes"]').each(function() {
         var converter = new showdown.Converter({openLinksInNewWindow: 'true'})
-        var value = $(this).data("edit-value")
+        // read the attribute rather than `data()`, which coerces a value that
+        // looks like a number, boolean, null or json into that type - a notes
+        // field holding one of those is then not a string and throws here,
+        // aborting the rest of init (#2043)
+        var value = $(this).attr("data-edit-value") || ""
         // sanitize any html tags
         var translate = $(this).find('div.translate').detach()
 
@@ -5795,6 +5801,22 @@ PeeringDB = {
     for(i=0; i<data.length; i++)
       r[data[i].name] = i
     twentyc.data._data["traffic_speed_by_label"] = r;
+  });
+
+  // registered here rather than from init(): init only runs on window.load, so
+  // a throw anywhere in it would otherwise leave every POST on the page with
+  // no X-CSRFToken header at all (#2043)
+  $.ajaxSetup({
+    beforeSend : function(xhr, settings) {
+      if(!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
+        // no header when there is no token: django then reports a missing token
+        // accurately, where an empty or undefined value is rejected as a length
+        // error that reads like the token was mangled (#2043)
+        var token = PeeringDB.csrf_token();
+        if(token)
+          xhr.setRequestHeader("X-CSRFToken", token);
+      }
+    }
   });
 
   $(window).bind("load", function() {

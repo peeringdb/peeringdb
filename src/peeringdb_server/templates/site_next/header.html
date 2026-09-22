@@ -63,9 +63,15 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 {{ form.media }}
 <script type="text/javascript" language="javascript">
 const is_authenticated = `{{request.user.is_authenticated}}` == 'True'
+
+// assigned while the document parses, not on window.load: the edit ui binds
+// its handlers on DOMContentLoaded, so a token published on load is absent
+// for every request the user makes before the last subresource settles, and
+// is never published at all if an earlier load handler throws (#2043)
+if(!PeeringDB.csrf)
+  PeeringDB.csrf = '{{ csrf_token }}';
+
 $(window).bind("load", function() {
-  if(!PeeringDB.csrf)
-    PeeringDB.csrf = '{{ csrf_token }}';
   {% if request.user.is_superuser %}
   PeeringDB.confirmation_prompts.approve = false;
   {% endif %}
@@ -115,10 +121,7 @@ $(window).bind("load", function() {
   }
 
   function getCSRFToken() {
-    // the hidden csrfmiddlewaretoken input went away with the POST search
-    // form (#2032); PeeringDB.csrf is the same token, set above
-    var csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
-    return csrfToken ? csrfToken.value : (PeeringDB.csrf || '');
+    return PeeringDB.csrf_token();
   }
 });
 </script>
