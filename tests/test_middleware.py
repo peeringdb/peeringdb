@@ -4,6 +4,7 @@ from unittest.mock import PropertyMock, patch
 
 import pytest
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import caches
 from django.http import HttpResponse, JsonResponse
 from django.test import (
@@ -15,12 +16,14 @@ from django.test import (
 )
 from django.urls.resolvers import ResolverMatch
 from django.utils.timezone import make_aware
+from oauth2_provider.models import AccessToken
 from rest_framework.response import Response
 from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import (
     ERR_BASE64_DECODE,
     ERR_VALUE_ERROR,
+    CacheControlMiddleware,
     EnforceMFAMiddleware,
     PDBCommonMiddleware,
 )
@@ -849,3 +852,213 @@ class TestCacheControlMiddleware(TestCase):
         self.client.force_login(self.user)
         response = self.client.get("/data/facilities")
         self._assert_cdn_only(response, 10)
+
+
+@override_settings(
+    CACHE_CONTROL_API=10,
+    CACHE_CONTROL_STATIC_PAGE=900,
+    # an api-cache file left in API_CACHE_ROOT by another test otherwise
+    # makes /api/fac answer from the cache, with the api-cache s-maxage
+    API_CACHE_ENABLED=False,
+    # once MFA enforcement is live basic auth is answered with a 403 before a
+    # real response exists, so push both start dates out of the way
+    MFA_FORCE_SOFT_START=make_aware(datetime(2099, 1, 1)),
+    MFA_FORCE_HARD_START=make_aware(datetime(2099, 1, 1)),
+)
+class TestCacheControlMiddlewareCredentials(APITestCase):
+    """
+    Credentialed responses can carry permissioned data, so no shared cache
+    may store them. API keys are not a DRF authentication class, which is how
+    Api-Key requests used to slip through and be emitted with s-maxage (#469).
+    """
+
+    def setUp(self):
+        reset_group_ids()
+        self.user = User.objects.create(username="cc_cred_user")
+        self.user.set_password("cc_cred_user")
+        self.user.save()
+        self.org = Organization.objects.create(name="CC Cred Org", status="ok")
+
+    # -- helpers --
+
+    def directives(self, response):
+        return {
+            directive.strip().lower()
+            for directive in response.get("Cache-Control", "").split(",")
+            if directive.strip()
+        }
+
+    def assert_not_shared_cacheable(self, response):
+        directives = self.directives(response)
+        assert "private" in directives
+        assert "no-store" in directives
+        assert not [d for d in directives if d.startswith("s-maxage")]
+
+    def assert_varies_on_authorization(self, response):
+        vary = {v.strip().lower() for v in response.get("Vary", "").split(",")}
+        assert "authorization" in vary
+
+    def user_api_key(self):
+        _, key = UserAPIKey.objects.create_key(
+            name="cc-cred", user=self.user, readonly=True
+        )
+        return key
+
+    def org_api_key(self):
+        _, key = OrganizationAPIKey.objects.create_key(name="cc-cred", org=self.org)
+        return key
+
+    def basic_auth(self):
+        encoded = base64.b64encode(b"cc_cred_user:cc_cred_user").decode("utf-8")
+        return f"Basic {encoded}"
+
+    def bearer_token(self):
+        # no application: the FK resolves to the stock oauth2_provider model
+        # while the migrated schema points at peeringdb's own table, and
+        # authenticating a token needs neither
+        AccessToken.objects.create(
+            user=self.user,
+            token="cc-cred-access-token",
+            expires=make_aware(datetime.now() + timedelta(days=1)),
+            scope="profile email",
+        )
+        return "Bearer cc-cred-access-token"
+
+    # -- the anonymous path stays shared-cacheable --
+
+    def test_api_anonymous_is_shared_cacheable(self):
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        assert "s-maxage=10" in response["Cache-Control"]
+        self.assert_varies_on_authorization(response)
+
+    # -- every credential scheme drops out of shared caching --
+
+    def test_api_user_api_key_not_shared_cacheable(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {self.user_api_key()}")
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+        self.assert_varies_on_authorization(response)
+
+    def test_api_org_api_key_not_shared_cacheable(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {self.org_api_key()}")
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+
+    def test_api_basic_auth_not_shared_cacheable(self):
+        self.client.credentials(HTTP_AUTHORIZATION=self.basic_auth())
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+
+    def test_api_session_auth_not_shared_cacheable(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+        self.assert_varies_on_authorization(response)
+
+    def test_api_oauth_bearer_not_shared_cacheable(self):
+        """
+        A bearer token is resolved by OAuth2TokenMiddleware rather than by any
+        REST authentication class, so it reaches the middleware as an
+        authenticated request.user.
+        """
+
+        self.client.credentials(HTTP_AUTHORIZATION=self.bearer_token())
+        response = self.client.get("/api/fac")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+
+    def test_api_unrecognized_authorization_not_shared_cacheable(self):
+        """
+        The header is the signal, not whether it resolved to an identity, and
+        no scheme is parsed -- anything unknown to the middleware must not fall
+        back to the shared-cacheable path either.
+        """
+
+        self.client.credentials(HTTP_AUTHORIZATION="Bogus not-a-real-credential")
+        response = self.client.get("/api/fac")
+        self.assert_not_shared_cacheable(response)
+
+    def test_api_empty_authorization_not_shared_cacheable(self):
+        """
+        Presence of the header is the signal, not its value, so an empty or
+        whitespace-only value drops out of shared caching too. The api answers
+        400 either way, because auth_check rejects any Authorization header it
+        cannot resolve to an identity.
+        """
+
+        for value in ("", "   "):
+            with self.subTest(authorization=value):
+                self.client.credentials(HTTP_AUTHORIZATION=value)
+                response = self.client.get("/api/fac")
+                assert response.status_code == 400
+                self.assert_not_shared_cacheable(response)
+
+    # -- non-api views --
+
+    def test_static_view_credentialed_not_shared_cacheable(self):
+        """A named non-api view outside the allowlist loses s-maxage too."""
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {self.user_api_key()}")
+        response = self.client.get("/about")
+        self.assert_not_shared_cacheable(response)
+
+    # -- routes and responses that used to slip past the middleware --
+
+    def test_api_unnamed_route_credentialed_not_shared_cacheable(self):
+        """
+        /api/search and the /api/<tag>/self routes are registered with no url
+        name, which used to end process_response before either guarantee was
+        applied, and both scope what they return to the calling user.
+        """
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {self.user_api_key()}")
+        response = self.client.get("/api/search")
+        assert response.status_code == 200
+        self.assert_not_shared_cacheable(response)
+        self.assert_varies_on_authorization(response)
+
+    def test_api_unnamed_route_anonymous_gets_no_s_maxage(self):
+        """An unnamed route must not become shared-cacheable either."""
+
+        response = self.client.get("/api/search")
+        assert response.status_code == 401
+        assert "s-maxage" not in response.get("Cache-Control", "")
+
+    def test_api_cache_response_credentialed_not_shared_cacheable(self):
+        """
+        An api-cache response is permission-filtered per request, so a
+        credential takes it out of shared caching as well -- at the cost of the
+        CDN offload it keeps while anonymous.
+        """
+
+        request = RequestFactory().get("/api/fac", HTTP_AUTHORIZATION="Api-Key x")
+        request.user = AnonymousUser()
+        request.resolver_match = ResolverMatch(
+            lambda req: None, [], {}, "fac-list", namespaces=["api"]
+        )
+        response = HttpResponse()
+        response.context_data = {"apicache": True}
+
+        response = CacheControlMiddleware(get_response_empty).process_response(
+            request, response
+        )
+
+        self.assert_not_shared_cacheable(response)
+
+    def test_allowlisted_data_view_keeps_s_maxage(self):
+        """
+        authenticated_views carries over unchanged from #1899 -- those five
+        views return no user-specific data, so credentials do not change their
+        cacheability.
+        """
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Api-Key {self.user_api_key()}")
+        response = self.client.get("/data/enum/net_types")
+        assert response.status_code == 200
+        assert "s-maxage=900" in response["Cache-Control"]
+        assert "no-store" not in response["Cache-Control"]
