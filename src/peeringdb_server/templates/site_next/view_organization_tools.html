@@ -135,12 +135,16 @@
               </div>
             </div>
 
+        {% if facility_location_enabled %}
+        {% include "site_next/facility_location.html" with location_org_id=instance.id %}
+        {% endif %}
+
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4">{% trans "Address 1" %}</div>
               <div class="col-8 col-sm-7 col-md-8">
-                <div data-edit-type="string"
+                {% if not facility_location_enabled %}<div data-edit-type="string"
                      data-edit-required="yes"
-                     data-edit-name="address1"></div>
+                     data-edit-name="address1"></div>{% else %}<div class="text-muted" data-location-field="address1">{% trans "Selected above" %}</div>{% endif %}
               </div>
             </div>
 
@@ -155,26 +159,26 @@
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4">{% trans "City" %}</div>
               <div class="col-8 col-sm-7 col-md-8">
-                <div data-edit-type="string"
+                {% if not facility_location_enabled %}<div data-edit-type="string"
                      data-edit-required="yes"
-                     data-edit-name="city"></div>
+                     data-edit-name="city"></div>{% else %}<div class="text-muted" data-location-field="city">{% trans "Selected above" %}</div>{% endif %}
               </div>
             </div>
 
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4">{% trans "State" %}</div>
               <div class="col-8 col-sm-7 col-md-8">
-                <div data-edit-type="string"
-                     data-edit-name="state"></div>
+                {% if not facility_location_enabled %}<div data-edit-type="string"
+                     data-edit-name="state"></div>{% else %}<div class="text-muted" data-location-field="state">{% trans "Selected above" %}</div>{% endif %}
               </div>
             </div>
 
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4">{% trans "Zip-Code" %}</div>
               <div class="col-8 col-sm-7 col-md-8">
-                <div data-edit-type="string"
+                {% if not facility_location_enabled %}<div data-edit-type="string"
                      data-edit-required="no"
-                     data-edit-name="zipcode"></div>
+                     data-edit-name="zipcode"></div>{% else %}<div class="text-muted" data-location-field="zipcode">{% trans "Selected above" %}</div>{% endif %}
               </div>
             </div>
 
@@ -183,11 +187,11 @@
             <div class="row">
               <div class="col-4 col-sm-5 col-md-4">{% trans "Country" %}</div>
               <div class="col-8 col-sm-7 col-md-8">
-                <div data-edit-type="select"
+                {% if not facility_location_enabled %}<div data-edit-type="select"
                      data-edit-name="country"
                      data-edit-required="yes"
                      data-edit-data="countries"
-                     data-edit-data-all-entry=":{% trans "-- Select Country --" %}"></div>
+                     data-edit-data-all-entry=":{% trans "-- Select Country --" %}"></div>{% else %}<div class="text-muted" data-location-field="country">{% trans "Selected above" %}</div>{% endif %}
               </div>
             </div>
 

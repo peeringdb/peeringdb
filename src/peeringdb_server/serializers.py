@@ -28,6 +28,7 @@ from django.core.cache import caches
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.base import ContentFile
 from django.core.validators import URLValidator
+from django.db import transaction
 from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
 from django.db.models.fields.related import (
@@ -53,9 +54,10 @@ from django_peeringdb.models.abstract import AddressModel
 from grainy.const import PERM_DELETE, PERM_UPDATE
 from PIL import Image
 from rest_framework import serializers, validators
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, Throttled
 from rest_framework.exceptions import ValidationError as RestValidationError
 
+from peeringdb_server import location
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.deskpro import (
@@ -101,9 +103,11 @@ from peeringdb_server.permissions import (
     check_permissions_from_request,
     get_email_from_user_or_key,
     get_org_key_from_request,
+    get_permission_holder_from_request,
     get_user_from_request,
     validate_rdap_user_or_key,
 )
+from peeringdb_server.rest_throttles import LocationLookupThrottle
 from peeringdb_server.search_v2 import elasticsearch_proximity_entity
 from peeringdb_server.validators import (
     clean_ixp_update_exclude,
@@ -1760,7 +1764,18 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.context.get("request") and self.context["request"].method == "POST":
+        if settings.FACILITY_ADDRESS_SELECTION_ENABLED:
+            if "address1" in self.fields:
+                self.fields["address1"].allow_blank = True
+            if self.instance:
+                for field in location.LOCATION_FIELDS:
+                    if field in self.fields:
+                        self.fields[field].required = False
+        if (
+            self.context.get("request")
+            and self.context["request"].method == "POST"
+            and not settings.FACILITY_ADDRESS_SELECTION_ENABLED
+        ):
             # make lat and long fields readonly on create
             self.fields["latitude"].read_only = True
             self.fields["longitude"].read_only = True
@@ -2022,10 +2037,136 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         # this happens here so it is done before the validators run
         if isinstance(data, QueryDict):
             data = data.dict()
+        else:
+            data = data.copy()
         if "suggest" in data and (not self.instance or not self.instance.id):
             data["org_id"] = settings.SUGGEST_ENTITY_ORG
 
+        self.validate_location_selection(data)
+
         return super().to_internal_value(data)
+
+    def validate_location_selection(self, data):
+        self._selected_location = None
+        self._raw_location_changed = False
+        request = self.context.get("request")
+        if request and settings.FACILITY_ADDRESS_SELECTION_ENABLED:
+            token = self.context.get("location_confirmation")
+            changed = not self.instance or any(
+                field in data
+                and not location.same_value(
+                    field, data[field], getattr(self.instance, field)
+                )
+                for field in location.LOCATION_FIELDS
+            )
+            if token:
+                try:
+                    org_id = int(
+                        data.get("org_id", self.instance.org_id if self.instance else 0)
+                    )
+                except (TypeError, ValueError):
+                    raise serializers.ValidationError(
+                        {"org_id": _("Invalid organization")}
+                    ) from None
+                selection = location.read_selection(
+                    token,
+                    location.actor_id(get_permission_holder_from_request(request)),
+                    org_id,
+                    self.instance,
+                    ref_tag="fac",
+                )
+                for field, value in selection["location"].items():
+                    if field in data and not location.same_value(
+                        field, data[field], value
+                    ):
+                        raise serializers.ValidationError(
+                            {
+                                field: _(
+                                    "This value differs from the confirmed location. Select again."
+                                )
+                            }
+                        )
+                    data[field] = value
+                self._selected_location = selection
+            elif changed:
+                self._raw_location_changed = True
+                supplied = [field in data for field in ("latitude", "longitude")]
+                if any(supplied) and not all(supplied):
+                    raise serializers.ValidationError(
+                        {"latitude": _("Provide latitude and longitude together.")}
+                    )
+                has_pin = all(supplied) and not all(
+                    data[field] in (None, "") for field in ("latitude", "longitude")
+                )
+                self._raw_location_pin = (
+                    location.coordinates(data["latitude"], data["longitude"])
+                    if has_pin
+                    else None
+                )
+                if self.instance:
+                    saved = location.snapshot(self.instance)
+                    for field in location.ADDRESS_FIELDS:
+                        data.setdefault(field, saved[field])
+            else:
+                for field in location.LOCATION_FIELDS:
+                    data.pop(field, None)
+        elif self.context.get("location_confirmation"):
+            raise serializers.ValidationError(
+                {
+                    "location_confirmation": _(
+                        "Facility location selection is not enabled."
+                    )
+                }
+            )
+
+    def validate_raw_location(self, data):
+        request = self.context["request"]
+        location.actor_id(get_permission_holder_from_request(request))
+        org = data.get("org", self.instance.org if self.instance else None)
+        if not org or org.status != "ok":
+            raise serializers.ValidationError(
+                {"org_id": _("Select an active organization.")}
+            )
+        namespace = Facility.Grainy.namespace_instance(
+            "*", id=self.instance.pk if self.instance else "*", org=org
+        )
+        if not check_permissions_from_request(
+            request, namespace, "u" if self.instance else "c"
+        ):
+            raise PermissionDenied(
+                f"User does not have write permissions to '{namespace}'"
+            )
+        if self.instance and not check_permissions_from_request(
+            request, self.instance, "u"
+        ):
+            raise PermissionDenied(
+                f"User does not have write permissions to '{self.instance.grainy_namespace}'"
+            )
+        throttle = LocationLookupThrottle()
+        if not throttle.allow_request(request, self.context.get("view")):
+            raise Throttled(wait=throttle.wait())
+        address = {
+            field: data.get(field, getattr(self.instance, field, ""))
+            for field in location.ADDRESS_FIELDS
+        }
+        selection = location.GoogleLocation().match_address(
+            address, self._raw_location_pin
+        )
+        selection["version"] = (
+            location.location_version(self.instance) if self.instance else None
+        )
+        self._selected_location = selection
+        for field, value in selection["location"].items():
+            data[field] = self.fields[field].run_validation(value)
+
+    def validate_floor(self, floor):
+        if (
+            settings.FACILITY_ADDRESS_SELECTION_ENABLED
+            and self.instance
+            and floor == self.instance.floor
+        ):
+            return floor
+        return super().validate_floor(floor)
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -2061,10 +2202,42 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             return None
 
     def update(self, instance, validated_data):
-        instance = super().update(instance, validated_data, ignore_geosync=False)
-        return instance
+        if self.context.get("request") and settings.FACILITY_ADDRESS_SELECTION_ENABLED:
+            with transaction.atomic():
+                current = Facility.objects.select_for_update().get(pk=instance.pk)
+                selection = getattr(self, "_selected_location", None)
+                if selection:
+                    if selection["version"] != location.location_version(current):
+                        raise location.LocationConflict()
+                    validated_data["location_method"] = selection["method"]
+                    validated_data["location_place_id"] = selection["place_id"]
+                    current._location_confirmed = True
+                else:
+                    # A full form may include unchanged address fields from an older read.
+                    for field in location.LOCATION_FIELDS:
+                        validated_data.pop(field, None)
+                return ModelSerializer.update(self, current, validated_data)
+        return super().update(instance, validated_data, ignore_geosync=False)
+
+    def create(self, validated_data):
+        selection = getattr(self, "_selected_location", None)
+        if selection:
+            validated_data["location_method"] = selection["method"]
+            validated_data["location_place_id"] = selection["place_id"]
+            return ModelSerializer.create(self, validated_data)
+        return super().create(validated_data)
 
     def validate(self, data):
+        if getattr(self, "_raw_location_changed", False):
+            self.validate_raw_location(data)
+        if (
+            self.instance
+            and self.context.get("request")
+            and settings.FACILITY_ADDRESS_SELECTION_ENABLED
+            and not getattr(self, "_selected_location", None)
+        ):
+            for field in location.LOCATION_FIELDS:
+                data[field] = getattr(self.instance, field)
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = (
@@ -2087,8 +2260,16 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             )
         except ValidationError as exc:
             raise serializers.ValidationError({"sales_phone": exc.message})
+        selected = getattr(self, "_selected_location", None)
+        unchanged_location = (
+            self.instance
+            and self.context.get("request")
+            and settings.FACILITY_ADDRESS_SELECTION_ENABLED
+            and not selected
+        )
         try:
-            data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
+            if not unchanged_location and not selected:
+                data["zipcode"] = validate_zipcode(data["zipcode"], data["country"])
         except ValidationError as exc:
             raise serializers.ValidationError({"zipcode": exc.message})
 
@@ -2098,19 +2279,34 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
 
         # unsetting existing latitude and longitude is NOT allowed
 
-        if self.instance and self.instance.latitude and not latitude:
+        if (
+            not unchanged_location
+            and self.instance
+            and self.instance.latitude is not None
+            and latitude is None
+        ):
             raise serializers.ValidationError(
                 {"latitude": _("Valid latitude is required")}
             )
 
-        elif self.instance and self.instance.longitude and not longitude:
+        elif (
+            not unchanged_location
+            and self.instance
+            and self.instance.longitude is not None
+            and longitude is None
+        ):
             raise serializers.ValidationError(
                 {"longitude": _("Valid longitude is required")}
             )
 
         # if latitude or longitude has changed, validate the distance
 
-        if self.instance and latitude and longitude:
+        if (
+            not unchanged_location
+            and self.instance
+            and latitude is not None
+            and longitude is not None
+        ):
             if (
                 latitude != self.instance.latitude
                 or longitude != self.instance.longitude

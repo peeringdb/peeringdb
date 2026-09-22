@@ -87,7 +87,7 @@ from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 import peeringdb_server.geo
-from peeringdb_server import settings
+from peeringdb_server import location, settings
 from peeringdb_server.api_key_views import load_all_key_permissions
 from peeringdb_server.data_views import BOOL_CHOICE, BOOL_CHOICE_WITH_OPT_OUT
 from peeringdb_server.deskpro import ticket_queue_rdap_error
@@ -2200,6 +2200,11 @@ def view_facility(request, id):
         ],
     }
 
+    if dj_settings.FACILITY_ADDRESS_SELECTION_ENABLED:
+        for field in data["fields"]:
+            if field["name"] in ("address1", "country", "location", "geocode"):
+                field["readonly"] = True
+
     data = generate_social_media_render_data(data, social_media, 3, dismiss)
 
     data["stats"] = get_fac_stats(peers, exchanges)
@@ -2261,6 +2266,7 @@ def view_facility(request, id):
         user_networks=user_networks,
         user_exchanges=user_exchanges,
         user_carriers=user_carriers,
+        facility_location_version=location.location_version(facility),
     )
 
 

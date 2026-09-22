@@ -3871,7 +3871,15 @@ PeeringDB = {
             return;
           }
         }
-        PeeringDB.API.request(
+        var sendRequest = PeeringDB.API.request;
+        if (endpoint === "fac" && method !== "DELETE" && window.FacilityLocation) {
+          if (!window.FacilityLocation.prepare(sender, data)) {
+            me.trigger("error", {type: "ValidationError", info: gettext("Select and confirm the facility location before saving.")});
+            return;
+          }
+          sendRequest = window.FacilityLocation.request.bind(null, sender);
+        }
+        sendRequest(
           method,
           endpoint,
           id,

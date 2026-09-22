@@ -3,6 +3,7 @@ import os
 import elasticsearch as es_module
 import pytest
 import pytest_filedata
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import caches
 from django.core.management import call_command
@@ -115,8 +116,9 @@ def elasticsearch_index(elasticsearch, django_db_setup, django_db_blocker):
 
 
 @pytest.fixture(autouse=True)
-def cleanup(request):
+def cleanup(request, monkeypatch):
     """Cleanup a django cache after each test"""
 
+    monkeypatch.setattr(settings, "GENERATING_API_CACHE", False, raising=False)
     for name in caches:
         caches[name].clear()

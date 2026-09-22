@@ -11,7 +11,11 @@ from rest_framework import throttling
 from rest_framework.exceptions import PermissionDenied
 
 from peeringdb_server.models import EnvironmentSetting
-from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
+from peeringdb_server.permissions import (
+    get_org_key_from_request,
+    get_permission_holder_from_request,
+    get_user_from_request,
+)
 
 
 class IXFImportThrottle(throttling.UserRateThrottle):
@@ -605,3 +609,14 @@ class OrganizationUsersThrottle(throttling.UserRateThrottle):
             return rate
         else:
             return self.default_rate
+
+
+class LocationLookupThrottle(throttling.SimpleRateThrottle):
+    scope = "location_lookup"
+
+    def get_rate(self):
+        return settings.API_THROTTLE_LOCATION
+
+    def get_cache_key(self, request, view):
+        holder = get_permission_holder_from_request(request)
+        return f"location-lookup:{holder.__class__.__name__}:{holder.pk or self.get_ident(request)}"

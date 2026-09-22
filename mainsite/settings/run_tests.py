@@ -5,6 +5,9 @@ SERVER_EMAIL = "pdb@localhost"
 
 SECRET_KEY = "tests"
 
+# Legacy API fixtures exercise the rollback setting; selection tests enable it explicitly.
+FACILITY_ADDRESS_SELECTION_ENABLED = False
+
 # Keys
 
 
@@ -21,7 +24,7 @@ OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH = ""
 BASE_URL = "https://localhost"
 PASSWORD_RESET_URL = "localhost"
 SUGGEST_ENTITY_ORG = 1234
-API_CACHED_ENABLED = False
+API_CACHE_ENABLED = False
 NSP_GUEST_GROUP = "guest"
 NSP_USER_GROUP = "user"
 IXF_POSTMORTEM_LIMIT = 250

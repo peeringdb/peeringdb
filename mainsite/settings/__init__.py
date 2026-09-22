@@ -422,6 +422,8 @@ set_from_env("GOOGLE_GEOLOC_API_KEY")
 # referrer-restricted. Falls back to GOOGLE_GEOLOC_API_KEY when unset.
 set_from_env("GOOGLE_MAPS_API_KEY")
 set_from_env("GOOGLE_MAPS_MAP_ID")
+set_option("FACILITY_ADDRESS_SELECTION_ENABLED", True)
+set_option("LOCATION_MATCH_MAX_DISTANCE_KM", 1.0)
 
 set_from_env("RDAP_LACNIC_APIKEY")
 
@@ -457,6 +459,7 @@ set_option("API_THROTTLE_RATE_USER", "100/second")
 set_option("API_THROTTLE_RATE_FILTER_DISTANCE", "10/minute")
 set_option("API_THROTTLE_IXF_IMPORT", "1/minute")
 set_option("API_THROTTLE_ORGANIZATION_USERS", "1/second")
+set_option("API_THROTTLE_LOCATION", "60/minute")
 # #1973: rate for the session-authenticated editor IRR lookup endpoint. Sized for a
 # debounced completion widget, not bulk querying -- PeeringDB must not become a free
 # IRR query proxy. Cache hits skip the pool, so this bounds distinct names per user.

@@ -42,6 +42,7 @@ from peeringdb_server.import_views import (
     view_import_net_ixf_postmortem,
     view_import_net_ixf_preview,
 )
+from peeringdb_server.location_views import LocationSaveView, LocationView
 from peeringdb_server.models import (
     Campus,
     Carrier,
@@ -302,6 +303,26 @@ urlpatterns = [
     re_path(
         r"^org_admin/key_permissions/remove$",
         peeringdb_server.api_key_views.key_permission_remove,
+    ),
+    re_path(
+        r"^data/location/save/?$",
+        LocationSaveView.as_view(),
+        name="location-save",
+    ),
+    re_path(
+        r"^data/location/country/?$",
+        LocationView.as_view(action="country"),
+        name="location-country",
+    ),
+    re_path(
+        r"^data/location/search/?$",
+        LocationView.as_view(action="search"),
+        name="location-search",
+    ),
+    re_path(
+        r"^data/location/resolve/?$",
+        LocationView.as_view(action="resolve"),
+        name="location-resolve",
     ),
     re_path(
         r"^data/countries$",
