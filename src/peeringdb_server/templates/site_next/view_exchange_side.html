@@ -84,6 +84,18 @@
           </a>
 
           <svg class="not-operational" data-edit-toggled="view" data-bs-toggle="tooltip" title="{% trans "Not operational" %}" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="15px" viewBox="0 0 24 24" width="15px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><g><g><path d="M12,5.99L19.53,19H4.47L12,5.99 M12,2L1,21h22L12,2L12,2z"/><polygon points="13,16 11,16 11,18 13,18"/><polygon points="13,10 11,10 11,15 13,15"/></g></g></g></svg>
+          {% if x.meta.planned_status_change %}
+          <span class="planned-status-change" data-edit-toggled="view"
+                data-bs-toggle="tooltip"
+                title="{% trans "Announced by the network. Plans are declarations of intent -- nothing happens automatically on this date." %}">
+            {% if x.meta.planned_status_change.status == "deleted" %}{% trans "planned removal" %}{% else %}{% trans "planned activation" %}{% endif %} {{ x.meta.planned_status_change.date }}
+          </span>
+          {% endif %}
+          {% if x.meta.rfc8950 %}
+          <span class="netixlan-capability" data-edit-toggled="view"
+                data-bs-toggle="tooltip"
+                title="{% trans "The network supports RFC8950 extended next hop on this connection" %}">RFC8950</span>
+          {% endif %}
         </div>
         <div class="ip4" data-sort-value="{{ x.ipaddr4|none_blank }} {{ x.ipaddr6|none_blank }}" data-filter-value="{{x.ipaddr4}}">{{ x.ipaddr4|none_blank }}</div>
 

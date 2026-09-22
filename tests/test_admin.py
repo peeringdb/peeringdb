@@ -4,6 +4,7 @@ import urllib
 
 import pytest
 from django.conf import settings as dj_settings
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
@@ -1719,3 +1720,162 @@ class AdminTests(TestCase):
 
         org.refresh_from_db()
         self.assertFalse(org.passkey_disable_password_auth)
+
+
+class NetixlanStatusAdminTests(TestCase):
+    """
+    #1742: netixlan carries operational-ness in `status`, so the admin's
+    status vocabulary has to include "not-operational".
+
+    StatusForm backs both netixlan admin write paths -- NetworkIXLanAdmin
+    via NetworkIXLanAdminForm, and the netixlan inline on the Network admin
+    page via NetworkIXLanForm. A select whose options do not contain the
+    row's current value renders preselected on "ok" and posts that back, so
+    saving a Network for an entirely unrelated reason would silently discard
+    the network's non-operational declaration.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.org = models.Organization.objects.create(name="NotOp Org", status="ok")
+        cls.net = models.Network.objects.create(
+            name="NotOp Net", asn=64599, org=cls.org, status="ok"
+        )
+        cls.ix = models.InternetExchange.objects.create(
+            name="NotOp IX", org=cls.org, status="ok"
+        )
+        models.IXLanPrefix.objects.create(
+            ixlan=cls.ix.ixlan,
+            protocol="IPv4",
+            prefix="195.69.164.0/22",
+            status="ok",
+        )
+        cls.netixlan = models.NetworkIXLan.objects.create(
+            network=cls.net,
+            ixlan=cls.ix.ixlan,
+            asn=cls.net.asn,
+            speed=1000,
+            status="not-operational",
+            ipaddr4="195.69.164.10",
+        )
+
+    def request(self):
+        # the concrete form class only exists once the ModelAdmin has run it
+        # through modelform_factory -- StatusForm itself declares no
+        # Meta.model, so the vocabulary has to be resolved at that point
+        request = RequestFactory().get("/")
+        request.user = get_user_model().objects.create_user(
+            "notop_admin", "notop_admin@localhost", "admin", is_superuser=True
+        )
+        return request
+
+    def status_field(self, model_admin, obj):
+        return model_admin.get_form(self.request(), obj=obj)(instance=obj).fields[
+            "status"
+        ]
+
+    def test_status_choices_include_not_operational_on_the_netixlan_admin(self):
+        field = self.status_field(
+            admin.NetworkIXLanAdmin(models.NetworkIXLan, AdminSite()), self.netixlan
+        )
+        assert "not-operational" in dict(field.choices)
+        # ... and the row's own value is selectable, so a save keeps it
+        assert field.valid_value("not-operational")
+
+    def test_status_choices_include_not_operational_on_the_network_inline(self):
+        inline = admin.NetworkInternetExchangeInline(models.Network, AdminSite())
+        formset = inline.get_formset(self.request(), obj=self.net)
+        field = formset.form(instance=self.netixlan).fields["status"]
+        assert "not-operational" in dict(field.choices)
+        assert field.valid_value("not-operational")
+
+    def test_other_models_keep_the_plain_status_vocabulary(self):
+        # the extra value is netixlan's alone -- it must not leak into every
+        # admin status select
+        field = self.status_field(
+            admin.NetworkAdmin(models.Network, AdminSite()), self.net
+        )
+        assert "not-operational" not in dict(field.choices)
+
+    def test_pending_netixlan_can_be_resolved_into_either_live_status(self):
+        models.NetworkIXLan.objects.filter(id=self.netixlan.id).update(status="pending")
+        self.netixlan.refresh_from_db()
+        field = self.status_field(
+            admin.NetworkIXLanAdmin(models.NetworkIXLan, AdminSite()), self.netixlan
+        )
+        assert set(dict(field.choices)) == {"ok", "not-operational", "pending"}
+
+    def test_status_filter_can_list_not_operational(self):
+        class _ModelAdmin:
+            model = models.NetworkIXLan
+
+        lookups = dict(
+            admin.StatusFilter(None, {}, models.NetworkIXLan, _ModelAdmin).lookups(
+                None, _ModelAdmin
+            )
+        )
+        assert "not-operational" in lookups
+        assert set(lookups) == {"ok", "not-operational", "pending", "deleted", "all"}
+
+    @staticmethod
+    def _post_data(form_cls, instance, **overrides):
+        # rebuild what the change form would post: every field at its
+        # current value, with the caller's overrides on top
+        unbound = form_cls(instance=instance)
+        data = {
+            name: unbound[name].value()
+            for name in unbound.fields
+            if unbound[name].value() is not None
+        }
+        data.update(overrides)
+        return data
+
+    def test_restoring_a_deleted_netixlan_under_a_deleted_parent_is_a_form_error(self):
+        """
+        StatusForm.clean()'s parent-status guard has to cover every live
+        status, not a literal list. A status missing from that list skips
+        validate_parent_status(), which NetworkIXLan.save() then raises as
+        ParentStatusException -- an IOError, not a ValidationError, so it
+        escapes the admin as a 500 on exactly the path that gives the AC a
+        readable error for "ok".
+        """
+        models.Network.objects.filter(id=self.net.id).update(status="deleted")
+        models.NetworkIXLan.objects.filter(id=self.netixlan.id).update(status="deleted")
+        self.netixlan.refresh_from_db()
+
+        # driven through the inline's form, the path the AC reaches from the
+        # Network page -- NetworkIXLanAdminForm shares StatusForm.clean()
+        inline = admin.NetworkInternetExchangeInline(models.Network, AdminSite())
+        form_cls = inline.get_formset(self.request(), obj=self.net).form
+
+        for status in ("ok", "not-operational"):
+            # a fresh instance per iteration -- validating a bound form
+            # mutates the one it is given
+            instance = models.NetworkIXLan.objects.get(id=self.netixlan.id)
+            form = form_cls(
+                instance=instance,
+                data=self._post_data(form_cls, instance, status=status),
+            )
+            assert not form.is_valid(), status
+            assert "has been marked as deleted" in str(form.errors), status
+
+    def test_operational_is_read_only_on_both_netixlan_admin_paths(self):
+        # NetworkIXLan.save() recomputes `operational` from `status` on
+        # every save, so an editable widget would silently discard whatever
+        # the AC set
+        request = self.request()
+        model_admin = admin.NetworkIXLanAdmin(models.NetworkIXLan, AdminSite())
+        assert "operational" in model_admin.get_readonly_fields(
+            request, obj=self.netixlan
+        )
+        assert (
+            "operational"
+            not in model_admin.get_form(request, obj=self.netixlan).base_fields
+        )
+
+        inline = admin.NetworkInternetExchangeInline(models.Network, AdminSite())
+        assert "operational" in inline.get_readonly_fields(request, obj=self.net)
+        assert (
+            "operational"
+            not in inline.get_formset(request, obj=self.net).form.base_fields
+        )

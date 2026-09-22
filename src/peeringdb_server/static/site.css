@@ -29,7 +29,10 @@ body {
 
 input[type="text"]:focus,
 input[type="text"]:active,
-input[type="text"]:active:focus {
+input[type="text"]:active:focus,
+input[type="date"]:focus,
+input[type="date"]:active,
+input[type="date"]:active:focus {
   outline: none !important;
   box-shadow: none !important;
   border: 2px var(--border-color) solid !important;
@@ -517,6 +520,7 @@ div.panel > .btn {
   white-space: nowrap;
 }
 
+
 .glyphicon-warning-sign {
   color: #b19400;
   vertical-align: text-top;
@@ -525,6 +529,109 @@ div.panel > .btn {
 .operational .not-operational {
   display: none !important;
 }
+/* #1751 / #1742: per-connection metadata signals, public rather than visible
+   only to whoever is editing. Two placements, because the two lists render
+   their booleans differently: on the exchange side they are chips beside the
+   not-operational indicator, matching how that table already shows is_rs_peer
+   and bfd_support; on the network side, where those two are on/off checkmark
+   columns, the plan badge is the view-mode content of its own column. */
+.planned-status-change,
+.netixlan-capability {
+  display: inline-block;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 5px;
+  margin-left: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  color: var(--heading-color);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* a planned change is a caution, not a capability -- same tone as the other
+   warning indicator in this file */
+.planned-status-change {
+  border-color: #b19400;
+  color: #b19400;
+}
+
+/* #1742: a planned change and its date are one thing to the user. The
+   status badge / select and the date text / picker share one .planned-change
+   cell (sorted by date) and are drawn as ONE control: in view mode a single
+   two-segment pill ("planned removal | 2026-10-01"), in edit mode a joined
+   select + date picker with a shared border, input-group style. */
+.planned-change .planned-status,
+.planned-change .planned-date {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* view mode: the badge is the left segment, the date the right one */
+.planned-change .planned-status-change {
+  margin-left: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.planned-change .planned-date:not(:empty) {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 5px;
+  margin-left: -1px;
+  border: 1px solid #b19400;
+  border-left: 0;
+  border-radius: 0 3px 3px 0;
+  color: #b19400;
+  white-space: nowrap;
+}
+
+/* view mode: an unset key is an empty cell -- collapse it, otherwise the
+   metadata sub-row reads as an empty extra row under every connection.
+   `data-has-value` is set server-side on render and toggled by the widgets'
+   apply() handlers in peeringdb.js, so it survives the edit/view round
+   trip (an :empty test does not: apply() leaves an empty template node). */
+div.view:not(.mode-edit) .netixlan-meta .rfc8950:not([data-has-value]),
+div.view:not(.mode-edit) .netixlan-meta .planned-status:not([data-has-value]),
+div.view:not(.mode-edit) .netixlan-meta .planned-date:not([data-has-value]) {
+  display: none;
+}
+
+/* edit mode: undo the pill on the wrapper, join the two inputs into one
+   full-width control -- the change type flexes, the date keeps its size */
+div.view.mode-edit .planned-change {
+  display: flex;
+  align-items: stretch;
+}
+
+div.view.mode-edit .planned-change .planned-status {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+div.view.mode-edit .planned-change .planned-date {
+  flex: 0 0 auto;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  margin-left: -2px;
+  border: 0;
+  color: inherit;
+}
+
+div.view.mode-edit .planned-change div.editable.input-frame > select {
+  width: 100%;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+div.view.mode-edit .planned-change div.editable.input-frame > input[type="date"] {
+  width: auto;
+  height: 100%;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
 
 /* landing page: info */
 
@@ -1167,7 +1274,8 @@ div.editable.input-frame > textarea.markdown {
 div.view > input[type="text"],
 div.panel div.editable.input-frame > input[type="text"],
 div.panel div.editable.input-frame > input[type="password"],
-div.view div.editable.input-frame > input[type="text"] {
+div.view div.editable.input-frame > input[type="text"],
+div.view div.editable.input-frame > input[type="date"] {
   width: 100%;
   padding: 3px;
   -margin: -3px 0px -3px 0px;
@@ -1182,6 +1290,7 @@ div.editable.input-frame > select {
 }
 input[type="text"],
 input[type="password"],
+input[type="date"],
 #search,
 select.editable,
 textarea {

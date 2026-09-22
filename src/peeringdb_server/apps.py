@@ -17,3 +17,10 @@ class PeeringDBServerAppConfig(AppConfig):
         # gets imported, and removing it will break things
         # like verification queue and org usergroup creation
         import peeringdb_server.signals  # noqa
+
+        from django.core import checks
+
+        from peeringdb_server.meta_registry import check_meta_registry
+
+        # registry <-> schema drift check for object metadata (#1751)
+        checks.register(check_meta_registry)

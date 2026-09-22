@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from peeringdb_server.inet import renumber_ipaddress
-from peeringdb_server.models import IXLanPrefix, NetworkIXLan
+from peeringdb_server.models import IXLanPrefix, NetworkIXLan, live_statuses
 
 
 class Command(BaseCommand):
@@ -57,7 +57,9 @@ class Command(BaseCommand):
         prefixes = IXLanPrefix.objects.filter(
             prefix=old, ixlan__ix_id=self.ix, status="ok"
         )
-        netixlans = NetworkIXLan.objects.filter(ixlan__ix_id=self.ix, status="ok")
+        netixlans = NetworkIXLan.objects.filter(
+            ixlan__ix_id=self.ix, status__in=live_statuses(NetworkIXLan)
+        )
 
         if self.ixlan:
             self.log(f"Only replacing in ixlan {self.ixlan.descriptive_name}")

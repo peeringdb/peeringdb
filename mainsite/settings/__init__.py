@@ -1586,6 +1586,18 @@ set_option(
     },
 )
 
+# object metadata (#1751) -- tunable bounds for registered meta keys
+# (peeringdb_server/meta_registry.py); deployment settings, never code
+# constants
+#
+# how far ahead (days) a `planned_status_change` date may be (#1736
+# suggested 12-18 months; default 18)
+set_option("META_PLANNED_STATUS_CHANGE_WINDOW_DAYS", 548)
+
+# accepted bounds for the `preferred_ip_mtu` key on net (#1471)
+set_option("META_PREFERRED_IP_MTU_MIN", 576)
+set_option("META_PREFERRED_IP_MTU_MAX", 65535)
+
 set_option("IXF_POSTMORTEM_LIMIT", 250)
 
 # when encountering problems where an exchange's IX-F feed

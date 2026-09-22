@@ -133,6 +133,9 @@ class MetaJSONRenderer(MungeRenderer):
 
         elif res.status_code < 500:
             meta["error"] = data.pop("detail", res.reason_phrase)
+            # The object's meta field shares its name with the response envelope.
+            if "meta" in data:
+                meta["field_errors"] = {"meta": data.pop("meta")}
 
             result.update(**data)
 

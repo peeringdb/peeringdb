@@ -24,10 +24,12 @@
     <div class="col-6 col-sm-4 col-md-3">
       <div data-sort-target=".exchange" data-sort-initial="asc">{% trans "Exchange" %}</div>
       <div data-sort-target=".ip4" data-sort-type="natural" class="ambiguous">{% trans "IPv4" %}</div>
+      <div data-sort-target=".rfc8950">{% trans "RFC8950" %}</div>
     </div>
     <div class="col-6 col-sm-4 col-md-3">
       <div data-sort-target=".asn" class="numeric">{% trans "ASN" %}</div>
       <div data-sort-target=".ip6" data-sort-type="natural" class="ambiguous">{% trans "IPv6" %}</div>
+      <div data-sort-target=".planned-change">{% trans "Planned change" %}</div>
     </div>
     <div class="col-3 col-sm-2 col-md-2 d-none d-sm-block">
       <div data-sort-target=".speed" class="numeric">{% trans "Capacity" %}</div>
@@ -88,11 +90,11 @@
             </div>
             <div data-edit-toggled="edit" class="editable-inline netixlan-extra">
               <div
-                data-edit-type="bool"
-                data-edit-name="operational"
+                data-edit-type="netixlan_status"
+                data-edit-name="status"
                 data-edit-toggled="edit"
                 data-sort-value="{{ x.operational }}"
-                data-edit-value="{{ x.operational }}">
+                data-edit-value="{{ x.status }}">
               </div>
               <span data-edit-toggled="edit">{% trans "Operational" %}</span>
             </div>
@@ -167,6 +169,36 @@
                {% if x.net_side %}
                <a href="/{{x.net_side|ref_tag}}/{{ x.net_side.id }}" data-bs-toggle="tooltip" title="{{ x.net_side }}">{{ x.net_side.name }}</a>
                {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="netixlan-meta row squeeze-15 m-0 p-0">
+        <div class="col-12 col-sm-3">
+          <div class="rfc8950"{% if x.meta.rfc8950 is not None %} data-has-value="1"{% endif %}
+               data-edit-type="select"
+               data-edit-name="rfc8950"
+               data-edit-template="check_tristate"
+               data-edit-data="enum/bool_choice_with_opt_out_str"
+               data-sort-value="{{ x.meta.rfc8950|default_if_none:"" }}"
+               data-edit-value="{{ x.meta.rfc8950|default_if_none:"" }}">{% if x.meta.rfc8950 == True %}<img class="checkmark" src="{{ STATIC_URL }}checkmark.png" alt="RFC8950" />{% elif x.meta.rfc8950 == False %}<img class="checkmark" src="{{ STATIC_URL }}checkmark-off.png" alt="{% trans "No RFC8950" %}" />{% endif %}</div>
+        </div>
+        <div class="col-12 col-sm-9">
+          <div class="planned-change" data-sort-value="{{ x.meta.planned_status_change.date|default_if_none:"" }}">
+          <div class="planned-status"{% if x.meta.planned_status_change %} data-has-value="1"{% endif %}
+               data-edit-type="select"
+               data-edit-name="planned_status_change_status"
+               data-edit-template="planned_status_change"
+               data-edit-data="enum/meta_planned_status_change"
+               data-sort-value="{{ x.meta.planned_status_change.status|default_if_none:"" }}"
+               data-edit-value="{{ x.meta.planned_status_change.status|default_if_none:"" }}">{% if x.meta.planned_status_change %}<span class="planned-status-change" data-bs-toggle="tooltip" title="{% trans "Announced by the network. Plans are declarations of intent -- nothing happens automatically on this date." %}">{% if x.meta.planned_status_change.status == "deleted" %}{% trans "planned removal" %}{% else %}{% trans "planned activation" %}{% endif %}</span>{% endif %}</div>
+          <div class="planned-date"{% if x.meta.planned_status_change %} data-has-value="1"{% endif %}
+               data-edit-type="date"
+               data-edit-name="planned_status_change_date"
+               data-edit-placeholder="YYYY-MM-DD"
+               data-edit-min="{{ data.meta_plan_date_min }}"
+               data-edit-max="{{ data.meta_plan_date_max }}"
+               data-sort-value="{{ x.meta.planned_status_change.date|default_if_none:"" }}"
+               data-edit-value="{{ x.meta.planned_status_change.date|default_if_none:"" }}">{{ x.meta.planned_status_change.date|default_if_none:"" }}</div>
           </div>
         </div>
       </div>
@@ -246,9 +278,9 @@
        <div class="row view_row">
          <div class="view_field col-4 col-sm-5 col-md-4">{% trans "Operational" %}</div>
          <div class="view_value col-8 col-sm-7 col-md-8">
-           <div data-edit-type="bool"
-                data-edit-name="operational"
-                data-edit-value="true">
+           <div data-edit-type="netixlan_status"
+                data-edit-name="status"
+                data-edit-value="ok">
            </div>
          </div>
        </div>

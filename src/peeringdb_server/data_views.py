@@ -16,6 +16,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
+from peeringdb_server import meta_registry
 from peeringdb_server.models import Network, Organization, Sponsorship
 
 from . import models
@@ -29,6 +30,26 @@ if TYPE_CHECKING:
 # until django-peeringdb is updated we want to remove
 # the 100+ Gbps choice since it's redundant
 const.TRAFFIC = [(k, i) for k, i in const.TRAFFIC if k != "100+ Gbps"]
+
+# Enum vocabularies owned by this server rather than by django-peeringdb.
+# The blank choice lets the dashboard clear the value; clearing either half of
+# `planned_status_change` clears the whole plan (see fold_meta_flat_fields).
+# `planned_status_change` speaks status values in the API ("deleted", "ok")
+# but users think in "removal" / "activation" -- the same wording as the
+# row badge. Removal is listed first as the primary use case (#1742).
+_PLANNED_STATUS_CHANGE_LABELS = {
+    "deleted": _("Planned Removal"),
+    "ok": _("Planned Activation"),
+}
+LOCAL_ENUMS = {
+    "META_PLANNED_STATUS_CHANGE": [("", _("None"))]
+    + [
+        (status, _PLANNED_STATUS_CHANGE_LABELS[status])
+        for status in ("deleted", "ok")
+        if status in meta_registry.PLANNED_STATUS_CHANGE_STATUSES
+    ],
+}
+
 
 # create enums without duplicate "Not Disclosed" choices
 const.RATIOS_TRUNC = const.RATIOS[1:]
@@ -167,41 +188,53 @@ def enum(request: HttpRequest, name: str) -> JsonResponse:
     Served with public Cache-Control headers — must remain user-agnostic.
     If this ever returns user-specific data, update CacheControlMiddleware.static_views.
     """
-    if name.upper() not in [
-        "RATIOS",
-        "RATIOS_TRUNC",
-        "RATIOS_ADVS",
-        "TRAFFIC",
-        "SCOPES",
-        "SCOPES_TRUNC",
-        "SCOPES_ADVS",
-        "NET_TYPES",
-        "NET_TYPES_MULTI_CHOICE",
-        "NET_TYPES_TRUNC",
-        "NET_TYPES_ADVS",
-        "POLICY_GENERAL",
-        "POLICY_LOCATIONS",
-        "POLICY_CONTRACTS",
-        "REGIONS",
-        "POC_ROLES",
-        "MEDIA",
-        "PROTOCOLS",
-        "ORG_GROUPS",
-        "BOOL_CHOICE_STR",
-        "BOOL_CHOICE_WITH_OPT_OUT_STR",
-        "VISIBILITY",
-        "POC_VISIBILITY",
-        "SERVICE_LEVEL_TYPES_TRUNC",
-        "TERMS_TYPES_TRUNC",
-        "SERVICE_LEVEL_TYPES_ADVS",
-        "TERMS_TYPES_ADVS",
-        "PROPERTY",
-        "AVAILABLE_VOLTAGE",
-        "REAUTH_PERIODS",
-        "MTUS",
-        "SOCIAL_MEDIA_SERVICES",
-    ]:
+    if (
+        name.upper()
+        not in [
+            "RATIOS",
+            "RATIOS_TRUNC",
+            "RATIOS_ADVS",
+            "TRAFFIC",
+            "SCOPES",
+            "SCOPES_TRUNC",
+            "SCOPES_ADVS",
+            "NET_TYPES",
+            "NET_TYPES_MULTI_CHOICE",
+            "NET_TYPES_TRUNC",
+            "NET_TYPES_ADVS",
+            "POLICY_GENERAL",
+            "POLICY_LOCATIONS",
+            "POLICY_CONTRACTS",
+            "REGIONS",
+            "POC_ROLES",
+            "MEDIA",
+            "PROTOCOLS",
+            "ORG_GROUPS",
+            "BOOL_CHOICE_STR",
+            "BOOL_CHOICE_WITH_OPT_OUT_STR",
+            "VISIBILITY",
+            "POC_VISIBILITY",
+            "SERVICE_LEVEL_TYPES_TRUNC",
+            "TERMS_TYPES_TRUNC",
+            "SERVICE_LEVEL_TYPES_ADVS",
+            "TERMS_TYPES_ADVS",
+            "PROPERTY",
+            "AVAILABLE_VOLTAGE",
+            "REAUTH_PERIODS",
+            "MTUS",
+            "SOCIAL_MEDIA_SERVICES",
+        ]
+        and name.upper() not in LOCAL_ENUMS
+    ):
         raise Exception("Unknown enum")
+
+    # #1751: metadata-key vocabularies come from the server-side registry
+    # rather than django_peeringdb.const -- a metadata key must never need a
+    # shared-library release, which is the whole point of the mechanism
+    if name.upper() in LOCAL_ENUMS:
+        choices = LOCAL_ENUMS[name.upper()]
+    else:
+        choices = getattr(const, name.upper())
 
     return JsonResponse(
         {
@@ -212,7 +245,7 @@ def enum(request: HttpRequest, name: str) -> JsonResponse:
                     # translated
                     "name": n,
                 }
-                for id, n in getattr(const, name.upper())
+                for id, n in choices
             ]
         }
     )

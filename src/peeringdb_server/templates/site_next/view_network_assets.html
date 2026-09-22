@@ -28,11 +28,11 @@
         </div>
         <div class="editable-inline netixlan-extra">
           <div
-            data-edit-type="bool"
-            data-edit-name="operational"
+            data-edit-type="netixlan_status"
+            data-edit-name="status"
             data-edit-toggled="edit"
             data-sort-value="{{ x.operational }}"
-            data-edit-value="{{ x.operational }}">
+            data-edit-value="{{ x.status }}">
           </div>
           <span data-edit-toggled="edit">{% trans "Operational" %}</span>
         </div>
@@ -68,6 +68,34 @@
         <div data-edit-type="string"
              data-edit-name="ipaddr6" class="ip6">
          </div>
+      </div>
+    </div>
+    <div class="row netixlan-meta squeeze-15">
+      <div class="col-12 col-sm-3 col-md-3 col-lg-3">
+        <div class="rfc8950"
+             data-sort-name="rfc8950"
+             data-edit-type="select"
+             data-edit-name="rfc8950"
+             data-edit-template="check_tristate"
+             data-edit-data="enum/bool_choice_with_opt_out_str">
+        </div>
+      </div>
+      <div class="col-12 col-sm-9 col-md-9 col-lg-9">
+        <div class="planned-change">
+        <div class="planned-status"
+             data-edit-type="select"
+             data-edit-data="enum/meta_planned_status_change"
+             data-edit-name="planned_status_change_status"
+             data-edit-template="planned_status_change">
+        </div>
+        <div class="planned-date"
+             data-edit-type="date"
+             data-edit-placeholder="YYYY-MM-DD"
+             data-edit-min="{{ data.meta_plan_date_min }}"
+             data-edit-max="{{ data.meta_plan_date_max }}"
+             data-edit-name="planned_status_change_date">
+        </div>
+        </div>
       </div>
     </div>
   </div>

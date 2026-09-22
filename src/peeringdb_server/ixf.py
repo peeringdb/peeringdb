@@ -43,6 +43,7 @@ from peeringdb_server.models import (
     NetworkProtocolsDisabled,
     User,
     ValidationErrorEncoder,
+    live_statuses,
 )
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
@@ -1156,10 +1157,13 @@ class Importer:
 
             self.ixf_ids.append(ixf_id)
 
+            # live statuses include "not-operational" (#1742) -- a
+            # not-operational netixlan is still a feed member; missing it
+            # here would falsely queue it for deletion
             if not network.ipv6_support:
                 self.ixf_ids.append((asn, ixf_id[1], None))
                 netixlan = NetworkIXLan.objects.filter(
-                    status="ok", ipaddr4=ixf_id[1]
+                    status__in=live_statuses(NetworkIXLan), ipaddr4=ixf_id[1]
                 ).first()
                 if netixlan:
                     self.ixf_ids.append((asn, ixf_id[1], netixlan.ipaddr6))
@@ -1167,7 +1171,7 @@ class Importer:
             if not network.ipv4_support:
                 self.ixf_ids.append((asn, None, ixf_id[2]))
                 netixlan = NetworkIXLan.objects.filter(
-                    status="ok", ipaddr6=ixf_id[2]
+                    status__in=live_statuses(NetworkIXLan), ipaddr6=ixf_id[2]
                 ).first()
                 if netixlan:
                     self.ixf_ids.append((asn, netixlan.ipaddr4, ixf_id[2]))

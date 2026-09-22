@@ -457,9 +457,8 @@ def test_post_ix_side_net_side(network, org):
         speed=20000,
         ipaddr4="195.69.147.250",
         ipaddr6=None,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     fac = Facility.objects.create(name="Test Facility", status="ok", org=org)

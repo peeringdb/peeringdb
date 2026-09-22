@@ -61,6 +61,7 @@ from peeringdb_server.models import (
     Organization,
     UserOrgAffiliationRequest,
     VerificationQueueItem,
+    live_statuses,
 )
 from peeringdb_server.util import disable_auto_now_and_save
 
@@ -108,9 +109,9 @@ def update_counts_for_netixlan(netixlan):
 
         ix = netixlan.ixlan.ix
         new_net_count = (
-            NetworkIXLan.objects.filter(ixlan__ix_id=ix.id, status="ok").aggregate(
-                net_count=Count("network_id", distinct=True)
-            )
+            NetworkIXLan.objects.filter(
+                ixlan__ix_id=ix.id, status__in=live_statuses(NetworkIXLan)
+            ).aggregate(net_count=Count("network_id", distinct=True))
         )["net_count"]
         if ix.net_count != new_net_count:
             ix.net_count = new_net_count

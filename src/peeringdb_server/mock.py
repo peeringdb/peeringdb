@@ -139,6 +139,11 @@ class Mock:
             if field.name.find("geocode") == 0:
                 continue
 
+            # generated columns are database-computed (e.g. the metadata
+            # registry's filterable-key columns, #1751) -- never assign
+            if isinstance(field, models.GeneratedField):
+                continue
+
             # choice fields should automatically select a value from
             # the available choices
             #
@@ -211,6 +216,11 @@ class Mock:
         self, data: MockFieldData, reftag: str | None = None
     ) -> list[dict[str, str]]:
         return [{"service": "website", "identifier": "https://www.peeringdb.com"}]
+
+    def meta(self, data: MockFieldData, reftag: str | None = None) -> dict:
+        # object metadata document (#1751) -- empty by default; tests that
+        # exercise registered keys set them explicitly
+        return {}
 
     def notes(self, data: MockFieldData, reftag: str | None = None) -> str:
         return "Some notes"

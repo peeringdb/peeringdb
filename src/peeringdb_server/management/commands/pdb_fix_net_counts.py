@@ -11,7 +11,7 @@ ixf_net_count: Number of unique networks in the IX-F export data
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 
-from peeringdb_server.models import InternetExchange, NetworkIXLan
+from peeringdb_server.models import InternetExchange, NetworkIXLan, live_statuses
 
 
 class Command(BaseCommand):
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 # Calculate correct net_count from database
                 correct_net_count = (
                     NetworkIXLan.objects.filter(
-                        ixlan__ix_id=ix.id, status="ok"
+                        ixlan__ix_id=ix.id, status__in=live_statuses(NetworkIXLan)
                     ).aggregate(net_count=Count("network_id", distinct=True))
                 )["net_count"]
 

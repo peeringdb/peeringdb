@@ -1079,9 +1079,8 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
         speed=20000,
         ipaddr4=IP4,
         ipaddr6=IP6,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     # setup IX-F cache
@@ -1176,9 +1175,8 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
         speed=20000,
         ipaddr4=IP4,
         ipaddr6=None,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     ghost_peer_b = NetworkIXLan.objects.create(
@@ -1188,9 +1186,8 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
         speed=20000,
         ipaddr4=None,
         ipaddr6=IP6,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     # setup IX-F data
@@ -1286,9 +1283,8 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
         speed=20000,
         ipaddr4=IP4,
         ipaddr6="2001:7f8:1::a500:2906:2",
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     ghost_peer_b = NetworkIXLan.objects.create(
@@ -1298,9 +1294,8 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
         speed=20000,
         ipaddr4="195.69.147.251",
         ipaddr6=IP6,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
 
     # setup IX-F data
@@ -1346,11 +1341,13 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
     ghost_peer_a.refresh_from_db()
     ghost_peer_b.refresh_from_db()
 
-    assert ghost_peer_a.status == "ok"
+    # ghost peers were seeded not-operational; partial resolution frees an
+    # ip address but never touches the surviving peer's status
+    assert ghost_peer_a.status == "not-operational"
     assert ghost_peer_a.ipaddr4 is None
     assert ghost_peer_a.ipaddr6 is not None
 
-    assert ghost_peer_b.status == "ok"
+    assert ghost_peer_b.status == "not-operational"
     assert ghost_peer_b.ipaddr4 is not None
     assert ghost_peer_b.ipaddr6 is None
 
@@ -1400,9 +1397,8 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         speed=20000,
         ipaddr4=IP4,
         ipaddr6=IP6,
-        status="ok",
+        status="not-operational",
         is_rs_peer=False,
-        operational=False,
     )
     # setup IX-F data
 
@@ -1879,11 +1875,11 @@ def test_validate_status():
 @pytest.mark.django_db
 def test_validate_status_field_serializer():
     """
-    Ensure the `status` field is read-only in serializers and cannot be set via API.
+    Ensure the API cannot set arbitrary `status` values (see issue #1562).
 
-    This prevents the API from accepting arbitrary status values (see issue #1562).
-    The status field is declared as ReadOnlyField, so any status value provided
-    in the input data should be ignored.
+    #1742: on netixlan, `status` is writable but restricted to the
+    live statuses ("ok" / "not-operational") -- an arbitrary or lifecycle
+    value is explicitly rejected rather than silently ignored.
     """
 
     # --- Setup ---
@@ -1905,46 +1901,38 @@ def test_validate_status_field_serializer():
         ixlan=ixlan, protocol="IPv4", prefix="192.0.2.0/24", status="ok"
     )
 
-    # --- Test that status field is ignored in input data ---
-    # Even if we try to set status to an invalid value, it should be ignored
-    # and the object should be created with the default status
     django_request = factory.post("/api/netixlan")
     request = Request(django_request)
 
-    test_cases = [
-        {
-            "name": "NetworkIXLan with invalid status",
-            "serializer_class": NetworkIXLanSerializer,
-            "data": {
-                "net_id": net.id,
-                "ixlan_id": ixlan.id,
-                "asn": net.asn,
-                "speed": 1000,
-                "ipaddr4": "192.0.2.1",
-                "status": "Testing",  # This should be ignored
-            },
-        },
-    ]
+    base_data = {
+        "net_id": net.id,
+        "ixlan_id": ixlan.id,
+        "asn": net.asn,
+        "speed": 1000,
+        "ipaddr4": "192.0.2.1",
+    }
 
-    for test_case in test_cases:
-        serializer = test_case["serializer_class"](
-            data=test_case["data"], context={"request": request}
+    # arbitrary and lifecycle values are explicitly rejected
+    for invalid in ("Testing", "verified", "pending", "deleted"):
+        serializer = NetworkIXLanSerializer(
+            data=dict(base_data, status=invalid), context={"request": request}
+        )
+        assert not serializer.is_valid()
+        assert "status" in serializer.errors, (
+            f"status '{invalid}' should be rejected with an explicit error"
         )
 
-        # The serializer should be valid because status is read-only and ignored
-        # (though it may fail validation for other reasons like permissions)
-        # The key assertion is that status should NOT be in the errors
-        if not serializer.is_valid():
-            assert "status" not in serializer.errors, (
-                f"{test_case['name']}: status field should be read-only and ignored, "
-                f"but got error: {serializer.errors.get('status')}"
-            )
-
-    # --- Verify status field is marked as read-only ---
-    serializer = NetworkIXLanSerializer()
-    assert serializer.fields["status"].read_only, (
-        "status field should be marked as read_only"
-    )
+    # the live statuses are accepted (validation may still fail on other
+    # fields, but never on status)
+    for valid in ("ok", "not-operational"):
+        serializer = NetworkIXLanSerializer(
+            data=dict(base_data, status=valid), context={"request": request}
+        )
+        serializer.is_valid()
+        assert "status" not in serializer.errors, (
+            f"status '{valid}' should be accepted, "
+            f"got error: {serializer.errors.get('status')}"
+        )
 
 
 @pytest.mark.parametrize(

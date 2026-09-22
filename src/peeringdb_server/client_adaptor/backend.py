@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-from django.db.models import OneToOneRel
+from django.db.models import GeneratedField, OneToOneRel
 from django_peeringdb.client_adaptor.backend import Backend as BaseBackend
 from django_peeringdb.client_adaptor.backend import reftag_to_cls
 from peeringdb import resource
@@ -97,6 +97,13 @@ class Backend(BaseBackend):
         fields = []
         for field in _fields:
             if isinstance(field, OneToOneRel):
+                continue
+            # generated columns (the metadata registry's filterable-key
+            # columns, #1751) are database-computed and server-internal --
+            # they must be invisible to sync. Reading one off an unsaved
+            # instance triggers a refresh_from_db -> DoesNotExist, which
+            # breaks the client's field loop.
+            if isinstance(field, GeneratedField):
                 continue
             if field.name in ignore_fields:
                 continue

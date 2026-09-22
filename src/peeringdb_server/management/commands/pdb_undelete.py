@@ -7,7 +7,7 @@ import json
 import reversion
 from django.core.management.base import BaseCommand
 
-from peeringdb_server.models import REFTAG_MAP
+from peeringdb_server.models import REFTAG_MAP, live_statuses
 
 
 class Command(BaseCommand):
@@ -54,7 +54,9 @@ class Command(BaseCommand):
 
         if conflict_ip4:
             # ipv4 exists in another netixlan now
-            others = model.objects.filter(ipaddr4=netixlan.ipaddr4, status="ok")
+            others = model.objects.filter(
+                ipaddr4=netixlan.ipaddr4, status__in=live_statuses(model)
+            )
             for other in [o for o in others if o.ixlan.ix_id == netixlan.ixlan.ix_id]:
                 # netixlan is at same ix as the one being undeleted, delete the other
                 # one so we can proceed with undeletion
@@ -75,7 +77,9 @@ class Command(BaseCommand):
 
         if conflict_ip6:
             # ipv6 exists in another netixlan now
-            others = model.objects.filter(ipaddr6=netixlan.ipaddr6, status="ok")
+            others = model.objects.filter(
+                ipaddr6=netixlan.ipaddr6, status__in=live_statuses(model)
+            )
             for other in [o for o in others if o.ixlan.ix_id == netixlan.ixlan.ix_id]:
                 # netixlan is at same ix as the one being undeleted, delete the other
                 # one so we can proceed with undeletion

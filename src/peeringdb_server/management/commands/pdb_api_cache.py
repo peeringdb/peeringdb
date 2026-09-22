@@ -117,6 +117,19 @@ class Command(BaseCommand):
         output_dir = options.get("output_dir")
         depths = list(map(int, options.get("depths").split(",")))
 
+        # snapshot the settings this command mutates so they can be restored
+        # when it finishes -- GENERATING_API_CACHE disables permission checks
+        # and throttling globally, so leaving it set poisons any code running
+        # in the same process afterwards (e.g. other tests via call_command)
+        restore_settings = {
+            name: getattr(settings, name, None)
+            for name in (
+                "GENERATING_API_CACHE",
+                "API_DEPTH_ROW_LIMIT",
+                "CSRF_USE_SESSIONS",
+            )
+        }
+
         if options.get("public_data"):
             request_user = AnonymousUser()
 
@@ -128,8 +141,12 @@ class Command(BaseCommand):
             settings.GENERATING_API_CACHE = True
 
         if options.get("gen_kmz_only"):
-            print("Generating kmz file")
-            fac_export_kmz(output_dir=output_dir)
+            try:
+                print("Generating kmz file")
+                fac_export_kmz(output_dir=output_dir)
+            finally:
+                for name, value in restore_settings.items():
+                    setattr(settings, name, value)
             return
 
         if only:
@@ -223,6 +240,9 @@ class Command(BaseCommand):
         finally:
             tmpdir.cleanup()
             self.log_file.close()
+            # restore the globally mutated settings (see snapshot in handle)
+            for name, value in restore_settings.items():
+                setattr(settings, name, value)
 
         if options.get("gen_kmz"):
             print("Generating kmz file")

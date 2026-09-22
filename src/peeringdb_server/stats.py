@@ -19,6 +19,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     User,
+    live_statuses,
 )
 
 if TYPE_CHECKING:
@@ -58,7 +59,10 @@ def gen_stats() -> None:
         Facility.handleref.tag: Facility.handleref.filter(status="ok").count(),
         Carrier.handleref.tag: Carrier.handleref.filter(status="ok").count(),
         Campus.handleref.tag: Campus.handleref.filter(status="ok").count(),
-        NetworkIXLan.handleref.tag: NetworkIXLan.handleref.filter(status="ok").count(),
+        # live netixlan statuses include "not-operational" (#1742)
+        NetworkIXLan.handleref.tag: NetworkIXLan.handleref.filter(
+            status__in=live_statuses(NetworkIXLan)
+        ).count(),
         NetworkFacility.handleref.tag: NetworkFacility.handleref.filter(
             status="ok"
         ).count(),
@@ -99,12 +103,15 @@ def get_fac_stats(
 
 
 def get_ix_stats(netixlan: QuerySet[NetworkIXLan], ixlan: IXLan) -> dict[str, int]:
-    peer_count = netixlan.values("network").distinct().filter(status="ok").count()
-    connections_count = netixlan.filter(ixlan=ixlan, status="ok").count()
+    # live netixlan statuses include "not-operational" (#1742) -- those
+    # members still count as peers/connections
+    live = live_statuses(NetworkIXLan)
+    peer_count = netixlan.values("network").distinct().filter(status__in=live).count()
+    connections_count = netixlan.filter(ixlan=ixlan, status__in=live).count()
     open_peer_count = (
         netixlan.values("network")
         .distinct()
-        .filter(network__policy_general="Open", status="ok")
+        .filter(network__policy_general="Open", status__in=live)
         .count()
     )
     ipv6_percentage = 0
@@ -113,15 +120,17 @@ def get_ix_stats(netixlan: QuerySet[NetworkIXLan], ixlan: IXLan) -> dict[str, in
     try:
         ipv6_percentage = int(
             (
-                netixlan.filter(status="ok", ixlan=ixlan, ipaddr6__isnull=False).count()
-                / netixlan.filter(ixlan=ixlan, status="ok").count()
+                netixlan.filter(
+                    status__in=live, ixlan=ixlan, ipaddr6__isnull=False
+                ).count()
+                / netixlan.filter(ixlan=ixlan, status__in=live).count()
             )
             * 100
         )
     except ZeroDivisionError:
         pass
 
-    for n in netixlan.filter(status="ok", ixlan=ixlan):
+    for n in netixlan.filter(status__in=live, ixlan=ixlan):
         total_speed += n.speed
 
     return {

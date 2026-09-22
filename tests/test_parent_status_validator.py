@@ -62,9 +62,8 @@ def test_networkixlan_parent_status_validate():
             speed=20000,
             ipaddr4="195.69.147.250",
             ipaddr6=None,
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
 
 

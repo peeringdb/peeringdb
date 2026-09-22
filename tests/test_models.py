@@ -67,9 +67,8 @@ def entities():
             speed=1,
             ipaddr4="195.69.147.250",
             ipaddr6="2001:7f8:1::a500:2906:1",
-            status="ok",
+            status="not-operational",
             is_rs_peer=True,
-            operational=False,
         )
 
         NetworkFacility.objects.create(
