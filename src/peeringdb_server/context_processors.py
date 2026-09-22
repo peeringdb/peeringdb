@@ -3,6 +3,8 @@ from __future__ import annotations
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
+from django_countries import countries
+from django_peeringdb.const import REGION_MAPPING
 
 
 def theme_mode(request: HttpRequest) -> dict[str, str | bool]:
@@ -35,7 +37,17 @@ def admin_config(request: HttpRequest) -> dict[str, object]:
     """
     Context processor to provide suggest entity org configuration values
     """
-    return {"SUGGEST_ENTITY_ORG": settings.SUGGEST_ENTITY_ORG}
+    regions = {region["code"]: region["continent"] for region in REGION_MAPPING}
+    return {
+        "SUGGEST_ENTITY_ORG": settings.SUGGEST_ENTITY_ORG,
+        "facility_location_enabled": settings.FACILITY_ADDRESS_SELECTION_ENABLED,
+        "facility_location_maps_key": getattr(settings, "GOOGLE_MAPS_API_KEY", ""),
+        "facility_location_map_id": getattr(settings, "GOOGLE_MAPS_MAP_ID", ""),
+        "facility_location_support": settings.DEFAULT_FROM_EMAIL,
+        "facility_location_countries": [
+            (code, name, regions.get(code, "")) for code, name in countries
+        ],
+    }
 
 
 def notification_banner(request: HttpRequest) -> dict[str, object]:

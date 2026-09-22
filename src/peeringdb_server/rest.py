@@ -2111,7 +2111,7 @@ urlpatterns = [
         ),
         name="asset-logo",
     ),
-    re_path("search", search_api_view),
+    re_path(r"^search/?$", search_api_view),
 ]
 rout_urls = router.urls
 urls = urlpatterns + rout_urls

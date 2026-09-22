@@ -120,7 +120,15 @@ class Mock:
                 continue
 
             # these we don't care about
-            if field.name in ["id", "logo", "version", "created", "updated"]:
+            if field.name in [
+                "id",
+                "logo",
+                "version",
+                "created",
+                "updated",
+                "location_method",
+                "location_place_id",
+            ]:
                 continue
                 # if reftag == "ixlan" and field.name != "id":
                 #    continue

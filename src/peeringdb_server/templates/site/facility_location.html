@@ -1,0 +1,41 @@
+{% load i18n l10n %}
+<section class="facility-location" data-edit-toggled="edit"
+         data-org-id="{{ location_org_id }}" data-facility-id="{{ location_facility_id }}"
+         data-location-version="{{ location_version }}"
+         data-country="{{ instance.country }}" data-latitude="{{ instance.latitude|unlocalize }}" data-longitude="{{ instance.longitude|unlocalize }}"
+         data-maps-key="{{ facility_location_maps_key }}" data-map-id="{{ facility_location_map_id }}"
+         data-support="{{ facility_location_support }}">
+  {% if location_facility_id %}
+  <button type="button" class="location-open location-secondary" aria-expanded="false">{% trans "Change location" %}</button>
+  {% endif %}
+  <div class="location-editor" {% if location_facility_id %}hidden{% endif %}>
+    <h3>{% trans "Facility location" %}</h3>
+    <p>{% trans "Search for the facility address, select a Google result, then confirm the location below." %}</p>
+    <label class="location-label">{% trans "Country" %}
+      <select class="location-country form-control"><option value="">{% trans "Select country" %}</option>
+        {% for code, name, region in facility_location_countries %}<option value="{{ code }}" data-region="{{ region }}">{{ name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="location-label">{% trans "Search address" %}
+      <input class="location-search form-control" type="search" autocomplete="off" placeholder="{% trans 'Street address or facility name' %}">
+    </label>
+    <ul class="location-results" aria-label="{% trans 'Address results' %}"></ul>
+    <div class="location-actions">
+    <button type="button" class="location-map-choice location-secondary">{% trans "Can't find the right location? Choose on map" %}</button>
+    <button type="button" class="location-reset location-cancel">{% trans "Cancel location change" %}</button>
+    </div>
+    <div class="location-map" style="height:320px;display:none" aria-label="{% trans 'Choose the facility location on the map' %}"></div>
+    <p class="location-point"></p>
+    <div class="location-message" role="status" aria-live="polite"></div>
+    <div class="location-proposal" hidden>
+      <h4>{% trans "Confirm this location" %}</h4>
+      <dl class="location-details"></dl>
+      <button type="button" class="location-confirm btn btn-primary">{% trans "Use this location" %}</button>
+    </div>
+    <div class="location-attribution small" style="font-family:Arial,sans-serif;font-size:14px;font-weight:500;color:#5e5e5e;background:white;padding:4px 8px;display:inline-block" translate="no">Google Maps</div>
+    <div class="location-provider-attributions small"></div>
+    <p class="location-help">{% trans "If the location or address details are wrong, email support. Include the facility name or ID, entered address, selected point, and what needs correcting." %}
+      <a class="location-support" href="mailto:{{ facility_location_support }}">{{ facility_location_support }}</a>
+    </p>
+  </div>
+</section>

@@ -60,6 +60,10 @@ window.STATIC_URL = "{{ STATIC_URL }}";
 
 <script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}peeringdb_ui_next.js"></script>
+{% if facility_location_enabled %}
+<link rel="stylesheet" href="{{ STATIC_URL }}facility-location.css">
+<script src="{{ STATIC_URL }}facility-location.js"></script>
+{% endif %}
 {{ form.media }}
 <script type="text/javascript" language="javascript">
 const is_authenticated = `{{request.user.is_authenticated}}` == 'True'

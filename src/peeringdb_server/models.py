@@ -69,6 +69,7 @@ from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
 
 import peeringdb_server.geo as geo
+from peeringdb_server import location
 from peeringdb_server.context import current_request, is_forced_ixlan_deletion
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
@@ -2158,6 +2159,17 @@ class Facility(
     Describes a peeringdb facility.
     """
 
+    location_method = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        editable=False,
+        choices=location.LocationMethod.choices,
+    )
+    location_place_id = models.CharField(
+        max_length=512, blank=True, default="", editable=False
+    )
+
     org = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="fac_set"
     )
@@ -2207,7 +2219,53 @@ class Facility(
         Save the current instance
         """
         self.validate_parent_status()
+        kwargs["update_fields"] = self._clear_stale_location_provenance(
+            kwargs.get("update_fields")
+        )
         super().save(*args, **kwargs)
+        self._location_confirmed = False
+
+    def _clear_stale_location_provenance(self, update_fields):
+        if (
+            not self.pk
+            or not self.location_method
+            or getattr(self, "_location_confirmed", False)
+        ):
+            return update_fields
+        fields = set(location.LOCATION_FIELDS)
+        if update_fields is not None:
+            fields &= set(update_fields)
+        if not fields:
+            return update_fields
+        previous = type(self).objects.filter(pk=self.pk).first()
+        if previous and any(
+            not location.same_value(
+                field, getattr(previous, field), getattr(self, field)
+            )
+            for field in fields
+        ):
+            self.location_method = ""
+            self.location_place_id = ""
+            if update_fields is not None:
+                return set(update_fields) | {"location_method", "location_place_id"}
+        return update_fields
+
+    def process_geo_location(self, geocode=True, save=True):
+        if self.location_method:
+            return {
+                field: getattr(self, field)
+                for field in (
+                    "address1",
+                    "address2",
+                    "city",
+                    "state",
+                    "zipcode",
+                    "country",
+                    "latitude",
+                    "longitude",
+                )
+            }
+        return super().process_geo_location(geocode=geocode, save=save)
 
     @staticmethod
     def autocomplete_search_fields():

@@ -258,6 +258,9 @@
   <!-- fields -->
   <div class="view_fields" id="{{ref_tag}}_section">
   {% for row in data.fields %}
+  {% if row.name == "address1" and facility_location_enabled and ref_tag == "fac" and permissions.can_edit %}
+  {% include "site/facility_location.html" with location_org_id=instance.org_id location_facility_id=instance.id location_version=facility_location_version %}
+  {% endif %}
   {% if row.last_soc_field %}
   <div class="row view_value text-center" data-edit-toggled="edit">
     <button onclick="addSocialMediaElement(this)"
