@@ -5486,12 +5486,11 @@ const checkAsSet = () =>{
   // check the use of hierarchical AS-SET name and if a non-hierarchical AS-SET name is already in use
 
   const asSetTokens = (value) => value.trim().split(/[,\s]+/).filter(Boolean);
-  const hasSourcePrefixes = (value) => {
-    const tokens = asSetTokens(value);
-    return tokens.length > 0 && tokens.every(
-      (token) => /^[a-zA-Z0-9-]+::[a-zA-Z0-9_:-]+$/.test(token)
-    );
-  };
+  // Mirrors validate_irr_as_set's per-name shape rules, depth cap included (#2040).
+  // The lookahead is the "at least one component is a set name" rule, and it is
+  // load-bearing: without it the editor offers Use RIPE::AS5405:AS5406, which the
+  // save path refuses. Pinned by tests/test_irr_as_set_editor_grammar.py.
+  const IRR_NAME_RE = /^(?=[^:]*$|.*AS-)(?:AS-[A-Z0-9_-]+|AS[0-9]+)(?::(?:AS-[A-Z0-9_-]+|AS[0-9]+)){0,2}$/i;
   const hasRouteSet = (value) => asSetTokens(value).some(
     (token) => /(^|::|:)RS-/i.test(token)
   );
@@ -5500,7 +5499,7 @@ const checkAsSet = () =>{
     if (tokens.length !== 1) return null;
     const prefixed = tokens[0].match(/^([a-zA-Z0-9-]+)::([a-zA-Z0-9_:-]+)$/);
     const name = prefixed ? prefixed[2] : tokens[0];
-    if (!/^(AS-[a-zA-Z0-9_:-]+|AS[0-9]+)$/i.test(name)) return null;
+    if (!IRR_NAME_RE.test(name)) return null;
     return {
       source: prefixed ? prefixed[1].toUpperCase() : null,
       name: name.toUpperCase()
@@ -5520,7 +5519,7 @@ const checkAsSet = () =>{
     const parsed = tokens.map((token) => {
       const prefixed = token.match(/^([a-zA-Z0-9-]+)::([a-zA-Z0-9_:-]+)$/);
       const name = prefixed ? prefixed[2] : token;
-      if (!/^(AS-[a-zA-Z0-9_:-]+|AS[0-9]+)$/i.test(name)) return null;
+      if (!IRR_NAME_RE.test(name)) return null;
       return {
         raw: token,
         source: prefixed ? prefixed[1].toUpperCase() : null,
@@ -5729,11 +5728,15 @@ const checkAsSet = () =>{
 
         const token = completionToken(irr_as_set);
         if (!token) {
+          // #2040: a prefixed-but-malformed value used to render nothing, which read
+          // as approval and was then rejected on save. Always say something.
+          // The examples carry a SOURCE:: prefix on purpose: IRR_AS_SET_REQUIRE_SOURCE
+          // (#1973) makes the save path reject every unprefixed token on a changed
+          // value, so recommending a bare name here would repeat the #2040 mistake of
+          // the editor endorsing what save refuses.
           setNote(
             "irr-hint-note",
-            hasSourcePrefixes(irr_as_set)
-              ? null
-              : gettext("Clearly name your AS-SET with a hierarchical name, e.g. RIPE::AS-RIPENCC")
+            gettext("Not a valid AS-SET name. Use RIPE::AS-EXAMPLE or RIPE::AS64496:AS-EXAMPLE.")
           );
           lastLookupValue = null;
           return;
