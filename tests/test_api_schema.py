@@ -11,6 +11,15 @@ from rest_framework import serializers
 
 from peeringdb_server import meta_registry
 from peeringdb_server.api_schema import BaseSchema, CustomSchemaGenerator
+from peeringdb_server.rest import REFTAG_MAP
+
+# Components that legitimately expose no properties at all. `ASSet` is generated
+# from ASSetSerializer, whose Meta.fields is empty, so there is nothing to document.
+EMPTY_COMPONENTS = {"ASSet"}
+
+# Properties knowingly shipped without a description. Keep this empty -- an entry
+# here is a documentation gap, not a fix. Format: "Component.property".
+UNDOCUMENTED_ALLOWLIST: set[str] = set()
 
 
 class _FakeSerializer(serializers.Serializer):
@@ -119,3 +128,134 @@ def test_api_docs_carry_no_relative_markdown_links():
     """
     for page in pathlib.Path(dj_settings.API_DOC_PATH).glob("*.md"):
         assert not re.search(r"\]\([^)]*\.md\)", page.read_text()), page.name
+
+
+@pytest.fixture(scope="module")
+def generated_schema():
+    """
+    The real openapi schema, built through the same generator the
+    `generateschema` management command uses.
+    """
+    return CustomSchemaGenerator().get_schema()
+
+
+@pytest.mark.django_db
+def test_every_schema_property_is_documented(generated_schema):
+    """
+    Every property of every component must carry a non-empty `description`.
+
+    The description comes from a field's `help_text` and nothing else, so a new
+    field without help_text lands in the public API docs as a bare type. Adding
+    help_text on the model or the serializer field is the fix; see #1981.
+    """
+    schemas = generated_schema["components"]["schemas"]
+
+    undocumented = sorted(
+        f"{component}.{name}"
+        for component, definition in schemas.items()
+        for name, prop in (definition.get("properties") or {}).items()
+        if not (isinstance(prop, dict) and prop.get("description"))
+    )
+    undocumented = [u for u in undocumented if u not in UNDOCUMENTED_ALLOWLIST]
+
+    assert not undocumented, (
+        f"{len(undocumented)} openapi properties have no description.\n"
+        "Add help_text to the model field, or to the serializer field when it is "
+        "declared explicitly:\n  " + "\n  ".join(undocumented)
+    )
+
+
+@pytest.mark.django_db
+def test_schema_components_are_not_empty(generated_schema):
+    """
+    Guards the test above: a component that loses all of its properties would
+    otherwise pass the documentation check by having nothing left to check.
+    """
+    schemas = generated_schema["components"]["schemas"]
+
+    empty = {name for name, d in schemas.items() if not (d.get("properties") or {})}
+
+    assert empty == EMPTY_COMPONENTS, (
+        f"components with no properties changed: expected {sorted(EMPTY_COMPONENTS)}, "
+        f"got {sorted(empty)}"
+    )
+
+
+@pytest.mark.django_db
+def test_non_filtering_views_advertise_no_query_params(generated_schema):
+    """
+    A list endpoint that builds its own queryset and ignores `request.query_params`
+    must not advertise filter/pagination parameters.
+
+    Documenting them tells API consumers a filter exists when the view silently
+    drops it, which is worse than documenting nothing. Viewsets opt in by
+    inheriting `peeringdb_server.rest.ModelViewSet`, which sets
+    `supports_query_filters` and applies the params in get_queryset().
+    """
+    generator = CustomSchemaGenerator()
+    generator._initialise_endpoints()
+    _, endpoints = generator._get_paths_and_endpoints(None)
+
+    offenders = []
+    for path, method, view in endpoints:
+        if getattr(view, "supports_query_filters", False):
+            continue
+
+        operation = generated_schema["paths"].get(path, {}).get(method.lower())
+        if not operation:
+            continue
+
+        params = [
+            p["name"] for p in operation.get("parameters", []) if p.get("in") == "query"
+        ]
+        if params:
+            offenders.append(f"{method} {path} -> {', '.join(sorted(params))}")
+
+    assert not offenders, (
+        "these views ignore query params but the schema advertises them:\n  "
+        + "\n  ".join(sorted(offenders))
+        + "\n\nEither the view should apply them, or it should not inherit "
+        "`supports_query_filters`."
+    )
+
+
+@pytest.mark.django_db
+def test_relation_filters_only_traverse_api_models(generated_schema):
+    """
+    `<relation>__<field>` query params must only reach models that are exposed
+    as their own endpoint.
+
+    Traversing into an internal model documents every one of its columns as a
+    filter -- `ix` reaches the user table through `ixf_import_request_user`,
+    which put the password hash column in the public API docs.
+    """
+    api_tags = set(REFTAG_MAP)
+
+    # relation filters whose target model is not itself an API endpoint
+    internal = set()
+    for viewset in REFTAG_MAP.values():
+        serializer = viewset.serializer_class
+        for name, fld in serializer.queryable_relations():
+            model = getattr(fld, "model", None)
+            tag = getattr(getattr(model, "HandleRef", None), "tag", None)
+            if tag not in api_tags:
+                internal.add(name)
+
+    assert internal, (
+        "expected some internal relations to exist, test is not exercising anything"
+    )
+
+    documented = {
+        param["name"]
+        for operations in generated_schema["paths"].values()
+        for operation in operations.values()
+        if isinstance(operation, dict)
+        for param in operation.get("parameters", [])
+        if param.get("in") == "query"
+    }
+
+    leaked = sorted(documented & internal)
+    assert not leaked, (
+        "these query params traverse into models that are not part of the API "
+        "and must not be documented:\n  " + "\n  ".join(leaked)
+    )

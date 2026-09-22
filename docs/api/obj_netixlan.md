@@ -2,6 +2,18 @@
 
 Identified by the `netixlan` tag.
 
+A single network's connection to an exchange LAN — its addresses, capacity and route
+server participation. This is the object that expresses "network X is present at
+exchange Y", and it is the highest-volume object type on the API.
+
+`ipaddr4` and `ipaddr6` must each fall inside one of the LAN's prefixes, and each
+address may be claimed by only one connection.
+
+Records on networks with `allow_ixp_update` set may be created, modified or removed
+automatically from the exchange's IX-F member export rather than by the network
+itself. Such a network can exempt individual fields from those updates through
+`ixp_update_exclude`.
+
 ### Parent relationship:
 
 - `net` network
