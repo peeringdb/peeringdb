@@ -28,6 +28,7 @@ from peeringdb_server.models import (
     Network,
     NetworkFacility,
     NetworkIXLan,
+    live_statuses,
 )
 from peeringdb_server.renderers import JSONEncoder
 from peeringdb_server.rest import REFTAG_MAP as RestViewSets
@@ -621,7 +622,7 @@ class AdvancedSearchExportView(ExportView):
         """
         # Query all netixlan for these ASNs
         netixlan_qs = NetworkIXLan.objects.filter(
-            network__asn__in=asn_list, status="ok"
+            network__asn__in=asn_list, status__in=live_statuses(NetworkIXLan)
         )
         ix_ids = set(netixlan_qs.values_list("ixlan__ix_id", flat=True))
         ix_qs = InternetExchange.objects.filter(id__in=ix_ids, status="ok")

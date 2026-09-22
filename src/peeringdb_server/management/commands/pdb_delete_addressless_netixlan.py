@@ -30,7 +30,7 @@ import reversion
 from django.db import transaction
 
 from peeringdb_server.management.commands.pdb_base_command import PeeringDBBaseCommand
-from peeringdb_server.models import NetworkIXLan
+from peeringdb_server.models import NetworkIXLan, live_statuses
 
 
 class Command(PeeringDBBaseCommand):
@@ -69,7 +69,9 @@ class Command(PeeringDBBaseCommand):
         reversion.set_comment("Removed address-less netixlan (#2005)")
 
         qset = NetworkIXLan.objects.filter(
-            status="ok", ipaddr4__isnull=True, ipaddr6__isnull=True
+            status__in=live_statuses(NetworkIXLan),
+            ipaddr4__isnull=True,
+            ipaddr6__isnull=True,
         ).select_related("ixlan__ix")
 
         deleted = 0

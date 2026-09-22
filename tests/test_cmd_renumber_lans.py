@@ -124,3 +124,29 @@ class TestRenumberLans(ClientCase):
         output = out.getvalue()
 
         assert "[error] 2001:504:0:1::65: Ip address not within old prefix" in output
+
+    def test_renumbers_not_operational(self):
+        """
+        test that `pdb_renumber_lans` renumbers netixlans in the
+        "not-operational" status (#1742) -- they still hold addresses that
+        have to move with the prefix
+        """
+
+        ix = REFTAG_MAP["ix"].objects.all().first()
+        ixlan = ix.ixlan_set_active.all().first()
+
+        netixlan = ixlan.netixlan_set.first()
+        netixlan.status = "not-operational"
+        netixlan.save()
+
+        call_command(
+            "pdb_renumber_lans",
+            ix=ix.id,
+            old="206.223.116.0/23",
+            new="206.224.116.0/23",
+            commit=True,
+        )
+
+        netixlan.refresh_from_db()
+        assert netixlan.status == "not-operational"
+        assert netixlan.ipaddr4.compressed == "206.224.116.101"

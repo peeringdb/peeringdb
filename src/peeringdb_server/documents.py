@@ -29,6 +29,7 @@ from peeringdb_server.models import (
     Network,
     NetworkIXLan,
     Organization,
+    live_statuses,
 )
 
 
@@ -140,15 +141,21 @@ class IpAddressMixin:
     def cached_netixlan(self, instance):
         netixlan_set = NetworkIXLan.objects.none()
 
+        # netixlan live statuses include "not-operational" (#1742) -- those
+        # connections' IPs must stay searchable
+        netixlan_statuses = live_statuses(NetworkIXLan)
+
         if instance.HandleRef.tag in ["net", "ix"]:
             if instance.HandleRef.tag == "net":
-                netixlan_set = instance.netixlan_set.filter(status="ok")
+                netixlan_set = instance.netixlan_set.filter(
+                    status__in=netixlan_statuses
+                )
             elif instance.HandleRef.tag == "ix":
                 ixlan_set = instance.ixlan_set.filter(status="ok")
                 netixlan_set = NetworkIXLan.objects.none()
                 for ixlan in ixlan_set:
                     netixlan_set = netixlan_set.union(
-                        ixlan.netixlan_set.filter(status="ok")
+                        ixlan.netixlan_set.filter(status__in=netixlan_statuses)
                     )
 
         return netixlan_set.distinct()

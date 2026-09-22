@@ -12,6 +12,7 @@ method.
 """
 
 import base64
+import copy
 import datetime
 import io
 import ipaddress
@@ -57,7 +58,7 @@ from rest_framework import serializers, validators
 from rest_framework.exceptions import NotFound, Throttled
 from rest_framework.exceptions import ValidationError as RestValidationError
 
-from peeringdb_server import location
+from peeringdb_server import location, meta_registry
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.auto_approval import auto_approve_ix
 from peeringdb_server.deskpro import (
@@ -98,6 +99,7 @@ from peeringdb_server.models import (
     User,
     VerificationQueueItem,
     is_suggested,
+    live_statuses,
 )
 from peeringdb_server.permissions import (
     check_permissions_from_request,
@@ -455,6 +457,149 @@ def single_url_param(params, key, fn=None):
         raise ValidationError({key: exc})
 
     return v
+
+
+# --- object metadata: flat write-only fields (#1751) -------------------------
+#
+# The dashboard edits flat fields, not JSON documents, so each UI-exposed
+# metadata key also gets a flat write-only serializer field that is folded
+# into `meta` before registry validation.
+#
+# Folding starts from the object's CURRENT document, so a payload naming one
+# key never clears the others -- the same partial-request safety the
+# `ixp_update_exclude_<field>` flags have.
+#
+# Every flat field must be CLEARABLE, and its clear value must be what an
+# untouched widget submits. The dashboard does not send only the field the
+# user changed: `prepare()` in static/20c/twentyc.edit.js exports every
+# `[data-edit-type]` field in a netixlan row as soon as any one of them
+# changes. A flat field whose "no value" state folded into a real value
+# would therefore be stamped onto the document by an unrelated edit of the
+# same row -- which for a boolean means losing the distinction between
+# "explicitly false" and "never declared" that the generated columns exist
+# to preserve. Hence the tri-state select for `rfc8950` rather than a
+# checkbox: a checkbox has no way to submit "unset".
+
+
+class BlankableIntegerField(serializers.IntegerField):
+    """
+    IntegerField whose "no value" is also the empty string.
+
+    The dashboard submits every field of a form as JSON, and an emptied
+    number input arrives as "" -- which stock IntegerField rejects with
+    "A valid integer is required", making an optional metadata key look
+    mandatory. Blank means the same thing null does here: clear the key.
+    """
+
+    def to_internal_value(self, data):
+        if data == "" and self.allow_null:
+            return None
+        return super().to_internal_value(data)
+
+
+def fold_meta_flat_fields(data, instance, spec):
+    """
+    Fold flat write-only metadata fields into the `meta` document.
+
+    `spec` is an iterable of (field_name, json_path, clear_value). A field
+    whose submitted value equals its clear_value removes its key from the
+    document -- and for a multi-part key such as `planned_status_change`,
+    clearing any one part clears the whole object, since "blank it out" is
+    what a user means by emptying either half and a half-plan is not a legal
+    value anyway.
+
+    Only fields actually present in the payload are consulted, and the
+    resulting document is left for `meta_registry.validate_meta` to check --
+    this function never decides whether a value is legal. The one shape
+    check it does make is completeness of a multi-part key written through
+    its flat fields: a half-written key is reported against the flat field
+    the user has to act on, not against `meta`, so the dashboard can
+    highlight that input (#1742: clearing the change type while leaving a
+    date behind).
+    """
+
+    present = [entry for entry in spec if entry[0] in data]
+    if not present:
+        return
+    submitted = {}
+
+    if "meta" in data and isinstance(data["meta"], dict):
+        document = copy.deepcopy(data["meta"])
+    elif instance is not None:
+        document = copy.deepcopy(instance.meta or {})
+    else:
+        document = {}
+
+    for field_name, json_path, clear_value in present:
+        value = data.pop(field_name)
+        submitted[field_name] = value
+        *parents, leaf = json_path
+
+        container = document
+        for key in parents:
+            existing = container.get(key)
+            container[key] = existing if isinstance(existing, dict) else {}
+            container = container[key]
+
+        if value == clear_value:
+            if parents:
+                # clearing one part of a multi-part key clears the key
+                document.pop(json_path[0], None)
+            else:
+                container.pop(leaf, None)
+        else:
+            container[leaf] = value
+
+    _check_multipart_complete(document, spec, submitted)
+    data["meta"] = document
+
+
+def _check_multipart_complete(document, spec, submitted):
+    """
+    Every multi-part key touched through its flat fields must be whole
+    once folded -- or gone. Raises RestValidationError keyed by flat field.
+
+    Errors land on the key's LAST part in `spec` order (for
+    `planned_status_change` the date): whatever went wrong, that is the
+    input the user fills in or clears -- a change type set back to None
+    with a date left behind, a change type chosen without a date, a date
+    typed without a change type. Pointing at it lets the dashboard
+    highlight one field with one instruction.
+    """
+
+    parts_by_root = {}
+    for field_name, json_path, clear_value in spec:
+        if len(json_path) > 1:
+            parts_by_root.setdefault(json_path[0], {})[json_path[-1]] = (
+                field_name,
+                clear_value,
+            )
+
+    errors = {}
+    for root, parts in parts_by_root.items():
+        touched = [f for f, _clear in parts.values() if f in submitted]
+        cleared = [f for f, c in parts.values() if f in submitted and submitted[f] == c]
+        written = [f for f in touched if f not in cleared]
+        if not written:
+            # nothing set (or everything cleared): the key is gone, fine
+            continue
+        value = document.get(root)
+        value = value if isinstance(value, dict) else {}
+        target_leaf, (target_field, _clear) = list(parts.items())[-1]
+        for leaf in parts:
+            if leaf in value:
+                continue
+            if leaf == target_leaf:
+                errors[target_field] = _("%(key)s also needs a %(part)s.") % {
+                    "key": root,
+                    "part": leaf,
+                }
+            else:
+                errors[target_field] = _(
+                    "Clear this, or also set a %(part)s for %(key)s."
+                ) % {"key": root, "part": leaf}
+    if errors:
+        raise RestValidationError(errors)
 
 
 def validate_relation_filter_field(a, b):
@@ -930,13 +1075,16 @@ class ModelSerializer(serializers.ModelSerializer):
 
                     # build the Prefetch object
 
+                    related_model = getattr(cls.Meta.model, fld).rel.related_model
                     prefetch.append(
                         Prefetch(
                             src_fld,
                             queryset=cls.prefetch_query(
-                                getattr(
-                                    cls.Meta.model, fld
-                                ).rel.related_model.objects.filter(status="ok"),
+                                # live statuses: "not-operational" is live on
+                                # netixlan (#1742)
+                                related_model.objects.filter(
+                                    status__in=live_statuses(related_model)
+                                ),
                                 request,
                             ),
                             to_attr=attr_fld,
@@ -2710,6 +2858,53 @@ class NetworkIXLanSerializer(ModelSerializer):
     ipaddr4 = IPAddressField(version=4, allow_blank=True)
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
 
+    # #1751: flat write-only mirrors of this object's UI-exposed metadata
+    # keys -- see fold_meta_flat_fields(). `meta` stays the read surface.
+    rfc8950 = serializers.BooleanField(
+        required=False,
+        # tri-state: true, false, and "never declared" are three distinct
+        # states and the generated column preserves all three. Submit null
+        # (or blank) to remove the key.
+        allow_null=True,
+        write_only=True,
+        help_text=_(
+            "Supports RFC8950 extended next hop on this connection. Submit "
+            "null to clear."
+        ),
+    )
+    planned_status_change_status = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text=_(
+            "Planned change to this connection's status: 'deleted' (the network "
+            "is leaving the exchange) or 'ok' (the connection goes live). "
+            "Submit blank together with planned_status_change_date to clear."
+        ),
+    )
+    planned_status_change_date = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text=_(
+            "Date the planned status change takes effect (YYYY-MM-DD), in the "
+            "future and within the configured window."
+        ),
+    )
+
+    META_FLAT_FIELDS = (
+        ("rfc8950", ("rfc8950",), None),
+        ("planned_status_change_status", ("planned_status_change", "status"), ""),
+        ("planned_status_change_date", ("planned_status_change", "date"), ""),
+    )
+
+    # #1742: netixlan status is writable through the API, limited to
+    # the live statuses ("ok" / "not-operational") -- lifecycle transitions
+    # (pending, deleted) stay server-controlled. `operational` is read-only
+    # and derived from status on save; during the deprecation window writes
+    # to it are mapped onto status (see run_validation).
+    status = serializers.CharField(required=False)
+
     def validate_create(self, data):
         # we don't want users to be able to create netixlans if the parent
         # network or ixlan is pending or deleted
@@ -2750,13 +2945,39 @@ class NetworkIXLanSerializer(ModelSerializer):
             "operational",
             "net_side_id",
             "ix_side_id",
+            "meta",
+            "rfc8950",
+            "planned_status_change_status",
+            "planned_status_change_date",
         ] + HandleRefSerializer.Meta.fields
 
-        read_only_fields = ["net_side_id", "ix_side_id"]
+        read_only_fields = ["net_side_id", "ix_side_id", "operational"]
         related_fields = ["net", "ixlan"]
         list_exclude = ["net", "ixlan"]
 
         _ref_tag = model.handleref.tag
+
+    @classmethod
+    def finalize_query_params(cls, qset, query_params: dict):
+        """
+        Rewrites `meta__<path>` filter parameters onto the typed generated
+        columns declared by the metadata key registry (#1751), so filtered
+        metadata lookups are real, indexed database queries.
+        """
+
+        update_params = {}
+        column_map = meta_registry.filter_column_map("netixlan")
+
+        for key, value in query_params.items():
+            for prefix, column in column_map.items():
+                # exact match or match with an operator suffix (__lt, ...)
+                if key == prefix or key.startswith(prefix + "__"):
+                    update_params[column + key[len(prefix) :]] = value
+                    break
+            else:
+                update_params[key] = value
+
+        return (qset, update_params, False)
 
     @classmethod
     def prepare_query(cls, qset, **kwargs):
@@ -2810,7 +3031,70 @@ class NetworkIXLanSerializer(ModelSerializer):
                 data["asn"] = net.asn
             except Exception:
                 pass
+
+        # #1742 deprecation window: `operational` is read-only, but a
+        # write to it is mapped onto status ("ok" / "not-operational") so
+        # existing clients keep working. A status the client actually
+        # changed wins; a status merely echoed back unchanged (the standard
+        # full-object PUT round-trip) does not suppress the mapping --
+        # otherwise old clients would silently lose operational writes.
+        # After the announced window this mapping is removed and such
+        # writes are rejected.
+        if isinstance(data, dict) and "operational" in data:
+            status_in = data.get("status")
+            current_status = self.instance.status if self.instance else None
+            # Only a create, or a netixlan already in a live status, may be
+            # mapped. `status` used to be read-only here precisely so a
+            # netixlan could not be moved between lifecycle statuses through
+            # the API (#1562), and pending netixlans are reachable on this
+            # endpoint (rest.py's single-object queryset includes them) --
+            # so without this gate a write to the deprecated boolean would
+            # publish a pending connection.
+            mappable = self.instance is None or current_status in live_statuses(
+                NetworkIXLan
+            )
+            if mappable and (status_in is None or status_in == current_status):
+                try:
+                    operational = serializers.BooleanField().to_internal_value(
+                        data["operational"]
+                    )
+                except serializers.ValidationError:
+                    raise RestValidationError(
+                        {"operational": _("must be a boolean value")}
+                    )
+                data["status"] = "ok" if operational else "not-operational"
+
         return super().run_validation(data=data)
+
+    def validate_status(self, value):
+        # API writes may only toggle between the live statuses; lifecycle
+        # transitions (pending, deleted) stay server-controlled.
+        #
+        # A status the client merely echoed back unchanged is accepted
+        # whatever it is: `status` used to be read-only here, so a
+        # full-object PUT that round-trips a pending netixlan's own status
+        # would otherwise start failing on a value the client never asked
+        # to change.
+        if self.instance and value == self.instance.status:
+            return value
+        if value not in live_statuses(NetworkIXLan):
+            raise serializers.ValidationError(
+                _("status may only be set to 'ok' or 'not-operational'")
+            )
+        return value
+
+    def create(self, validated_data, auto_approve=False, suggest=False):
+        # the base create() hard-sets status to "ok"/"pending" for the
+        # verification queue -- reapply a requested "not-operational" after
+        # it (a netixlan is never queue-enabled, so a live status is safe)
+        status_requested = validated_data.get("status")
+        instance = super().create(
+            validated_data, auto_approve=auto_approve, suggest=suggest
+        )
+        if status_requested == "not-operational" and instance.status == "ok":
+            instance.status = "not-operational"
+            instance.save()
+        return instance
 
     def _validate_network_contact(self, data):
         """
@@ -2837,6 +3121,21 @@ class NetworkIXLanSerializer(ModelSerializer):
 
     def validate(self, data):
         self._validate_network_contact(data)
+
+        # #1751: fold the flat UI fields into the document first, then
+        # validate the whole thing against the typed key registry --
+        # unregistered keys are rejected
+        fold_meta_flat_fields(data, self.instance, self.META_FLAT_FIELDS)
+        if "meta" in data:
+            data["meta"] = meta_registry.validate_meta(
+                "netixlan",
+                data["meta"],
+                request=self.context.get("request"),
+                # the stored document, so a key the client merely
+                # round-tripped is exempt from write-time bounds -- see
+                # validate_meta()
+                current=(self.instance.meta or {}) if self.instance else None,
+            )
 
         netixlan = NetworkIXLan(**data)
         try:
@@ -3038,6 +3337,33 @@ class NetworkSerializer(ModelSerializer):
         validators=[URLValidator(schemes=["http", "https", "telnet", "ssh"])],
     )
 
+    # #1751: flat write-only mirrors of this object's UI-exposed metadata
+    # keys -- see fold_meta_flat_fields(). `meta` stays the read surface.
+    rtbh_community = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text=_(
+            "BGP community this network accepts for remote-triggered blackholing, "
+            "in standard (asn:value) or large (asn:local1:local2) format. Stored "
+            "canonically, so leading zeros are dropped. Submit blank to clear."
+        ),
+    )
+    preferred_ip_mtu = BlankableIntegerField(
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text=_(
+            "Preferred IP MTU for private network interconnection. "
+            "Submit blank or null to clear."
+        ),
+    )
+
+    META_FLAT_FIELDS = (
+        ("rtbh_community", ("rtbh_community",), ""),
+        ("preferred_ip_mtu", ("preferred_ip_mtu",), None),
+    )
+
     ixp_update_exclude_speed = serializers.BooleanField(required=False, write_only=True)
     ixp_update_exclude_is_rs_peer = serializers.BooleanField(
         required=False, write_only=True
@@ -3126,6 +3452,9 @@ class NetworkSerializer(ModelSerializer):
             "rir_status",
             "rir_status_updated",
             "logo",
+            "meta",
+            "rtbh_community",
+            "preferred_ip_mtu",
         ] + HandleRefSerializer.Meta.fields
         default_fields = ["id", "name", "asn"]
         related_fields = [
@@ -3518,6 +3847,18 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
 
     def validate(self, data):
         self._fold_ixp_update_exclude_flags(data)
+
+        # #1751: fold the flat UI fields into the document first, then
+        # validate the whole thing against the typed key registry --
+        # unregistered keys are rejected
+        fold_meta_flat_fields(data, self.instance, self.META_FLAT_FIELDS)
+        if "meta" in data:
+            data["meta"] = meta_registry.validate_meta(
+                "net",
+                data["meta"],
+                request=self.context.get("request"),
+                current=(self.instance.meta or {}) if self.instance else None,
+            )
 
         social_media = data.get("social_media")
         website = data.get("website")

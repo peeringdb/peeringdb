@@ -62,14 +62,15 @@ def test_add_deleted_netixlan(entities, use_ip, save):
         speed=1,
         ipaddr4=use_ip(4, "195.69.147.250"),
         ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
-        status="ok",
+        status="not-operational",
         is_rs_peer=True,
-        operational=False,
     )
 
     netixlan.delete()
 
-    assert NetworkIXLan.objects.filter(status="ok").count() == 0
+    assert (
+        NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count() == 0
+    )
     importer = ixf.Importer()
 
     if not save:
@@ -83,7 +84,7 @@ def test_add_deleted_netixlan(entities, use_ip, save):
 
     assert_no_emails(network, ixlan.ix)
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     # Assert data values are updated
     assert netixlan.is_rs_peer is True
     assert netixlan.operational is True
@@ -677,9 +678,8 @@ def test_update_data_attributes(entities, use_ip, save):
                 speed=20000,
                 ipaddr4=use_ip(4, "195.69.147.250"),
                 ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -723,7 +723,7 @@ def test_update_data_attributes(entities, use_ip, save):
         assert "is_rs_peer" in log["reason"]
         assert "speed" in log["reason"]
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan.operational is True
 
     # #793 we are currently ignoring is_rs_peer
@@ -745,7 +745,7 @@ def test_update_data_attributes(entities, use_ip, save):
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
     import_log.rollback()
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan.operational is False
     assert netixlan.is_rs_peer is False
     assert netixlan.speed == 20000
@@ -859,9 +859,8 @@ def test_update_data_attributes_no_routeserver(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=True,
-                operational=False,
             )
         )
 
@@ -906,9 +905,8 @@ def test_suggest_modify_local_ixf(entities, use_ip, save):
             speed=20000,
             ipaddr4=use_ip(4, "195.69.147.250"),
             ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
     )
 
@@ -1024,9 +1022,8 @@ def test_suggest_modify(entities, use_ip, save):
             speed=20000,
             ipaddr4=use_ip(4, "195.69.147.250"),
             ipaddr6=use_ip(6, "2001:7f8:1::a500:2906:1"),
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
     )
 
@@ -1105,9 +1102,8 @@ def test_suggest_modify_no_routeserver(entities, save):
             speed=20000,
             ipaddr4="195.69.147.250",
             ipaddr6="2001:7f8:1::a500:2906:1",
-            status="ok",
+            status="not-operational",
             is_rs_peer=True,
-            operational=False,
         )
     )
 
@@ -1973,7 +1969,10 @@ def test_single_ipaddr_matches(entities, save):
     else:
         assert len(importer.log["data"]) == 3
 
-        assert NetworkIXLan.objects.filter(status="ok").count() == 1
+        assert (
+            NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count()
+            == 1
+        )
 
         assert importer.log["data"][0]["action"] == "delete"
         assert importer.log["data"][1]["action"] == "delete"
@@ -2039,7 +2038,10 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
 
     else:
         # Assert NetworkIXLan is unchanged
-        assert NetworkIXLan.objects.filter(status="ok").count() == 1
+        assert (
+            NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count()
+            == 1
+        )
 
         # We consolidate notifications into a single MODIFY
         assert len(importer.log["data"]) == 1
@@ -2055,7 +2057,9 @@ def test_single_ipaddr_matches_no_auto_update(entities, use_ip, save):
         assert ixf_member_del.requirement_of == ixf_member_add
         assert ixf_member_add.action == "modify"
 
-        netixlan = NetworkIXLan.objects.filter(status="ok").first()
+        netixlan = NetworkIXLan.objects.filter(
+            status__in=["ok", "not-operational"]
+        ).first()
 
         email_info = [("MODIFY", network.asn, netixlan.ipaddr4, netixlan.ipaddr6)]
         assert_ix_email(ixlan.ix, email_info)
@@ -2189,7 +2193,9 @@ def test_two_missing_ipaddrs_no_auto_update(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
     # Assert NetworkIXLans are unchanged
-    assert NetworkIXLan.objects.filter(status="ok").count() == 2
+    assert (
+        NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count() == 2
+    )
 
     if not network.ipv4_support or not network.ipv6_support:
         # only one of the protocols is supported by the network
@@ -2287,9 +2293,8 @@ def test_delete(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.251",
                 ipaddr6=None,
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -2310,7 +2315,9 @@ def test_delete(entities, save):
     log = importer.log["data"][0]
 
     assert log["action"] == "delete"
-    assert NetworkIXLan.objects.filter(status="ok").count() == 1
+    assert (
+        NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count() == 1
+    )
     assert_data_change_notification([("netixlan", "delete")])
     assert_no_emails(network, ixlan.ix)
 
@@ -2320,7 +2327,9 @@ def test_delete(entities, save):
     # test rollback
     import_log = IXLanIXFMemberImportLog.objects.first()
     import_log.rollback()
-    assert NetworkIXLan.objects.filter(status="ok").count() == 2
+    assert (
+        NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).count() == 2
+    )
 
 
 @pytest.mark.django_db
@@ -2358,9 +2367,8 @@ def test_suggest_delete_local_ixf_has_flag(entities, save):
             speed=20000,
             ipaddr4="195.69.147.251",
             ipaddr6=None,
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
     )
 
@@ -2522,9 +2530,8 @@ def test_suggest_delete_no_local_ixf(entities, save):
             speed=20000,
             ipaddr4="195.69.147.251",
             ipaddr6=None,
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
     )
 
@@ -2600,7 +2607,9 @@ def test_delete_ip_reassigned_immediate(entities, save):
     # winning netixlan (ASN 2906) created
     assert NetworkIXLan.objects.filter(asn=2906, status="ok").count() == 1
 
-    winning_netixlan = NetworkIXLan.objects.get(asn=2906, status="ok")
+    winning_netixlan = NetworkIXLan.objects.get(
+        asn=2906, status__in=["ok", "not-operational"]
+    )
     if winning_network.ipv4_support:
         assert str(winning_netixlan.ipaddr4) == "195.69.147.250"
     if winning_network.ipv6_support:
@@ -2719,9 +2728,8 @@ def test_delete_no_reassignment_still_suggests(entities, save):
             speed=20000,
             ipaddr4="195.69.147.251",  # not in feed, not reassigned to anyone
             ipaddr6=None,
-            status="ok",
+            status="not-operational",
             is_rs_peer=False,
-            operational=False,
         )
     )
 
@@ -2733,10 +2741,12 @@ def test_delete_no_reassignment_still_suggests(entities, save):
     importer.update(ixlan, data=data)
     importer.notify_proposals()
 
-    # netixlan stays (proposal, not immediate delete)
+    # netixlan stays live (proposal, not immediate delete)
     assert (
         NetworkIXLan.objects.filter(
-            asn=1001, ipaddr4="195.69.147.251", status="ok"
+            asn=1001,
+            ipaddr4="195.69.147.251",
+            status__in=["ok", "not-operational"],
         ).count()
         == 1
     )
@@ -4915,7 +4925,7 @@ def test_multiple_facility_ids_import_continues(entities):
     importer.update(ixlan, data=data)
 
     # Import must have continued - netixlan is created
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
 
     # ix_side is left as None since we can't pick between two different facilities
@@ -4954,7 +4964,7 @@ def test_facility_id_invalid_skipped(entities):
     importer.update(ixlan, data=data)
 
     # With allow_ixp_update=True, the netixlan is created directly
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side is None
 
@@ -4987,7 +4997,7 @@ def test_ix_side_set_on_add(entities):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5016,7 +5026,7 @@ def test_ix_side_set_on_add_via_switch(entities):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5062,7 +5072,7 @@ def test_ix_side_set_on_modify(entities):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5114,7 +5124,7 @@ def test_ix_side_overwrites_existing(entities):
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == new_facility
 
@@ -5186,7 +5196,7 @@ def test_ix_side_applied_when_update_disabled(entities):
     importer.notify_proposals()
 
     # ix_side should be applied directly
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5227,7 +5237,7 @@ def test_ix_side_only_change_no_notification(entities):
     importer.notify_proposals()
 
     # ix_side should be updated silently
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5261,9 +5271,8 @@ def test_ix_side_with_other_changes_update_disabled(entities):
         ixlan=ixlan,
         asn=network.asn,
         speed=10000,
-        status="ok",
+        status="not-operational",
         is_rs_peer=True,
-        operational=False,
         **ip_kwargs,
     )
 
@@ -5272,7 +5281,7 @@ def test_ix_side_with_other_changes_update_disabled(entities):
     importer.notify_proposals()
 
     # ix_side should be applied directly despite allow_ixp_update=False
-    netixlan = NetworkIXLan.objects.filter(status="ok").first()
+    netixlan = NetworkIXLan.objects.filter(status__in=["ok", "not-operational"]).first()
     assert netixlan is not None
     assert netixlan.ix_side == facility
 
@@ -5363,9 +5372,8 @@ def test_ixp_update_exclude_speed(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -5415,9 +5423,8 @@ def test_ixp_update_exclude_is_rs_peer(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -5467,9 +5474,8 @@ def test_ixp_update_exclude_operational(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -5520,9 +5526,8 @@ def test_ixp_update_exclude_all_no_proposal(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -5660,9 +5665,8 @@ def test_ixp_update_exclude_default_empty_unchanged_behavior(entities, save):
                 speed=20000,
                 ipaddr4="195.69.147.250",
                 ipaddr6="2001:7f8:1::a500:2906:1",
-                status="ok",
+                status="not-operational",
                 is_rs_peer=False,
-                operational=False,
             )
         )
 
@@ -5734,7 +5738,9 @@ def test_ixp_update_exclude_add_preserves_non_excluded_when_update_disabled():
 
     ixf_member_data.apply(save=True)
 
-    netixlan = NetworkIXLan.objects.get(network=network, status="ok")
+    netixlan = NetworkIXLan.objects.get(
+        network=network, status__in=["ok", "not-operational"]
+    )
     # excluded -> falls back to the model default (0), NOT the IX-F value 10000
     assert netixlan.speed == 0, "excluded speed must not be taken from IX-F"
     # not excluded -> taken from IX-F even though allow_ixp_update is False
@@ -5867,6 +5873,8 @@ def test_ixf_import_creates_netixlan_for_supported_protocol():
     importer = ixf.Importer()
     importer.update(ixlan, data=data)
 
-    netixlan = NetworkIXLan.objects.get(status="ok", asn=network.asn)
+    netixlan = NetworkIXLan.objects.get(
+        status__in=["ok", "not-operational"], asn=network.asn
+    )
     assert netixlan.ipaddr4 is None
     assert str(netixlan.ipaddr6) == "2001:7f8:1::a500:2906:1"

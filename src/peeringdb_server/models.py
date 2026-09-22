@@ -69,7 +69,7 @@ from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
 
 import peeringdb_server.geo as geo
-from peeringdb_server import location
+from peeringdb_server import location, meta_registry
 from peeringdb_server.context import current_request, is_forced_ixlan_deletion
 from peeringdb_server.inet import RdapLookup, RdapNotFoundError
 from peeringdb_server.managers import CustomManager
@@ -104,6 +104,47 @@ HANDLEREF_STATUS = (
     ("pending", _("Pending")),
     ("deleted", _("Deleted")),
 )
+
+
+def live_statuses(model) -> list:
+    """
+    The status values under which an object of this model is live and
+    publicly visible.
+
+    #1742: netixlan status absorbed operational-ness, so
+    "not-operational" is a live, public status there -- unlike "pending".
+    Use this instead of a literal `status="ok"` filter wherever the intent
+    is "visible objects", so netixlan visibility stays correct.
+    """
+
+    if model.HandleRef.tag == "netixlan":
+        return ["ok", "not-operational"]
+    return ["ok"]
+
+
+def clean_meta_field(instance):
+    """
+    #1751: registry-validate an object's `meta` document at the model layer
+    and write the normalized form back.
+
+    Called from the concrete models' `clean()`, which is the only check on
+    every write path that is not the REST API: the Django admin renders
+    `meta` as a free-text JSON textarea, so without this "registered keys
+    only" would not hold there, and a malformed `planned_status_change.date`
+    would reach MySQL as a STORED generated column expression and surface as
+    an unhandled OperationalError (1292) instead of a form error.
+
+    Structural validation only -- write-time bounds stay in the serializers,
+    see `meta_registry.clean_meta`.
+    """
+
+    normalized, errors = meta_registry.clean_meta(instance.HandleRef.tag, instance.meta)
+    if errors:
+        if isinstance(errors, dict):
+            errors = [f"{key}: {message}" for key, message in errors.items()]
+        raise ValidationError({"meta": errors})
+    instance.meta = normalized
+
 
 SPONSORSHIP_LEVELS = (
     (1, _("Silver")),
@@ -386,7 +427,11 @@ class ParentStatusCheckMixin:
                 raise ParentStatusException(
                     getattr(self, field_name), self.HandleRef.tag
                 )
-            elif getattr(self, field_name).status == "pending" and self.status == "ok":
+            elif getattr(
+                self, field_name
+            ).status == "pending" and self.status in live_statuses(type(self)):
+                # live includes "not-operational" on netixlan (#1742) -- a
+                # publicly visible child under a pending parent
                 raise ParentStatusException(
                     getattr(self, field_name), self.HandleRef.tag
                 )
@@ -407,7 +452,7 @@ class ParentStatusCheckMixin:
         """
         if hasattr(self, "status"):
             try:
-                validate_status(self.status)
+                validate_status(self.status, tag=self.HandleRef.tag)
             except Exception as e:
                 # Convert RestValidationError to Django ValidationError
                 if hasattr(e, "detail") and isinstance(e.detail, dict):
@@ -2824,7 +2869,7 @@ class InternetExchange(
         # of the specified asns
         for asn in asns:
             for netixlan in NetworkIXLan.objects.filter(
-                network__asn=asn, status="ok"
+                network__asn=asn, status__in=live_statuses(NetworkIXLan)
             ).select_related("network", "ixlan"):
                 if netixlan.ixlan.ix_id not in exchanges:
                     exchanges[netixlan.ixlan.ix_id] = {}
@@ -3010,7 +3055,7 @@ class InternetExchange(
         """
         return (
             NetworkIXLan.objects.select_related("network")
-            .filter(ixlan__ix_id=self.id, status="ok")
+            .filter(ixlan__ix_id=self.id, status__in=live_statuses(NetworkIXLan))
             .aggregate(net_count=models.Count("network_id", distinct=True))["net_count"]
         )
 
@@ -3347,14 +3392,13 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
         """
         Returns queryset of active netixlan objects at this ixlan.
         """
+        # live statuses: #1742 made "not-operational" a live netixlan
+        # status -- non-operational connections are still active members
         return (
             self.netixlan_set(manager="handleref")
             .select_related("network")
-            .filter(status="ok")
+            .filter(status__in=live_statuses(NetworkIXLan))
         )
-        # q = NetworkIXLan.handleref.filter(ixlan_id=self.id).filter(status="ok")
-        # return Network.handleref.filter(id__in=[i.network_id for i in
-        # q]).filter(status="ok")
 
     @property
     def ready_for_ixf_import(self):
@@ -3493,7 +3537,9 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
         # if it does.
         if (
             ipv4
-            and NetworkIXLan.objects.filter(status="ok", ipaddr4=ipv4)
+            and NetworkIXLan.objects.filter(
+                status__in=live_statuses(NetworkIXLan), ipaddr4=ipv4
+            )
             .exclude(ixlan=self)
             .count()
             > 0
@@ -3504,7 +3550,9 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
 
         if (
             ipv6
-            and NetworkIXLan.objects.filter(status="ok", ipaddr6=ipv6)
+            and NetworkIXLan.objects.filter(
+                status__in=live_statuses(NetworkIXLan), ipaddr6=ipv6
+            )
             .exclude(ixlan=self)
             .count()
             > 0
@@ -3606,10 +3654,17 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
             netixlan.is_rs_peer = netixlan_info.is_rs_peer
             changed.append("is_rs_peer")
 
-        # Is the netixlan operational?
-        if netixlan_info.operational != netixlan.operational:
-            netixlan.operational = netixlan_info.operational
-            changed.append("operational")
+        # Is the netixlan operational? (#1742: operational-ness is
+        # carried by status -- "ok" vs "not-operational" -- and the boolean
+        # is derived on save. The feed's operational flag picks which live
+        # status the (re)saved netixlan gets below.)
+        status_wanted = "ok" if netixlan_info.operational else "not-operational"
+        if netixlan.status != status_wanted:
+            netixlan.status = status_wanted
+            # operational derives from status on save; set it in memory too
+            # so save=False preview runs log the feed's operational state
+            netixlan.operational = status_wanted == "ok"
+            changed.append("status")
 
         # Speed
         if netixlan_info.speed != netixlan.speed and (
@@ -3634,8 +3689,11 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
             netixlan.ix_side_id = info_ix_side_id
             changed.append("ix_side")
 
-        if save and (changed or netixlan.status == "deleted"):
-            netixlan.status = "ok"
+        if save and changed:
+            # status was already set above where it differed -- including
+            # resurrecting a deleted netixlan by design (the feed says this
+            # member exists), to the live status the feed's operational
+            # flag selects rather than unconditionally to "ok"
             netixlan.full_clean()
             netixlan.save()
 
@@ -3694,7 +3752,9 @@ class IXLanIXFMemberImportLog(StripFieldMixin):
                         except Exception:
                             break
 
-                elif entry.netixlan.status == "ok":
+                elif entry.netixlan.status in live_statuses(NetworkIXLan):
+                    # import-created netixlans may be live as either "ok" or
+                    # "not-operational" (#1742) -- both must roll back
                     entry.netixlan.ipaddr4 = None
                     entry.netixlan.ipaddr6 = None
                     entry.netixlan.delete()
@@ -4335,7 +4395,14 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
                 operational={"from": netixlan.operational, "to": self.operational}
             )
 
-        if netixlan.status != self.status:
+        # #1742: "not-operational" is a live status -- normalize it to
+        # "ok" for the lifecycle comparison, otherwise every import run of a
+        # non-operational netixlan would report a phantom status change
+        # (self.status only ever holds lifecycle values)
+        netixlan_lifecycle_status = (
+            "ok" if netixlan.status == "not-operational" else netixlan.status
+        )
+        if netixlan_lifecycle_status != self.status:
             changes.update(status={"from": netixlan.status, "to": self.status})
 
         return changes
@@ -4505,7 +4572,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         instance.
         """
         return NetworkIXLan.objects.filter(
-            ixlan=self.ixlan, network=self.net, status="ok"
+            ixlan=self.ixlan,
+            network=self.net,
+            status__in=live_statuses(NetworkIXLan),
         ).exists()
 
     @property
@@ -4828,8 +4897,15 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
                 netixlan.is_rs_peer = self.is_rs_peer
             if self.ix_side_id is not None:
                 netixlan.ix_side = self.ix_side
-            if self.take_operational_from_ixf:
-                netixlan.operational = self.operational
+            if self.take_operational_from_ixf and netixlan.status in live_statuses(
+                NetworkIXLan
+            ):
+                # #1742: the importer writes status, not the derived
+                # boolean -- feed inactive maps to "not-operational". Same
+                # data, same #1943 gating as before. Guarded on the live
+                # statuses so a pending or deleted netixlan is not dragged
+                # into a live one by a feed's operational flag.
+                netixlan.status = "ok" if self.operational else "not-operational"
             if save:
                 netixlan.full_clean()
                 netixlan.save()
@@ -5187,7 +5263,10 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
 
         ip_network = ipaddress.ip_network(self.prefix)
         ip_field = "ipaddr4" if self.protocol == "IPv4" else "ipaddr6"
-        netixlans = self.ixlan.netixlan_set.filter(status="ok")
+        # live statuses: a not-operational netixlan still uses its IPs
+        netixlans = self.ixlan.netixlan_set.filter(
+            status__in=live_statuses(NetworkIXLan)
+        )
 
         if getattr(self, "_being_renumbered", False):
             return True
@@ -5609,7 +5688,10 @@ class Network(
 
     @property
     def netixlan_set_active(self):
-        return self.netixlan_set(manager="handleref").filter(status="ok")
+        # live statuses include "not-operational" (#1742)
+        return self.netixlan_set(manager="handleref").filter(
+            status__in=live_statuses(NetworkIXLan)
+        )
 
     @property
     def ixlan_set_active(self):
@@ -5722,6 +5804,8 @@ class Network(
                 self.irr_as_set = validate_irr_as_set(self.irr_as_set)
         except ValidationError as exc:
             raise ValidationError({"irr_as_set": exc})
+
+        clean_meta_field(self)
 
         return super().clean()
 
@@ -6098,10 +6182,10 @@ class NetworkIXLan(
 
         if not check_deleted:
             ipv4 = NetworkIXLan.objects.filter(
-                ipaddr4=self.ipaddr4, status="ok"
+                ipaddr4=self.ipaddr4, status__in=live_statuses(NetworkIXLan)
             ).exclude(id=self.id)
             ipv6 = NetworkIXLan.objects.filter(
-                ipaddr6=self.ipaddr6, status="ok"
+                ipaddr6=self.ipaddr6, status__in=live_statuses(NetworkIXLan)
             ).exclude(id=self.id)
         else:
             ipv4 = NetworkIXLan.objects.filter(ipaddr4=self.ipaddr4).exclude(id=self.id)
@@ -6149,10 +6233,14 @@ class NetworkIXLan(
         other6 = None
 
         if conflict4:
-            other4 = NetworkIXLan.objects.get(status="ok", ipaddr4=self.ipaddr4)
+            other4 = NetworkIXLan.objects.get(
+                status__in=live_statuses(NetworkIXLan), ipaddr4=self.ipaddr4
+            )
 
         if conflict6:
-            other6 = NetworkIXLan.objects.get(status="ok", ipaddr6=self.ipaddr6)
+            other6 = NetworkIXLan.objects.get(
+                status__in=live_statuses(NetworkIXLan), ipaddr6=self.ipaddr6
+            )
 
         # will be flagged for existance of other peer in IX-F data
         # False means other peer is a ghost peer
@@ -6320,6 +6408,9 @@ class NetworkIXLan(
         # network (#168)
 
         self.asn = self.network.asn
+
+        clean_meta_field(self)
+
         super().clean()
 
     def ipaddr(self, version):
@@ -6377,8 +6468,26 @@ class NetworkIXLan(
         """
         Save the current instance
         """
+        # #1742: operational-ness is carried by `status` ("ok" vs
+        # "not-operational"); `operational` is a derived compatibility field,
+        # recomputed here on every save so it can never drift from status.
+        #
+        # Anything that persists a netixlan therefore has to express
+        # operational-ness as a status. The one exception is deliberate: an
+        # unsaved netixlan passed to `IXLan.add_netixlan()` as an info
+        # provider still carries it in `operational`, because that is the
+        # IX-F feed's vocabulary and add_netixlan is where it gets
+        # translated into a status.
+        self.operational = self.status == "ok"
         self.validate_parent_status()
         super().save(*args, **kwargs)
+
+
+# #1751: inject typed generated columns for filterable metadata keys.
+# The registry declaration is the schema workflow -- makemigrations picks
+# the columns up from here.
+meta_registry.contribute_generated_columns(NetworkIXLan, "netixlan")
+meta_registry.contribute_generated_columns(Network, "net")
 
 
 @grainy_model(namespace="carrier", parent="org")

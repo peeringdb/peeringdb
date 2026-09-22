@@ -2986,6 +2986,11 @@ def view_network(request, id):
             }
         ]
 
+    # #1751: metadata document backing the registered `net` keys rendered
+    # below -- serialized output always carries it, but default defensively
+    # so a cached/applicator-trimmed dict cannot break the view
+    network_meta = network_d.get("meta") or {}
+
     notify_incomplete_policy_url = network_d.get("policy_general") not in [
         "Open",
         "No",
@@ -3152,6 +3157,33 @@ def view_network(request, id):
                         "value": network_d.get("info_never_via_route_servers", False),
                     },
                 ],
+            },
+            # #1751: object metadata keys registered on `net`. These are
+            # edited through flat write-only serializer fields that fold into
+            # the `meta` document, so the field name here is the flat field's
+            # and the value is read back out of the document.
+            {
+                "name": "rtbh_community",
+                "label": _("RTBH Community"),
+                "help_text": _(
+                    "BGP community this network accepts for remote-triggered "
+                    "blackholing, as asn:value or asn:local1:local2"
+                ),
+                "type": "string",
+                # "" rather than `dismiss`: an unset metadata key is absent
+                # from the document, and a DoNotRender row is dropped whole by
+                # the template (view.html) in edit mode too -- the field would
+                # only ever appear once it already had a value
+                "value": network_meta.get("rtbh_community", ""),
+            },
+            {
+                "name": "preferred_ip_mtu",
+                "label": _("Preferred IP MTU"),
+                "help_text": _(
+                    "Preferred IP MTU for private network interconnection with this network"
+                ),
+                "type": "number",
+                "value": network_meta.get("preferred_ip_mtu", ""),
             },
             {
                 "readonly": True,
@@ -3335,6 +3367,16 @@ def view_network(request, id):
 
     # For tooltip
     data["phone_help_text"] = field_help(NetworkContact, "phone")
+
+    # #1742: bounds for the planned-change date picker. The registry is the
+    # only place the window is defined; these are a client-side hint on a
+    # CDN-cached page, so the server still validates what comes back.
+    _today = datetime.datetime.now().date()
+    data["meta_plan_date_min"] = (_today + datetime.timedelta(days=1)).isoformat()
+    data["meta_plan_date_max"] = (
+        _today
+        + datetime.timedelta(days=dj_settings.META_PLANNED_STATUS_CHANGE_WINDOW_DAYS)
+    ).isoformat()
 
     if not request.user.is_authenticated or not request.user.is_verified_user:
         cnt = network.poc_set.filter(status="ok", visible="Users").count()

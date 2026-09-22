@@ -49,6 +49,20 @@ PeeringDB = {
           .replace(/'/g, "&#039;");
     },
 
+    // Structured field errors can contain user input; the editor renders HTML.
+    format_field_errors: function(errors, path = "") {
+      if (Array.isArray(errors)) {
+        return errors.flatMap(error => PeeringDB.format_field_errors(error, path));
+      }
+      if (errors && typeof errors === "object") {
+        return Object.entries(errors).flatMap(([key, value]) =>
+          PeeringDB.format_field_errors(value, path ? `${path}.${key}` : key)
+        );
+      }
+      if (errors == null) return [];
+      return [PeeringDB.escape_html(`${path}: ${errors}`)];
+    },
+
     // WAF/proxy error bodies arrive as full html pages - reduce them to a
     // short plain-text excerpt so error messages can surface the actual
     // reason instead of a canned one (#2032)
@@ -730,7 +744,9 @@ PeeringDB = {
           netixlan_row.find('[data-edit-name="ipaddr4"] input').val(data.ipaddr4)
           netixlan_row.find('[data-edit-name="ipaddr6"] input').val(data.ipaddr6)
           netixlan_row.find('[data-edit-name="is_rs_peer"] input').prop("checked", data.is_rs_peer)
-          netixlan_row.find('[data-edit-name="operational"] input').prop("checked", data.operational)
+          // #1742: the widget writes status now, but the derived `operational`
+        // boolean is still served and is what the checkbox reflects
+        netixlan_row.find('[data-edit-name="status"] input').prop("checked", data.operational)
           netixlan_row.addClass("newrow")
           this.detach_row(row);
           row.find('button').tooltip("hide")
@@ -3932,6 +3948,7 @@ PeeringDB = {
                   info.push(gettext("Parent entity pending review - please wait for it to be approved before adding entities to it")) ///
                 } else if(err != "Unknown")
                   info.push(r.responseJSON.meta.error)
+                info.push(...PeeringDB.format_field_errors(r.responseJSON.meta.field_errors));
                 continue;
               }
               sender.find('[data-edit-name="'+k+'"]').each(function(idx) {
@@ -4459,6 +4476,59 @@ PeeringDB = {
   /*
    * showdown (markdown) input type
    */
+
+  twentyc.editable.input.register(
+    "date",
+    {
+      // #1751: native picker. Its value is always YYYY-MM-DD -- the format the
+      // metadata registry validates against -- so the whole class of format
+      // errors a free-text field produces cannot happen here. `min`/`max` come
+      // off the element so the server stays the one place the window is
+      // defined; the page is CDN-cached, so treat them as a hint and let the
+      // server reject a stale boundary.
+      make : function() {
+        var input = $('<input type="date"></input>');
+        if(this.source.data("edit-min"))
+          input.attr("min", this.source.data("edit-min"));
+        if(this.source.data("edit-max"))
+          input.attr("max", this.source.data("edit-max"));
+        return input;
+      }
+    },
+    "string"
+  )
+
+  twentyc.editable.input.register(
+    "netixlan_status",
+    {
+      // #1742: operational-ness is carried by netixlan `status`, not by the
+      // derived `operational` boolean. The checkbox is kept -- users think in
+      // "operational" -- but it reads and writes status values, so the
+      // dashboard stops depending on the operational->status write mapping
+      // that the deprecation window removes.
+
+      set : function(value) {
+        // remember what we were handed: a netixlan sitting in a lifecycle
+        // status must not have it rewritten by a checkbox that can only
+        // express the two live statuses
+        this.original_status = value;
+        this.element.prop("checked", value == "ok" || value === true || value === 1);
+      },
+
+      get : function() {
+        var original = this.original_status;
+        if(original && original != "ok" && original != "not-operational")
+          return original;
+        return this.element.prop("checked") ? "ok" : "not-operational";
+      },
+
+      blank : function() {
+        // "not-operational" is a real value, never an absent one
+        return false;
+      }
+    },
+    "bool"
+  )
 
   twentyc.editable.input.register(
     "social_media",
@@ -5368,6 +5438,14 @@ PeeringDB = {
   twentyc.editable.templates.register("check", $('<img class="checkmark" />'));
   twentyc.editable.templates.register("poc_email", $('<a></a>'));
 
+  // #1751: the tri-state metadata columns on a netixlan row render as an
+  // image / a badge in view mode, not as the option label, so their cells
+  // carry a template. Both wrappers are empty containers -- "not disclosed"
+  // and "no plan" are legitimately blank cells -- and the handlers below
+  // fill them in.
+  twentyc.editable.templates.register("check_tristate", $('<span></span>'));
+  twentyc.editable.templates.register("planned_status_change", $('<span></span>'));
+
   /*
    * set up input template handlers
    */
@@ -5387,6 +5465,72 @@ PeeringDB = {
       node.addClass("empty")
     }
     node.text(input.get());
+  }
+
+  /*
+   * #1751: teach `select` the `data-edit-template` branch `bool` already has.
+   *
+   * `apply()` is what runs on a successful inline save, and the stock select
+   * replaces the cell with the option label -- so saving any field of a
+   * netixlan row from the dashboard dropped that row's RFC8950 checkmark
+   * image and its planned-status badge down to plain text until the page was
+   * reloaded. Cells that declare no `data-edit-template` keep the old
+   * behaviour.
+   *
+   * `template_handlers` is inherited from `base` by reference, so `select`
+   * gets its own object first -- otherwise these handlers would land on
+   * every input type.
+   */
+
+  twentyc.editable.input.get("select").prototype.template_handlers = {};
+
+  twentyc.cls.override(
+    twentyc.editable.input.get("select"),
+    "apply",
+    function(value) {
+      this.source.data("edit-value", this.get());
+      var tmplId = this.source.data("edit-template");
+      if(!tmplId) {
+        this.source.text(this.value_to_label());
+        return;
+      }
+      var node = twentyc.editable.templates.get(tmplId).clone(true);
+      if(this.template_handlers[tmplId])
+        this.template_handlers[tmplId](this.get(), node, this);
+      this.source.empty().append(node);
+    }
+  );
+
+  twentyc.editable.input.get("select").prototype.template_handlers["check_tristate"] = function(value, node, input) {
+    // "" is "not disclosed" and renders as an empty cell -- which is why
+    // this cannot reuse the two-state `check` template the bool columns use.
+    var unset = (value === "" || value === null || value === undefined);
+    // view-mode collapse of unset metadata cells keys off this attribute (site.css)
+    if(input)
+      input.source.attr("data-has-value", unset ? null : "1");
+    if(unset)
+      return;
+    var yes = (value === true || value == "True" || value == "true");
+    $('<img class="checkmark" />').
+      attr("src", STATIC_URL+"checkmark"+(yes?"":"-off")+".png").
+      attr("alt", input ? input.value_to_label() : "").
+      appendTo(node);
+  }
+
+  twentyc.editable.input.get("select").prototype.template_handlers["planned_status_change"] = function(value, node, input) {
+    // no planned change -> empty cell. Keep the labels in step with
+    // view_network_side.html, which renders the same badge server-side.
+    if(input)
+      input.source.attr("data-has-value", value ? "1" : null);
+    if(!value)
+      return;
+    var badge = $('<span class="planned-status-change"></span>').
+      attr("data-bs-toggle", "tooltip").
+      attr("title", gettext("Announced by the network. Plans are declarations of intent -- nothing happens automatically on this date.")).
+      text(value == "deleted" ? gettext("planned removal") : gettext("planned activation")); ///
+    badge.appendTo(node);
+    if(window.bootstrap && bootstrap.Tooltip)
+      new bootstrap.Tooltip(badge[0]);
   }
 
   /*
@@ -5473,6 +5617,29 @@ PeeringDB = {
   twentyc.data.loaders.assign("enum/available_voltage", "data");
   twentyc.data.loaders.assign("enum/reauth_periods", "data");
   twentyc.data.loaders.assign("enum/mtus", "data");
+  // #1751: metadata-key vocabularies are served from the server-side
+  // registry, not django_peeringdb.const. Without this assignment
+  // twentyc.data.load() throws ("no suitable loader") out of the select
+  // widget's set(), which aborts row init for the whole list.
+  twentyc.data.loaders.assign("enum/meta_planned_status_change", "data");
+
+  // #1742: the date is the right half of the planned-change control. It
+  // carries `data-has-value` like the other metadata cells (view-mode collapse,
+  // see site.css), and choosing "None" as the change type empties it: a
+  // date without a change type is not a plan the server accepts.
+  twentyc.cls.override(
+    twentyc.editable.input.get("date"),
+    "apply",
+    function(value) {
+      this.date_apply(value);
+      this.source.attr("data-has-value", this.get() ? "1" : null);
+    }
+  );
+
+  $(document).on("change", ".planned-change .planned-status select", function() {
+    if($(this).val() === "")
+      $(this).closest(".planned-change").find(".planned-date input").val("");
+  });
   twentyc.data.loaders.assign("enum/social_media_services", "data");
 
   const checkAsSet = () =>{
@@ -7219,7 +7386,8 @@ $(document).ready(function() {
             "ixlan_id": "ixlan-id",
             "is_rs_peer": "rs-peer",
             "bfd_support": "bfd-support",
-            "operational": "operational"
+            "operational": "operational",
+            "status": "operational"
           };
 
           var fieldId = fieldMap[field] || field;
@@ -7288,7 +7456,8 @@ $(document).ready(function() {
       // Add checkbox values
       data.is_rs_peer = $("#netixlan-rs-peer").prop("checked") ? 1 : 0;
       data.bfd_support = $("#netixlan-bfd-support").prop("checked") ? 1 : 0;
-      data.operational = $("#netixlan-operational").prop("checked") ? 1 : 0;
+      // #1742: write status, not the derived operational boolean
+      data.status = $("#netixlan-operational").prop("checked") ? "ok" : "not-operational";
 
       // Client-side validation
       var hasErrors = false;

@@ -113,7 +113,10 @@ class Command(BaseCommand):
             print("%d orphaned poc (net status='deleted')" % poc)
 
         netixlan = (
-            pdbm.NetworkIXLan.objects.filter(status="ok", network__status="deleted")
+            pdbm.NetworkIXLan.objects.filter(
+                status__in=pdbm.live_statuses(pdbm.NetworkIXLan),
+                network__status="deleted",
+            )
             .select_related("network")
             .count()
         )
@@ -121,7 +124,10 @@ class Command(BaseCommand):
             print("%d orphaned netixlans (net status='deleted')" % netixlan)
 
         netixlan = (
-            pdbm.NetworkIXLan.objects.filter(status="ok", ixlan__status="deleted")
+            pdbm.NetworkIXLan.objects.filter(
+                status__in=pdbm.live_statuses(pdbm.NetworkIXLan),
+                ixlan__status="deleted",
+            )
             .select_related("ixlan")
             .count()
         )

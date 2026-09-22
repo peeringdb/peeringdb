@@ -53,6 +53,7 @@ from peeringdb_server.models import (
     NetworkIXLan,
     Organization,
     User,
+    live_statuses,
 )
 from peeringdb_server.rest import NetworkViewSet
 from peeringdb_server.rest_client import (
@@ -2386,10 +2387,14 @@ class TestJSON(unittest.TestCase):
         net_filter_count = Network.objects.filter(status="ok", ix_count__gt=0).count()
         net_count = Network.objects.filter(status="ok").count()
 
+        # live statuses: the API returns "not-operational" netixlans too
+        # (#1742), so the expected counts have to include them
         netixlan_filter_count = NetworkIXLan.objects.filter(
-            status="ok", ixlan__ix__fac_count__gt=0
+            status__in=live_statuses(NetworkIXLan), ixlan__ix__fac_count__gt=0
         ).count()
-        netixlan_count = NetworkIXLan.objects.filter(status="ok").count()
+        netixlan_count = NetworkIXLan.objects.filter(
+            status__in=live_statuses(NetworkIXLan)
+        ).count()
 
         user = User.objects.get(username=self.db_user.user)
 
@@ -2487,10 +2492,10 @@ class TestJSON(unittest.TestCase):
         data.pop("net_id")
         NetworkIXLan.objects.create(**data)
 
-        # Get queryset of netixlan with status="ok"
-        netixlan_ids = NetworkIXLan.objects.filter(status="ok").values_list(
-            "id", flat=True
-        )
+        # Get queryset of netixlans in a live status (#1742)
+        netixlan_ids = NetworkIXLan.objects.filter(
+            status__in=live_statuses(NetworkIXLan)
+        ).values_list("id", flat=True)
 
         # Define helper function to check response
         def check_side_response(port_name, port_id):
@@ -5070,9 +5075,11 @@ class TestJSON(unittest.TestCase):
         assert len(data) == 0
 
         # set one netixlan to not operational
+        # (#1742: operational-ness is carried by status; the
+        # boolean is derived on save)
 
         netixlan = NetworkIXLan.objects.first()
-        netixlan.operational = False
+        netixlan.status = "not-operational"
         netixlan.save()
 
         # assert that it is now returned in the operational=False

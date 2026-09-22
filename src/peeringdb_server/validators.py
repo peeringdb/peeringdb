@@ -363,7 +363,13 @@ def validate_prefix_overlap(
                 ixlan = instance.ixlan
                 ip_field = "ipaddr4" if new_prefix.version == 4 else "ipaddr6"
 
-                netixlans = ixlan.netixlan_set.filter(status="ok")
+                # live statuses include "not-operational" (#1742) -- a
+                # shrinking prefix must keep covering those members too
+                netixlans = ixlan.netixlan_set.filter(
+                    status__in=peeringdb_server.models.live_statuses(
+                        peeringdb_server.models.NetworkIXLan
+                    )
+                )
                 old_covered = {
                     n
                     for n in netixlans
@@ -1155,17 +1161,22 @@ def validate_distance_geocode(
     return new_geocode
 
 
-def validate_status(value: str) -> str:
+def validate_status(value: str, tag: str | None = None) -> str:
     """
     Validate that the status field only accepts allowed values.
 
-    Valid status values are: 'ok', 'pending', 'deleted'
+    Valid status values are: 'ok', 'pending', 'deleted' -- plus, on
+    netixlan only, 'not-operational' (#1742: netixlan status
+    absorbs operational-ness).
 
     This prevents the API from accepting arbitrary status values that
     can lead to data being inaccessible or cause unexpected behavior.
 
     Arguments:
         - value (str): The status value to validate
+        - tag (str): handleref tag of the object being validated;
+          extends the allowed values for object types that carry
+          additional status vocabulary
 
     Raises:
         - RestValidationError: If the status value is not in the allowed list
@@ -1179,6 +1190,9 @@ def validate_status(value: str) -> str:
     allowed_statuses = [
         status[0] for status in peeringdb_server.models.HANDLEREF_STATUS
     ]
+
+    if tag == "netixlan":
+        allowed_statuses.append("not-operational")
 
     if value not in allowed_statuses:
         raise RestValidationError(

@@ -74,6 +74,7 @@ from peeringdb_server.models import (
     ProtectedAction,
     User,
     UserAPIKey,
+    live_statuses,
 )
 from peeringdb_server.org_admin_views import save_user_permissions
 from peeringdb_server.pagination import UnlimitedIfNoPagePagination
@@ -713,7 +714,7 @@ class ModelViewSet(viewsets.ModelViewSet):
                 # incremental update query (used by peeringdb-py client
                 # to handle incremental updates, will include `deleted` objects)
 
-                allowed_status = ["ok", "deleted"]
+                allowed_status = live_statuses(self.model) + ["deleted"]
 
                 if self.model.HandleRef.tag == "campus":
                     # Special treatment for campus objects, since their status
@@ -738,9 +739,9 @@ class ModelViewSet(viewsets.ModelViewSet):
                     .filter(status__in=allowed_status)
                 )
             else:
-                qset = qset.filter(status="ok")
+                qset = qset.filter(status__in=live_statuses(self.model))
         else:
-            qset = qset.filter(status__in=["ok", "pending"])
+            qset = qset.filter(status__in=live_statuses(self.model) + ["pending"])
 
         if hasattr(self, "apply_pre_slice_filters"):
             qset = self.apply_pre_slice_filters(qset)

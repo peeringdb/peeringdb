@@ -106,6 +106,7 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequest,
     UserOrgAffiliationRequestHistory,
     VerificationQueueItem,
+    live_statuses,
 )
 from peeringdb_server.org_admin_views import save_user_permissions
 from peeringdb_server.permissions import org_namespace_filter
@@ -133,6 +134,23 @@ PERMISSION_APP_LABELS = [
 ]
 
 
+def _status_vocabulary(model):
+    """
+    The live status values a model's `status` field may hold.
+
+    #1742: on netixlan that is "ok" *and* "not-operational". Both the admin
+    status select and the status list filter have to know about the second
+    one -- a select whose options do not contain the row's current value
+    silently posts back "ok", and since netixlans are an inline on the
+    Network admin page that would discard a network's non-operational
+    declaration on any unrelated save of its parent.
+    """
+
+    if model is not None and hasattr(model, "HandleRef"):
+        return live_statuses(model)
+    return ["ok"]
+
+
 class StatusFilter(admin.SimpleListFilter):
     """
     A listing filter that, by default, will only show entities
@@ -144,12 +162,14 @@ class StatusFilter(admin.SimpleListFilter):
     dflt = "all"
 
     def lookups(self, request, model_admin):
-        return [
-            ("ok", "ok"),
-            ("pending", "pending"),
-            ("deleted", "deleted"),
-            ("all", "all"),
-        ]
+        # #1742: netixlan carries operational-ness in `status`, so
+        # "not-operational" is an additional live status there. Without it
+        # here the AC cannot list those rows at all.
+        return (
+            [(status, status) for status in _status_vocabulary(model_admin.model)]
+            + [("pending", "pending"), ("deleted", "deleted")]
+            + [("all", "all")]
+        )
 
     def choices(self, cl):
         val = self.value()
@@ -381,14 +401,21 @@ class StatusForm(baseForms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        live = [(status, status) for status in _status_vocabulary(self._meta.model)]
+        self.fields["status"].choices = live + [
+            ("pending", "pending"),
+            ("deleted", "deleted"),
+        ]
         if "instance" in kwargs and kwargs.get("instance"):
             inst = kwargs.get("instance")
-            if inst.status == "ok":
-                self.fields["status"].choices = [("ok", "ok")]
+            # a live row may move between the live statuses; a lifecycle
+            # status may only be resolved into a live one
+            if inst.status in dict(live):
+                self.fields["status"].choices = live
             elif inst.status == "pending":
-                self.fields["status"].choices = [("ok", "ok"), ("pending", "pending")]
+                self.fields["status"].choices = live + [("pending", "pending")]
             elif inst.status == "deleted":
-                self.fields["status"].choices = [("ok", "ok"), ("deleted", "deleted")]
+                self.fields["status"].choices = live + [("deleted", "deleted")]
 
     def clean_name(self):
         # reject 2+ consecutive whitespace (#1984); subclasses overriding
@@ -415,8 +442,15 @@ class StatusForm(baseForms.ModelForm):
             new_status = self.cleaned_data.get("status")
             old_status = self.instance.status
 
-            # If changing from deleted to ok/pending, check if parent allows it
-            if old_status == "deleted" and new_status in ["ok", "pending"]:
+            # If changing from deleted to a live status (or to pending),
+            # check if parent allows it. #1742: the live vocabulary is
+            # per-model -- netixlan also has "not-operational" -- and a
+            # status missing from this list skips the check entirely, so
+            # `save()` raises ParentStatusException instead. That is an
+            # IOError, not a ValidationError, so it escapes the admin as a
+            # 500 rather than becoming a form error.
+            live = _status_vocabulary(self._meta.model)
+            if old_status == "deleted" and new_status in live + ["pending"]:
                 try:
                     original_status = self.instance.status
                     self.instance.status = new_status
@@ -909,6 +943,9 @@ class NetworkInternetExchangeInline(SanitizedAdmin, admin.TabularInline):
     extra = 0
     raw_id_fields = ("ixlan", "network", "net_side", "ix_side")
     form = NetworkIXLanForm
+    # #1742: `operational` is derived from `status` on every save, so an
+    # editable widget here would silently discard whatever the AC set.
+    readonly_fields = ("operational",)
 
 
 class UserOrgAffiliationRequestInlineForm(baseForms.ModelForm):
@@ -1858,7 +1895,9 @@ class NetworkIXLanAdmin(SoftDeleteAdmin, ISODateTimeMixin):
         "ipaddr4",
         "ipaddr6",
     )
-    readonly_fields = ("id", "ix", "net")
+    # #1742: `operational` is derived from `status` on every save, so an
+    # editable widget here would silently discard whatever the AC set.
+    readonly_fields = ("id", "ix", "net", "operational")
     list_filter = (StatusFilter,)
 
     raw_id_fields = ("network", "ixlan")

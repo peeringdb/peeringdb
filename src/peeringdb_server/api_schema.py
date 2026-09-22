@@ -19,6 +19,7 @@ from rest_framework import serializers
 from rest_framework.schemas.openapi import AutoSchema, SchemaGenerator
 from rest_framework.schemas.utils import is_list_view
 
+from peeringdb_server import meta_registry
 from peeringdb_server.serializers import (
     CampusSerializer,
     CarrierSerializer,
@@ -340,6 +341,19 @@ class BaseSchema(AutoSchema):
             if obj_descr_file:
                 with open(obj_descr_file) as fh:
                     op_dict["description"] += "\n\n" + fh.read()
+
+            # #1751: object types that carry a `meta` document get the shared
+            # metadata reference appended. Only `obj_<tag>` and `op_<type>`
+            # are ever looked up in API_DOC_INCLUDES, so a docs/api/ page
+            # that is not named that way is never rendered into the schema --
+            # and a relative .md link out of an obj_ page resolves against
+            # the apidocs URL and 404s. Inlining it here keeps one copy of
+            # the text and puts it where API consumers actually read.
+            if model.HandleRef.tag in meta_registry.PARTICIPATING_MODELS:
+                meta_descr_file = settings.API_DOC_INCLUDES.get("object_metadata", "")
+                if meta_descr_file:
+                    with open(meta_descr_file) as fh:
+                        op_dict["description"] += "\n\n" + fh.read()
 
             # check if we have an augmentation method set for the operation_type and object type
             # combination, if so run it
