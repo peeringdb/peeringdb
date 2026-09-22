@@ -25,6 +25,7 @@ from peeringdb_server.models import (
     User,
     UserOrgAffiliationRequest,
 )
+from peeringdb_server.permissions import org_namespace_filter
 from peeringdb_server.util import check_permissions
 
 from .forms import OrgAdminUserPermissionForm, OrgUserOptions
@@ -39,7 +40,7 @@ def save_user_permissions(org, user, perms):
 
     # wipe all the user's perms for the targeted org
 
-    user.grainy_permissions.filter(namespace__startswith=org.grainy_namespace).delete()
+    user.grainy_permissions.filter(org_namespace_filter(org)).delete()
 
     # collect permissioning namespaces from the provided permissioning ids
 
@@ -113,7 +114,7 @@ def load_all_user_permissions(org):
     # Bulk load all permissions for all users in this org
     user_ids = [user.id for user in users]
     all_permissions = UserPermission.objects.filter(
-        user_id__in=user_ids, namespace__startswith=org.grainy_namespace
+        org_namespace_filter(org), user_id__in=user_ids
     ).select_related("user")
 
     # Group permissions by user_id for faster lookup
@@ -157,9 +158,7 @@ def load_entity_permissions(org, entity, entity_perms=None, org_entities=None):
     if entity_perms is None:
         entity_perms = {
             p.namespace: p.permission
-            for p in entity.grainy_permissions.filter(
-                namespace__startswith=org.grainy_namespace
-            )
+            for p in entity.grainy_permissions.filter(org_namespace_filter(org))
         }
 
     perms = {}
