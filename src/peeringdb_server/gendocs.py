@@ -22,7 +22,9 @@ for entry in os.scandir("peeringdb_server"):
         outfile = f"docs/dev/modules/{entry.name}.md"
         print(f"Generating {outfile}")
         with open(outfile, "w") as fh:
-            doc_text = doc_module(f"peeringdb_server/{entry.name}", section_level=1)
+            doc_text = doc_module(
+                f"peeringdb_server.{entry.name.removesuffix('.py')}", section_level=1
+            )
             fh.write(f"Generated from {entry.name} on {now}\n\n")
             fh.write("\n".join(doc_text))
 
@@ -39,7 +41,8 @@ for entry in os.scandir("peeringdb_server/management/commands"):
     if entry.is_file() and entry.name.find(".py") > -1:
         try:
             doc_text = doc_module(
-                f"peeringdb_server/management/commands/{entry.name}", section_level=1
+                f"peeringdb_server.management.commands.{entry.name.removesuffix('.py')}",
+                section_level=1,
             )
             command_index[entry.name] = doc_text[2]
         except Exception:

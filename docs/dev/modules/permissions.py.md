@@ -1,4 +1,4 @@
-Generated from permissions.py on 2026-08-15 04:17:12.049436
+Generated from permissions.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.permissions
 
@@ -77,6 +77,21 @@ Otherwise returns None.
 Initialize the Permission Util based on
 whether the provided object is a UserAPIKey, OrgAPIKey,
 or a different object.
+
+---
+## org_namespace_filter
+`def org_namespace_filter(org)`
+
+Return a Q matching an org's own namespace and its descendants, and nothing
+else.
+
+A bare `namespace__startswith=org.grainy_namespace` compiles to
+`LIKE 'peeringdb.organization.5%'`, which also matches org 50, 500 and
+5000 -- so filtering on one org reached into unrelated ones (#2039).
+
+The exact-match half is load-bearing: the org-root grant is stored at
+exactly `peeringdb.organization.<id>` with no trailing separator, so a
+dotted-prefix-only filter would leave it behind on every save.
 
 ---
 ## return_org_api_key_perms

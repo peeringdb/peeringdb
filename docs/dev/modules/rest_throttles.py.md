@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2026-08-15 04:17:12.049436
+Generated from rest_throttles.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.rest_throttles
 
@@ -107,6 +107,41 @@ Should return a unique cache-key which can be used for throttling.
 Must be overridden.
 
 May return `None` if the request should not be throttled.
+
+---
+
+## LocationLookupThrottle
+
+```
+LocationLookupThrottle(rest_framework.throttling.SimpleRateThrottle)
+```
+
+A simple cache implementation, that only requires `.get_cache_key()`
+to be overridden.
+
+The rate (requests / seconds) is set by a `rate` attribute on the Throttle
+class.  The attribute is a string of the form 'number_of_requests/period'.
+
+Period should be one of: ('s', 'sec', 'm', 'min', 'h', 'hour', 'd', 'day')
+
+Previous request information used for throttling is stored in the cache.
+
+
+### Methods
+
+#### get_cache_key
+`def get_cache_key(self, request, view)`
+
+Should return a unique cache-key which can be used for throttling.
+Must be overridden.
+
+May return `None` if the request should not be throttled.
+
+---
+#### get_rate
+`def get_rate(self)`
+
+Determine the string representation of the allowed request rate.
 
 ---
 

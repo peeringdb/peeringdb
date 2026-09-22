@@ -153,7 +153,7 @@ dev = [
 
 [tool.uv.sources]
 # until released
-django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202607" }
+django-peeringdb = { git = "https://github.com/peeringdb/django-peeringdb", rev = "support_202608" }
 # until released
 peeringdb = { git = "https://github.com/peeringdb/peeringdb-py", rev = "support_202607" }
 # from branch until passkey support is released

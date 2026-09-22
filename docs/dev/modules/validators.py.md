@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-08-15 04:17:12.049436
+Generated from validators.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.validators
 
@@ -345,17 +345,22 @@ Returns:
 
 ---
 ## validate_status
-`def validate_status(value)`
+`def validate_status(value, tag=None)`
 
 Validate that the status field only accepts allowed values.
 
-Valid status values are: 'ok', 'pending', 'deleted'
+Valid status values are: 'ok', 'pending', 'deleted' -- plus, on
+netixlan only, 'not-operational' (#1742: netixlan status
+absorbs operational-ness).
 
 This prevents the API from accepting arbitrary status values that
 can lead to data being inaccessible or cause unexpected behavior.
 
 Arguments:
     - value (str): The status value to validate
+    - tag (str): handleref tag of the object being validated;
+      extends the allowed values for object types that carry
+      additional status vocabulary
 
 Raises:
     - RestValidationError: If the status value is not in the allowed list

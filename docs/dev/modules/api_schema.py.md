@@ -1,4 +1,4 @@
-Generated from api_schema.py on 2026-08-15 04:17:12.049436
+Generated from api_schema.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.api_schema
 
@@ -121,6 +121,13 @@ Override this so operation ids become "{op} {reftag}"
 Determine if this is a list retrieval operation.
 
 ---
+#### is_api_model
+`def is_api_model(self, model)`
+
+Whether model is exposed as its own endpoint, i.e. part of the public
+API surface rather than an internal model reachable through a relation.
+
+---
 #### map_field
 `def map_field(self, field)`
 
@@ -148,5 +155,15 @@ map field validators
 
 Helper function that return the request body schema
 for the specified content type.
+
+---
+#### serializer_help_text
+`def serializer_help_text(self, serializer, field)`
+
+Return help_text declared on the serializer for *field*, for fields that
+carry it there rather than on the model (#1981).
+
+Only consulted when the model field has none, so it never overrides
+model-level documentation.
 
 ---

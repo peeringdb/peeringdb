@@ -1,4 +1,4 @@
-Generated from models.py on 2026-08-15 04:17:12.049436
+Generated from models.py on 2026-09-22 17:40:35.243351
 
 # peeringdb_server.models
 
@@ -27,6 +27,23 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 # Functions
 ---
 
+## clean_meta_field
+`def clean_meta_field(instance)`
+
+#1751: registry-validate an object's `meta` document at the model layer
+and write the normalized form back.
+
+Called from the concrete models' `clean()`, which is the only check on
+every write path that is not the REST API: the Django admin renders
+`meta` as a free-text JSON textarea, so without this "registered keys
+only" would not hold there, and a malformed `planned_status_change.date`
+would reach MySQL as a STORED generated column expression and surface as
+an unhandled OperationalError (1292) instead of a form error.
+
+Structural validation only -- write-time bounds stay in the serializers,
+see `meta_registry.clean_meta`.
+
+---
 ## default_time_e
 `def default_time_e()`
 
@@ -45,6 +62,18 @@ Returns datetime set to today with a time of 00:00:00.
 Check if the network, facility or exchange is a suggested
 entity (is it a memeber of the organization designated to
 hold suggested entities).
+
+---
+## live_statuses
+`def live_statuses(model)`
+
+The status values under which an object of this model is live and
+publicly visible.
+
+#1742: netixlan status absorbed operational-ness, so
+"not-operational" is a live, public status there -- unlike "pending".
+Use this instead of a literal `status="ok"` filter wherever the intent
+is "visible objects", so netixlan visibility stays correct.
 
 ---
 ## validate_PUT_ownership
@@ -507,6 +536,15 @@ Relationship through netfac -> net
 
 ### Methods
 
+#### process_geo_location
+`def process_geo_location(self, geocode=True, save=True)`
+
+Sets longitude and latitude.
+
+Will return a dict containing normalized address
+data.
+
+---
 #### save
 `def save(self, *args, **kwargs)`
 
@@ -1886,10 +1924,11 @@ and adds optional org ownership to it through an `org` relationship
 #### clean
 `def clean(self)`
 
-Hook for doing any extra model-wide validation after clean() has been
-called on every field by self.clean_fields. Any ValidationError raised
-by this method will not be associated with a particular field; it will
-have a special-case association with the field defined by NON_FIELD_ERRORS.
+Validate the application, reporting each problem on the field it belongs to.
+
+Raises a :class:`~django.core.exceptions.ValidationError` keyed by field name, so
+callers get a per-field ``message_dict`` and a ModelForm renders each message next
+to its input. Every problem found is reported, not just the first one.
 
 ---
 
