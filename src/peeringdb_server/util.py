@@ -27,12 +27,15 @@ if TYPE_CHECKING:
     from simplekml import Kml
 
 # Session-bearing anonymous auth views must never be cached by shared
-# proxies, since their responses carry `Set-Cookie` / CSRF state (#2032).
-# Lives here rather than in `views` so `mainsite.urls` can import it
-# without pulling in the heavy views module.
+# proxies, since their responses carry Set-Cookie / CSRF state (#2032).
+# Lives here rather than in views so mainsite.urls can import it without
+# pulling in the heavy views module. CacheControlMiddleware applies the
+# same directives to credentialed responses (#469).
+NO_STORE_PRIVATE_DIRECTIVES: dict[str, bool] = {"private": True, "no_store": True}
+
 no_store_private: Callable[
     [Callable[..., HttpResponse]], Callable[..., HttpResponse]
-] = cache_control(private=True, no_store=True)
+] = cache_control(**NO_STORE_PRIVATE_DIRECTIVES)
 
 
 def disable_auto_now_and_save(

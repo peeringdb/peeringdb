@@ -17,6 +17,7 @@ from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
 from django.urls import resolve, reverse
 from django.utils import timezone, translation
+from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.deprecation import MiddlewareMixin
 from django_ratelimit.core import get_usage
 
@@ -24,6 +25,7 @@ from peeringdb_server.context import current_request
 from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
 from peeringdb_server.permissions import get_key_from_request
 from peeringdb_server.settings_util import get_setting_time
+from peeringdb_server.util import NO_STORE_PRIVATE_DIRECTIVES
 
 log = structlog.get_logger("django")
 
@@ -609,6 +611,21 @@ class CacheControlMiddleware(MiddlewareMixin):
     # the `CACHE_CONTROL_API_CACHE` setting for api-cache responses
     # and the `CACHE_CONTROL_API` setting for normal responses
 
+    @staticmethod
+    def request_is_credentialed(request):
+        """
+        Returns True if the request carries any credential.
+
+        API keys are not a DRF authentication class, so request.user stays
+        anonymous for Api-Key requests and the presence of the header is the
+        only signal available at response time (#469).
+        """
+
+        if request.user.is_authenticated:
+            return True
+
+        return "HTTP_AUTHORIZATION" in request.META
+
     def process_response(self, request, response):
         # only on GET requests
 
@@ -622,18 +639,36 @@ class CacheControlMiddleware(MiddlewareMixin):
 
         match = request.resolver_match
 
-        if not match or not match.url_name:
+        if not match:
             return response
+
+        is_api = match.namespace == "api"
+
+        if is_api:
+            # so a shared cache cannot hand a stored anonymous response
+            # to a credentialed request on the same URL (#469)
+
+            patch_vary_headers(response, ("Authorization",))
 
         if (
-            request.user.is_authenticated
+            self.request_is_credentialed(request)
             and match.url_name not in self.authenticated_views
         ):
-            # request is authenticated, dont set cache-control
-            # headers for authenticated responses.
+            # credentialed responses can carry permissioned data, so no
+            # shared cache may store them (#469). patched rather than
+            # assigned so stricter directives already set are not weakened.
+
+            patch_cache_control(response, **NO_STORE_PRIVATE_DIRECTIVES)
             return response
 
-        if match.namespace == "api":
+        if not match.url_name:
+            # the branches below pick their setting by view name, so an
+            # unnamed route must not fall into the api one and become
+            # shared-cacheable
+
+            return response
+
+        if is_api:
             # REST API
 
             if getattr(response, "context_data", None):
