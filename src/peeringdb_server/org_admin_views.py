@@ -437,17 +437,23 @@ def manage_user_update(request, **kwargs):
     if group not in ["member", "admin"]:
         return JsonResponse({"group": _("Needs to be member or admin")}, status=400)
 
+    was_admin = user.is_org_admin(org)
+
     if group == "admin":
         org.usergroup.user_set.remove(user)
         org.admin_usergroup.user_set.add(user)
-        # remove granular permissions user has to the org
-        # since user is now an organization admin (#1157)
-        user.grainy_permissions.filter(
-            namespace__startswith=f"peeringdb.organization.{org.id}."
-        ).delete()
     elif group == "member":
         org.usergroup.user_set.add(user)
         org.admin_usergroup.user_set.remove(user)
+
+    # the user's own rows go with the old role: both groups grant at the very
+    # namespace such a row occupies, and grainy skips a namespace the user
+    # already holds instead of merging into it (#1157, #2038). An admin must
+    # hold none either way, but a member who was already a member changed no
+    # role, so their granular permissions are not a leftover.
+
+    if group == "admin" or was_admin:
+        save_user_permissions(org, user, {})
 
     return JsonResponse({"status": "ok"})
 

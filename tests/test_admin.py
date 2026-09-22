@@ -14,6 +14,7 @@ from django.utils import timezone
 from django_grainy.models import GroupPermission
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_security_keys.models import SecurityKey
+from grainy.const import PERM_CRUD
 
 import peeringdb_server.admin as admin
 import peeringdb_server.models as models
@@ -137,6 +138,39 @@ class AdminTests(TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
+
+    def _userpermission_payload(self, user, org, grainy_forms=1, initial_forms=0):
+        """
+        Payload for the UserPermission admin change form that puts `user` in
+        `org`'s admin group -- override `groups` for any other role.
+        `grainy_forms` is the number of permission inline forms submitted -- 0
+        models a client that posts only the groups field. `initial_forms` is
+        how many of those are existing rows rendered back by the change page.
+        """
+
+        payload = {
+            "groups": org.admin_usergroup.id,
+            "affiliation_requests-TOTAL_FORMS": 0,
+            "affiliation_requests-INITIAL_FORMS": 0,
+            "affiliation_requests-MIN_NUM_FORMS": 0,
+            "affiliation_requests-MAX_NUM_FORMS": 1000,
+            "affiliation_requests-__prefix__-org": "",
+            "affiliation_requests-__prefix__-org_name": "",
+            "affiliation_requests-__prefix__-asn": "",
+            "affiliation_requests-__prefix__-status": "",
+            "affiliation_requests-__prefix__-user": user.id,
+            "affiliation_requests-__prefix__-id": "",
+            "grainy_permissions-TOTAL_FORMS": grainy_forms,
+            "grainy_permissions-INITIAL_FORMS": initial_forms,
+            "grainy_permissions-MIN_NUM_FORMS": 0,
+            "grainy_permissions-MAX_NUM_FORMS": 1000,
+            "grainy_permissions-__prefix__-namespace": "",
+            "grainy_permissions-__prefix__-user": user.id,
+            "grainy_permissions-__prefix__-id": "",
+            "_continue": "Save and continue editing",
+        }
+
+        return payload
 
     def test_views(self):
         """
@@ -1064,6 +1098,235 @@ class AdminTests(TestCase):
 
         # assert that the there are 1 grainy permissions
         assert len(user_permission.grainy_permissions.all()) == 1
+
+    def test_userpermission_org_root_namespace(self):
+        """
+        Test that the #1157 cleanup also removes a permission at exactly the
+        org root namespace (#2038)
+
+        `test_userpermission` above only covers a dotted sub-namespace. The old
+        dotted-prefix filter never matched the org root row -- the one that
+        shadows the admin group's own CRUD grant at the same namespace.
+        """
+
+        user_permission = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
+
+        org = models.Organization.objects.create(name="test-org", status="ok")
+        org.admin_usergroup.user_set.add(user_permission)
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse(
+            "admin:peeringdb_server_userpermission_change", args=[user_permission.id]
+        )
+
+        payload = self._userpermission_payload(user_permission, org)
+        payload.update(
+            {
+                "grainy_permissions-0-namespace": org.grainy_namespace,
+                "grainy_permissions-0-permission": 1,
+                "grainy_permissions-0-user": user_permission.id,
+                "grainy_permissions-0-id": "",
+            }
+        )
+
+        response = client.post(url, payload, follow=True)
+
+        assert response.status_code == 200
+        assert len(user_permission.grainy_permissions.all()) == 0
+
+    def test_userpermission_groups_only_change(self):
+        """
+        Test that promoting a user to org admin in django-admin cleans up their
+        granular permissions even when no permission inline form is submitted
+        (#2038)
+
+        `save_formset` took the user from a bound inline form, so a POST that
+        changes only `groups` reached it with no user and did nothing.
+        """
+
+        user_permission = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
+
+        org = models.Organization.objects.create(name="test-org", status="ok")
+        org.usergroup.user_set.add(user_permission)
+        user_permission.grainy_permissions.create(
+            namespace=org.grainy_namespace, permission=PERM_CRUD
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse(
+            "admin:peeringdb_server_userpermission_change", args=[user_permission.id]
+        )
+
+        response = client.post(
+            url,
+            self._userpermission_payload(user_permission, org, grainy_forms=0),
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        assert user_permission.is_org_admin(org)
+        assert len(user_permission.grainy_permissions.all()) == 0
+
+    def test_userpermission_demotion_clears_user_permissions(self):
+        """
+        Test that demoting an org admin in django-admin drops the granular
+        permissions they held while admin, without touching a permission the
+        same POST added (#2038)
+
+        `admin_organizations` reflects the groups as they are *after* the save,
+        so cleaning up from that alone would cover the promote direction only,
+        while the org UI and the REST API both scrub a demotion.
+        """
+
+        user_permission = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
+
+        org = models.Organization.objects.create(name="test-org", status="ok")
+        org.admin_usergroup.user_set.add(user_permission)
+
+        # what the admin role left behind -- the population
+        # `pdb_fix_org_admin_perms` is shipped to clean
+
+        leftover = user_permission.grainy_permissions.create(
+            namespace=org.grainy_namespace, permission=PERM_CRUD
+        )
+
+        # a legitimate permission in an unrelated org the demotion must not
+        # reach -- the wipe is a new delete path, so its scope is asserted
+
+        other_org = models.Organization.objects.create(name="other-org", status="ok")
+        other_org.usergroup.user_set.add(user_permission)
+        user_permission.grainy_permissions.create(
+            namespace=f"{other_org.grainy_namespace}.network", permission=PERM_CRUD
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse(
+            "admin:peeringdb_server_userpermission_change", args=[user_permission.id]
+        )
+
+        payload = self._userpermission_payload(
+            user_permission, org, grainy_forms=2, initial_forms=1
+        )
+
+        # `groups` replaces the whole set, so the unrelated membership has to be
+        # posted back alongside the demotion
+
+        payload["groups"] = [org.usergroup.id, other_org.usergroup.id]
+
+        payload.update(
+            {
+                # the leftover row as the change page renders it back -- the
+                # inline always echoes existing rows, and the permission field
+                # reports itself as changed either way, so the wipe cannot lean
+                # on the formset to tell it what the POST really touched
+                "grainy_permissions-0-namespace": org.grainy_namespace,
+                "grainy_permissions-0-permission": PERM_CRUD,
+                "grainy_permissions-0-user": user_permission.id,
+                "grainy_permissions-0-id": leftover.id,
+                # and one permission the same POST grants the demoted member,
+                # which is legitimate for a member to hold
+                "grainy_permissions-1-namespace": f"{org.grainy_namespace}.network",
+                "grainy_permissions-1-permission": PERM_CRUD,
+                "grainy_permissions-1-user": user_permission.id,
+                "grainy_permissions-1-id": "",
+            }
+        )
+
+        response = client.post(url, payload, follow=True)
+
+        assert response.status_code == 200
+
+        user_permission = get_user_model().objects.get(id=user_permission.id)
+
+        assert not user_permission.is_org_admin(org)
+        assert {p.namespace for p in user_permission.grainy_permissions.all()} == {
+            f"{org.grainy_namespace}.network",
+            f"{other_org.grainy_namespace}.network",
+        }
+
+    def test_userpermission_removal_clears_user_permissions(self):
+        """
+        Test that removing a plain member from an org in django-admin drops the
+        granular permissions they held there (#2038)
+
+        Both capture points around the group write key on the *admin* role, so
+        a user who was never an admin of the org fell through every branch --
+        leaving django-admin the only removal path that did not scrub, while
+        `manage_user_delete` and `remove_organization_user` both wipe on
+        removal without consulting the role.
+        """
+
+        user_permission = get_user_model().objects.create_user(
+            username="user", email="user@localhost", password="user"
+        )
+
+        org = models.Organization.objects.create(name="test-org", status="ok")
+        org.usergroup.user_set.add(user_permission)
+
+        # legitimately granted while the user was a member -- it stops being
+        # legitimate the moment they are out of the org
+
+        granted = user_permission.grainy_permissions.create(
+            namespace=f"{org.grainy_namespace}.network.123", permission=PERM_CRUD
+        )
+
+        # an unrelated org the removal must not reach
+
+        other_org = models.Organization.objects.create(name="other-org", status="ok")
+        other_org.usergroup.user_set.add(user_permission)
+        user_permission.grainy_permissions.create(
+            namespace=f"{other_org.grainy_namespace}.network", permission=PERM_CRUD
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse(
+            "admin:peeringdb_server_userpermission_change", args=[user_permission.id]
+        )
+
+        payload = self._userpermission_payload(
+            user_permission, org, grainy_forms=1, initial_forms=1
+        )
+
+        # `groups` replaces the whole set, so dropping `org` from it is the
+        # removal -- the unrelated membership has to be posted back alongside
+
+        payload["groups"] = [other_org.usergroup.id]
+
+        payload.update(
+            {
+                # the row as the change page renders it back, so the wipe has
+                # to take an echoed row and not just an untouched one
+                "grainy_permissions-0-namespace": granted.namespace,
+                "grainy_permissions-0-permission": PERM_CRUD,
+                "grainy_permissions-0-user": user_permission.id,
+                "grainy_permissions-0-id": granted.id,
+            }
+        )
+
+        response = client.post(url, payload, follow=True)
+
+        assert response.status_code == 200
+
+        user_permission = get_user_model().objects.get(id=user_permission.id)
+
+        assert org not in user_permission.organizations
+        assert {p.namespace for p in user_permission.grainy_permissions.all()} == {
+            f"{other_org.grainy_namespace}.network",
+        }
 
     def test_get_user_change_form_with_inline_fields(self):
         """

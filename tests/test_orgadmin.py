@@ -8,8 +8,9 @@ from django.contrib.auth.models import Group
 from django.db import connection
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
+from django_grainy.util import Permissions
 from django_otp.plugins.otp_totp.models import TOTPDevice
-from grainy.const import PERM_CREATE, PERM_READ
+from grainy.const import PERM_CREATE, PERM_CRUD, PERM_READ, PERM_UPDATE
 
 import peeringdb_server.api_key_views as api_key_views
 import peeringdb_server.models as models
@@ -75,6 +76,17 @@ class OrgAdminTests(TestCase):
 
     def setUp(self):
         self.factory = RequestFactory()
+
+    def _can(self, user, namespace, flag):
+        """
+        Whether `user` effectively holds `flag` at `namespace`: own rows first,
+        group rows merged in with `override=False`, as at request time.
+
+        Re-fetched so a cached group m2m cannot mask a change.
+        """
+
+        fresh = models.User.objects.get(id=user.id)
+        return Permissions(fresh).check(namespace, flag)
 
     def test_users(self):
         """
@@ -823,6 +835,146 @@ class OrgAdminTests(TestCase):
         request.user = self.org_admin
         resp = org_admin.manage_user_update(request)
         self.assertEqual(resp.status_code, 403)
+
+    def test_manage_user_update_promote_clears_org_root_row(self):
+        """
+        Test that promoting a member to admin removes the user's own grainy
+        rows for the org, including the row at exactly the org root namespace
+        (#2038)
+
+        That row is the one that decides: the admin group grants CRUD at the
+        same namespace, and grainy skips a namespace the user already holds, so
+        a surviving CRU row replaces the group's CRUD rather than widening it.
+        """
+
+        user = self.user_a
+        org_admin.save_user_permissions(
+            self.org, user, {f"org.{self.org.id}": PERM_CREATE}
+        )
+
+        self.assertTrue(
+            user.grainy_permissions.filter(namespace=self.org.grainy_namespace).exists()
+        )
+        self.assertFalse(self._can(user, self.org.grainy_namespace, PERM_UPDATE))
+
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": user.id, "group": "admin"},
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.manage_user_update(request)
+        self.assertEqual(json.loads(resp.content), {"status": "ok"})
+
+        self.assertEqual(self._org_namespaces(user, self.org.grainy_namespace), set())
+        self.assertTrue(self._can(user, self.org.grainy_namespace, PERM_CRUD))
+
+    def test_manage_user_update_demote_clears_org_root_row(self):
+        """
+        Test that demoting an admin to member removes the user's own grainy
+        rows for the org (#2038)
+
+        This direction did no cleanup at all, so the demoted user kept every
+        capability their own rows granted -- privilege retention.
+        """
+
+        user = self.user_a
+        self.org.usergroup.user_set.remove(user)
+        self.org.admin_usergroup.user_set.add(user)
+        org_admin.save_user_permissions(
+            self.org, user, {f"org.{self.org.id}": PERM_CRUD}
+        )
+
+        self.assertTrue(self._can(user, self.org.grainy_namespace, PERM_UPDATE))
+
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": user.id, "group": "member"},
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.manage_user_update(request)
+        self.assertEqual(json.loads(resp.content), {"status": "ok"})
+
+        self.assertEqual(self._org_namespaces(user, self.org.grainy_namespace), set())
+        self.assertTrue(self._can(user, self.org.grainy_namespace, PERM_READ))
+        self.assertFalse(self._can(user, self.org.grainy_namespace, PERM_UPDATE))
+
+    def test_manage_user_update_member_to_member_keeps_permissions(self):
+        """
+        Test that setting a member's role to member -- no role change -- leaves
+        their granular permissions alone (#2038)
+
+        The wipe is for permissions the *old* role left behind. Firing it on a
+        no-op would silently drop an org's per-entity permissioning.
+        """
+
+        user = self.user_a
+        org_admin.save_user_permissions(self.org, user, {"fac": PERM_CREATE})
+        expected = self._org_namespaces(user, self.org.grainy_namespace)
+        self.assertTrue(expected)
+
+        request = self.factory.post(
+            "/org-admin/manage_user/update",
+            {"org_id": self.org.id, "user_id": user.id, "group": "member"},
+        )
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.manage_user_update(request)
+        self.assertEqual(json.loads(resp.content), {"status": "ok"})
+
+        self.assertEqual(
+            self._org_namespaces(user, self.org.grainy_namespace), expected
+        )
+
+    def test_uoar_approve_admin_clears_stale_rows(self):
+        """
+        Test that approving an affiliation request into an empty org clears any
+        grainy rows the user still holds for that org (#2038)
+
+        `approve()` early-returns for existing members, so anyone reaching the
+        promotion branch should hold no rows -- the wipe is a safety net for
+        rows another path left behind, notably REST user removal.
+        """
+
+        org = models.Organization.objects.create(name="Test org empty", status="ok")
+        user = self.user_e
+        user.grainy_permissions.create(
+            namespace=org.grainy_namespace, permission=PERM_CREATE | PERM_READ
+        )
+
+        uoar = models.UserOrgAffiliationRequest.objects.create(
+            user=user, org=org, status="pending"
+        )
+        uoar.approve()
+
+        self.assertTrue(models.User.objects.get(id=user.id).is_org_admin(org))
+        self.assertEqual(self._org_namespaces(user, org.grainy_namespace), set())
+        self.assertTrue(self._can(user, org.grainy_namespace, PERM_CRUD))
+
+    def test_uoar_approve_member_clears_stale_rows(self):
+        """
+        Test the member branch of the same wipe (#2038): an org that already
+        has users takes the new affiliate in as a plain member, and any rows
+        they still hold for that org go with it.
+        """
+
+        user = self.user_e
+        user.grainy_permissions.create(
+            namespace=self.org.grainy_namespace, permission=PERM_CRUD
+        )
+
+        uoar = models.UserOrgAffiliationRequest.objects.create(
+            user=user, org=self.org, status="pending"
+        )
+        uoar.approve()
+
+        self.assertTrue(models.User.objects.get(id=user.id).is_org_member(self.org))
+        self.assertEqual(self._org_namespaces(user, self.org.grainy_namespace), set())
+        self.assertFalse(self._can(user, self.org.grainy_namespace, PERM_UPDATE))
 
     def test_permissions(self):
         """
