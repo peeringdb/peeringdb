@@ -9,8 +9,9 @@ from django.db import connection
 from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from django_otp.plugins.otp_totp.models import TOTPDevice
-from grainy.const import PERM_CREATE
+from grainy.const import PERM_CREATE, PERM_READ
 
+import peeringdb_server.api_key_views as api_key_views
 import peeringdb_server.models as models
 import peeringdb_server.org_admin_views as org_admin
 import peeringdb_server.views as views
@@ -395,6 +396,223 @@ class OrgAdminTests(TestCase):
         resp = org_admin.user_permissions(request)
         self.assertEqual(resp.status_code, 403)
         self.assertEqual(json.loads(resp.content), {})
+
+    def _org_namespaces(self, holder, root):
+        """
+        Return the namespaces held by `holder` that genuinely belong to the org
+        rooted at the `root` namespace.
+
+        The boundary test is done here in python rather than by reusing the
+        filter under test, so a broken filter cannot make its own assertions
+        pass.
+        """
+
+        prefix = f"{root}."
+        return {
+            perm.namespace
+            for perm in holder.grainy_permissions.all()
+            if perm.namespace == root or perm.namespace.startswith(prefix)
+        }
+
+    def _create_colliding_org(self):
+        """
+        Create an org and return (org, foreign_root), where `foreign_root` is
+        the namespace of a second org whose id is this org's id with a `0`
+        appended, so `org.grainy_namespace` is a strict LIKE-prefix of
+        `foreign_root` (#2039). No row is created for the second org, only its
+        namespace is needed.
+        """
+
+        org = models.Organization.objects.create(name="Org five", status="ok")
+
+        return org, f"{org.grainy_namespace}0"
+
+    def _setup_colliding_orgs(self, user):
+        """
+        Create the org, add `user` to it as a member, give the user granular
+        permissions in it, then seed the same permissions under the
+        prefix-sharing foreign namespace. Returns (org, foreign_root).
+
+        The foreign rows are seeded last, so nothing in setup can wipe them.
+        """
+
+        org, foreign_root = self._create_colliding_org()
+
+        org.usergroup.user_set.add(user)
+        org_admin.save_user_permissions(
+            org, user, {f"org.{org.id}": PERM_CREATE, "fac": PERM_CREATE}
+        )
+
+        # same namespaces save_user_permissions writes, with PERM_READ or-ed in
+
+        for namespace in self._colliding_namespaces(foreign_root):
+            user.grainy_permissions.create(
+                namespace=namespace, permission=PERM_CREATE | PERM_READ
+            )
+
+        return org, foreign_root
+
+    def _colliding_namespaces(self, root):
+        """
+        The namespaces `save_user_permissions` writes under `root` for
+        `{"org.<id>": PERM_CREATE, "fac": PERM_CREATE}`.
+        """
+
+        return {
+            root,
+            f"{root}.network.*.poc_set.private",
+            f"{root}.facility",
+        }
+
+    def test_save_user_permissions_prefix_collision(self):
+        """
+        Test that save_user_permissions leaves alone the permissions a user
+        holds in an unrelated org whose id shares a decimal prefix with the
+        targeted org (#2039)
+        """
+
+        user = self.user_c
+        org_5, foreign_root = self._setup_colliding_orgs(user)
+
+        expected_5 = self._colliding_namespaces(org_5.grainy_namespace)
+        expected_50 = self._colliding_namespaces(foreign_root)
+
+        self.assertEqual(self._org_namespaces(user, org_5.grainy_namespace), expected_5)
+        self.assertEqual(self._org_namespaces(user, foreign_root), expected_50)
+
+        # clear the user's permissions in org 5 only
+
+        org_admin.save_user_permissions(org_5, user, {})
+
+        self.assertEqual(self._org_namespaces(user, org_5.grainy_namespace), set())
+        self.assertEqual(self._org_namespaces(user, foreign_root), expected_50)
+
+    def test_save_user_permissions_org_root_round_trip(self):
+        """
+        Test that save_user_permissions still wipes and recreates the org-root
+        grant, which is stored at exactly `peeringdb.organization.<id>` with no
+        trailing separator (#2039)
+
+        A dotted-prefix-only filter would satisfy the collision test above while
+        orphaning this row on every save, so it is asserted in both directions.
+        """
+
+        user = self.user_c
+        org_5, _ = self._setup_colliding_orgs(user)
+
+        root = user.grainy_permissions.filter(namespace=org_5.grainy_namespace)
+        self.assertEqual(root.count(), 1)
+
+        # re-saving the same permissions must not accumulate a second root row
+
+        org_admin.save_user_permissions(
+            org_5, user, {f"org.{org_5.id}": PERM_CREATE, "fac": PERM_CREATE}
+        )
+        self.assertEqual(root.count(), 1)
+
+        # and dropping the org-root permission must actually remove it
+
+        org_admin.save_user_permissions(org_5, user, {"fac": PERM_CREATE})
+        self.assertEqual(root.count(), 0)
+
+    def test_save_key_permissions_prefix_collision(self):
+        """
+        Test that save_key_permissions leaves alone namespaces belonging to an
+        unrelated org whose id shares a decimal prefix with the targeted org
+        (#2039)
+
+        An OrganizationAPIKey belongs to a single org and only ever receives
+        that org's namespaces through save_key_permissions, so the foreign row
+        here is seeded directly. This guards the shared predicate rather than
+        reproducing a wipe that can happen in production.
+        """
+
+        org_5, foreign_root = self._create_colliding_org()
+
+        key, _ = models.OrganizationAPIKey.objects.create_key(
+            name="test key", org=org_5, email="key@localhost"
+        )
+
+        api_key_views.save_key_permissions(
+            org_5, key, {f"org.{org_5.id}": PERM_CREATE, "fac": PERM_CREATE}
+        )
+
+        foreign_namespace = f"{foreign_root}.facility"
+        models.OrganizationAPIPermission.objects.create(
+            org_api_key=key, namespace=foreign_namespace, permission=PERM_CREATE
+        )
+
+        api_key_views.save_key_permissions(org_5, key, {})
+
+        self.assertEqual(self._org_namespaces(key, org_5.grainy_namespace), set())
+        self.assertEqual(self._org_namespaces(key, foreign_root), {foreign_namespace})
+
+    def test_manage_user_delete_prefix_collision(self):
+        """
+        Test the reported entry point (#2039): an admin of org 5 removing a
+        member from org 5 must not wipe that member's permissions in org 50.
+
+        Goes through @org_admin_required and @target_user_validate, neither of
+        which requires the acting admin to hold any permission over org 50.
+        """
+
+        user = self.user_c
+        org_5, foreign_root = self._setup_colliding_orgs(user)
+        org_5.admin_usergroup.user_set.add(self.org_admin)
+
+        expected_50 = self._org_namespaces(user, foreign_root)
+        self.assertTrue(expected_50)
+
+        url = "/org-admin/manage_user/delete?org_id=%d&user_id=%d" % (
+            org_5.id,
+            user.id,
+        )
+        request = self.factory.post(url)
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.manage_user_delete(request)
+        self.assertEqual(json.loads(resp.content).get("status"), "ok")
+
+        self.assertEqual(self._org_namespaces(user, org_5.grainy_namespace), set())
+        self.assertEqual(self._org_namespaces(user, foreign_root), expected_50)
+
+    def test_user_permission_remove_prefix_collision(self):
+        """
+        Test the other reported entry point (#2039): an admin of org 5 editing
+        one of a member's permissions in org 5 must not wipe that member's
+        permissions in org 50.
+        """
+
+        user = self.user_c
+        org_5, foreign_root = self._setup_colliding_orgs(user)
+        org_5.admin_usergroup.user_set.add(self.org_admin)
+
+        expected_50 = self._org_namespaces(user, foreign_root)
+        self.assertTrue(expected_50)
+
+        url = "/org-admin/user_permissions/remove?org_id=%d&user_id=%d" % (
+            org_5.id,
+            user.id,
+        )
+        request = self.factory.post(url, data={"entity": "fac"})
+        mock_csrf_session(request)
+        request.user = self.org_admin
+
+        resp = org_admin.user_permission_remove(request)
+        self.assertEqual(json.loads(resp.content).get("status"), "ok")
+
+        # the facility permission is gone, the org-root grant survives, and
+        # org 50 is untouched
+
+        self.assertEqual(
+            self._org_namespaces(user, org_5.grainy_namespace),
+            {
+                org_5.grainy_namespace,
+                f"{org_5.grainy_namespace}.network.*.poc_set.private",
+            },
+        )
+        self.assertEqual(self._org_namespaces(user, foreign_root), expected_50)
 
     def test_user_permissions_performance(self):
         """

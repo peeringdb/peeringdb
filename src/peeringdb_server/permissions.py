@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 import grainy.const as grainy_constant
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 
 # from django_grainy.const import *
 from django_grainy.helpers import request_method_to_flag
@@ -40,6 +41,27 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from rdap.objects import RdapObject
     from rest_framework.views import APIView
+
+    from peeringdb_server.models import Organization
+
+
+def org_namespace_filter(org: Organization) -> Q:
+    """
+    Return a Q matching an org's own namespace and its descendants, and nothing
+    else.
+
+    A bare `namespace__startswith=org.grainy_namespace` compiles to
+    `LIKE 'peeringdb.organization.5%'`, which also matches org 50, 500 and
+    5000 -- so filtering on one org reached into unrelated ones (#2039).
+
+    The exact-match half is load-bearing: the org-root grant is stored at
+    exactly `peeringdb.organization.<id>` with no trailing separator, so a
+    dotted-prefix-only filter would leave it behind on every save.
+    """
+
+    return Q(namespace=org.grainy_namespace) | Q(
+        namespace__startswith=f"{org.grainy_namespace}."
+    )
 
 
 def validate_rdap_user_or_key(request: HttpRequest, rdap: RdapObject) -> bool:

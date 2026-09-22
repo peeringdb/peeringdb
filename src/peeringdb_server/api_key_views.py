@@ -20,6 +20,7 @@ from peeringdb_server.models import (
     UserAPIKey,
 )
 from peeringdb_server.org_admin_views import load_entity_permissions, org_admin_required
+from peeringdb_server.permissions import org_namespace_filter
 
 if TYPE_CHECKING:
     from peeringdb_server.models import Organization
@@ -36,7 +37,7 @@ def save_key_permissions(
 
     # wipe all the key's perms for the targeted org
 
-    key.grainy_permissions.filter(namespace__startswith=org.grainy_namespace).delete()
+    key.grainy_permissions.filter(org_namespace_filter(org)).delete()
 
     # collect permissioning namespaces from the provided permissioning ids
 
