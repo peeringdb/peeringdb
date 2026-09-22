@@ -26,7 +26,7 @@ import structlog
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import caches
-from django.core.exceptions import FieldError, ValidationError
+from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
 from django.core.files.base import ContentFile
 from django.core.validators import URLValidator
 from django.db import transaction
@@ -144,6 +144,7 @@ FILTER_EXCLUDE = [
     "ixlan__ixf_ixp_member_list_url",
     "network__notes_private",
     # internal
+    "ixf_import_request_user",
     "ixf_import_log_set__id",
     "ixf_import_log_set__created",
     "ixf_import_log_set__updated",
@@ -804,6 +805,27 @@ class AddressSerializer(serializers.ModelSerializer):
         ]
 
 
+def model_help_text(serializer, field, field_name):
+    """
+    Return the help_text of the model field backing `field`, or "" if there
+    isn't one. Used to keep model documentation from being lost when a
+    serializer declares a field explicitly.
+    """
+
+    model = getattr(getattr(serializer, "Meta", None), "model", None)
+    source = field.source or field_name
+
+    # "*" is SerializerMethodField and friends, "a.b" is a traversal -- neither
+    # maps to a single model field
+    if model is None or source == "*" or "." in source:
+        return ""
+
+    try:
+        return model._meta.get_field(source).help_text
+    except FieldDoesNotExist:
+        return ""
+
+
 class ModelSerializer(serializers.ModelSerializer):
     """
     ModelSerializer that provides DB API with custom params.
@@ -846,8 +868,27 @@ class ModelSerializer(serializers.ModelSerializer):
     is_model = True
     nested_exclude = []
 
-    id = serializers.IntegerField(read_only=True)
-    status = serializers.ReadOnlyField()
+    id = serializers.IntegerField(
+        read_only=True, help_text=_("Unique numeric identifier for this object")
+    )
+    status = serializers.ReadOnlyField(
+        help_text=_(
+            "Object state: `ok` is live and publicly visible, `pending` is awaiting review, `deleted` is soft-deleted and retained but omitted from normal listings"
+        )
+    )
+
+    # declared as plain DateTimeFields so __init__ swaps them for
+    # RemoveMillisecondsDateTimeField (defined further down) while keeping help_text
+    created = serializers.DateTimeField(
+        read_only=True,
+        help_text=_(
+            "Time this object was first created. Soft-deleting and later restoring an object does not reset it, so it may predate the object's current owner"
+        ),
+    )
+    updated = serializers.DateTimeField(
+        read_only=True,
+        help_text=_("Time this object was last modified, including status changes"),
+    )
 
     def __init__(self, *args, **kwargs):
         # args[0] is either a queryset or a model
@@ -855,10 +896,29 @@ class ModelSerializer(serializers.ModelSerializer):
         # at 0x7fa5604e8410>, u'request': <rest_framework.request.Request
         # object at 0x7fa5604e86d0>, u'format': None}}
         for field_name, field in self.fields.items():
+            # an explicit serializer declaration shadows the model field and drops its
+            # help_text, which is where the openapi `description` comes from -- fall
+            # back to the model's rather than restating it on the serializer (#1981)
+            if not field.help_text:
+                field.help_text = model_help_text(self, field, field_name)
+
             if isinstance(field, serializers.DateTimeField):
+                # carry help_text over or it's dropped with the field's other
+                # kwargs, and description is built from help_text alone (#1981).
+                # not label: it's unused by the generator here.
                 self.fields[field_name] = RemoveMillisecondsDateTimeField(
-                    read_only=True
+                    read_only=True, help_text=field.help_text
                 )
+            elif isinstance(field, serializers.PrimaryKeyRelatedField) and not (
+                field.help_text
+            ):
+                # `<x>_id` fields all mean the same thing; document them from
+                # the target model's ref tag rather than repeating it per field.
+                model = getattr(field.queryset, "model", None)
+                if model is not None:
+                    field.help_text = _("Id of the related `%(tag)s` object") % {
+                        "tag": model.handleref.tag
+                    }
 
         try:
             data = args[0]
@@ -1624,6 +1684,14 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
     NestedSerializer.Meta.through = through
     NestedSerializer.Meta.getter = getter
 
+    # `help_text` is in DRF's LIST_SERIALIZER_KWARGS, so it survives many=True and
+    # ends up as the openapi `description` for every `*_set` field (#1981).
+    kwargs.setdefault(
+        "help_text",
+        _("Related `%(tag)s` objects, listed as ids unless expanded with `depth`")
+        % {"tag": serializer.Meta.model.handleref.tag},
+    )
+
     return NestedSerializer(many=True, read_only=True, **kwargs)
 
 
@@ -1876,17 +1944,35 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
-    org_name = serializers.CharField(source="org.name", read_only=True)
+    org_name = serializers.CharField(
+        source="org.name",
+        read_only=True,
+        help_text=_("Name of the organization this record belongs to"),
+    )
 
-    org = serializers.SerializerMethodField()
+    org = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `org` object, included only when the request `depth` is high enough"
+        )
+    )
 
     campus_id = serializers.PrimaryKeyRelatedField(
         queryset=Campus.objects.all(), source="campus", allow_null=True, required=False
     )
 
-    campus = serializers.SerializerMethodField()
+    campus = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `campus` object, included only when the request `depth` is high enough"
+        )
+    )
 
-    suggest = serializers.BooleanField(required=False, write_only=True)
+    suggest = serializers.BooleanField(
+        required=False,
+        write_only=True,
+        help_text=_(
+            "Write-only. Any value present on create, including `false`, files this record under the organization that holds suggested entities, rather than creating it directly"
+        ),
+    )
 
     website = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     social_media = SocialMediaSerializer(required=False, many=True)
@@ -1897,8 +1983,23 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
     tech_phone = serializers.CharField(required=False, allow_blank=True, default="")
     sales_phone = serializers.CharField(required=False, allow_blank=True, default="")
 
-    latitude = serializers.FloatField(required=False, allow_null=True)
-    longitude = serializers.FloatField(required=False, allow_null=True)
+    # the shared AddressModel help_text says these are derived by geocoding, which
+    # is true for `org` but not here -- they are read-only on POST only (see
+    # `__init__` below) and writable on update within `validate_distance_geocode`
+    latitude = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        help_text=_(
+            "Latitude in decimal degrees. Geocoded from the postal address on create, where submitted values are ignored. Writable on update: within 1km of the current pair, or within 50km of the new city's centre when `city` changes in the same request. Cannot be cleared once set"
+        ),
+    )
+    longitude = serializers.FloatField(
+        required=False,
+        allow_null=True,
+        help_text=_(
+            "Longitude in decimal degrees. Geocoded from the postal address on create, where submitted values are ignored. Writable on update: within 1km of the current pair, or within 50km of the new city's centre when `city` changes in the same request. Cannot be cleared once set"
+        ),
+    )
 
     available_voltage_services = serializers.MultipleChoiceField(
         choices=AVAILABLE_VOLTAGE, required=False, allow_null=True
@@ -2486,10 +2587,20 @@ class CarrierFacilitySerializer(ModelSerializer):
         queryset=Carrier.objects.all(), source="carrier"
     )
 
-    fac = serializers.SerializerMethodField()
-    carrier = serializers.SerializerMethodField()
+    fac = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `fac` object, included only when the request `depth` is high enough"
+        )
+    )
+    carrier = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `carrier` object, included only when the request `depth` is high enough"
+        )
+    )
 
-    name = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField(
+        help_text=_("Name of the facility this record refers to")
+    )
 
     class Meta:
         model = CarrierFacility
@@ -2553,9 +2664,17 @@ class CarrierSerializer(ModelSerializer):
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
-    org_name = serializers.CharField(source="org.name", read_only=True)
+    org_name = serializers.CharField(
+        source="org.name",
+        read_only=True,
+        help_text=_("Name of the organization this record belongs to"),
+    )
 
-    org = serializers.SerializerMethodField()
+    org = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `org` object, included only when the request `depth` is high enough"
+        )
+    )
 
     social_media = SocialMediaSerializer(required=False, many=True)
 
@@ -2659,12 +2778,26 @@ class InternetExchangeFacilitySerializer(ModelSerializer):
         queryset=Facility.objects.all(), source="facility"
     )
 
-    ix = serializers.SerializerMethodField()
-    fac = serializers.SerializerMethodField()
+    ix = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `ix` object, included only when the request `depth` is high enough"
+        )
+    )
+    fac = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `fac` object, included only when the request `depth` is high enough"
+        )
+    )
 
-    name = serializers.SerializerMethodField()
-    country = serializers.SerializerMethodField()
-    city = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField(
+        help_text=_("Name of the facility this record refers to")
+    )
+    country = serializers.SerializerMethodField(
+        help_text=_("Country of the facility this record refers to")
+    )
+    city = serializers.SerializerMethodField(
+        help_text=_("City of the facility this record refers to")
+    )
 
     def validate_create(self, data):
         # we don't want users to be able to create ixfacs if the parent
@@ -2742,7 +2875,11 @@ class NetworkContactSerializer(ModelSerializer):
     net_id = serializers.PrimaryKeyRelatedField(
         queryset=Network.objects.all(), source="network"
     )
-    net = serializers.SerializerMethodField()
+    net = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `net` object, included only when the request `depth` is high enough"
+        )
+    )
 
     class Meta:
         model = NetworkContact
@@ -2841,19 +2978,35 @@ class NetworkIXLanSerializer(ModelSerializer):
         source="net_side",
         allow_null=True,
         required=False,
+        help_text=_("Id of the facility housing the network side of this connection"),
     )
     ix_side_id = serializers.PrimaryKeyRelatedField(
         queryset=Facility.objects.all(),
         source="ix_side",
         allow_null=True,
         required=False,
+        help_text=_("Id of the facility housing the exchange side of this connection"),
     )
 
-    net = serializers.SerializerMethodField()
-    ixlan = serializers.SerializerMethodField()
+    net = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `net` object, included only when the request `depth` is high enough"
+        )
+    )
+    ixlan = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `ixlan` object, included only when the request `depth` is high enough"
+        )
+    )
 
-    name = serializers.SerializerMethodField()
-    ix_id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField(
+        help_text=_(
+            "Name of the exchange, suffixed with the LAN name when the LAN is named"
+        )
+    )
+    ix_id = serializers.SerializerMethodField(
+        help_text=_("Id of the exchange this connection belongs to")
+    )
 
     ipaddr4 = IPAddressField(version=4, allow_blank=True)
     ipaddr6 = IPAddressField(version=6, allow_blank=True)
@@ -2903,7 +3056,14 @@ class NetworkIXLanSerializer(ModelSerializer):
     # (pending, deleted) stay server-controlled. `operational` is read-only
     # and derived from status on save; during the deprecation window writes
     # to it are mapped onto status (see run_validation).
-    status = serializers.CharField(required=False)
+    status = serializers.CharField(
+        required=False,
+        help_text=_(
+            "Connection state: `ok` and `not-operational` are published, "
+            "`pending` awaits approval, and `deleted` is removed. API status "
+            "changes may only select `ok` or `not-operational`."
+        ),
+    )
 
     def validate_create(self, data):
         # we don't want users to be able to create netixlans if the parent
@@ -2926,6 +3086,15 @@ class NetworkIXLanSerializer(ModelSerializer):
         ]
 
         model = NetworkIXLan
+        extra_kwargs = {
+            "meta": {
+                "help_text": _(
+                    "Optional attributes using registered metadata keys. Supplying "
+                    "this document replaces stored metadata; flat metadata fields "
+                    "update individual keys."
+                )
+            }
+        }
         depth = 0
         fields = [
             "id",
@@ -3189,14 +3358,31 @@ class NetworkFacilitySerializer(ModelSerializer):
         queryset=Network.objects.all(), source="network"
     )
 
-    fac = serializers.SerializerMethodField()
-    net = serializers.SerializerMethodField()
+    fac = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `fac` object, included only when the request `depth` is high enough"
+        )
+    )
+    net = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `net` object, included only when the request `depth` is high enough"
+        )
+    )
 
-    name = serializers.SerializerMethodField()
-    country = serializers.SerializerMethodField()
-    city = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField(
+        help_text=_("Name of the facility this record refers to")
+    )
+    country = serializers.SerializerMethodField(
+        help_text=_("Country of the facility this record refers to")
+    )
+    city = serializers.SerializerMethodField(
+        help_text=_("City of the facility this record refers to")
+    )
 
-    local_asn = serializers.IntegerField(read_only=True)
+    local_asn = serializers.IntegerField(
+        read_only=True,
+        help_text=_("Autonomous System Number of the network at this facility"),
+    )
 
     class Meta:
         model = NetworkFacility
@@ -3323,7 +3509,11 @@ class NetworkSerializer(ModelSerializer):
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
-    org = serializers.SerializerMethodField()
+    org = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `org` object, included only when the request `depth` is high enough"
+        )
+    )
 
     route_server = serializers.CharField(
         required=False,
@@ -3364,12 +3554,26 @@ class NetworkSerializer(ModelSerializer):
         ("preferred_ip_mtu", ("preferred_ip_mtu",), None),
     )
 
-    ixp_update_exclude_speed = serializers.BooleanField(required=False, write_only=True)
+    ixp_update_exclude_speed = serializers.BooleanField(
+        required=False,
+        write_only=True,
+        help_text=_(
+            "Write-only. Set to exclude `speed` from automatic IX-F updates. Reflected in `ixp_update_exclude`"
+        ),
+    )
     ixp_update_exclude_is_rs_peer = serializers.BooleanField(
-        required=False, write_only=True
+        required=False,
+        write_only=True,
+        help_text=_(
+            "Write-only. Set to exclude `is_rs_peer` from automatic IX-F updates. Reflected in `ixp_update_exclude`"
+        ),
     )
     ixp_update_exclude_operational = serializers.BooleanField(
-        required=False, write_only=True
+        required=False,
+        write_only=True,
+        help_text=_(
+            "Write-only. Set to exclude `operational` from automatic IX-F updates. Reflected in `ixp_update_exclude`"
+        ),
     )
 
     info_prefixes4 = NullableIntegerField(
@@ -3379,7 +3583,13 @@ class NetworkSerializer(ModelSerializer):
         allow_null=True, required=False, validators=[validate_info_prefixes6]
     )
 
-    suggest = serializers.BooleanField(required=False, write_only=True)
+    suggest = serializers.BooleanField(
+        required=False,
+        write_only=True,
+        help_text=_(
+            "Write-only. Any value present on create, including `false`, files this record under the organization that holds suggested entities, rather than creating it directly"
+        ),
+    )
     validators = [
         AsnRdapValidator(),
     ]
@@ -3388,7 +3598,11 @@ class NetworkSerializer(ModelSerializer):
         required=False, allow_null=True, allow_blank=True, default=""
     )
 
-    rir_status = serializers.SerializerMethodField()
+    rir_status = serializers.SerializerMethodField(
+        help_text=_(
+            "`ok` when RIR data shows this network's ASN as allocated, otherwise `null`. The more detailed status kept internally is not exposed here. Read-only; values submitted on create or update are ignored"
+        )
+    )
     rir_status_updated = RemoveMillisecondsDateTimeField(default=None, read_only=True)
 
     social_media = SocialMediaSerializer(required=False, many=True)
@@ -3399,10 +3613,25 @@ class NetworkSerializer(ModelSerializer):
         choices=NET_TYPES_MULTI_CHOICE, required=False, allow_null=True
     )
 
-    info_type = LegacyInfoTypeField(required=False, allow_null=True)
+    info_type = LegacyInfoTypeField(
+        required=False,
+        allow_null=True,
+        help_text=_(
+            "Legacy single network type, superseded by `info_types`. Carries one of the network's types, but which one is not defined: it is ordered differently from `info_types` and is not necessarily its first entry. Read `info_types` for the full set. Writing this field replaces `info_types` entirely with the single value sent, discarding any `info_types` in the same request; write `info_types` instead"
+        ),
+    )
 
     class Meta:
         model = Network
+        extra_kwargs = {
+            "meta": {
+                "help_text": _(
+                    "Optional attributes using registered metadata keys. Supplying "
+                    "this document replaces stored metadata; flat metadata fields "
+                    "update individual keys."
+                )
+            }
+        }
         depth = 1
         fields = [
             "id",
@@ -3719,8 +3948,11 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
             # django-rest-framework multiplechoicefield maintains
             # a set of values and thus looses sorting.
             #
-            # we always want to return values sorted by choice
-            # definition order
+            # we always want to return values in a stable order, so sort
+            # them alphabetically (note: this is NOT choice definition
+            # order, which is what the legacy `info_type` below follows when
+            # the value came from the database -- on a create/update response
+            # `info_types` is still DRF's set and carries no order at all)
 
             if instance.info_types:
                 sorted_info_types = sorted([x for x in instance.info_types])
@@ -3889,7 +4121,11 @@ class IXLanPrefixSerializer(ModelSerializer):
         queryset=IXLan.objects.all(), source="ixlan"
     )
 
-    ixlan = serializers.SerializerMethodField()
+    ixlan = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `ixlan` object, included only when the request `depth` is high enough"
+        )
+    )
 
     prefix = IPNetworkField(
         validators=[
@@ -3997,13 +4233,21 @@ class IXLanSerializer(ModelSerializer):
       - ix_id, handled by serializer
     """
 
-    dot1q_support = serializers.SerializerMethodField()
+    dot1q_support = serializers.SerializerMethodField(
+        help_text=_(
+            "Obsolete. Always `false`; the field is deprecated and no longer describes 802.1Q VLAN tagging support. Read-only; values submitted on create or update are ignored"
+        )
+    )
 
     ix_id = serializers.PrimaryKeyRelatedField(
         queryset=InternetExchange.objects.all(), source="ix"
     )
 
-    ix = serializers.SerializerMethodField()
+    ix = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `ix` object, included only when the request `depth` is high enough"
+        )
+    )
 
     net_set = nested(
         NetworkSerializer,
@@ -4109,7 +4353,11 @@ class InternetExchangeSerializer(ModelSerializer):
         queryset=Organization.objects.all(), source="org"
     )
 
-    org = serializers.SerializerMethodField()
+    org = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `org` object, included only when the request `depth` is high enough"
+        )
+    )
 
     ixlan_set = nested(
         IXLanSerializer, exclude=["ix_id", "ix"], source="ixlan_set_active_prefetched"
@@ -4150,6 +4398,9 @@ class InternetExchangeSerializer(ModelSerializer):
         ],
         required=False,
         write_only=True,
+        help_text=_(
+            "Write-only. IP prefix to create the exchange's first LAN prefix from. Required on create, ignored on update"
+        ),
     )
 
     # Optional IX-F member list URL supplied at creation time.
@@ -4161,12 +4412,27 @@ class InternetExchangeSerializer(ModelSerializer):
         allow_blank=True,
         allow_null=True,
         default=None,
+        help_text=_(
+            "Write-only. IX-F member list URL supplied on create, used to assess auto-approval. Ignored on update, and stored on the LAN only when auto-approval succeeds"
+        ),
     )
 
-    proto_unicast = serializers.SerializerMethodField()
-    proto_ipv6 = serializers.SerializerMethodField()
+    proto_unicast = serializers.SerializerMethodField(
+        help_text=_(
+            "Whether this exchange has an active IPv4 prefix on its LAN. Derived from the prefix records, not a declared capability. Read-only; values submitted on create or update are ignored"
+        )
+    )
+    proto_ipv6 = serializers.SerializerMethodField(
+        help_text=_(
+            "Whether this exchange has an active IPv6 prefix on its LAN. Derived from the prefix records, not a declared capability. Read-only; values submitted on create or update are ignored"
+        )
+    )
 
-    media = serializers.SerializerMethodField()
+    media = serializers.SerializerMethodField(
+        help_text=_(
+            "Obsolete. Always `Ethernet`; the field is deprecated and no longer describes the physical media offered. Read-only; values submitted on create or update are ignored"
+        )
+    )
 
     validators = [
         RequiredForMethodValidator("prefix", ["POST"]),
@@ -4523,9 +4789,36 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
     org_id = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(), source="org"
     )
-    org_name = serializers.CharField(source="org.name", read_only=True)
-    org = serializers.SerializerMethodField()
+    org_name = serializers.CharField(
+        source="org.name",
+        read_only=True,
+        help_text=_("Name of the organization this record belongs to"),
+    )
+    org = serializers.SerializerMethodField(
+        help_text=_(
+            "Expanded `org` object, included only when the request `depth` is high enough"
+        )
+    )
     social_media = SocialMediaSerializer(required=False, many=True)
+
+    # model properties -- DRF builds these as ReadOnlyField with no kwargs, so
+    # help_text has to be declared here to reach the schema
+    city = serializers.ReadOnlyField(
+        help_text=_("City of the first facility in this campus, empty if it has none")
+    )
+    country = serializers.ReadOnlyField(
+        help_text=_(
+            "Country of the first facility in this campus, empty if it has none"
+        )
+    )
+    state = serializers.ReadOnlyField(
+        help_text=_("State of the first facility in this campus, empty if it has none")
+    )
+    zipcode = serializers.ReadOnlyField(
+        help_text=_(
+            "Postal code of the first facility in this campus, empty if it has none"
+        )
+    )
 
     class Meta:
         model = Campus
@@ -4926,13 +5219,41 @@ class AssetReadSerializer(serializers.Serializer):
     Read serializer for retrieving asset information.
     """
 
-    ref_tag = serializers.CharField(read_only=True)
-    ref_id = serializers.IntegerField(read_only=True)
-    asset_type = serializers.CharField(read_only=True, default="logo")
-    file_type = serializers.CharField(read_only=True)
-    file_data = serializers.CharField(read_only=True)
-    created = serializers.DateTimeField(read_only=True)
-    updated = serializers.DateTimeField(read_only=True)
+    ref_tag = serializers.CharField(
+        read_only=True,
+        help_text=_(
+            "Entity type the asset belongs to: org, fac, net, ix, carrier or campus"
+        ),
+    )
+    ref_id = serializers.IntegerField(
+        read_only=True, help_text=_("Id of the entity the asset belongs to")
+    )
+    asset_type = serializers.CharField(
+        read_only=True,
+        default="logo",
+        help_text=_("Type of asset. Only `logo` is currently supported"),
+    )
+    file_type = serializers.CharField(
+        read_only=True, help_text=_("MIME type of the asset file")
+    )
+    file_data = serializers.CharField(
+        read_only=True, help_text=_("Base64 encoded contents of the asset file")
+    )
+    # there is no asset row: the logo is a FileField on the entity itself, so
+    # `to_representation` returns the entity's handleref timestamps and neither
+    # value is specific to the asset.
+    created = serializers.DateTimeField(
+        read_only=True,
+        help_text=_(
+            "Time the entity this asset belongs to was created, not the time the asset was uploaded"
+        ),
+    )
+    updated = serializers.DateTimeField(
+        read_only=True,
+        help_text=_(
+            "Time the entity this asset belongs to was last modified. Moves on any change to that entity, not only on a change to the asset"
+        ),
+    )
 
     def to_representation(self, instance):
         """Convert entity logo to response format with base64 data"""
@@ -4983,6 +5304,33 @@ class UserSerializer(ModelSerializer):
         required=False,
         default="member",
         error_messages={"invalid_choice": "Invalid role. Must be admin or member"},
+        help_text=_(
+            "This user's role in the organization: `admin` can manage the organization, `member` cannot"
+        ),
+    )
+
+    full_name = serializers.ReadOnlyField(
+        help_text=_("First and last name of the user, combined")
+    )
+
+    # a user is not a handleref object. `status` here shadows USER_GROUP
+    # membership, which `set_verified` sets on approval; email confirmation
+    # never touches it. It is also not the object state that the shared base
+    # declaration describes, as `User` has no soft-delete.
+    status = serializers.ReadOnlyField(
+        help_text=_(
+            "Account state: `ok` once the account has been approved, either by the organization it affiliated with or by PeeringDB staff, `pending` until then. Unrelated to email address confirmation"
+        )
+    )
+
+    # django's stock help_text for this field is an admin-form instruction
+    # ("Unselect this instead of deleting accounts") and means nothing to an
+    # API consumer
+    is_active = serializers.BooleanField(
+        required=False,
+        help_text=_(
+            "Whether this account is enabled. `false` for a closed or administratively disabled account, which cannot sign in"
+        ),
     )
 
     class Meta:

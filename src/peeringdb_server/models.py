@@ -2228,7 +2228,12 @@ class Facility(
 
     # TODO: why are we redefining this, seems same as the one
     # defined in django-peeringdb
-    website = models.URLField(_("Website"), blank=True, default="")
+    website = models.URLField(
+        _("Website"),
+        blank=True,
+        default="",
+        help_text=_("Website of the facility"),
+    )
 
     ix_count = models.PositiveIntegerField(
         _("number of exchanges at this facility"),
@@ -3305,7 +3310,12 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
 
     # IX-F import fields
 
-    ixf_ixp_import_enabled = models.BooleanField(default=False)
+    ixf_ixp_import_enabled = models.BooleanField(
+        default=False,
+        help_text=_(
+            "Whether the IX-F member export at `ixf_ixp_member_list_url` is imported automatically for this LAN"
+        ),
+    )
     ixf_ixp_import_error = models.TextField(
         _("IX-F error"),
         blank=True,
@@ -5141,7 +5151,10 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
 
     # override in_dfz to default it to True on the schema level (#761)
 
-    in_dfz = models.BooleanField(default=True)
+    in_dfz = models.BooleanField(
+        default=True,
+        help_text=_("Whether this prefix is routed in the default-free zone"),
+    )
 
     @property
     def descriptive_name(self):
@@ -5447,9 +5460,27 @@ class Network(
 
         return cls.objects.filter(allow_ixp_update=True, status="ok")
 
-    netixlan_updated = models.DateTimeField(blank=True, null=True)
-    netfac_updated = models.DateTimeField(blank=True, null=True)
-    poc_updated = models.DateTimeField(blank=True, null=True)
+    netixlan_updated = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "Time the most recently changed exchange connection (`netixlan`) of this network was updated. Read-only"
+        ),
+    )
+    netfac_updated = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "Time the most recently changed facility presence (`netfac`) of this network was updated. Read-only"
+        ),
+    )
+    poc_updated = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text=_(
+            "Time the most recently changed point of contact (`poc`) of this network was updated. Read-only"
+        ),
+    )
 
     ix_count = models.PositiveIntegerField(
         _("number of exchanges at this network"),
@@ -6640,10 +6671,18 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         _("email address"), max_length=254, null=True, unique=True
     )
     first_name = models.CharField(
-        _("first name"), max_length=254, blank=True, validators=[validate_account_name]
+        _("first name"),
+        max_length=254,
+        blank=True,
+        validators=[validate_account_name],
+        help_text=_("Given name of the user"),
     )
     last_name = models.CharField(
-        _("last name"), max_length=254, blank=True, validators=[validate_account_name]
+        _("last name"),
+        max_length=254,
+        blank=True,
+        validators=[validate_account_name],
+        help_text=_("Family name of the user"),
     )
     is_staff = models.BooleanField(
         _("staff status"),
@@ -6657,7 +6696,11 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             "Designates whether this user should be treated as active. Unselect this instead of deleting accounts."
         ),
     )
-    date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
+    date_joined = models.DateTimeField(
+        _("date joined"),
+        default=timezone.now,
+        help_text=_("Time this user account was registered"),
+    )
     created = CreatedDateTimeField()
     updated = UpdatedDateTimeField()
     status = models.CharField(_("status"), max_length=254, default="ok")

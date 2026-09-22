@@ -60,7 +60,14 @@ class CustomSchemaGenerator(SchemaGenerator):
             schema["info"]["version"] = settings.PEERINGDB_VERSION
 
         if not self.description:
-            schema["info"]["description"] = "PeeringDB REST API"
+            # object docs repeat per operation, so facts that hold for every
+            # object type live here instead -- once, at the top of the page (#1981)
+            descr_file = settings.API_DOC_INCLUDES.get("api_description", "")
+            if descr_file:
+                with open(descr_file) as fh:
+                    schema["info"]["description"] = fh.read()
+            else:
+                schema["info"]["description"] = "PeeringDB REST API"
 
         return schema
 
@@ -110,6 +117,10 @@ class BaseSchema(AutoSchema):
         "DateTimeField": "date-time",
         "DateField": "date",
     }
+
+    # inherited from django-handleref: these mean the same thing on every model,
+    # and carry their help_text on the shared serializer rather than the model
+    shared_handleref_fields = ("id", "created", "updated", "status", "version")
 
     serializer_method_field_map = {
         "org": OrganizationSerializer,
@@ -476,6 +487,12 @@ class BaseSchema(AutoSchema):
             "Retrieves a list of `{obj_type}` type objects"
         ).format(obj_type=model.HandleRef.tag)
 
+        # some list endpoints build their own queryset and never look at query
+        # params -- documenting filters there advertises behaviour that doesn't
+        # exist, so emit none at all
+        if not getattr(self.view, "supports_query_filters", False):
+            return
+
         parameters.extend(
             [
                 {
@@ -527,6 +544,37 @@ class BaseSchema(AutoSchema):
         self.augment_list_filters(model, serializer, parameters)
         op_dict.update(parameters=sorted(parameters, key=lambda x: x["name"]))
 
+    def serializer_help_text(self, serializer, field):
+        """
+        Return help_text declared on the serializer for *field*, for fields that
+        carry it there rather than on the model (#1981).
+
+        Only consulted when the model field has none, so it never overrides
+        model-level documentation.
+        """
+
+        name = field.split("__")[-1]
+
+        # for `<relation>__<name>` the name belongs to the related model, so only
+        # trust this serializer for fields that mean the same thing everywhere
+        if "__" in field and name not in self.shared_handleref_fields:
+            return None
+
+        slz_field = getattr(serializer, "fields", {}).get(name)
+        return getattr(slz_field, "help_text", None)
+
+    def is_api_model(self, model):
+        """
+        Whether model is exposed as its own endpoint, i.e. part of the public
+        API surface rather than an internal model reachable through a relation.
+        """
+        # function-level: importing rest at module scope is circular
+        # (rest -> serializers -> ... -> api_schema, mid-initialization)
+        from peeringdb_server.rest import REFTAG_MAP
+
+        tag = getattr(getattr(model, "HandleRef", None), "tag", None)
+        return tag in REFTAG_MAP
+
     def augment_list_filters(self, model, serializer, parameters):
         """
         Further augment openapi schema for object listing by filling
@@ -568,6 +616,14 @@ class BaseSchema(AutoSchema):
 
             if blocked:
                 continue
+
+            # only traverse into models that are themselves API endpoints, or
+            # internal models get fully advertised -- e.g. ix would expose the
+            # whole user table via ixf_import_request_user.
+            #
+            # Runtime exclusions are maintained separately in FILTER_EXCLUDE.
+            if "__" in field and not self.is_api_model(getattr(fld, "model", None)):
+                continue
             elif typ == "ForeignKey" and (fld.one_to_many or hasattr(fld, "multiple")):
                 # mark prefix of nested object as blocked so we
                 # don't expose it's fields to the documentation
@@ -589,7 +645,9 @@ class BaseSchema(AutoSchema):
 
             # if field has a help_text set, append it to description
 
-            help_text = getattr(fld, "help_text", None)
+            help_text = getattr(fld, "help_text", None) or self.serializer_help_text(
+                serializer, field
+            )
             if help_text:
                 description.insert(0, f"{help_text}")
 

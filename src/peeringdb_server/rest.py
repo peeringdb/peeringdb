@@ -462,6 +462,12 @@ class ModelViewSet(viewsets.ModelViewSet):
     """
 
     paginate_by_param = ("limit",)
+
+    # get_queryset() below applies query params as filters. The openapi schema
+    # only documents filter/pagination parameters for viewsets that set this,
+    # so a viewset that ignores query params doesn't advertise them (#1981).
+    supports_query_filters = True
+
     permission_classes = (
         ModelViewSetPermissions,
         BasicAuthMFABlockWrite,

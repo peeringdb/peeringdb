@@ -21,6 +21,8 @@ When adding nested data to a serializer, it should use the `nested` helper funct
 
 API queries through url parameters are handled, sanitized and passed to the django query in `rest.py::ModelViewSet::get_queryset`
 
+`serializers.FILTER_EXCLUDE` controls which related fields can be queried. A relation name excludes all of its nested fields, including lookup suffixes. In particular, `/api/ix` ignores `ixf_import_request_user__*` parameters because the import request user is internal. Supported filters such as `name`, `org_id`, and `org__name` remain available.
+
 For more complex queries (e.g., stuff that cannot go into a django queryset filter as one field evaluation), one can define such logic in the
 `Serializer` itself using its `prepare_query` method. Check `IXLanPrefixSerializer` and the `whereis` filter for an example.
 
