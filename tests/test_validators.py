@@ -1460,11 +1460,11 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         (
             [
                 {"service": "linkedin", "identifier": "jane-doe-pro"},
-                {"service": "bluesky", "identifier": "myblueskyhandle"},
+                {"service": "bluesky", "identifier": "bsky.app"},
             ],
             [
                 {"service": "linkedin", "identifier": "jane-doe-pro"},
-                {"service": "bluesky", "identifier": "myblueskyhandle"},
+                {"service": "bluesky", "identifier": "bsky.app"},
             ],
         ),
         (
@@ -1532,6 +1532,7 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         ([{"service": "youtube", "identifier": ".mychannel"}], False),
         ([{"service": "bluesky", "identifier": "-bad-handle"}], False),
         ([{"service": "bluesky", "identifier": "bad--handle"}], False),
+        ([{"service": "bluesky", "identifier": "bskyapp"}], False),
         ([{"service": "reddit", "identifier": "user-name"}], False),
         ([{"service": "snapchat", "identifier": "user_name"}], False),
         ([{"service": "telegram", "identifier": "user-name"}], False),
@@ -1568,7 +1569,7 @@ def test_validate_social_media(value, validated):
         ("Alice.BSKY.SOCIAL", True),
         ("a" * 63 + ".com", True),
         (("a" * 63 + ".") * 3 + "a" * 61, True),
-        ("example", True),
+        ("example", False),
         ("@example.com", False),
         ("https://bsky.app/profile/example.com", False),
         ("example..com", False),

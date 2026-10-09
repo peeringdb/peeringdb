@@ -812,6 +812,7 @@ def validate_identifier(service: str, identifier: str) -> None:
 
     service = service.lower()
     is_valid = False  # Default to False, will be updated if a regex matches
+    custom_error_message = None
 
     # Define regex patterns and specific rules for each service
     if service == "x":
@@ -867,24 +868,16 @@ def validate_identifier(service: str, identifier: str) -> None:
         is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{5,32}$", identifier))
 
     elif service == "bluesky":
-        # https://atproto.com/specs/handle#handle-identifier-syntax
-        if "." in identifier:
-            is_valid = len(identifier) <= 253 and bool(
-                re.fullmatch(
-                    r"([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+"
-                    r"[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?",
-                    identifier,
-                )
+        # Bluesky: https://atproto.com/specs/handle#handle-identifier-syntax
+        # All bluesky handles are domain-like identifiers.
+        is_valid = len(identifier) <= 253 and bool(
+            re.fullmatch(
+                r"([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+"
+                r"[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?",
+                identifier,
             )
-        elif "--" in identifier:
-            is_valid = False
-        else:
-            # Preserve previously accepted short identifiers for compatibility.
-            is_valid = bool(
-                re.fullmatch(
-                    r"^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,30}[a-zA-Z0-9])?$", identifier
-                )
-            )
+        )
+        custom_error_message = f"Invalid identifier {identifier} for service {service}! bluesky handles must be domain-like. For example: 'bsky.app'."
 
     elif service == "threads":
         # Threads: Follows Instagram's identifier rules due to integration.
@@ -907,7 +900,10 @@ def validate_identifier(service: str, identifier: str) -> None:
 
     # If after all checks, the identifier is not valid, raise an exception.
     if not is_valid:
-        raise ValueError(f"Invalid identifier {identifier} for service {service}!")
+        if custom_error_message:
+            raise ValueError(custom_error_message)
+        else:
+            raise ValueError(f"Invalid identifier {identifier} for service {service}!")
 
 
 def validate_url(url: str) -> None:
