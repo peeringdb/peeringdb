@@ -867,11 +867,19 @@ def validate_identifier(service: str, identifier: str) -> None:
         is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{5,32}$", identifier))
 
     elif service == "bluesky":
-        # Bluesky: 4-32 characters, alphanumeric (case-insensitive) and hyphens.
-        # Must start and end with letter/number. No consecutive hyphens.
-        if "--" in identifier:
+        # https://atproto.com/specs/handle#handle-identifier-syntax
+        if "." in identifier:
+            is_valid = len(identifier) <= 253 and bool(
+                re.fullmatch(
+                    r"([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+"
+                    r"[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?",
+                    identifier,
+                )
+            )
+        elif "--" in identifier:
             is_valid = False
         else:
+            # Preserve previously accepted short identifiers for compatibility.
             is_valid = bool(
                 re.fullmatch(
                     r"^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,30}[a-zA-Z0-9])?$", identifier

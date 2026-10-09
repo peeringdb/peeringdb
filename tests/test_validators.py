@@ -1559,6 +1559,41 @@ def test_validate_social_media(value, validated):
 
 
 @pytest.mark.parametrize(
+    "identifier,is_valid",
+    [
+        ("example.com", True),
+        ("alice.bsky.social", True),
+        ("8.cn", True),
+        ("xn--bcher-kva.de", True),
+        ("Alice.BSKY.SOCIAL", True),
+        ("a" * 63 + ".com", True),
+        (("a" * 63 + ".") * 3 + "a" * 61, True),
+        ("example", True),
+        ("@example.com", False),
+        ("https://bsky.app/profile/example.com", False),
+        ("example..com", False),
+        ("-example.com", False),
+        ("example-.com", False),
+        (".example.com", False),
+        ("example.com.", False),
+        ("example.123", False),
+        ("example_com", False),
+        ("bücher.de", False),
+        ("a" * 64 + ".com", False),
+        (("a" * 63 + ".") * 3 + "a" * 62, False),
+    ],
+)
+def test_validate_bluesky_handle(identifier, is_valid):
+    """Accept domain handles without weakening label and length checks."""
+    value = [{"service": "bluesky", "identifier": identifier}]
+    if is_valid:
+        assert validate_social_media(value) == value
+    else:
+        with pytest.raises(ValidationError):
+            validate_social_media(value)
+
+
+@pytest.mark.parametrize(
     "website,org_website,validated",
     [
         # success validation website not null
