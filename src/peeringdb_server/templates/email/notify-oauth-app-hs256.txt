@@ -1,0 +1,10 @@
+{% load i18n %}{% autoescape off %}
+{% language 'en' %}{% blocktrans with name=application.name client_id=application.client_id %}Your PeeringDB OAuth application "{{ name }}" (client ID {{ client_id }}) is configured to sign OpenID Connect ID tokens with HS256. PeeringDB stores client secrets hashed and can no longer issue HS256 ID tokens.{% endblocktrans %}
+
+{% if migrated %}{% blocktrans %}We have switched the application to RS256. ID tokens are now signed with PeeringDB's RSA key. If your application verifies ID token signatures, it must use the public keys published at the JWKS endpoint below instead of the client secret.{% endblocktrans %}{% else %}{% blocktrans %}Until the application is switched to RS256, sign-ins that request the openid scope will fail. Please select RS256 in the application settings. ID tokens are then signed with PeeringDB's RSA key; if your application verifies ID token signatures, it must use the public keys published at the JWKS endpoint below instead of the client secret.{% endblocktrans %}{% endif %}
+
+{% trans "Application settings:" %} {{ application_url }}
+{% trans "JWKS endpoint:" %} {{ jwks_url }}
+
+{% blocktrans with email=support_email %}If you have any questions, please contact us at {{ email }}.{% endblocktrans %}
+{% endlanguage %}{% endautoescape %}

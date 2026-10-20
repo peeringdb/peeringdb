@@ -1,4 +1,5 @@
 import json
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import jwt
 import pytest
@@ -7,7 +8,9 @@ from django.test import Client
 from django.urls import reverse
 from oauth2_provider.models import AccessToken, Application, RefreshToken
 from oauth2_provider.settings import oauth2_settings
+from oauthlib.oauth2.rfc6749.endpoints.authorization import AuthorizationEndpoint
 
+from mainsite.oauth2.validators import OIDCValidator
 from peeringdb_server.models import OAuthApplication, Organization, User
 from tests.util import reset_group_ids
 
@@ -747,6 +750,194 @@ def expand_id_token(id_token):
     payload = jwt.utils.base64url_decode(parts[1]).decode("utf-8")
     payload_json = json.loads(payload)
     return payload_json
+
+
+AUTHORIZE_CLIENT_ID = "client_id_user"
+AUTHORIZE_CLIENT_SECRET = "client_secret_user"
+AUTHORIZE_REDIRECT_URI = "https://example.com"
+
+
+def authorize_at_endpoint(user, app_grant_type, response_type, scope, **extra_params):
+    """
+    Authorizes an RS256 app for a user whose login session has amr
+    pwd,mfa and returns the client and the parameters of the redirect
+    """
+
+    app_fields = dict(
+        user=user,
+        name="User app",
+        client_id=AUTHORIZE_CLIENT_ID,
+        client_secret=AUTHORIZE_CLIENT_SECRET,
+        redirect_uris=AUTHORIZE_REDIRECT_URI,
+        skip_authorization=False,
+        authorization_grant_type=app_grant_type,
+        client_type=Application.CLIENT_CONFIDENTIAL,
+        algorithm="RS256",
+    )
+    app = Application.objects.create(**app_fields)
+    OAuthApplication.objects.create(id=app.id, **app_fields)
+
+    client = Client()
+    client.force_login(user)
+    session = client.session
+    session["amr"] = ["pwd", "mfa"]
+    session["oauth_session"] = True
+    session.save()
+    cookie_signer = get_cookie_signer(salt="oauth_session")
+    client.cookies["oauth_session"] = cookie_signer.sign(session.session_key)
+
+    auth_url = reverse("oauth2_provider:authorize")
+    auth_params = {
+        "client_id": AUTHORIZE_CLIENT_ID,
+        "response_type": response_type,
+        "redirect_uri": AUTHORIZE_REDIRECT_URI,
+        "scope": scope,
+        "nonce": "nonce",
+        "state": "state",
+        **extra_params,
+    }
+    assert client.get(auth_url, auth_params).status_code == 200
+
+    # the consent form posts back to the URL it was served from
+    resp = client.post(
+        f"{auth_url}?{urlencode(auth_params)}", {**auth_params, "allow": "Authorize"}
+    )
+
+    assert resp.status_code == 302
+    assert resp.url.startswith(AUTHORIZE_REDIRECT_URI)
+    return client, parse_qs(urlparse(resp.url).fragment)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grant_type,response_type",
+    [
+        (Application.GRANT_IMPLICIT, "id_token token"),
+        (Application.GRANT_IMPLICIT, "id_token"),
+        (Application.GRANT_OPENID_HYBRID, "code id_token"),
+        (Application.GRANT_OPENID_HYBRID, "code id_token token"),
+    ],
+)
+def test_oauth_authorization_endpoint_oidc_amr(
+    oauth2_org_admin_user, grant_type, response_type
+):
+    """
+    Implicit and hybrid flows issue the ID token at the authorization endpoint,
+    with amr taken from the login session (#490)
+    """
+
+    user, _, _ = oauth2_org_admin_user
+    _, returned = authorize_at_endpoint(
+        user, grant_type, response_type, "openid profile"
+    )
+
+    id_token_payload = expand_id_token(returned["id_token"][0])
+    assert id_token_payload["amr"] == ["pwd", "mfa"]
+    assert id_token_payload["nonce"] == "nonce"
+
+    if "code" in returned:
+        # the ID token from the code exchange carries the same amr, from the
+        # grant: the relying party's backend has no session
+        resp = Client().post(
+            reverse("oauth2_provider:token"),
+            {
+                "grant_type": "authorization_code",
+                "code": returned["code"][0],
+                "redirect_uri": AUTHORIZE_REDIRECT_URI,
+                "client_id": AUTHORIZE_CLIENT_ID,
+                "client_secret": AUTHORIZE_CLIENT_SECRET,
+            },
+        )
+        assert resp.status_code == 200
+        assert expand_id_token(resp.json()["id_token"])["amr"] == ["pwd", "mfa"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "grant_type,response_type,scope",
+    [
+        (Application.GRANT_IMPLICIT, "id_token token", "openid profile"),
+        (Application.GRANT_IMPLICIT, "token", "profile"),
+        # oauthlib saves the access token before the grant, so there is no
+        # grant to read amr from yet
+        (Application.GRANT_OPENID_HYBRID, "code token", "openid profile"),
+        (Application.GRANT_OPENID_HYBRID, "code id_token token", "openid profile"),
+    ],
+)
+def test_oauth_authorization_endpoint_access_token_amr(
+    oauth2_org_admin_user, grant_type, response_type, scope
+):
+    """
+    An access token issued at the authorization endpoint records the amr of
+    the login session (#490)
+    """
+
+    user, _, _ = oauth2_org_admin_user
+    _, returned = authorize_at_endpoint(user, grant_type, response_type, scope)
+
+    access_token_object = AccessToken.objects.get(token=returned["access_token"][0])
+    assert access_token_object.access_token_info.amr == "pwd,mfa"
+
+
+@pytest.mark.django_db
+def test_oauth_authorization_endpoint_ignores_grant_type_param(oauth2_org_admin_user):
+    """
+    A grant_type in the authorization request's query string does not make it
+    look like a token request (#490)
+    """
+
+    user, _, _ = oauth2_org_admin_user
+    _, returned = authorize_at_endpoint(
+        user,
+        Application.GRANT_IMPLICIT,
+        "id_token token",
+        "openid profile",
+        grant_type="implicit",
+    )
+
+    assert expand_id_token(returned["id_token"][0])["amr"] == ["pwd", "mfa"]
+    access_token_object = AccessToken.objects.get(token=returned["access_token"][0])
+    assert access_token_object.access_token_info.amr == "pwd,mfa"
+
+
+@pytest.mark.django_db
+def test_oauth_authorization_endpoint_amr_with_request_body(
+    oauth2_org_admin_user, monkeypatch
+):
+    """
+    amr still comes from the login session if django-oauth-toolkit passes a
+    request body to oauthlib at the authorization endpoint, which it does not
+    do today (#490)
+    """
+
+    original_authorize = AuthorizationEndpoint.create_authorization_response
+
+    def authorize_with_body(self, uri, **kwargs):
+        kwargs["body"] = "allow=Authorize"
+        return original_authorize(self, uri, **kwargs)
+
+    monkeypatch.setattr(
+        AuthorizationEndpoint, "create_authorization_response", authorize_with_body
+    )
+
+    decoded_bodies = []
+    original_finalize = OIDCValidator.finalize_id_token
+
+    def finalize_id_token(self, id_token, token, token_handler, request):
+        decoded_bodies.append(request.decoded_body)
+        return original_finalize(self, id_token, token, token_handler, request)
+
+    monkeypatch.setattr(OIDCValidator, "finalize_id_token", finalize_id_token)
+
+    user, _, _ = oauth2_org_admin_user
+    _, returned = authorize_at_endpoint(
+        user, Application.GRANT_IMPLICIT, "id_token token", "openid profile"
+    )
+
+    assert decoded_bodies == [[("allow", "Authorize")]]
+    assert expand_id_token(returned["id_token"][0])["amr"] == ["pwd", "mfa"]
+    access_token_object = AccessToken.objects.get(token=returned["access_token"][0])
+    assert access_token_object.access_token_info.amr == "pwd,mfa"
 
 
 @pytest.mark.django_db

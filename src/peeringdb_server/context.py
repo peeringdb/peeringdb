@@ -27,6 +27,12 @@ _incremental_update: contextvars.ContextVar[int | None] = contextvars.ContextVar
 # IXLanPrefix protection for active netixlans
 _forced_ixlan_deletion = contextvars.ContextVar("forced_ixlan_deletion", default=False)
 
+# signals that the OAuth authorization endpoint is issuing tokens (implicit
+# and hybrid flows)
+_issuing_at_authorization_endpoint = contextvars.ContextVar(
+    "issuing_at_authorization_endpoint", default=False
+)
+
 
 @contextmanager
 def current_request(request: HttpRequest | None = None) -> Iterator[HttpRequest | None]:
@@ -74,6 +80,29 @@ def forced_ixlan_deletion() -> Iterator[None]:
 def is_forced_ixlan_deletion() -> bool:
     """Returns True if currently inside a forced_ixlan_deletion context."""
     return _forced_ixlan_deletion.get()
+
+
+@contextmanager
+def issuing_at_authorization_endpoint() -> Iterator[None]:
+    """
+    Signals that the OAuth authorization endpoint is creating its response,
+    where implicit and hybrid flows issue tokens without a grant to read
+    amr from (#490)
+
+    Opened by the authorization view itself rather than inferred from the
+    oauthlib request, whose attributes the client can set through query
+    parameters.
+    """
+    token = _issuing_at_authorization_endpoint.set(True)
+    try:
+        yield
+    finally:
+        _issuing_at_authorization_endpoint.reset(token)
+
+
+def is_issuing_at_authorization_endpoint() -> bool:
+    """Returns True if currently inside an issuing_at_authorization_endpoint context."""
+    return _issuing_at_authorization_endpoint.get()
 
 
 @contextmanager

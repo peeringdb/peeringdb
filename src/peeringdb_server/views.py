@@ -862,6 +862,31 @@ class ApplicationFormMixin:
             return value
 
         form.fields["allowed_origins"].clean = validate_allowed_origins
+
+        # HS256 ID tokens cannot be signed with hashed client secrets (#2055).
+        # An app still on HS256 keeps the choice so an unrelated edit cannot
+        # silently drop OIDC support, but it must switch before saving.
+        hs256 = get_application_model().HS256_ALGORITHM
+        algorithm_field = form.fields["algorithm"]
+        if form.instance.algorithm != hs256:
+            algorithm_field.choices = [
+                choice for choice in algorithm_field.choices if choice[0] != hs256
+            ]
+
+        original_algorithm_clean = algorithm_field.clean
+
+        def validate_algorithm(value):
+            value = original_algorithm_clean(value)
+            if value == hs256:
+                raise ValidationError(
+                    _(
+                        "HS256 is no longer supported. Select RS256 and verify "
+                        "ID tokens with the keys published at the JWKS endpoint."
+                    )
+                )
+            return value
+
+        algorithm_field.clean = validate_algorithm
         return form
 
 

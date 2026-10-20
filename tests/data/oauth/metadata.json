@@ -48,7 +48,6 @@
       "amr"
     ],
     "signing_algorithms_supported": [
-      "RS256",
-      "HS256"
+      "RS256"
     ]
   }
