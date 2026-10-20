@@ -174,3 +174,25 @@ def test_change_primary(profile_user):
     assert user.emailaddress_set.filter(email="user@domain.com", primary=True).exists()
     assert user.emailaddress_set.filter(primary=True).count() == 1
     assert user.email == "user@domain.com"
+
+
+@pytest.mark.django_db
+def test_add_email_retry_after_wrong_password_is_not_cached(profile_user, settings):
+    """
+    A non-staff user who mistypes the password when adding an email address
+    can retry right away; the negative cache must not replay the 401 for the
+    corrected request, whose only difference is the POST body
+    """
+
+    settings.NEGATIVE_CACHE_ENABLED = True
+    client = Client()
+    client.force_login(profile_user)
+    url = reverse("profile-add-email")
+
+    response = client.post(url, {"email": "user@domain.com", "password": "wrong"})
+    assert response.status_code == 401
+
+    response = client.post(url, {"email": "user@domain.com", "password": "user"})
+    assert response.status_code == 200
+    assert response.headers.get("X-Cached-Response") is None
+    assert profile_user.emailaddress_set.filter(email="user@domain.com").exists()
