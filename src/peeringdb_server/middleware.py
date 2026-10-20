@@ -23,7 +23,7 @@ from django.core.exceptions import MiddlewareNotUsed
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
-from django.urls import resolve, reverse
+from django.urls import NoReverseMatch, resolve, reverse
 from django.utils import timezone, translation
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.deprecation import MiddlewareMixin
@@ -512,9 +512,30 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
     Middleware that uses Django's cache framework with Redis backend to cache error responses.
     """
 
+    # Error responses on these paths are never replayed. Passkey registration
+    # and adding an email address answer a mistyped password with a 401, and
+    # the corrected retry differs only in its POST body, so a cached 401 would
+    # reject the right password until it expires. The 401s still count towards
+    # the repeated-error throttle.
+    exempt_url_names = ("security-keys-request-registration", "profile-add-email")
+
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
+
+    def is_exempt(self, request):
+        """
+        Returns True if error responses for this request must not be cached.
+
+        An exempt name that no longer resolves is logged and ignored, so the
+        rest of the negative cache keeps working.
+        """
+        try:
+            paths = {reverse(name) for name in self.exempt_url_names}
+        except NoReverseMatch:
+            log.error("negative cache exempt url name does not resolve", exc_info=True)
+            return False
+        return request.path in paths
 
     def process_response(self, request, response):
         """
@@ -544,21 +565,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
     def _process_response_cached(self, request, response):
         # Check if the response is an error response
         if response.status_code in [401, 403, 429]:
-            # Generate the cache key
-            cache_key = self.generate_cache_key(request)
-            # Cache the response content and status code with specific expiry time
-            cache_data = {
-                "content": response.content.decode(),
-                "status": response.status_code,
-                "content-type": response.get("content-type"),
-            }
-            expiry_setting = f"NEGATIVE_CACHE_EXPIRY_{response.status_code}"
-            caches["negative"].set(
-                cache_key, cache_data, timeout=getattr(settings, expiry_setting)
-            )
-
             # If the response is 401 or 403, increment the count for this IP address
-            # so we can throttle it if it exceeds the limit
+            # so we can throttle it if it exceeds the limit. Counted before the
+            # exemption check, so nothing in that check can stop the throttle.
             if response.status_code in [401, 403]:
                 throttle_key = self.generate_ratelimit_key(request)
                 throttle_count = caches["negative"].get(throttle_key, 0)
@@ -566,6 +575,20 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
                 # cache for 1 minute
                 caches["negative"].set(throttle_key, throttle_count, timeout=60)
+
+            if not self.is_exempt(request):
+                # Generate the cache key
+                cache_key = self.generate_cache_key(request)
+                # Cache the response content and status code with specific expiry time
+                cache_data = {
+                    "content": response.content.decode(),
+                    "status": response.status_code,
+                    "content-type": response.get("content-type"),
+                }
+                expiry_setting = f"NEGATIVE_CACHE_EXPIRY_{response.status_code}"
+                caches["negative"].set(
+                    cache_key, cache_data, timeout=getattr(settings, expiry_setting)
+                )
 
     def process_request(self, request):
         """
@@ -625,6 +648,9 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
                     )
                 response["X-Cached-Response"] = "True"
                 return response
+
+        if self.is_exempt(request):
+            return
 
         # Generate the cache key
         cache_key = self.generate_cache_key(request)

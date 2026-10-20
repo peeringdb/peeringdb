@@ -14,6 +14,7 @@ from django.test import (
     modify_settings,
     override_settings,
 )
+from django.urls import reverse
 from django.urls.resolvers import ResolverMatch
 from django.utils.timezone import make_aware
 from oauth2_provider.models import AccessToken
@@ -26,6 +27,7 @@ from peeringdb_server.middleware import (
     CacheControlMiddleware,
     EnforceMFAMiddleware,
     PDBCommonMiddleware,
+    RedisNegativeCacheMiddleware,
 )
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
 
@@ -1071,3 +1073,74 @@ class TestCacheControlMiddlewareCredentials(APITestCase):
         assert response.status_code == 200
         assert "s-maxage=900" in response["Cache-Control"]
         assert "no-store" not in response["Cache-Control"]
+
+
+@pytest.mark.django_db
+@override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=1)
+def test_pdb_negative_cache_exempt_path_still_throttled():
+    """
+    Error responses on an exempt path are not replayed, but they still count
+    towards the repeated 401/403 throttle
+    """
+
+    user = User.objects.create_user("negcache-exempt", password="right-password")
+    client = Client()
+    client.force_login(user)
+    url = reverse("security-keys-request-registration")
+
+    for _ in range(2):
+        response = client.post(url, {"password": "wrong"})
+        assert response.status_code == 401
+        assert response.headers.get("X-Cached-Response") is None
+
+    response = client.post(url, {"password": "right-password"})
+    assert response.status_code == 429
+    assert response.headers.get("X-Throttled-Response") == "True"
+
+
+@pytest.mark.django_db
+@override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=1)
+def test_pdb_negative_cache_unresolvable_exempt_name_keeps_throttle():
+    """
+    An exempt url name that no longer resolves must not stop the 401/403
+    throttle or the replay of cached responses on other paths
+    """
+
+    user = User.objects.create_user("negcache-unresolvable", password="right-password")
+    client = Client()
+    client.force_login(user)
+    url = reverse("security-keys-request-registration")
+
+    with patch.object(
+        RedisNegativeCacheMiddleware, "exempt_url_names", ("does-not-exist",)
+    ):
+        response = client.post(url, {"password": "wrong"})
+        assert response.status_code == 401
+        response = client.post(url, {"password": "wrong"})
+        assert response.headers.get("X-Cached-Response") == "True"
+        response = client.post(url, {"password": "wrong"})
+        assert response.status_code == 429
+        assert response.headers.get("X-Throttled-Response") == "True"
+
+
+@pytest.mark.django_db
+@override_settings(CSRF_USE_SESSIONS=False, NEGATIVE_CACHE_REPEATED_RATE_LIMIT=1)
+def test_pdb_negative_cache_throttle_counted_before_exemption_check():
+    """
+    The 401/403 throttle is counted before the exemption check, so a failing
+    check cannot switch the throttle off
+    """
+
+    user = User.objects.create_user("negcache-check-fails", password="right-password")
+    client = Client()
+    client.force_login(user)
+    url = reverse("security-keys-request-registration")
+
+    with patch.object(
+        RedisNegativeCacheMiddleware, "is_exempt", side_effect=RuntimeError
+    ):
+        assert client.post(url, {"password": "wrong"}).status_code == 401
+        assert client.post(url, {"password": "wrong"}).status_code == 401
+        response = client.post(url, {"password": "wrong"})
+        assert response.status_code == 429
+        assert response.headers.get("X-Throttled-Response") == "True"

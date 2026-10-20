@@ -311,3 +311,40 @@ def test_enrollment_can_sign_out(client, enrollment_user):
     assert client.get("/logout").status_code == 302
     assert SESSION_KEY not in client.session
     assert not client.session.get("passkey_setup_required")
+
+
+@pytest.mark.parametrize("passkey_required", [False, True])
+def test_registration_retry_after_wrong_password_is_not_cached(
+    client, settings, passkey_required
+):
+    """
+    A non-staff user who mistypes the password for passkey registration can
+    retry right away; the negative cache must not replay the 401 for the
+    corrected request, whose only difference is the POST body
+    """
+
+    settings.NEGATIVE_CACHE_ENABLED = True
+    user = User.objects.create_user(
+        "passkey-registration-retry",
+        password=PASSWORD,
+        email="retry@example.net",
+        status="ok",
+    )
+    if passkey_required:
+        org = Organization.objects.create(name="Registration retry", status="ok")
+        org.set_org_flag(settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH, True)
+        org.save()
+        org.usergroup.user_set.add(user)
+        password_login(client, user)
+        assert client.session["passkey_setup_required"] is True
+    else:
+        client.force_login(user)
+
+    url = reverse("security-keys-request-registration") + "?passkey=1"
+    response = client.post(url, {"password": "wrong"})
+    assert response.status_code == 401
+
+    response = client.post(url, {"password": PASSWORD})
+    assert response.status_code == 200
+    assert response.headers.get("X-Cached-Response") is None
+    assert response.json()["authenticatorSelection"]["residentKey"] == "required"
