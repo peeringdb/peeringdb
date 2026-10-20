@@ -165,11 +165,16 @@ class RestClient:
 
         return self.create(typ, data)
 
-    def rm(self, typ, id):
+    def rm(self, typ, id, **params):
         """
         remove typ by id
+
+        Keyword arguments are sent as query parameters, which is how a
+        bodyless DELETE carries flags such as `confirm` (#1717).
         """
-        return self._load(self._request(typ, id=id, method="DELETE"))
+        return self._load(
+            self._request(typ, id=id, method="DELETE", params=params or None)
+        )
 
     def type_wrap(self, typ):
         return TypeWrap(self, typ)

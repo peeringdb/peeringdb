@@ -1715,11 +1715,13 @@ PeeringDB = {
    */
 
   PeeringDB.API = {
-    request : function(method, ref, id, data, success) {
+    request : function(method, ref, id, data, success, params) {
 
       var url = "/api/"+ref;
       if(id)
          url += "/"+id
+      if(params)
+         url += "?"+$.param(params);
 
       var prepared;
       if(data) {
@@ -3846,6 +3848,7 @@ PeeringDB = {
         }
 
         var me = $(this),
+            target = this,
             data = this.data,
             id = parseInt(this.data._id);
         var social_media = [];
@@ -3923,7 +3926,8 @@ PeeringDB = {
               me.trigger("success", r.data[0]);
             else
               me.trigger("success", {});
-          }
+          },
+          target.params
         ).done(function(r) {
           if (r && r.meta && r.meta.geovalidation_warning){
             PeeringDB.add_geo_warning(r.meta, endpoint);
@@ -3932,6 +3936,13 @@ PeeringDB = {
           }
 
         }).fail(function(r) {
+          // the api refuses a delete whose side effects the operator has not
+          // confirmed yet, and leaves the confirming to the module (#1717)
+          if(r.status == 400 && r.responseJSON && r.responseJSON.meta &&
+             r.responseJSON.meta.confirmation_required) {
+            me.trigger("confirmation-required", [r.responseJSON.meta.error, target]);
+            return;
+          }
           if(r.status == 400) {
             var k,i,info=[gettext("The server rejected your data")]; ///
             errorType = "HTTPError"
@@ -4100,9 +4111,29 @@ PeeringDB = {
       remove : function(id, row, trigger, container) {
         var b = PeeringDB.confirm(gettext("Remove") + " "+row.data("edit-label"), "remove"); ///
         var me = this;
+        var confirmed = false;
+        var cancelled = false;
+
         $(this.target).on("success", function(ev, data) {
+          if(cancelled)
+            return;
           if(b)
             me.listing_remove(id, row, trigger, container);
+          if(confirmed)
+            // the confirmed side effects reach past the row that was removed,
+            // so re-render the page to show them (#1717)
+            PeeringDB.refresh();
+        });
+
+        $(this.target).on("confirmation-required", function(ev, message, target) {
+          if(PeeringDB.confirm(message)) {
+            confirmed = true;
+            target.params = { confirm : "true" };
+            target.execute();
+          } else {
+            cancelled = true;
+            $(target).trigger("success", ["Canceled"]);
+          }
         });
 
         if(b) {

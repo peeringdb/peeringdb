@@ -516,6 +516,55 @@ def rollback(modeladmin, request, queryset):
 rollback.short_description = _("ROLLBACK")
 
 
+def warn_last_prefix(request, objs):
+    """
+    Surface the side effect of deleting an exchange's last prefix in the
+    admin the same way `not_deletable_reason` is surfaced (#1717).
+
+    Django's own delete confirmation only lists the rows it is about to
+    touch, so without this an AC member cleaning up a stray prefix gets no
+    indication that the exchange goes with it.
+
+    `objs` is every row the operation removes, not one row: asked per row,
+    a save that removes several prefixes of one exchange is silent, since
+    each still has a sibling at the time. Group by ixlan and ask instead
+    whether the save leaves the exchange with nothing.
+    """
+
+    by_ixlan = {}
+
+    for obj in objs:
+        if not isinstance(obj, IXLanPrefix):
+            # nothing else carries the last-prefix side effect
+            continue
+
+        if not obj.pk or obj.status not in ["ok", "pending"]:
+            # not a row this save takes down, so it neither empties the
+            # exchange nor counts towards the number that do
+            continue
+
+        # every /cp delete surface refuses a protected prefix rather than
+        # removing it (the `soft_delete` loop, `delete_view`, and
+        # `StatusForm.clean` for the inline), so it keeps the exchange
+        # listed and the operator gets the protection error instead
+        if not obj.deletable:
+            continue
+
+        by_ixlan.setdefault(obj.ixlan_id, []).append(obj)
+
+    for removed in by_ixlan.values():
+        # the rule itself lives on the model, so the warning and the delete
+        # that follows it cannot drift apart
+        if not IXLanPrefix.empties_exchange(removed):
+            continue
+
+        # asked before anything is deleted, so the peer and facility counts
+        # in the message are the ones being taken down
+        message = removed[0].exchange_removal_warning(prefix_count=len(removed))
+
+        messages.warning(request, f"⚠️ {removed[0].ixlan.ix}: {message}")
+
+
 @transaction.atomic
 @reversion.create_revision()
 def soft_delete(modeladmin, request, queryset):
@@ -556,6 +605,9 @@ def soft_delete(modeladmin, request, queryset):
         )
 
         messages.warning(request, _("Please confirm deletion of selected objects."))
+
+        warn_last_prefix(request, queryset)
+
         return TemplateResponse(request, "admin/soft_delete.html", context)
 
 
@@ -1206,6 +1258,23 @@ class IXLanAdmin(SoftDeleteAdmin):
             "ix",
         ],
     }
+
+    def save_formset(self, request, form, formset, change):
+        """
+        Warn when the prefixes flagged for deletion on this save are every
+        one the exchange has left (#1717).
+
+        The inline deletes on save with no confirmation step of its own, and
+        the delete flags only exist on the POST, so a banner rendered on the
+        GET cannot answer this -- it does not yet know which rows are going.
+        """
+
+        if formset.model is IXLanPrefix:
+            warn_last_prefix(
+                request, [deleted.instance for deleted in formset.deleted_forms]
+            )
+
+        super().save_formset(request, form, formset, change)
 
 
 class IXLanIXFMemberImportLogEntryInline(admin.TabularInline):
@@ -1922,6 +1991,11 @@ class IXLanPrefixAdmin(SoftDeleteAdmin, ISODateTimeMixin):
             messages.error(request, obj.not_deletable_reason)
             # Redirect back to the changelist page
             return HttpResponseRedirect("../")
+        if obj and request.method == "GET":
+            # django's confirmation page only lists the prefix rows, so the
+            # exchange removal that comes with a last-prefix delete has to be
+            # spelled out separately (#1717)
+            warn_last_prefix(request, [obj])
         return super().delete_view(request, object_id, extra_context)
 
 

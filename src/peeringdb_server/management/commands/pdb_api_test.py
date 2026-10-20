@@ -3318,6 +3318,125 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
+    def test_ixpfx_last_prefix_confirmation(self):
+        """
+        Deleting the last prefix of an exchange is refused until the caller
+        confirms it, and then takes the exchange with it (#1717)
+        """
+
+        ix = InternetExchange(
+            org=SHARED["org_rw_ok"], status="ok", name="Exchange Issue 1717"
+        )
+        ix.save()
+
+        prefix = IXLanPrefix.objects.create(
+            ixlan=ix.ixlan,
+            status="ok",
+            prefix=self.get_prefix4(),
+            protocol="IPv4",
+        )
+
+        with pytest.raises(InvalidRequestException) as excinfo:
+            self.db_org_admin.rm("ixpfx", prefix.id)
+
+        assert excinfo.value.extra["meta"]["confirmation_required"] is True
+        assert (
+            "remove the exchange from PeeringDB"
+            in (excinfo.value.extra["meta"]["error"])
+        )
+
+        # an unconfirmed attempt is a normal interaction and must not open an
+        # admin committee ticket the way a protected deletion does
+        assert not DeskProTicket.objects.filter(
+            subject__icontains=f"ixpfx-{prefix.id}"
+        ).exists()
+
+        prefix.refresh_from_db()
+        ix.refresh_from_db()
+
+        self.assertEqual(prefix.status, "ok")
+        self.assertEqual(ix.status, "ok")
+
+        self.db_org_admin.rm("ixpfx", prefix.id, confirm="true")
+
+        prefix.refresh_from_db()
+        ix.refresh_from_db()
+
+        self.assertEqual(prefix.status, "deleted")
+        self.assertEqual(ix.status, "deleted")
+        self.assertEqual(ix.ixlan.status, "deleted")
+
+    ##########################################################################
+
+    def test_ixpfx_last_prefix_confirmation_not_needed(self):
+        """
+        Deleting a prefix while the exchange keeps another one needs no
+        confirmation and leaves the exchange listed (#1717)
+        """
+
+        ixlan = SHARED["ixlan_rw_ok"]
+
+        prefix = IXLanPrefix.objects.create(
+            ixlan=ixlan,
+            status="ok",
+            prefix=self.get_prefix4(),
+            protocol="IPv4",
+        )
+
+        # the exchange keeps the prefixes it was set up with
+        assert ixlan.ixpfx_set_active.exclude(pk=prefix.pk).exists()
+
+        self.db_org_admin.rm("ixpfx", prefix.id)
+
+        prefix.refresh_from_db()
+        ixlan.ix.refresh_from_db()
+
+        self.assertEqual(prefix.status, "deleted")
+        self.assertEqual(ixlan.ix.status, "ok")
+
+    ##########################################################################
+
+    def test_ixpfx_last_prefix_in_use_is_refused_outright(self):
+        """
+        A last prefix a peer is still addressed out of is refused with the
+        protection error, not offered for confirmation first (#1717)
+        """
+
+        ix = InternetExchange(
+            org=SHARED["org_rw_ok"], status="ok", name="Exchange Issue 1717 In Use"
+        )
+        ix.save()
+
+        prefix_addr = self.get_prefix4()
+        prefix = IXLanPrefix.objects.create(
+            ixlan=ix.ixlan,
+            status="ok",
+            prefix=prefix_addr,
+            protocol="IPv4",
+        )
+        NetworkIXLan.objects.create(
+            network=SHARED["net_rw_ok"],
+            ixlan=ix.ixlan,
+            asn=SHARED["net_rw_ok"].asn,
+            speed=1000,
+            status="ok",
+            ipaddr4=str(ipaddress.ip_network(prefix_addr)[1]),
+        )
+
+        with pytest.raises(PermissionDeniedException) as excinfo:
+            self.db_org_admin.rm("ixpfx", prefix.id)
+
+        assert "is still using this prefix" in str(excinfo.value)
+        assert "remove the exchange from PeeringDB" not in str(excinfo.value)
+
+        prefix.refresh_from_db()
+        ix.refresh_from_db()
+
+        self.assertEqual(prefix.status, "ok")
+        self.assertEqual(ix.status, "ok")
+
+    ##########################################################################
+
     def test_ixpfx_renumber_validation_001(self):
         # Using 206.126.236.0/24 (valid public IP space instead of TEST-NET)
         prefix = IXLanPrefix.objects.create(

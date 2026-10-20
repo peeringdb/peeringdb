@@ -12,6 +12,7 @@ import base64
 import datetime
 import json
 import os
+from urllib.parse import urlencode
 
 import pytest
 from django.conf import settings
@@ -152,7 +153,11 @@ class DummyRestClient(RestClient):
         fnc = getattr(self.api_client, method.lower())
         if not data:
             data = {}
-        if params:
+        if params and method.upper() == "DELETE":
+            # the test client would send these as a request body, where the
+            # api does not look for them
+            url = f"{url}?{urlencode(params, doseq=True)}"
+        elif params:
             data.update(**params)
         res = fnc(url, data, format="json")
 
