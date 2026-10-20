@@ -141,6 +141,21 @@ def _filters_may_produce_duplicates(model, filters):
     return False
 
 
+def _deletion_confirmed(request):
+    """
+    Return whether the request carries the explicit confirmation that a
+    delete with side effects requires (#1717).
+
+    Passed as a `confirm` query parameter rather than in the body so that
+    clients sending a bodyless DELETE can supply it.
+    """
+    return str(request.query_params.get("confirm", "")).lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
 class DataException(ValueError):
     pass
 
@@ -993,6 +1008,27 @@ class ModelViewSet(viewsets.ModelViewSet):
             user_key = get_user_key_from_request(request)
             org_key = get_org_key_from_request(request)
             if check_permissions_from_request(request, obj, "d"):
+                # some deletes take more than the addressed object with them
+                # and are refused until the caller confirms (#1717). Returning
+                # here keeps it out of the ProtectedAction path below, so no
+                # admin committee ticket is filed for an unconfirmed attempt.
+                if hasattr(obj, "deletion_confirmation_required") and not (
+                    _deletion_confirmed(request)
+                ):
+                    confirmation = obj.deletion_confirmation_required()
+                    if confirmation:
+                        # the renderer rebuilds `meta` for error responses, so
+                        # extra fields go through meta_response and the human
+                        # message through `detail`, which becomes meta.error
+                        if not hasattr(request, "meta_response"):
+                            request.meta_response = {}
+                        request.meta_response["confirmation_required"] = True
+
+                        return Response(
+                            status=status.HTTP_400_BAD_REQUEST,
+                            data={"detail": confirmation},
+                        )
+
                 with reversion.create_revision():
                     if request.user and request.user.is_authenticated:
                         reversion.set_user(request.user)

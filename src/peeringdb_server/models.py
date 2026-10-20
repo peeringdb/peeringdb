@@ -5304,6 +5304,151 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
         self._not_deletable_reason = None
         return True
 
+    @classmethod
+    def empties_exchange(cls, prefixes):
+        """
+        Returns whether removing exactly `prefixes` leaves the exchange they
+        belong to listed with no active-or-pending prefix (#1717).
+
+        The set form is the general rule and `is_last_prefix` is the one-row
+        case of it. They have to stay in agreement -- the admin can empty an
+        exchange in a single save, where no individual row is the last one,
+        and a warning computed from a different rule than the delete that
+        follows it is how that case went unannounced in the first place.
+
+        All of `prefixes` are assumed to share one ixlan; the admin groups
+        its selection before asking.
+        """
+
+        prefixes = [
+            prefix
+            for prefix in prefixes
+            if prefix.id and prefix.status in ["ok", "pending"]
+        ]
+
+        if not prefixes:
+            return False
+
+        ixlan = prefixes[0].ixlan
+
+        if ixlan.status != "ok" or ixlan.ix.status != "ok":
+            # either the prefix is going away because a parent is being
+            # deleted -- which is a cascade, not an operator removing a
+            # prefix, and is what stops the cascade from re-entering here --
+            # or the exchange is not listed in the first place, so it cannot
+            # end up published without a prefix
+            return False
+
+        return not ixlan.ixpfx_set_active_or_pending.exclude(
+            pk__in=[prefix.pk for prefix in prefixes]
+        ).exists()
+
+    @property
+    def is_last_prefix(self):
+        """
+        Returns whether this is the only remaining active-or-pending prefix
+        of an exchange that is still listed (#1717).
+
+        Drives both the confirmation the API asks for before the delete and
+        the exchange removal that follows it.
+        """
+
+        return self.empties_exchange([self])
+
+    def deletion_confirmation_required(self):
+        """
+        Returns the message the caller has to confirm before this prefix can
+        be deleted, or None when the delete has no side effects (#1717).
+
+        Consumed generically by the REST API's destroy handler.
+        """
+
+        # a prefix that peers are still addressed out of cannot be deleted at
+        # all, so asking to confirm the exchange removal would promise an
+        # outcome the delete then refuses. Fall through to the protection
+        # error instead, which names the peer that is in the way.
+        if not self.is_last_prefix or not self.deletable:
+            return None
+
+        return self.exchange_removal_warning()
+
+    def exchange_removal_warning(self, prefix_count=1):
+        """
+        Returns the message naming what is removed along with the exchange
+        when it loses its final prefix (#1717).
+
+        Split out of `deletion_confirmation_required()` so a caller that has
+        already established the exchange is being emptied can ask for the
+        text on its own -- the admin can empty one with several prefixes in
+        a single save, where no individual row is the last one. That is what
+        `prefix_count` covers, so the sentence says "the last two" rather
+        than claiming one row is all that is left.
+        """
+
+        # the exchange deletion is forced past the exchange's own guards, so
+        # it takes any active peers and facility connections with it. Those
+        # records belong to other organizations, so name them here -- the
+        # operator confirming this prompt is the one authorizing their
+        # removal and should not have to find out afterwards.
+        ix = self.ixlan.ix
+        also_removed = []
+
+        net_count = ix.derived_network_count
+        if net_count:
+            also_removed.append(_("{} active peer(s)").format(net_count))
+
+        ixfac_count = ix.ixfac_set_active.count()
+        if ixfac_count:
+            also_removed.append(
+                _("{} active facility connection(s)").format(ixfac_count)
+            )
+
+        if prefix_count > 1:
+            lead = _(
+                "These are the last {} prefixes for this exchange. Deleting "
+                "them will also remove the exchange from PeeringDB"
+            ).format(prefix_count)
+        else:
+            lead = _(
+                "This is the last prefix for this exchange. Deleting it will "
+                "also remove the exchange from PeeringDB"
+            )
+
+        if also_removed:
+            return _("{}, together with its {}. Do you want to continue?").format(
+                lead, ", ".join(str(item) for item in also_removed)
+            )
+
+        return _("{}. Do you want to continue?").format(lead)
+
+    def delete(self, hard=False, force=False):
+        """
+        Soft-deletes the prefix, taking the exchange with it when this was the
+        exchange's last prefix (#1717).
+        """
+
+        # `force` and `hard` are administrative overrides -- orphan cleanup
+        # (pdb_fix_orphaned_objects) and row purges -- and must not depublish a
+        # live exchange as a side effect. Only an ordinary soft delete
+        # represents an operator removing a prefix.
+        take_ix_with_it = not hard and not force and self.is_last_prefix
+
+        if not take_ix_with_it:
+            return super().delete(hard=hard, force=force)
+
+        ix = self.ixlan.ix
+
+        with transaction.atomic():
+            result = super().delete(hard=hard, force=force)
+            # forced past the exchange's own facility-connection and peer
+            # guards: a prefix-less exchange should not stay listed regardless
+            # of what else hangs off it. What goes with it is spelled out in
+            # deletion_confirmation_required() so the operator confirming the
+            # delete knows other organizations' records are included.
+            ix.delete(force=True)
+
+        return result
+
 
 @grainy_model(namespace="network", parent="org")
 @reversion.register

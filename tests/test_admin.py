@@ -994,6 +994,408 @@ class AdminTests(TestCase):
         assert len(messages) == 1
         assert "Please confirm deletion of selected objects." in str(messages[0])
 
+    def test_ixpfx_last_prefix_warning(self):
+        """
+        Test that /cp warns that deleting an exchange's last prefix takes
+        the exchange with it (#1717)
+
+        Django's own confirmation pages only list the prefix rows, so
+        without this the exchange would disappear unannounced.
+        """
+
+        org = models.Organization.objects.create(
+            name="Org Last Prefix Admin", status="ok"
+        )
+        ix = models.InternetExchange.objects.create(
+            name="IX Last Prefix Admin", org=org, status="ok"
+        )
+        ixpfx = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.123.0/24", status="ok"
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        # bulk SOFT DELETE action confirmation page
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlanprefix_changelist"),
+            {"_selected_action": ixpfx.id, "action": "soft_delete"},
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        # single object delete confirmation page
+        response = client.get(
+            reverse("admin:peeringdb_server_ixlanprefix_delete", args=(ixpfx.id,))
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        # merely opening the ixlan change form deletes nothing, so it says
+        # nothing -- the inline warns on the save that carries the flags
+        response = client.get(
+            reverse("admin:peeringdb_server_ixlan_change", args=(ix.ixlan.id,))
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        # none of the confirmation pages changed anything
+        ixpfx.refresh_from_db()
+        ix.refresh_from_db()
+
+        assert ixpfx.status == "ok"
+        assert ix.status == "ok"
+
+        # the inline warns on the save that carries the delete flag, which is
+        # also the save that takes the exchange
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlan_change", args=(ix.ixlan.id,)),
+            self.ixlan_form_data(ix.ixlan, [ixpfx], delete=[ixpfx]),
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        ix.refresh_from_db()
+        assert ix.status == "deleted"
+
+    def test_ixpfx_last_prefix_no_warning_when_another_prefix_remains(self):
+        """
+        Test that the last-prefix warning is not raised while the exchange
+        keeps another prefix (#1717)
+        """
+
+        org = models.Organization.objects.create(
+            name="Org Two Prefixes Admin", status="ok"
+        )
+        ix = models.InternetExchange.objects.create(
+            name="IX Two Prefixes Admin", org=org, status="ok"
+        )
+        ixpfx = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.124.0/24", status="ok"
+        )
+        models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:db8:124::/64", status="ok"
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.get(
+            reverse("admin:peeringdb_server_ixlanprefix_delete", args=(ixpfx.id,))
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+    def ixlan_form_data(self, ixlan, prefixes, delete=()):
+        """
+        Build a post body for the ixlan change form, flagging the prefixes
+        in `delete` for removal on the prefix inline (#1717)
+        """
+
+        data = {
+            "arp_sponge": "",
+            "ixf_ixp_member_list_url_visible": "Private",
+            "ix": ixlan.ix.id,
+            "status": ixlan.status,
+            "mtu": 1500,
+            "ixpfx_set-TOTAL_FORMS": len(prefixes),
+            "ixpfx_set-INITIAL_FORMS": len(prefixes),
+            "ixpfx_set-MIN_NUM_FORMS": 0,
+            "ixpfx_set-MAX_NUM_FORMS": 1000,
+            "netixlan_set-TOTAL_FORMS": 0,
+            "netixlan_set-INITIAL_FORMS": 0,
+            "netixlan_set-MIN_NUM_FORMS": 0,
+            "netixlan_set-MAX_NUM_FORMS": 1000,
+        }
+
+        for idx, prefix in enumerate(prefixes):
+            data.update(
+                {
+                    f"ixpfx_set-{idx}-id": prefix.id,
+                    f"ixpfx_set-{idx}-ixlan": ixlan.id,
+                    f"ixpfx_set-{idx}-status": prefix.status,
+                    f"ixpfx_set-{idx}-protocol": prefix.protocol,
+                    f"ixpfx_set-{idx}-prefix": str(prefix.prefix),
+                }
+            )
+            if prefix in delete:
+                data[f"ixpfx_set-{idx}-DELETE"] = "on"
+
+        return data
+
+    def test_ixpfx_last_prefix_warning_for_whole_selection(self):
+        """
+        Test that /cp warns when one operation removes every prefix an
+        exchange has, not just when a row is the last one left (#1717)
+
+        Asked per row, both prefixes report that a sibling remains.
+        """
+
+        org = models.Organization.objects.create(name="Org Both Prefixes", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="IX Both Prefixes", org=org, status="ok"
+        )
+        ixpfx4 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.125.0/24", status="ok"
+        )
+        ixpfx6 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:db8:125::/64", status="ok"
+        )
+
+        # neither row is the last one on its own
+        assert ixpfx4.is_last_prefix is False
+        assert ixpfx6.is_last_prefix is False
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlanprefix_changelist"),
+            {
+                "_selected_action": [ixpfx4.id, ixpfx6.id],
+                "action": "soft_delete",
+            },
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        warning = [
+            msg for msg in messages if "remove the exchange from PeeringDB" in msg
+        ]
+
+        # one warning for the exchange, not one per prefix
+        assert len(warning) == 1
+        assert "last 2 prefixes" in warning[0]
+
+        # the confirmation page changed nothing
+        ix.refresh_from_db()
+        assert ix.status == "ok"
+
+    def test_ixpfx_last_prefix_no_warning_for_partial_selection(self):
+        """
+        Test that selecting only some of an exchange's prefixes raises no
+        warning, since the exchange keeps the rest (#1717)
+        """
+
+        org = models.Organization.objects.create(
+            name="Org Partial Selection", status="ok"
+        )
+        ix = models.InternetExchange.objects.create(
+            name="IX Partial Selection", org=org, status="ok"
+        )
+        ixpfx4 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.126.0/24", status="ok"
+        )
+        models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:db8:126::/64", status="ok"
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlanprefix_changelist"),
+            {"_selected_action": [ixpfx4.id], "action": "soft_delete"},
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+    def test_ixpfx_last_prefix_no_warning_when_a_selected_prefix_is_protected(self):
+        """
+        Test that a protected prefix in the selection suppresses the warning,
+        since the delete skips it and the exchange stays listed (#1717)
+        """
+
+        org = models.Organization.objects.create(
+            name="Org Protected Selection", status="ok"
+        )
+        ix = models.InternetExchange.objects.create(
+            name="IX Protected Selection", org=org, status="ok"
+        )
+        net = models.Network.objects.create(
+            name="Net Protected Selection", org=org, asn=64599, status="ok"
+        )
+        ixpfx4 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.127.0/24", status="ok"
+        )
+        ixpfx6 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:db8:127::/64", status="ok"
+        )
+        models.NetworkIXLan.objects.create(
+            network=net,
+            ixlan=ix.ixlan,
+            asn=net.asn,
+            speed=1000,
+            status="ok",
+            ipaddr4="198.51.127.1",
+        )
+
+        assert ixpfx4.deletable is False
+        assert ixpfx6.deletable is True
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlanprefix_changelist"),
+            {
+                "_selected_action": [ixpfx4.id, ixpfx6.id],
+                "action": "soft_delete",
+            },
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+    def test_ixpfx_last_prefix_warning_on_ixlan_inline_save(self):
+        """
+        Test that the ixlan change form warns when the prefixes flagged for
+        deletion on the save are all the exchange has (#1717)
+
+        The exchange really does go, which is what made the silence a bug
+        rather than a cosmetic gap.
+        """
+
+        org = models.Organization.objects.create(name="Org Inline Delete", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="IX Inline Delete", org=org, status="ok"
+        )
+        ixpfx4 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.128.0/24", status="ok"
+        )
+        ixpfx6 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:504:16:128::/64", status="ok"
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlan_change", args=(ix.ixlan.id,)),
+            self.ixlan_form_data(ix.ixlan, [ixpfx4, ixpfx6], delete=[ixpfx4, ixpfx6]),
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        warning = [
+            msg for msg in messages if "remove the exchange from PeeringDB" in msg
+        ]
+
+        assert len(warning) == 1
+        assert "last 2 prefixes" in warning[0]
+
+        ix.refresh_from_db()
+        assert ix.status == "deleted"
+
+    def test_ixpfx_last_prefix_no_warning_on_ixlan_inline_partial_save(self):
+        """
+        Test that the ixlan change form stays silent when the save leaves the
+        exchange a prefix (#1717)
+        """
+
+        org = models.Organization.objects.create(name="Org Inline Keep", status="ok")
+        ix = models.InternetExchange.objects.create(
+            name="IX Inline Keep", org=org, status="ok"
+        )
+        ixpfx4 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.129.0/24", status="ok"
+        )
+        ixpfx6 = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv6", prefix="2001:504:16:129::/64", status="ok"
+        )
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlan_change", args=(ix.ixlan.id,)),
+            self.ixlan_form_data(ix.ixlan, [ixpfx4, ixpfx6], delete=[ixpfx4]),
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        ix.refresh_from_db()
+        ixpfx4.refresh_from_db()
+
+        assert ix.status == "ok"
+        assert ixpfx4.status == "deleted"
+
+    def test_ixpfx_last_prefix_no_warning_on_ixlan_inline_protected_save(self):
+        """
+        Test that flagging a protected prefix for deletion on the ixlan
+        inline neither deletes it nor warns about the exchange (#1717)
+
+        The inline has no refusal of its own at the call site: it works
+        because `StatusForm.clean` clears `DELETE` before raising, which is
+        what keeps the form invalid and `save_formset` unreached. If that
+        ordering ever changed, the prefix would be deleted with the warning
+        suppressed -- the silent exchange removal this is meant to close.
+        """
+
+        org = models.Organization.objects.create(
+            name="Org Inline Protected", status="ok"
+        )
+        ix = models.InternetExchange.objects.create(
+            name="IX Inline Protected", org=org, status="ok"
+        )
+        net = models.Network.objects.create(
+            name="Net Inline Protected", org=org, asn=64598, status="ok"
+        )
+        ixpfx = models.IXLanPrefix.objects.create(
+            ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.130.0/24", status="ok"
+        )
+        models.NetworkIXLan.objects.create(
+            network=net,
+            ixlan=ix.ixlan,
+            asn=net.asn,
+            speed=1000,
+            status="ok",
+            ipaddr4="198.51.130.1",
+        )
+
+        assert ixpfx.deletable is False
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.post(
+            reverse("admin:peeringdb_server_ixlan_change", args=(ix.ixlan.id,)),
+            self.ixlan_form_data(ix.ixlan, [ixpfx], delete=[ixpfx]),
+            follow=True,
+        )
+
+        assert response.status_code == 200
+        messages = [str(msg) for msg in get_messages(response.wsgi_request)]
+        assert not any("remove the exchange from PeeringDB" in msg for msg in messages)
+
+        ixpfx.refresh_from_db()
+        ix.refresh_from_db()
+
+        assert ixpfx.status == "ok"
+        assert ix.status == "ok"
+
     def test_delete_user(self):
         """
         Test that deleting with pending UOAR works
