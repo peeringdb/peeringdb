@@ -435,11 +435,6 @@ class Command(BaseCommand):
                                 f"{net.name} ({net.asn}) has been RIR unassigned for too long, deleting"
                             )
                             if self.commit:
-                                # networks cannot be deleted while they have
-                                # active netixlans in them, so we delete those first
-                                net.netixlan_set_active.delete()
-
-                                # then we delete the network
                                 net.delete()
                         else:
                             days = pdb_settings.KEEP_RIR_STATUS - notok_since.days
