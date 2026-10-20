@@ -1,10 +1,12 @@
 import datetime
 import json
+import re
 import urllib
 
 import pytest
 from django.conf import settings as dj_settings
 from django.contrib.admin.sites import AdminSite
+from django.contrib.admin.sites import site as admin_site
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
@@ -13,6 +15,8 @@ from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django_grainy.models import GroupPermission
+from django_otp.plugins.otp_email.models import EmailDevice
+from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_security_keys.models import SecurityKey
 from grainy.const import PERM_CRUD
@@ -27,6 +31,34 @@ class AdminTests(TestCase):
     """
 
     asn_count = 0
+
+    MFA_INLINE_HEADINGS = (
+        "User has these TOTP devices",
+        "User has these Webauthn Security Keys",
+        "User has these Backup Token sets",
+        "Email one-time password (auto-provisioned)",
+    )
+
+    MFA_INLINE_PREFIXES = (
+        "totpdevice_set",
+        "webauthn_security_keys",
+        "staticdevice_set",
+        "emaildevice_set",
+    )
+
+    # none of the four MFA device models is a peeringdb_server model, so
+    # admin.PERMISSION_APP_LABELS does not cover them and a non-superuser is
+    # shown none of these sections without their own grants (#2009)
+    MFA_DEVICE_APP_LABELS = [
+        "otp_totp",
+        "django_security_keys",
+        "otp_static",
+        "otp_email",
+    ]
+
+    BACKUP_TOKENS = ("aaaa1111", "bbbb2222", "cccc3333")
+
+    EMAIL_OTP_TOKEN = "998877"
 
     @classmethod
     def entity_data(cls, org, tag):
@@ -96,7 +128,7 @@ class AdminTests(TestCase):
             is_staff=True,
         )
         readonly_group = Group.objects.create(name="readonly")
-        for app_label in admin.PERMISSION_APP_LABELS:
+        for app_label in admin.PERMISSION_APP_LABELS + cls.MFA_DEVICE_APP_LABELS:
             GroupPermission.objects.create(
                 group=readonly_group, namespace=app_label, permission=0x01
             )
@@ -1100,6 +1132,71 @@ class AdminTests(TestCase):
         # assert that the there are 1 grainy permissions
         assert len(user_permission.grainy_permissions.all()) == 1
 
+    def create_mfa_devices(self, user):
+        """
+        Give `user` one device of every type the change form renders.
+        """
+
+        devices = {
+            "totp": TOTPDevice.objects.create(user=user, name="default"),
+            "securitykey": SecurityKey.objects.create(
+                name="test",
+                type="security-key",
+                user=user,
+                credential_id="1234",
+                credential_public_key="deadbeef",
+            ),
+            "static": StaticDevice.objects.create(user=user, name="backup tokens"),
+            "email": EmailDevice.objects.create(
+                user=user,
+                confirmed=True,
+                token=self.EMAIL_OTP_TOKEN,
+                last_used_at=timezone.now(),
+            ),
+        }
+
+        for token in self.BACKUP_TOKENS:
+            StaticToken.objects.create(device=devices["static"], token=token)
+
+        return devices
+
+    def get_user_change_page(self, user):
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse("admin:peeringdb_server_user_change", args=[user.id])
+        response = client.get(url, follow=True)
+
+        assert response.status_code == 200
+        return response.content.decode()
+
+    def read_inline_cell(self, page, prefix, field):
+        """
+        Return the rendered value of a read-only inline column.
+
+        Scoped to the inline group named by prefix, because a column name like
+        last_used_at is rendered by more than one MFA section. The single-match
+        assertion is what keeps this honest if a fixture ever gives a user two
+        devices of the same type -- an unscoped read would silently return the
+        first row.
+        """
+
+        group = re.search(
+            rf'id="{prefix}-group".*?(?=id="[\w-]+-group"|</form>)', page, re.S
+        )
+        assert group, f"no inline group rendered for {prefix}"
+
+        cells = re.findall(
+            rf'grp-td {field} .*?<div class="grp-readonly">(.*?)</div>',
+            group.group(0),
+            re.S,
+        )
+        assert cells, f"no read-only cell rendered for {prefix}.{field}"
+        assert len(cells) == 1, (
+            f"{len(cells)} read-only cells rendered for {prefix}.{field}, expected 1"
+        )
+        return cells[0].strip()
+
     def test_userpermission_org_root_namespace(self):
         """
         Test that the #1157 cleanup also removes a permission at exactly the
@@ -1331,46 +1428,313 @@ class AdminTests(TestCase):
 
     def test_get_user_change_form_with_inline_fields(self):
         """
-        Test load page for TOTP devices and Webauthn Security Keys inline form fields
+        Test that all configured MFA device types are listed on the user change
+        form (#2009)
         """
 
         userchange = get_user_model().objects.create_user(
             username="user", email="user@localhost", password="user"
         )
 
-        # create user TOTP devices
-        totpdevice = TOTPDevice.objects.create(user=userchange, name="default")
-        totpdevice.save()
+        devices = self.create_mfa_devices(userchange)
 
-        # create user to Webauthn Security Keys
-        securitykey = SecurityKey.objects.create(
-            name="test",
-            type="security-key",
-            user=userchange,
-            credential_id="1234",
-            credential_public_key="deadbeef",
+        page = self.get_user_change_page(userchange)
+
+        for heading in self.MFA_INLINE_HEADINGS:
+            assert f'<h2 class="grp-collapse-handler">{heading}</h2>' in page
+
+        # the TOTP and security key sections are read-only like the rest
+        assert 'name="totpdevice_set-0-name"' not in page
+        assert 'name="webauthn_security_keys-0-name"' not in page
+        assert self.read_inline_cell(page, "totpdevice_set", "name") == "default"
+        assert (
+            self.read_inline_cell(page, "webauthn_security_keys", "type")
+            == "security-key"
         )
-        securitykey.save()
+        # SecurityKey.updated is auto_now and this key never authenticated, so
+        # the column must not be presented as a last-use time
+        assert '<div class="grp-th last-updated">' in page
+        assert '<div class="grp-th last-used">' not in page
+        assert (
+            self.read_inline_cell(page, "webauthn_security_keys", "last_updated") != "-"
+        )
+
+        # every throttled device type shows its lockout state
+        for prefix in ("totpdevice_set", "staticdevice_set", "emaildevice_set"):
+            assert (
+                self.read_inline_cell(page, prefix, "throttling_failure_count") == "0"
+            )
+
+        # only the TOTP device page can clear a lockout, so only TOTP links to
+        # it. the static and email device pages have no throttling fields, the
+        # static one lists every backup code, and the security key one is
+        # editable
+        assert (
+            reverse("admin:otp_totp_totpdevice_change", args=[devices["totp"].pk])
+            in page
+        )
+        for key, url_name in (
+            ("static", "admin:otp_static_staticdevice_change"),
+            ("email", "admin:otp_email_emaildevice_change"),
+            ("securitykey", "admin:django_security_keys_securitykey_change"),
+        ):
+            assert reverse(url_name, args=[devices[key].pk]) not in page
+
+        # backup tokens are reported as a count of what is left
+        assert self.read_inline_cell(
+            page, "staticdevice_set", "unused_token_count"
+        ) == str(len(self.BACKUP_TOKENS))
+
+        # email otp falls back to the account address when the device carries
+        # no alternative one
+        assert (
+            self.read_inline_cell(page, "emaildevice_set", "token_destination")
+            == "user@localhost"
+        )
+
+        # last_used_at is what distinguishes an auto-provisioned email device
+        # from one that has actually authenticated someone
+        assert self.read_inline_cell(page, "emaildevice_set", "last_used_at") != "-"
+        assert self.read_inline_cell(page, "staticdevice_set", "last_used_at") == "-"
+
+    def test_get_user_change_form_hides_mfa_secrets(self):
+        """
+        Test that no MFA section renders a secret: the TOTP shared key, backup
+        token values or the live email one-time password (#2009)
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_secrets", email="user_secrets@localhost", password="user"
+        )
+
+        devices = self.create_mfa_devices(userchange)
+
+        page = self.get_user_change_page(userchange)
+
+        assert devices["totp"].key not in page
+
+        for token in self.BACKUP_TOKENS:
+            assert token not in page
+
+        assert self.EMAIL_OTP_TOKEN not in page
+
+    def test_get_user_change_form_without_mfa_devices(self):
+        """
+        Test that the user change form renders for a user with no MFA devices
+        at all (#2009)
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_nodevices", email="user_nodevices@localhost", password="user"
+        )
+
+        page = self.get_user_change_page(userchange)
+
+        for heading in self.MFA_INLINE_HEADINGS:
+            assert f'<h2 class="grp-collapse-handler">{heading}</h2>' in page
+
+    def user_change_post_data(self, user, devices):
+        """
+        Build a POST payload for the user change form that leaves every MFA
+        device exactly as it is, mirroring what the browser submits.
+        """
+
+        return {
+            "username": user.username,
+            "email": user.email,
+            "first_name": "Changed",
+            "last_name": "",
+            "date_joined_0": user.date_joined.strftime("%Y-%m-%d"),
+            "date_joined_1": user.date_joined.strftime("%H:%M:%S"),
+            "affiliation_requests-TOTAL_FORMS": "0",
+            "affiliation_requests-INITIAL_FORMS": "0",
+            "affiliation_requests-MIN_NUM_FORMS": "0",
+            "affiliation_requests-MAX_NUM_FORMS": "1000",
+            # the MFA sections contribute no editable fields, so the browser
+            # submits their management form and the row ids only
+            "totpdevice_set-TOTAL_FORMS": "1",
+            "totpdevice_set-INITIAL_FORMS": "1",
+            "totpdevice_set-MIN_NUM_FORMS": "0",
+            "totpdevice_set-MAX_NUM_FORMS": "0",
+            "totpdevice_set-0-id": str(devices["totp"].id),
+            "totpdevice_set-0-user": str(user.id),
+            "webauthn_security_keys-TOTAL_FORMS": "1",
+            "webauthn_security_keys-INITIAL_FORMS": "1",
+            "webauthn_security_keys-MIN_NUM_FORMS": "0",
+            "webauthn_security_keys-MAX_NUM_FORMS": "0",
+            "webauthn_security_keys-0-id": str(devices["securitykey"].id),
+            "webauthn_security_keys-0-user": str(user.id),
+            "staticdevice_set-TOTAL_FORMS": "1",
+            "staticdevice_set-INITIAL_FORMS": "1",
+            "staticdevice_set-MIN_NUM_FORMS": "0",
+            "staticdevice_set-MAX_NUM_FORMS": "0",
+            "staticdevice_set-0-id": str(devices["static"].id),
+            "staticdevice_set-0-user": str(user.id),
+            "emaildevice_set-TOTAL_FORMS": "1",
+            "emaildevice_set-INITIAL_FORMS": "1",
+            "emaildevice_set-MIN_NUM_FORMS": "0",
+            "emaildevice_set-MAX_NUM_FORMS": "0",
+            "emaildevice_set-0-id": str(devices["email"].id),
+            "emaildevice_set-0-user": str(user.id),
+        }
+
+    def test_user_change_form_saves_with_mfa_devices(self):
+        """
+        Test that the user change form still saves for a user carrying every
+        MFA device type, and leaves the devices alone (#2009)
+
+        The MFA sections render with MAX_NUM_FORMS of 0 because they take no
+        additions, so the browser posts that back on an ordinary save.
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_save", email="user_save@localhost", password="user"
+        )
+
+        devices = self.create_mfa_devices(userchange)
 
         client = Client()
         client.force_login(self.admin_user)
 
         url = reverse("admin:peeringdb_server_user_change", args=[userchange.id])
-        response = client.get(url, follow=True)
+        response = client.post(url, self.user_change_post_data(userchange, devices))
+
+        assert response.status_code == 302
+
+        userchange.refresh_from_db()
+        assert userchange.first_name == "Changed"
+
+        assert TOTPDevice.objects.filter(pk=devices["totp"].pk).exists()
+        assert SecurityKey.objects.filter(pk=devices["securitykey"].pk).exists()
+        assert StaticDevice.objects.filter(pk=devices["static"].pk).exists()
+        assert EmailDevice.objects.filter(pk=devices["email"].pk).exists()
+        assert StaticToken.objects.filter(
+            device_id=devices["static"].pk
+        ).count() == len(self.BACKUP_TOKENS)
+
+    def test_user_change_form_ignores_mfa_device_edits(self):
+        """
+        Test that values posted for the read-only TOTP and security key columns
+        are ignored, so the user change form cannot replace a TOTP shared key
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_forge", email="user_forge@localhost", password="user"
+        )
+
+        devices = self.create_mfa_devices(userchange)
+        totp_key = devices["totp"].key
+
+        data = self.user_change_post_data(userchange, devices)
+        data["totpdevice_set-0-key"] = "00" * 20
+        data["totpdevice_set-0-name"] = "forged"
+        data["webauthn_security_keys-0-name"] = "forged"
+
+        client = Client()
+        client.force_login(self.admin_user)
+
+        url = reverse("admin:peeringdb_server_user_change", args=[userchange.id])
+        response = client.post(url, data)
+
+        assert response.status_code == 302
+
+        devices["totp"].refresh_from_db()
+        devices["securitykey"].refresh_from_db()
+        assert devices["totp"].key == totp_key
+        assert devices["totp"].name == "default"
+        assert devices["securitykey"].name == "test"
+
+    def test_get_user_change_form_readonly_admin(self):
+        """
+        Test that a read-only staff admin sees every MFA device section on the
+        user change form, and no secret in any of them (#2009)
+
+        The positive assertion is load bearing. Django drops an inline whose
+        model the request has no permission on, and the four device models sit
+        outside peeringdb_server, so a staff account is shown none of these
+        sections unless its grants include MFA_DEVICE_APP_LABELS. Asserting
+        only the absence of secrets would therefore pass against a page with
+        no MFA sections on it at all.
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_ro", email="user_ro@localhost", password="user"
+        )
+
+        devices = self.create_mfa_devices(userchange)
+
+        client = Client()
+        client.force_login(self.readonly_admin)
+
+        url = reverse("admin:peeringdb_server_user_change", args=[userchange.id])
+        # no follow: a redirect to the login form also lands on 200 and would
+        # not be the change form
+        response = client.get(url)
 
         assert response.status_code == 200
+
         page = response.content.decode()
-        # check the topt device is listed
+
+        for heading in self.MFA_INLINE_HEADINGS:
+            assert f'<h2 class="grp-collapse-handler">{heading}</h2>' in page
+
+        # the computed columns render for a non-superuser too
+        assert self.read_inline_cell(
+            page, "staticdevice_set", "unused_token_count"
+        ) == str(len(self.BACKUP_TOKENS))
         assert (
-            '<h2 class="grp-collapse-handler">User has these TOTP devices</h2>' in page
+            self.read_inline_cell(page, "emaildevice_set", "token_destination")
+            == "user_ro@localhost"
         )
-        assert f'name="totpdevice_set-0-key" value="{totpdevice.key}"' in page
-        # check the security key device is listed
-        assert (
-            '<h2 class="grp-collapse-handler">User has these Webauthn Security Keys</h2>'
-            in page
+
+        assert devices["totp"].key not in page
+
+        for token in self.BACKUP_TOKENS:
+            assert token not in page
+
+        assert self.EMAIL_OTP_TOKEN not in page
+
+    def test_user_change_form_mfa_device_delete(self):
+        """
+        Test that every MFA device section on the user change form offers
+        deletion, including the ones added by #2009
+        """
+
+        userchange = get_user_model().objects.create_user(
+            username="user_revoke", email="user_revoke@localhost", password="user"
         )
-        assert 'name="webauthn_security_keys-0-credential_id" value="1234"' in page
+
+        devices = self.create_mfa_devices(userchange)
+
+        page = self.get_user_change_page(userchange)
+
+        for prefix in self.MFA_INLINE_PREFIXES:
+            assert f'name="{prefix}-0-DELETE"' in page
+
+        request = self.factory.post("/cp")
+        request.user = self.admin_user
+
+        inline = admin.UserStaticDeviceInline(models.User, admin_site)
+        formset_cls = inline.get_formset(request, userchange)
+        prefix = formset_cls.get_default_prefix()
+
+        formset = formset_cls(
+            {
+                f"{prefix}-TOTAL_FORMS": "1",
+                f"{prefix}-INITIAL_FORMS": "1",
+                f"{prefix}-MIN_NUM_FORMS": "0",
+                f"{prefix}-MAX_NUM_FORMS": "0",
+                f"{prefix}-0-id": str(devices["static"].id),
+                f"{prefix}-0-user": str(userchange.id),
+                f"{prefix}-0-DELETE": "on",
+            },
+            instance=userchange,
+        )
+
+        assert formset.is_valid(), formset.errors
+        formset.save()
+
+        assert not StaticDevice.objects.filter(pk=devices["static"].pk).exists()
 
     def test_protected_ixlanprefix_deletion(self):
         ixlan = self.entities["ixlan"][0]
