@@ -226,9 +226,20 @@ are internal, not new public API fields.
 
 ## Verification
 
-`tests/test_facility_location.py` enables enforcement explicitly and exercises
+`tests/test_facility_location.py` drives the Google provider itself and exercises
 mapping, exact persistence, exact raw-address matches, coordinate thresholds, rejected nonmatching/tampered writes, permissions, expiry,
-concurrency, provider failures, legacy edits and rollback. The general suite uses
-the disabled setting for its legacy API fixtures. Browser checks must cover both
+concurrency, provider failures, legacy edits and rollback. Its `rollback` tests
+cover the disabled setting's write paths: create ignoring submitted coordinates,
+the update distance, coordinate and postcode checks, and address normalisation.
+
+The rest of the suite runs with selection enabled, as production does. An
+autouse fixture in `tests/conftest.py` answers Google's HTTP calls by echoing
+the submitted address as an exact match at `LOCATION_TEST_MATCH_POINT`
+(`mainsite/settings/run_tests.py`). The real matching code therefore enforces the
+US/CA state requirement, a Latin-script city, a postcode where the country uses
+one and the distance limit for submitted coordinates. It never compares the
+address with Google's spelling or English city name; the provider tests in
+`tests/test_facility_location.py` cover that. A module opts out with
+`FAKE_GOOGLE_ADDRESS_MATCH = False`. Browser checks must cover both
 `site` and `site_next` creation, suggestion and edit forms, invalidation after
 search/country/pin changes, stale responses, errors, cancellation and support.

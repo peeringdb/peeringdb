@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.forms import modelform_factory
 from django.test import RequestFactory, override_settings
+from django_countries.fields import Country
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
@@ -825,6 +826,11 @@ def test_validate_phonenumber():
 
     validate_phonenumber("+1 206 555 0199")
     validate_phonenumber("012065550199", "US")
+
+    # facility serializer passes the instance's Country object (#484)
+    assert validate_phonenumber("+1 206 555 0199", Country("US")) == "+12065550199"
+    assert validate_phonenumber("(206) 555-0199", Country("US")) == "+12065550199"
+    assert validate_phonenumber("+1 206 555 0199", Country("")) == "+12065550199"
 
     with pytest.raises(ValidationError):
         validate_phonenumber("invalid number")

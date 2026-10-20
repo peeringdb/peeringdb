@@ -29,7 +29,7 @@ from django.core.cache import caches
 from django.core.exceptions import FieldDoesNotExist, FieldError, ValidationError
 from django.core.files.base import ContentFile
 from django.core.validators import URLValidator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from django.db.models.expressions import RawSQL
 from django.db.models.fields.related import (
@@ -2372,6 +2372,9 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
         request = self.context["request"]
         location.actor_id(get_permission_holder_from_request(request))
         org = data.get("org", self.instance.org if self.instance else None)
+        if not self.instance and org and org.status != "ok":
+            # same parent-status error validate_create() gives without selection (#486)
+            raise ParentStatusException(org, self.Meta.model.handleref.tag)
         if not org or org.status != "ok":
             raise serializers.ValidationError(
                 {"org_id": _("Select an active organization.")}
@@ -3257,9 +3260,31 @@ class NetworkIXLanSerializer(ModelSerializer):
         # verification queue -- reapply a requested "not-operational" after
         # it (a netixlan is never queue-enabled, so a live status is safe)
         status_requested = validated_data.get("status")
-        instance = super().create(
-            validated_data, auto_approve=auto_approve, suggest=suggest
-        )
+        try:
+            with transaction.atomic():
+                instance = super().create(
+                    validated_data, auto_approve=auto_approve, suggest=suggest
+                )
+        except IntegrityError:
+            # validate() checked for IP conflicts, but a concurrent request can
+            # claim the address before this insert (#485); the re-check sees
+            # its row because Django runs MySQL at READ COMMITTED. A model
+            # instance normalises the addresses the way stored values are
+            conflict_v4, conflict_v6 = NetworkIXLan(
+                ipaddr4=validated_data.get("ipaddr4") or None,
+                ipaddr6=validated_data.get("ipaddr6") or None,
+            ).ipaddress_conflict(check_deleted=True)
+            collisions = {
+                field: [_("IP already exists")]
+                for field, conflict in (
+                    ("ipaddr4", conflict_v4),
+                    ("ipaddr6", conflict_v6),
+                )
+                if conflict
+            }
+            if not collisions:
+                raise
+            raise RestValidationError(collisions, code="unique")
         if status_requested == "not-operational" and instance.status == "ok":
             instance.status = "not-operational"
             instance.save()

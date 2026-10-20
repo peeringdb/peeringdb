@@ -29,7 +29,6 @@ from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import serializers
 from rest_framework.test import APIRequestFactory
 
-import peeringdb_server.geo as geo
 from peeringdb_server import inet
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.inet import RdapLookup
@@ -308,13 +307,14 @@ class TestJSON(unittest.TestCase):
             "website": WEBSITE,
             "social_media": SOCIAL_MEDIA,
             "city": CITY,
+            "state": STATE,
             "zipcode": ZIPCODE,
             "address1": "Some street",
             "clli": str(uuid.uuid4())[:6].upper(),
             "rencode": "",
             "npanxx": "000-111",
-            "latitude": 30.091435,
-            "longitude": 31.25435,
+            "latitude": 41.88,
+            "longitude": -87.63,
             "notes": NOTE,
             "country": COUNTRY,
             "tech_email": EMAIL,
@@ -1999,82 +1999,58 @@ class TestJSON(unittest.TestCase):
 
     ##########################################################################
 
-    def geo_mock_init(self, key, timeout):
-        pass
-
-    def geo_gmaps_mock_geocode_freeform(location):
-        return {"lat": 30.091435, "lng": 31.25435}
-
-    @patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
-    @patch.object(geo.Melissa, "__init__", geo_mock_init)
-    @override_settings(MELISSA_KEY="")
-    @override_settings(GOOGLE_GEOLOC_API_KEY="")
     def test_org_admin_002_PUT_fac_geocode_missing_geocode(self):
-        with patch.object(
-            geo.GoogleMaps,
-            "geocode_freeform",
-            side_effect=lambda location: {"lat": 30.091435, "lng": 31.25435},
-        ):
-            data = self.make_data_fac()
-            data.pop("latitude")
-            data.pop("longitude")
-            r_data = self.assert_create(
-                self.db_org_admin,
-                "fac",
-                data,
-            )
-            fac_id = r_data.get("id")
+        data = self.make_data_fac()
+        data.pop("latitude")
+        data.pop("longitude")
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+        )
+        fac_id = r_data.get("id")
 
-            assert r_data["latitude"] is None
-            assert r_data["longitude"] is None
+        # the confirmed address match supplies the coordinates (#486)
+        assert r_data["latitude"] == 41.88
+        assert r_data["longitude"] == -87.63
 
-            self.assert_update(
-                self.db_org_admin,
-                "fac",
-                fac_id,
-                {"latitude": 30.093435, "longitude": 31.255350},
-                test_failures={
-                    "invalid": [
-                        {"latitude": 35.689487, "longitude": 139.691711},
-                    ],
-                },
-                ignore=["latitude", "longitude"],
-            )
+        # pins must stay within 1 km of the matched address
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            fac_id,
+            {"latitude": 41.882, "longitude": -87.631},
+            test_failures={
+                "invalid": [
+                    {"latitude": 35.689487, "longitude": 139.691711},
+                ],
+            },
+            ignore=["latitude", "longitude"],
+        )
 
     ##########################################################################
 
-    @patch.object(geo.GoogleMaps, "__init__", geo_mock_init)
-    @patch.object(geo.Melissa, "__init__", geo_mock_init)
     def test_org_admin_002_PUT_fac_geocode_existing_geocode(self):
-        with patch.object(
-            geo.GoogleMaps,
-            "geocode_freeform",
-            side_effect=lambda location: {"lat": 30.091435, "lng": 31.25435},
-        ):
-            data = self.make_data_fac()
-            r_data = self.assert_create(
-                self.db_org_admin,
-                "fac",
-                data,
-                ignore=["latitude", "longitude"],
-            )
-            fac_id = r_data.get("id")
+        data = self.make_data_fac()
+        r_data = self.assert_create(
+            self.db_org_admin,
+            "fac",
+            data,
+            ignore=["latitude", "longitude"],
+        )
+        fac_id = r_data.get("id")
 
-            Facility.objects.filter(id=fac_id).update(
-                latitude=data.get("latitude"), longitude=data.get("longitude")
-            )
-
-            self.assert_update(
-                self.db_org_admin,
-                "fac",
-                fac_id,
-                {"latitude": 30.093445, "longitude": 31.24535},
-                test_failures={
-                    "invalid": [
-                        {"latitude": 30.059545, "longitude": 31.24935},
-                    ],
-                },
-            )
+        self.assert_update(
+            self.db_org_admin,
+            "fac",
+            fac_id,
+            {"latitude": 41.8825, "longitude": -87.6305},
+            test_failures={
+                "invalid": [
+                    {"latitude": 41.85, "longitude": -87.63},
+                ],
+            },
+        )
 
     ##########################################################################
 
@@ -4568,6 +4544,13 @@ class TestJSON(unittest.TestCase):
         fac.latitude = lat_fac
         fac.longitude = lng_fac
         fac.save()
+
+        # the other harness facilities share the Chicago address, so park them
+        # away; scoped to the test orgs since the command can run on a real db
+        test_orgs = [obj for obj in SHARED.values() if isinstance(obj, Organization)]
+        Facility.objects.filter(org__in=test_orgs).exclude(id=fac.id).update(
+            latitude=30.091435, longitude=31.25435
+        )
 
         data = self.db_org_member.all("fac", country="US", city="Chicago", distance=10)
 
