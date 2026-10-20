@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-09-22 17:40:35.243351
+Generated from validators.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.validators
 
@@ -278,6 +278,7 @@ Validate a phonenumber to E.164
 
 Arguments:
     - phonenumber (str)
+    - country (str or `Country`): region used to parse national numbers
 
 Raises:
     - ValidationError if phone number isn't valid E.164 and cannot

@@ -1,4 +1,4 @@
-Generated on 2026-09-22 17:40:35.243351
+Generated on 2026-10-20 12:07:11.547813
 
 ## _db_command.py
 
@@ -23,6 +23,27 @@ Base class to use for command creation.
 ## pdb_batch_replace.py
 
 Replace a value in a field across several entities.
+
+## pdb_cleanup_prefixless_ix.py
+
+One time cleanup of exchanges that are listed without a peering LAN prefix.
+
+#1717 stops new ones from appearing by taking the exchange with its last
+prefix, but exchanges that reached that state before the change are not
+touched by it. The product committee asked for a one time script to clean
+those up on deploy.
+
+The exchange is forced past its own facility-connection and peer guards, the
+same as a confirmed last-prefix delete does -- a prefix-less exchange does not
+meet the listing criteria regardless of what else is still attached to it.
+Everything is soft-deleted and restorable.
+
+Usage:
+    # Preview only -- lists what would be deleted, no changes made
+    python manage.py pdb_cleanup_prefixless_ix
+
+    # Apply -- soft-deletes the exchanges
+    python manage.py pdb_cleanup_prefixless_ix --commit
 
 ## pdb_cleanup_vq.py
 
@@ -411,6 +432,40 @@ Usage:
 
 # Classes
 
+## pdb_oauth_hs256.py
+
+Lists, migrates and notifies OAuth applications that cannot sign their HS256
+ID tokens (#2055).
+
+PeeringDB stores client secrets hashed (migration 0115), so an HS256 ID token
+can no longer be signed and these applications fail every request that issues
+one. HS256 applications that still hold a plaintext secret sign fine; they are
+listed as skipped and left alone. Switching an application to RS256 changes how
+its relying party has to verify ID tokens, so the command lets the operator
+pick what to do:
+
+  --migrate  switch the applications to RS256 (requires OIDC_RSA_PRIVATE_KEY)
+  --notify   email the owner: the user for user-owned applications, the
+             organization admins for organization-owned ones. The text says
+             whether the application was switched or still needs switching.
+
+Either flag, or both. Without either, the applications are only listed.
+With both, the owner is mailed first and an application is switched only once
+at least one owner mail went out; one that could not be notified (no active
+owner with an email address, or every send failed) stays on HS256, so a re-run
+finds it again.
+
+Dry run by default; --commit applies the changes and sends the mail. Mail
+honors MAIL_DEBUG. Applications nobody could be notified about, and failed
+sends to individual owners of an application that was notified, are logged,
+the run continues, and the command exits with an error listing them and what
+to do next. A dry run lists the applications that would not be notified and
+exits normally. Nothing records who was notified, so re-running --notify
+without --migrate mails the same owners again.
+
+Usage:
+  manage pdb_oauth_hs256 [--migrate] [--notify] [--commit]
+
 ## pdb_org_cleanup.py
 
 # Classes
@@ -422,6 +477,10 @@ Process one item in the admin tool command queue.
 ## pdb_rdap_cache.py
 
 Update the cache of the RDAP cache from IANA.
+
+## pdb_rdap_ownership_audit.py
+
+Report retained affiliation evidence without modifying the selected database.
 
 ## pdb_renumber_lans.py
 

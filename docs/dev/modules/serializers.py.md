@@ -1,4 +1,4 @@
-Generated from serializers.py on 2026-09-22 17:40:35.243351
+Generated from serializers.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.serializers
 
@@ -30,6 +30,16 @@ typed without a change type. Pointing at it lets the dashboard
 highlight one field with one instruction.
 
 ---
+## filter_name_forms
+`def filter_name_forms(name)`
+
+The forms a filter path segment can take on its way to the ORM: as sent,
+with every trailing `_id` removed (the ORM accepts a foreign key's attname),
+and the queryable_field_xl translation of both.
+
+Bounded at four forms, so checking a key stays linear in its length.
+
+---
 ## fold_meta_flat_fields
 `def fold_meta_flat_fields(data, instance, spec)`
 
@@ -50,6 +60,13 @@ its flat fields: a half-written key is reported against the flat field
 the user has to act on, not against `meta`, so the dashboard can
 highlight that input (#1742: clearing the change type while leaving a
 date behind).
+
+---
+## is_filter_excluded
+`def is_filter_excluded(path)`
+
+Whether a filter path (without lookup suffix) touches anything in
+FILTER_EXCLUDE, in any form it can be translated to.
 
 ---
 ## model_help_text
@@ -663,6 +680,13 @@ result set is a list or single object.
 
 This will return the depth specified in the request or the next best
 possible depth.
+
+---
+#### filterable_fields
+`def filterable_fields(cls)`
+
+Returns (name, field) pairs a list request may filter on: the model's
+own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489).
 
 ---
 #### is_unique_query

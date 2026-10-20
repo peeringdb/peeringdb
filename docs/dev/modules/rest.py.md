@@ -1,4 +1,4 @@
-Generated from rest.py on 2026-09-22 17:40:35.243351
+Generated from rest.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.rest
 
@@ -19,6 +19,16 @@ The peeringdb REST API is implemented through django-rest-framework.
 # Functions
 ---
 
+## _deletion_confirmed
+`def _deletion_confirmed(request)`
+
+Return whether the request carries the explicit confirmation that a
+delete with side effects requires (#1717).
+
+Passed as a `confirm` query parameter rather than in the body so that
+clients sending a bodyless DELETE can supply it.
+
+---
 ## _filters_may_produce_duplicates
 `def _filters_may_produce_duplicates(model, filters)`
 

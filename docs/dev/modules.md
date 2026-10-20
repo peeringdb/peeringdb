@@ -1,4 +1,4 @@
-Generated on 2026-09-22 17:40:35.243351
+Generated on 2026-10-20 12:07:11.547813
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -319,6 +319,10 @@ Determine permission holder from request (api key or user).
 Read only user api key handling.
 
 Censor API output data according to permissions using grainy Applicators.
+
+## [rdap_audit.py](/docs/dev/modules/rdap_audit.py.md)
+
+Read-only affiliation evidence; approval method and historical verification are not recorded.
 
 ## [renderers.py](/docs/dev/modules/renderers.py.md)
 

@@ -1,4 +1,4 @@
-Generated from views.py on 2026-09-22 17:40:35.243351
+Generated from views.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.views
 
@@ -631,14 +631,6 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
-#### attempt_passkey_auth
-`def attempt_passkey_auth(self, request, **kwargs)`
-
-Wrap attempt_passkey_auth so we can set a session
-property to indicate that the passkey auth was
-used
-
----
 #### done
 `def done(self, form_list, **kwargs)`
 
@@ -684,6 +676,19 @@ Returns the form for the step
 
 Returns the keyword arguments for instantiating the form
 (or formset) on the given step.
+
+---
+#### get_form_list
+`def get_form_list(self)`
+
+This method returns a form_list based on the initial form list but
+checks if there is a condition method/value in the condition_list.
+If an entry exists in the condition list, it will call/read the value
+and respect the result. (True means add the form, False means ignore
+the form)
+
+The form_list is generated once per wizard instance to avoid repeated
+expensive condition evaluations (e.g., database queries).
 
 ---
 #### get_mfa_incomplete_redirect

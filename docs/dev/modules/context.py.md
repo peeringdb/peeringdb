@@ -1,4 +1,4 @@
-Generated from context.py on 2026-09-22 17:40:35.243351
+Generated from context.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.context
 
@@ -35,5 +35,23 @@ outside this context is unaffected.
 `def is_forced_ixlan_deletion()`
 
 Returns True if currently inside a forced_ixlan_deletion context.
+
+---
+## is_issuing_at_authorization_endpoint
+`def is_issuing_at_authorization_endpoint()`
+
+Returns True if currently inside an issuing_at_authorization_endpoint context.
+
+---
+## issuing_at_authorization_endpoint
+`def issuing_at_authorization_endpoint()`
+
+Signals that the OAuth authorization endpoint is creating its response,
+where implicit and hybrid flows issue tokens without a grant to read
+amr from (#490)
+
+Opened by the authorization view itself rather than inferred from the
+oauthlib request, whose attributes the client can set through query
+parameters.
 
 ---

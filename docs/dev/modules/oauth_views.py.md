@@ -1,4 +1,4 @@
-Generated from oauth_views.py on 2026-09-22 17:40:35.243351
+Generated from oauth_views.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.oauth_views
 
@@ -67,6 +67,19 @@ The endpoint is used in the following flows:
 
 ### Methods
 
+#### create_authorization_response
+`def create_authorization_response(self, request, scopes, credentials, allow)`
+
+A wrapper method that calls create_authorization_response on `server_class`
+instance.
+
+:param request: The current django.http.HttpRequest object
+:param scopes: A space-separated string of provided scopes
+:param credentials: Authorization credentials dictionary containing
+                   `client_id`, `state`, `redirect_uri` and `response_type`
+:param allow: True if the user authorize the client, otherwise False
+
+---
 #### error_response
 `def error_response(self, error, application, **kwargs)`
 
@@ -74,6 +87,16 @@ Handle errors either by redirecting to redirect_uri with a json in the body cont
 error details or providing an error response
 
 ---
+
+## ConnectDiscoveryInfoView
+
+```
+ConnectDiscoveryInfoView(oauth2_provider.views.oidc.ConnectDiscoveryInfoView)
+```
+
+OIDC discovery document without HS256 in the advertised ID token
+signing algorithms (#2055)
+
 
 ## LoginRequiredMixin
 

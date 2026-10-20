@@ -1,4 +1,4 @@
-Generated from middleware.py on 2026-09-22 17:40:35.243351
+Generated from middleware.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.middleware
 
@@ -16,11 +16,37 @@ method used for the request.
 This is used to cache negative authentication responses
 
 ---
+## get_auth_status
+`def get_auth_status(request)`
+
+Returns the value of the X-Auth-Status header for the request.
+
+---
 ## get_client_ident
 `def get_client_ident(request)`
 
 Get the IP address of the client, taking both
 X-Forwarded-For and REMOTE_ADDR into account.
+
+---
+## get_log_auth_id
+`def get_log_auth_id(request)`
+
+Returns the caller identity to log for the request (#487).
+
+PDBPermissionMiddleware records it as `request.log_auth_id` where it
+authenticates. Otherwise OAuth bearer requests log `u<user_id>_oauth`,
+and a request without an identity logs `anon`, or `unverified` if it
+sent credentials that were never accepted.
+
+---
+## get_log_invalid_key_id
+`def get_log_invalid_key_id(key)`
+
+Returns the caller identity to log for an API key that matched no key.
+
+Only a key shaped like a generated one, `<prefix>.<secret>`, has a
+public part to log; any other value may be secret throughout.
 
 ---
 # Classes
@@ -217,6 +243,15 @@ Initialize self.  See help(type(self)) for accurate signature.
 Generate the cache key using the IP address, HTTP_AUTHORIZATION value or session ID, request path, and URL parameters.
 
 ---
+#### is_exempt
+`def is_exempt(self, request)`
+
+Returns True if error responses for this request must not be cached.
+
+An exempt name that no longer resolves is logged and ignored, so the
+rest of the negative cache keeps working.
+
+---
 #### process_request
 `def process_request(self, request)`
 
@@ -227,5 +262,32 @@ Process the request before it's passed to the view.
 `def process_response(self, request, response)`
 
 Process the response before it's sent to the client.
+
+---
+
+## UwsgiLogVarsMiddleware
+
+```
+UwsgiLogVarsMiddleware(builtins.object)
+```
+
+Adds the caller identity to the uWSGI request log as the `auth_id` and
+`auth_status` log variables (#487).
+
+Not used outside uWSGI.
+
+
+### Methods
+
+#### \__call__
+`def __call__(self, request)`
+
+Call self as a function.
+
+---
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
 
 ---
