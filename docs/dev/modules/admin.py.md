@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-09-22 17:40:35.596979
+Generated from admin.py on 2026-10-20 12:07:11.946573
 
 # peeringdb_server.admin
 
@@ -50,6 +50,22 @@ Arguments:
 targets <QuerySet|list> iterable of Organization instances
 
 target <Organization> merge organizations with this organization
+
+---
+## warn_last_prefix
+`def warn_last_prefix(request, objs)`
+
+Surface the side effect of deleting an exchange's last prefix in the
+admin the same way `not_deletable_reason` is surfaced (#1717).
+
+Django's own delete confirmation only lists the rows it is about to
+touch, so without this an AC member cleaning up a stray prefix gets no
+indication that the exchange goes with it.
+
+`objs` is every row the operation removes, not one row: asked per row,
+a save that removes several prefixes of one exchange is silent, since
+each still has a sibling at the time. Group by ixlan and ask instead
+whether the save leaves the exchange with nothing.
 
 ---
 # Classes
@@ -642,6 +658,20 @@ Soft delete admin.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### save_formset
+`def save_formset(self, request, form, formset, change)`
+
+Warn when the prefixes flagged for deletion on this save are every
+one the exchange has left (#1717).
+
+The inline deletes on save with no confirmation step of its own, and
+the delete flags only exist on the POST, so a banner rendered on the
+GET cannot answer this -- it does not yet know which rows are going.
+
+---
 
 ## IXLanAdminForm
 
@@ -1454,6 +1484,46 @@ request has permission to delete *any* object of the given type.
 
 ---
 
+## ReadOnlyDeviceInline
+
+```
+ReadOnlyDeviceInline(django.contrib.admin.options.TabularInline)
+```
+
+Base for the MFA device sections on the user change page (#2009).
+
+Those sections are there to be read while working a lost-access ticket, so
+every column is named in both fields and readonly_fields. Listing the
+columns is not optional: a bare inline renders every model field as an
+editable input, which on TOTPDevice is the shared secret and on EmailDevice
+the live one-time password.
+
+Read-only is declared explicitly rather than derived from
+has_change_permission, so the rendering does not depend on Django's
+permission-to-readonly behaviour while can_delete remains true.
+
+Device types that django-otp throttles show the throttling columns. Only
+the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+lockout, while django_otp's own static and email device admins have no
+throttling fields, and the static one shows every backup code.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+### Methods
+
+#### has_add_permission
+`def has_add_permission(self, request, obj=None)`
+
+Return True if the given request has permission to add an object.
+Can be overridden by the user in subclasses.
+
+---
+
 ## SearchLogAdmin
 
 ```
@@ -1739,14 +1809,55 @@ Reject usernames that differ only in case.
 ## UserDeviceInline
 
 ```
-UserDeviceInline(django.contrib.admin.options.TabularInline)
+UserDeviceInline(peeringdb_server.admin.ReadOnlyDeviceInline)
 ```
 
-Options for inline editing of ``model`` instances.
+Base for the MFA device sections on the user change page (#2009).
 
-Provide ``fk_name`` to specify the attribute name of the ``ForeignKey``
-from ``model`` to its parent. This is required if ``model`` has more than
-one ``ForeignKey`` to its parent.
+Those sections are there to be read while working a lost-access ticket, so
+every column is named in both fields and readonly_fields. Listing the
+columns is not optional: a bare inline renders every model field as an
+editable input, which on TOTPDevice is the shared secret and on EmailDevice
+the live one-time password.
+
+Read-only is declared explicitly rather than derived from
+has_change_permission, so the rendering does not depend on Django's
+permission-to-readonly behaviour while can_delete remains true.
+
+Device types that django-otp throttles show the throttling columns. Only
+the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+lockout, while django_otp's own static and email device admins have no
+throttling fields, and the static one shows every backup code.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## UserEmailDeviceInline
+
+```
+UserEmailDeviceInline(peeringdb_server.admin.ReadOnlyDeviceInline)
+```
+
+Base for the MFA device sections on the user change page (#2009).
+
+Those sections are there to be read while working a lost-access ticket, so
+every column is named in both fields and readonly_fields. Listing the
+columns is not optional: a bare inline renders every model field as an
+editable input, which on TOTPDevice is the shared secret and on EmailDevice
+the live one-time password.
+
+Read-only is declared explicitly rather than derived from
+has_change_permission, so the rendering does not depend on Django's
+permission-to-readonly behaviour while can_delete remains true.
+
+Device types that django-otp throttles show the throttling columns. Only
+the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+lockout, while django_otp's own static and email device admins have no
+throttling fields, and the static one shows every backup code.
 
 
 ### Instanced Attributes
@@ -1944,17 +2055,58 @@ already been called.
 
 ---
 
+## UserStaticDeviceInline
+
+```
+UserStaticDeviceInline(peeringdb_server.admin.ReadOnlyDeviceInline)
+```
+
+Base for the MFA device sections on the user change page (#2009).
+
+Those sections are there to be read while working a lost-access ticket, so
+every column is named in both fields and readonly_fields. Listing the
+columns is not optional: a bare inline renders every model field as an
+editable input, which on TOTPDevice is the shared secret and on EmailDevice
+the live one-time password.
+
+Read-only is declared explicitly rather than derived from
+has_change_permission, so the rendering does not depend on Django's
+permission-to-readonly behaviour while can_delete remains true.
+
+Device types that django-otp throttles show the throttling columns. Only
+the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+lockout, while django_otp's own static and email device admins have no
+throttling fields, and the static one shows every backup code.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## UserWebauthnSecurityKeyInline
 
 ```
-UserWebauthnSecurityKeyInline(django.contrib.admin.options.TabularInline)
+UserWebauthnSecurityKeyInline(peeringdb_server.admin.ReadOnlyDeviceInline)
 ```
 
-Options for inline editing of ``model`` instances.
+Base for the MFA device sections on the user change page (#2009).
 
-Provide ``fk_name`` to specify the attribute name of the ``ForeignKey``
-from ``model`` to its parent. This is required if ``model`` has more than
-one ``ForeignKey`` to its parent.
+Those sections are there to be read while working a lost-access ticket, so
+every column is named in both fields and readonly_fields. Listing the
+columns is not optional: a bare inline renders every model field as an
+editable input, which on TOTPDevice is the shared secret and on EmailDevice
+the live one-time password.
+
+Read-only is declared explicitly rather than derived from
+has_change_permission, so the rendering does not depend on Django's
+permission-to-readonly behaviour while can_delete remains true.
+
+Device types that django-otp throttles show the throttling columns. Only
+the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+lockout, while django_otp's own static and email device admins have no
+throttling fields, and the static one shows every backup code.
 
 
 ### Instanced Attributes

@@ -1,4 +1,4 @@
-Generated from forms.py on 2026-09-22 17:40:35.243351
+Generated from forms.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.forms
 
@@ -59,6 +59,29 @@ class.
 These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
+
+### Methods
+
+#### add_error
+`def add_error(self, field, error)`
+
+Update the content of `self._errors`.
+
+The `field` argument is the name of the field to which the errors
+should be added. If it's None, treat the errors as NON_FIELD_ERRORS.
+
+The `error` argument can be a single error, a list of errors, or a
+dictionary that maps field names to lists of errors. An "error" can be
+either a simple string or an instance of ValidationError with its
+message attribute set and a "list or dictionary" can be an actual
+`list` or `dict` or an instance of ValidationError with its
+`error_list` or `error_dict` attribute set.
+
+If `error` is a dictionary, the `field` argument *must* be None and
+errors will be added to the fields that correspond to the keys of the
+dictionary.
+
+---
 
 ## OrgAdminUserPermissionForm
 

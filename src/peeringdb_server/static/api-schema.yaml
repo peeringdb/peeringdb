@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: PeeringDB API
-  version: 2.82.0
+  version: 2.84.0
   description: "PeeringDB REST API\n\n## Reading PeeringDB data\n\nThe notes below\
     \ apply to every object type on this API. They describe how records\nbehave over\
     \ time, which is the part most consumers of bulk PeeringDB data need and\ncannot\
@@ -1271,41 +1271,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: org__email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: org__flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: org__floor
         in: query
         description: 'Floor within the building
@@ -1389,46 +1354,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: org__periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: org__restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__state
         in: query
         description: 'State, province or region of the postal address
@@ -6945,41 +6870,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: org__email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: org__flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: org__floor
         in: query
         description: 'Floor within the building
@@ -7063,46 +6953,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: org__periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: org__restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__state
         in: query
         description: 'State, province or region of the postal address
@@ -16867,18 +16717,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: ixf_import_request_user
-        in: query
-        description: 'The user that triggered the manual IX-F import request
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
       - name: ixf_last_import
         in: query
         description: 'Time this exchange''s IX-F member export was last imported.
@@ -17116,41 +16954,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: org__email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: org__flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: org__floor
         in: query
         description: 'Floor within the building
@@ -17234,46 +17037,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: org__periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: org__restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__state
         in: query
         description: 'State, province or region of the postal address
@@ -30250,56 +30013,6 @@ paths:
         required: false
         schema:
           type: boolean
-      - name: ixf_ixp_import_error
-        in: query
-        description: 'Reason IX-F data could not be parsed
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: ixf_ixp_import_error_notified
-        in: query
-        description: 'Last time we notified the exchange about the IX-F parsing issue
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: ixf_ixp_import_protocol_conflict
-        in: query
-        description: 'IX has been sending IP addresses for protocol not supported
-          by network
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: ixf_ixp_member_list_url
-        in: query
-        description: 'URL of this LAN''s IX-F member export feed
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: ixf_ixp_member_list_url_visible
         in: query
         description: 'Who may see `ixf_ixp_member_list_url`: `Public` anyone, `Users`
@@ -31622,54 +31335,67 @@ paths:
         \ that falls inside one of its LAN's prefixes, which\nmakes this object the\
         \ authority on which addresses are valid at an exchange.\n\n`in_dfz` records\
         \ whether the prefix is routed in the default-free zone.\n\n### Parent relationship:\n\
-        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n\n## List\
-        \ objects\n\n### Querying\n\nYou may query the resultset by passing field\
-        \ names as url parameters\n\n### Numeric Queries\n\nOn numeric fields you\
-        \ can suffix the field names with the following filters:\n\n- \\_\\_lt : less-than\n\
-        - \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n\
-        - \\_\\_in : value inside set of values (comma separated)\n\n**examples**\n\
-        \n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\n### String Queries\n\
-        \nOn string fields you can suffix the field names with the following filters:\n\
-        \n- \\_\\_contains : field value contains specified value\n- \\_\\_startswith\
-        \ : field value starts with specified value\n- \\_\\_in : value contained\
-        \ inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
-        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
-        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
-        \ to retrieve all\nobjects updated since then. Note that this result will\
-        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
-        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
-        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
-        object, you can expand those lists with the 'depth' parameter as explained\
-        \ below.\n\nThe naming schema of the field will always tell you which type\
-        \ of object the set is holding\nand will correspond with the object's endpoint\
-        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
-        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
-        \ be loaded (any field ending with the _set suffix, with the exception of\
-        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
-        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
-        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
-        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
-        \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting\
+        \ the last prefix\n\nAn exchange has to keep a globally unique Peering LAN\
+        \ prefix to stay listed, so\ndeleting the last remaining prefix of an exchange\
+        \ also deletes the exchange\nitself. Because that takes the exchange out of\
+        \ the API and public listings, the\nrequest is refused unless it carries an\
+        \ explicit confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout\
+        \ the flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n\
+        \n\n## List objects\n\n### Querying\n\nYou may query the resultset by passing\
+        \ field names as url parameters\n\n### Numeric Queries\n\nOn numeric fields\
+        \ you can suffix the field names with the following filters:\n\n- \\_\\_lt\
+        \ : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
+        - \\_\\_gte : greater-than-equal\n- \\_\\_in : value inside set of values\
+        \ (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\
+        \n### String Queries\n\nOn string fields you can suffix the field names with\
+        \ the following filters:\n\n- \\_\\_contains : field value contains specified\
+        \ value\n- \\_\\_startswith : field value starts with specified value\n- \\\
+        _\\_in : value contained inside set of values (comma separated)\n\n**examples**\n\
+        \n    ?<field_name>__contains=something\n    ?<field_name>__in=this,that\n\
+        \nAll string filtering operations are case-insensitive\n\n### Since\n\n\n\
+        You can use the since argument with a unix timestamp (seconds) to retrieve\
+        \ all\nobjects updated since then. Note that this result will contain objects\
+        \ that were\ndeleted in that timeframe as well - you can spot them by checking\
+        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
+        \ is a list of objects in a relationship with the parent\nobject, you can\
+        \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
+        \ naming schema of the field will always tell you which type of object the\
+        \ set is holding\nand will correspond with the object's endpoint on the API\n\
+        \n    <object_type>_set\n\nSo a set called 'net_set' will hold Network objects\
+        \ (api endpoint /net)\n\n### Depth\n\nNested sets will not be loaded (any\
+        \ field ending with the _set suffix, with the exception of 'irr_as_set') unless\
+        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
+        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
+        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
+        \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
+        \ does not require lookups will be served a cached result. Cache is updated\
+        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
+        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
+        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
+        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
+        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
+        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
+        \ and has it's **depth** parameter specified will have a result limit of 250\
+        \ entries, any entries past this limit will be truncated, at which point you\
+        \ either should be more specific with your query or use the skip and limit\
+        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
+        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -31807,44 +31533,6 @@ paths:
         required: false
         schema:
           type: boolean
-      - name: ixlan__ixf_ixp_import_error
-        in: query
-        description: 'Reason IX-F data could not be parsed
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: ixlan__ixf_ixp_import_error_notified
-        in: query
-        description: 'Last time we notified the exchange about the IX-F parsing issue
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: ixlan__ixf_ixp_import_protocol_conflict
-        in: query
-        description: 'IX has been sending IP addresses for protocol not supported
-          by network
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
       - name: ixlan__ixf_ixp_member_list_url_visible
         in: query
         description: 'Who may see `ixf_ixp_member_list_url`: `Public` anyone, `Users`
@@ -32116,86 +31804,38 @@ paths:
       - api
     post:
       operationId: create ixpfx
-      description: 'Creates a new `ixpfx` type object.
-
-
-        ## Internet Exchange Prefix
-
-
-        Identified by the `ixpfx` tag.
-
-
-        An IP prefix assigned to an exchange LAN. `prefix` is unique across PeeringDB,
-        so the
-
-        same range cannot be registered on two exchanges.
-
-
-        A `netixlan` may only use an address that falls inside one of its LAN''s prefixes,
-        which
-
-        makes this object the authority on which addresses are valid at an exchange.
-
-
-        `in_dfz` records whether the prefix is routed in the default-free zone.
-
-
-        ### Parent relationship:
-
-
-        - `ix` internet exchange
-
-
-        ### Relationship(s):
-
-
-        - None
-
-
-
-        ## Creating objects
-
-
-        ### Status `pending`
-
-
-        Some object types will be flagged as `pending` until they have been reviewed
-        and approved by peeringdb staff.
-
-
-        Currently this is the case for:
-
-
-
-        - `org` organizations (only administrative staff users are currently allowed
-        to create organizations)
-
-        - `fac` facilities
-
-        - `net` networks
-
-        - `ix` exchanges
-
-        - `ixpfx` prefixes (if part of a new exchange)
-
-        - `ixlan` exchange networks (if part of a new exchange)
-
-
-        ### Permissions
-
-
-        To be able to create an object, the requesting user requires `create` permissions
-        to one of the
-
-        object''s parents in the relationship hierarchy.
-
-
-        For example to create a `net` type object, the user needs to be permissioned
-        to create in the organization
-
-        that is to be the network''s holder entity.
-
-        '
+      description: "Creates a new `ixpfx` type object.\n\n## Internet Exchange Prefix\n\
+        \nIdentified by the `ixpfx` tag.\n\nAn IP prefix assigned to an exchange LAN.\
+        \ `prefix` is unique across PeeringDB, so the\nsame range cannot be registered\
+        \ on two exchanges.\n\nA `netixlan` may only use an address that falls inside\
+        \ one of its LAN's prefixes, which\nmakes this object the authority on which\
+        \ addresses are valid at an exchange.\n\n`in_dfz` records whether the prefix\
+        \ is routed in the default-free zone.\n\n### Parent relationship:\n\n- `ix`\
+        \ internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting the\
+        \ last prefix\n\nAn exchange has to keep a globally unique Peering LAN prefix\
+        \ to stay listed, so\ndeleting the last remaining prefix of an exchange also\
+        \ deletes the exchange\nitself. Because that takes the exchange out of the\
+        \ API and public listings, the\nrequest is refused unless it carries an explicit\
+        \ confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout the\
+        \ flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n\
+        \n\n## Creating objects\n\n### Status `pending`\n\nSome object types will\
+        \ be flagged as `pending` until they have been reviewed and approved by peeringdb\
+        \ staff.\n\nCurrently this is the case for:\n\n\n- `org` organizations (only\
+        \ administrative staff users are currently allowed to create organizations)\n\
+        - `fac` facilities\n- `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes\
+        \ (if part of a new exchange)\n- `ixlan` exchange networks (if part of a new\
+        \ exchange)\n\n### Permissions\n\nTo be able to create an object, the requesting\
+        \ user requires `create` permissions to one of the\nobject's parents in the\
+        \ relationship hierarchy.\n\nFor example to create a `net` type object, the\
+        \ user needs to be permissioned to create in the organization\nthat is to\
+        \ be the network's holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -33326,13 +32966,26 @@ paths:
         \ that falls inside one of its LAN's prefixes, which\nmakes this object the\
         \ authority on which addresses are valid at an exchange.\n\n`in_dfz` records\
         \ whether the prefix is routed in the default-free zone.\n\n### Parent relationship:\n\
-        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n\n## Retrieve\
-        \ a single object\n\n### Depth\n\nNested sets will not be expanded (any field\
-        \ ending with the _set suffix, with the exception of 'irr_as_set') unless\
-        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
-        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
-        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
-        \n**example**\n\n    ?depth=1\n"
+        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting\
+        \ the last prefix\n\nAn exchange has to keep a globally unique Peering LAN\
+        \ prefix to stay listed, so\ndeleting the last remaining prefix of an exchange\
+        \ also deletes the exchange\nitself. Because that takes the exchange out of\
+        \ the API and public listings, the\nrequest is refused unless it carries an\
+        \ explicit confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout\
+        \ the flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n\
+        \n\n## Retrieve a single object\n\n### Depth\n\nNested sets will not be expanded\
+        \ (any field ending with the _set suffix, with the exception of 'irr_as_set')\
+        \ unless the 'depth'\nparameter is passed in the request URL.\n\nDepth can\
+        \ be one of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 :\
+        \ expand sets into objects (slower)\n  - 0 : don't expand sets at all (default\
+        \ behaviour)\n\n**example**\n\n    ?depth=1\n"
       parameters:
       - name: id
         in: path
@@ -33360,53 +33013,30 @@ paths:
       - api
     put:
       operationId: update ixpfx
-      description: 'Updates an existing `ixpfx` type object.
-
-
-        ## Internet Exchange Prefix
-
-
-        Identified by the `ixpfx` tag.
-
-
-        An IP prefix assigned to an exchange LAN. `prefix` is unique across PeeringDB,
-        so the
-
-        same range cannot be registered on two exchanges.
-
-
-        A `netixlan` may only use an address that falls inside one of its LAN''s prefixes,
-        which
-
-        makes this object the authority on which addresses are valid at an exchange.
-
-
-        `in_dfz` records whether the prefix is routed in the default-free zone.
-
-
-        ### Parent relationship:
-
-
-        - `ix` internet exchange
-
-
-        ### Relationship(s):
-
-
-        - None
-
-
-
-        ## Update existing objects
-
-
-        ### Permissions
-
-
-        In order to update an object the requesting user requires `update` permissions
-        to the object itself or one of the parent relationships in the object hierarchy
-
-        '
+      description: "Updates an existing `ixpfx` type object.\n\n## Internet Exchange\
+        \ Prefix\n\nIdentified by the `ixpfx` tag.\n\nAn IP prefix assigned to an\
+        \ exchange LAN. `prefix` is unique across PeeringDB, so the\nsame range cannot\
+        \ be registered on two exchanges.\n\nA `netixlan` may only use an address\
+        \ that falls inside one of its LAN's prefixes, which\nmakes this object the\
+        \ authority on which addresses are valid at an exchange.\n\n`in_dfz` records\
+        \ whether the prefix is routed in the default-free zone.\n\n### Parent relationship:\n\
+        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting\
+        \ the last prefix\n\nAn exchange has to keep a globally unique Peering LAN\
+        \ prefix to stay listed, so\ndeleting the last remaining prefix of an exchange\
+        \ also deletes the exchange\nitself. Because that takes the exchange out of\
+        \ the API and public listings, the\nrequest is refused unless it carries an\
+        \ explicit confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout\
+        \ the flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n\
+        \n\n## Update existing objects\n\n### Permissions\n\nIn order to update an\
+        \ object the requesting user requires `update` permissions to the object itself\
+        \ or one of the parent relationships in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -34535,42 +34165,27 @@ paths:
       - api
     patch:
       operationId: patch ixpfx
-      description: 'PATCH (partial update) is currently disabled.
-
-
-        ## Internet Exchange Prefix
-
-
-        Identified by the `ixpfx` tag.
-
-
-        An IP prefix assigned to an exchange LAN. `prefix` is unique across PeeringDB,
-        so the
-
-        same range cannot be registered on two exchanges.
-
-
-        A `netixlan` may only use an address that falls inside one of its LAN''s prefixes,
-        which
-
-        makes this object the authority on which addresses are valid at an exchange.
-
-
-        `in_dfz` records whether the prefix is routed in the default-free zone.
-
-
-        ### Parent relationship:
-
-
-        - `ix` internet exchange
-
-
-        ### Relationship(s):
-
-
-        - None
-
-        '
+      description: "PATCH (partial update) is currently disabled.\n\n## Internet Exchange\
+        \ Prefix\n\nIdentified by the `ixpfx` tag.\n\nAn IP prefix assigned to an\
+        \ exchange LAN. `prefix` is unique across PeeringDB, so the\nsame range cannot\
+        \ be registered on two exchanges.\n\nA `netixlan` may only use an address\
+        \ that falls inside one of its LAN's prefixes, which\nmakes this object the\
+        \ authority on which addresses are valid at an exchange.\n\n`in_dfz` records\
+        \ whether the prefix is routed in the default-free zone.\n\n### Parent relationship:\n\
+        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting\
+        \ the last prefix\n\nAn exchange has to keep a globally unique Peering LAN\
+        \ prefix to stay listed, so\ndeleting the last remaining prefix of an exchange\
+        \ also deletes the exchange\nitself. Because that takes the exchange out of\
+        \ the API and public listings, the\nrequest is refused unless it carries an\
+        \ explicit confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout\
+        \ the flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n"
       parameters:
       - name: id
         in: path
@@ -35699,46 +35314,28 @@ paths:
       - api
     delete:
       operationId: delete ixpfx
-      description: 'Marks an `ixpfx` type object as `deleted`.
-
-
-        ## Internet Exchange Prefix
-
-
-        Identified by the `ixpfx` tag.
-
-
-        An IP prefix assigned to an exchange LAN. `prefix` is unique across PeeringDB,
-        so the
-
-        same range cannot be registered on two exchanges.
-
-
-        A `netixlan` may only use an address that falls inside one of its LAN''s prefixes,
-        which
-
-        makes this object the authority on which addresses are valid at an exchange.
-
-
-        `in_dfz` records whether the prefix is routed in the default-free zone.
-
-
-        ### Parent relationship:
-
-
-        - `ix` internet exchange
-
-
-        ### Relationship(s):
-
-
-        - None
-
-
-
-        ## Deleting objects
-
-        '
+      description: "Marks an `ixpfx` type object as `deleted`.\n\n## Internet Exchange\
+        \ Prefix\n\nIdentified by the `ixpfx` tag.\n\nAn IP prefix assigned to an\
+        \ exchange LAN. `prefix` is unique across PeeringDB, so the\nsame range cannot\
+        \ be registered on two exchanges.\n\nA `netixlan` may only use an address\
+        \ that falls inside one of its LAN's prefixes, which\nmakes this object the\
+        \ authority on which addresses are valid at an exchange.\n\n`in_dfz` records\
+        \ whether the prefix is routed in the default-free zone.\n\n### Parent relationship:\n\
+        \n- `ix` internet exchange\n\n### Relationship(s):\n\n- None\n\n### Deleting\
+        \ the last prefix\n\nAn exchange has to keep a globally unique Peering LAN\
+        \ prefix to stay listed, so\ndeleting the last remaining prefix of an exchange\
+        \ also deletes the exchange\nitself. Because that takes the exchange out of\
+        \ the API and public listings, the\nrequest is refused unless it carries an\
+        \ explicit confirmation:\n\n    DELETE /api/ixpfx/<id>?confirm=true\n\nWithout\
+        \ the flag the response is a `400` whose `meta` object carries\n`confirmation_required:\
+        \ true` and a human readable `error` message. Nothing is\nchanged by the refused\
+        \ request, and no admin committee ticket is opened for it.\n\nThe exchange\
+        \ is removed even if networks are still peering at it or it still\nhas facility\
+        \ connections, so the message names how many of each go with it.\n\nThe exchange\
+        \ is soft-deleted, as any deletion in PeeringDB is: the records stay\nin the\
+        \ database and can be restored by the admin committee. Deleting a prefix\n\
+        while the exchange keeps another active or pending prefix needs no confirmation.\n\
+        \n\n## Deleting objects\n"
       parameters:
       - name: id
         in: path
@@ -36157,87 +35754,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: irr_as_set_auto_prefix_candidate
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: irr_as_set_auto_prefix_checked
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: irr_as_set_cap_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: irr_as_set_missing_since
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: irr_as_set_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: irr_as_set_status
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          `unknown`, `ok`, `moved`, `gone`
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: irr_as_set_verified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: irr_as_set_verify_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: ix
         in: query
         description: 'Find networks present at exchange (exchange id)
@@ -36397,19 +35913,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: notes_private
-        in: query
-        description: 'Notes visible only to administrators of the owning organization.
-          Not exposed via the API
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: org
         in: query
         description: 'Expanded `org` object, included only when the request `depth`
@@ -36521,41 +36024,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: org__email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: org__flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: org__floor
         in: query
         description: 'Floor within the building
@@ -36639,46 +36107,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: org__periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: org__restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__state
         in: query
         description: 'State, province or region of the postal address
@@ -36872,16 +36300,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: rir_status_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: rir_status_updated
         in: query
         description: 'Time `rir_status` was last set. Read-only
@@ -40450,87 +39868,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__irr_as_set_auto_prefix_candidate
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_auto_prefix_checked
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_cap_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_missing_since
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_status
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          `unknown`, `ok`, `moved`, `gone`
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_verified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_verify_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -40717,16 +40054,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__rir_status_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Time `rir_status` was last set. Read-only
@@ -44717,87 +44044,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__irr_as_set_auto_prefix_candidate
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_auto_prefix_checked
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_cap_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_missing_since
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_status
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          `unknown`, `ok`, `moved`, `gone`
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_verified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_verify_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -44984,16 +44230,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__rir_status_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Time `rir_status` was last set. Read-only
@@ -53447,44 +52683,6 @@ paths:
         required: false
         schema:
           type: boolean
-      - name: ixlan__ixf_ixp_import_error
-        in: query
-        description: 'Reason IX-F data could not be parsed
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: ixlan__ixf_ixp_import_error_notified
-        in: query
-        description: 'Last time we notified the exchange about the IX-F parsing issue
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: ixlan__ixf_ixp_import_protocol_conflict
-        in: query
-        description: 'IX has been sending IP addresses for protocol not supported
-          by network
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
       - name: ixlan__ixf_ixp_member_list_url_visible
         in: query
         description: 'Who may see `ixf_ixp_member_list_url`: `Public` anyone, `Users`
@@ -53848,87 +53046,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__irr_as_set_auto_prefix_candidate
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_auto_prefix_checked
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_cap_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_missing_since
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_status
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          `unknown`, `ok`, `moved`, `gone`
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: net__irr_as_set_verified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
-      - name: net__irr_as_set_verify_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__ix_count
         in: query
         description: 'number of exchanges at this network
@@ -54115,16 +53232,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: net__rir_status_notified
-        in: query
-        description: 'Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: net__rir_status_updated
         in: query
         description: 'Time `rir_status` was last set. Read-only
@@ -62020,41 +61127,6 @@ paths:
           default: 0
           minimum: 0
           maximum: 2
-      - name: email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: floor
         in: query
         description: 'Floor within the building
@@ -62171,18 +61243,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
       - name: page
         required: false
         in: query
@@ -62195,34 +61255,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: since
         in: query
         required: false
@@ -64089,41 +63121,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: org__email_domains
-        in: query
-        description: 'If user email restriction is enabled: only allow users with
-          emails in these domains. One domain per line, in the format of ''@xyz.com''
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
-      - name: org__flagged
-        in: query
-        description: 'Flag the organization for deletion
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__flagged_date
-        in: query
-        description: 'Date when the organization was flagged
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: string
-          format: date-time
       - name: org__floor
         in: query
         description: 'Floor within the building
@@ -64207,46 +63204,6 @@ paths:
         required: false
         schema:
           type: string
-      - name: org__org_flags
-        in: query
-        description: 'Bitmask to store organization policy toggles
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__lt`, `__gt`, `__lte`, `__gte`, `__in`'
-        required: false
-        schema:
-          type: integer
-      - name: org__periodic_reauth
-        in: query
-        description: 'Require users in this organization to periodically re-authenticate
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
-      - name: org__periodic_reauth_period
-        in: query
-        description: "Range of options is available:\n1 Week, 2 Weeks, 1 Month, \n\
-          3 Month, 6 Month, 1 Year\n\nFilter results by matching a value against this\
-          \ field.\n\n`1w`, `2w`, `1m`, `3m`, `6m`, `1y`\n\nSupported filter suffixes:\
-          \ `__startswith`, `__contains`, `__in`"
-        required: false
-        schema:
-          type: string
-      - name: org__restrict_user_emails
-        in: query
-        description: 'Require users in your organization to have email addresses within
-          your specified domains.
-
-
-          Filter results by matching a value against this field.'
-        required: false
-        schema:
-          type: boolean
       - name: org__state
         in: query
         description: 'State, province or region of the postal address

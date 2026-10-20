@@ -1,4 +1,4 @@
-Generated from models.py on 2026-09-22 17:40:35.243351
+Generated from models.py on 2026-10-20 12:07:11.547813
 
 # peeringdb_server.models
 
@@ -1136,6 +1136,11 @@ in a state where it can be marked as deleted.
 This will be False if there are netixlans using IPs from this prefix.
 - descriptive_name (`@property`): Returns a descriptive label of the ixpfx for logging purposes.
 - grainy_namespace (`@property`): None
+- is_last_prefix (`@property`): Returns whether this is the only remaining active-or-pending prefix
+of an exchange that is still listed (#1717).
+
+Drives both the confirmation the API asks for before the delete and
+the exchange removal that follows it.
 - ix_id (`@property`): None
 - ix_org_id (`@property`): None
 - ix_result_name (`@property`): None
@@ -1143,6 +1148,22 @@ This will be False if there are netixlans using IPs from this prefix.
 
 ### Class Methods
 
+#### empties_exchange
+`def empties_exchange(cls, prefixes)`
+
+Returns whether removing exactly `prefixes` leaves the exchange they
+belong to listed with no active-or-pending prefix (#1717).
+
+The set form is the general rule and `is_last_prefix` is the one-row
+case of it. They have to stay in agreement -- the admin can empty an
+exchange in a single save, where no individual row is the last one,
+and a warning computed from a different rule than the delete that
+follows it is how that case went unannounced in the first place.
+
+All of `prefixes` are assumed to share one ixlan; the admin groups
+its selection before asking.
+
+---
 #### related_to_ix
 `def related_to_ix(cls, value=None, filt=None, field=ix_id, qset=None)`
 
@@ -1172,6 +1193,36 @@ Return str(self).
 `def clean(self)`
 
 Custom model validation.
+
+---
+#### delete
+`def delete(self, hard=False, force=False)`
+
+Soft-deletes the prefix, taking the exchange with it when this was the
+exchange's last prefix (#1717).
+
+---
+#### deletion_confirmation_required
+`def deletion_confirmation_required(self)`
+
+Returns the message the caller has to confirm before this prefix can
+be deleted, or None when the delete has no side effects (#1717).
+
+Consumed generically by the REST API's destroy handler.
+
+---
+#### exchange_removal_warning
+`def exchange_removal_warning(self, prefix_count=1)`
+
+Returns the message naming what is removed along with the exchange
+when it loses its final prefix (#1717).
+
+Split out of `deletion_confirmation_required()` so a caller that has
+already established the exchange is being emptied can ask for the
+text on its own -- the admin can empty one with several prefixes in
+a single save, where no individual row is the last one. That is what
+`prefix_count` covers, so the sentence says "the last two" rather
+than claiming one row is all that is left.
 
 ---
 #### test_ip_address
@@ -2602,7 +2653,7 @@ Remove user from 'guest' group.
 Validates if the user has an email address that matches any email
 in the RDAP record.
 
-Checks both the primary email and all verified secondary email addresses.
+Only verified primary and secondary EmailAddress records prove ownership.
 
 Arguments:
     rdap: RdapAsn instance containing RDAP data
