@@ -173,7 +173,12 @@ class PDBCommonMiddleware(CommonMiddleware):
         return False
 
     def process_request(self, request):
-        must_prepend = settings.PDB_PREPEND_WWW and not self.has_subdomain(request)
+        # a bracketed IPv6 literal cannot take a www. prefix (#485)
+        must_prepend = (
+            settings.PDB_PREPEND_WWW
+            and not self.has_subdomain(request)
+            and not request.get_host().startswith("[")
+        )
         redirect_url = (
             (f"{request.scheme}://www.{request.get_host()}") if must_prepend else ""
         )

@@ -22,6 +22,9 @@ from peeringdb_server.serializers import FacilitySerializer
 
 pytestmark = pytest.mark.django_db
 
+# these tests drive the Google provider themselves
+FAKE_GOOGLE_ADDRESS_MATCH = False
+
 
 @pytest.mark.parametrize("enabled", [False, True])
 def test_optional_browser_settings(settings, rf, enabled):
@@ -336,6 +339,27 @@ def test_raw_create_matches_without_confirmation(client, owner, provider):
     assert provider.call_count == 3
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "status,message",
+    [
+        ("pending", "has not yet been approved"),
+        ("deleted", "has been marked as deleted"),
+    ],
+)
+def test_raw_create_under_inactive_org_keeps_parent_status_error(
+    client, owner, provider, status, message
+):
+    org = Organization.objects.create(name="Inactive Location Owner", status=status)
+    org.admin_usergroup.user_set.add(owner[0])
+    response = client.post("/api/fac", payload(org), format="json")
+    assert response.status_code == 400, response.content
+    body = response.json()
+    assert message in body["meta"]["error"]
+    assert "org_id" not in body
+    provider.assert_not_called()
+
+
 def test_raw_address_match_is_case_insensitive(client, owner, provider):
     data = payload(owner[1])
     data.update(address1="123 MAIN STREET", city="CHICAGO", state="il")
@@ -593,6 +617,19 @@ def test_unrelated_edit_needs_no_selection(client, owner, facility, provider):
 
 
 @pytest.mark.django_db
+def test_unrelated_edit_with_phone_numbers(client, owner, facility, provider):
+    # the unchanged country is copied from the instance as a `Country` (#484)
+    data = payload(owner[1], facility=facility)
+    data.update(tech_phone="(312) 555-0100", sales_phone="+1 312 555 0101")
+    response = client.put(f"/api/fac/{facility.pk}", data, format="json")
+    assert response.status_code == 200, response.content
+    facility.refresh_from_db()
+    assert facility.tech_phone == "+13125550100"
+    assert facility.sales_phone == "+13125550101"
+    provider.assert_not_called()
+
+
+@pytest.mark.django_db
 def test_unrelated_edit_of_incomplete_legacy_location(
     client, owner, facility, provider
 ):
@@ -658,6 +695,82 @@ def test_disabled_rollout_keeps_legacy_api(client, owner, settings, provider):
     response = client.post("/api/fac", payload(owner[1]), format="json")
     assert response.status_code == 201, response.content
     assert resolve(client, owner[1]).status_code == 400
+    provider.assert_not_called()
+
+
+# The rollback setting (selection off) keeps the legacy write paths alive
+
+
+@pytest.fixture
+def rollback(settings):
+    settings.FACILITY_ADDRESS_SELECTION_ENABLED = False
+
+
+@pytest.fixture
+def rollback_facility(facility):
+    # the legacy path rejects any write that still carries a floor (#1482)
+    Facility.objects.filter(pk=facility.pk).update(floor="")
+    facility.refresh_from_db()
+    return facility
+
+
+@pytest.mark.django_db
+def test_rollback_create_ignores_submitted_coordinates(
+    client, owner, rollback, provider
+):
+    data = payload(owner[1])
+    data.update(latitude=35.689487, longitude=139.691711)
+    response = client.post("/api/fac", data, format="json")
+    assert response.status_code == 201, response.content
+    saved = Facility.objects.get(name="New Location Facility")
+    assert saved.latitude is None
+    assert saved.longitude is None
+    provider.assert_not_called()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "change,field",
+    [
+        # same city, pin far from the saved coordinates
+        ({"latitude": 35.689487, "longitude": 139.691711}, "latitude"),
+        ({"latitude": None, "longitude": None}, "latitude"),
+        ({"zipcode": ""}, "zipcode"),
+    ],
+)
+def test_rollback_update_validation(
+    client, owner, rollback_facility, rollback, provider, change, field
+):
+    facility = rollback_facility
+    data = payload(owner[1], facility=facility)
+    data.update(change)
+    response = client.put(f"/api/fac/{facility.pk}", data, format="json")
+    assert response.status_code == 400, response.content
+    assert field in response.json()
+    facility.refresh_from_db()
+    assert (float(facility.latitude), facility.zipcode) == (41.88, "60601")
+    provider.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_rollback_update_normalises_changed_address(
+    client, owner, rollback_facility, rollback, settings, provider
+):
+    facility = rollback_facility
+    # the legacy update skips geocoding under the run_tests release env
+    settings.RELEASE_ENV = "dev"
+    data = payload(owner[1], facility=facility)
+    data["address1"] = "125 main street"
+    with patch.object(
+        Facility,
+        "process_geo_location",
+        return_value={"address1": "125 Main Street", "city": "Chicago", "state": "IL"},
+    ) as geocode:
+        response = client.put(f"/api/fac/{facility.pk}", data, format="json")
+    assert response.status_code == 200, response.content
+    geocode.assert_called_once()
+    facility.refresh_from_db()
+    assert facility.address1 == "125 Main Street"
     provider.assert_not_called()
 
 

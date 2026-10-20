@@ -15,6 +15,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django_countries.fields import Country
 from geopy.distance import geodesic
 from rest_framework.exceptions import ValidationError as RestValidationError
 from schema import Schema
@@ -78,12 +79,13 @@ def validate_poc_visible(visible: str) -> str:
     return visible
 
 
-def validate_phonenumber(phonenumber: str, country: str | None = None) -> str:
+def validate_phonenumber(phonenumber: str, country: str | Country | None = None) -> str:
     """
     Validate a phonenumber to E.164
 
     Arguments:
         - phonenumber (str)
+        - country (str or `Country`): region used to parse national numbers
 
     Raises:
         - ValidationError if phone number isn't valid E.164 and cannot
@@ -96,8 +98,11 @@ def validate_phonenumber(phonenumber: str, country: str | None = None) -> str:
     if not phonenumber:
         return ""
 
+    # A model instance's country is a `Country`, which phonenumbers rejects (#484)
+    region = str(country) if country else None
+
     try:
-        parsed_number = phonenumbers.parse(phonenumber, country)
+        parsed_number = phonenumbers.parse(phonenumber, region)
         validated_number = phonenumbers.format_number(
             parsed_number, phonenumbers.PhoneNumberFormat.E164
         )

@@ -5,8 +5,12 @@ SERVER_EMAIL = "pdb@localhost"
 
 SECRET_KEY = "tests"
 
-# Legacy API fixtures exercise the rollback setting; selection tests enable it explicitly.
-FACILITY_ADDRESS_SELECTION_ENABLED = False
+# Matches production; tests/conftest.py fakes the Google address match (#486)
+FACILITY_ADDRESS_SELECTION_ENABLED = True
+
+# Where the faked Google geocoder places every address; submitted coordinates
+# must be within LOCATION_MATCH_MAX_DISTANCE_KM of it, as in production
+LOCATION_TEST_MATCH_POINT = (41.88, -87.63)
 
 # Keys
 

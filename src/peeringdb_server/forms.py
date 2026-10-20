@@ -21,7 +21,7 @@ from captcha.models import CaptchaStore
 from django import forms
 from django.conf import settings as dj_settings
 from django.contrib.auth import forms as auth_forms
-from django.core.exceptions import ValidationError
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from grainy.const import PERM_CRUD, PERM_DENY, PERM_READ
@@ -288,6 +288,25 @@ class ObjectLogoUploadForm(forms.ModelForm):
             )
 
         return logo
+
+    def add_error(
+        self,
+        field: str | None,
+        error: ValidationError | str | list[str] | dict[str, list[str]],
+    ) -> None:
+        # Model.clean() also checks fields this form does not edit, such as the
+        # deprecated floor (#1482); that legacy data must not block a logo
+        # upload, matching the API asset endpoint (#485)
+        if field is None and hasattr(error, "error_dict"):
+            error_dict = {
+                name: errors
+                for name, errors in error.error_dict.items()
+                if name == NON_FIELD_ERRORS or name in self.fields
+            }
+            if not error_dict:
+                return
+            error = ValidationError(error_dict)
+        super().add_error(field, error)
 
 
 class PasskeyFlagFormMixin:

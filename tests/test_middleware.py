@@ -56,6 +56,15 @@ class PDBCommonMiddlewareTest(TestCase):
         self.assertEqual(r.status_code, 301)
         self.assertEqual(r.url, "http://www.testserver/path/")
 
+    @pytest.mark.django_db
+    @override_settings(PDB_PREPEND_WWW=True, ALLOWED_HOSTS=["*"])
+    def test_prepend_www_skips_ipv6_literal(self):
+        # https://www.[2001:db8::1]/ is not a valid URL (#485)
+        for host in ("[2001:db8::1]", "[2001:db8::1]:8000"):
+            request = self.rf.get("/path/", HTTP_HOST=host)
+            r = PDBCommonMiddleware(get_response_empty).process_request(request)
+            self.assertIsNone(r)
+
 
 @modify_settings(
     MIDDLEWARE={
