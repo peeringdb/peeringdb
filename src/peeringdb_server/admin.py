@@ -45,6 +45,8 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from django_otp.plugins.otp_email.models import EmailDevice
+from django_otp.plugins.otp_static.models import StaticDevice
 from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_peeringdb.const import NET_TYPES_MULTI_CHOICE
@@ -970,24 +972,120 @@ class UserOrgAffiliationRequestInline(admin.TabularInline):
     }
 
 
-class UserDeviceInline(admin.TabularInline):
+class ReadOnlyDeviceInline(admin.TabularInline):
+    """
+    Base for the MFA device sections on the user change page (#2009).
+
+    Those sections are there to be read while working a lost-access ticket, so
+    every column is named in both fields and readonly_fields. Listing the
+    columns is not optional: a bare inline renders every model field as an
+    editable input, which on TOTPDevice is the shared secret and on EmailDevice
+    the live one-time password.
+
+    Read-only is declared explicitly rather than derived from
+    has_change_permission, so the rendering does not depend on Django's
+    permission-to-readonly behaviour while can_delete remains true.
+
+    Device types that django-otp throttles show the throttling columns. Only
+    the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
+    lockout, while django_otp's own static and email device admins have no
+    throttling fields, and the static one shows every backup code.
+    """
+
+    extra = 0
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+class UserDeviceInline(ReadOnlyDeviceInline):
     model = TOTPDevice
-    extra = 0
     verbose_name_plural = _("User has these TOTP devices")
-    raw_id_fields = ("user",)
-    autocomplete_lookup_fields = {
-        "fk": ["user"],
-    }
+    show_change_link = True
+    # key is the shared secret and is never shown. step, t0, digits, tolerance
+    # and last_t are fixed configuration or replay state with no use on a
+    # support ticket. drift shows a phone clock that is off.
+    fields = (
+        "name",
+        "confirmed",
+        "created_at",
+        "last_used_at",
+        "throttling_failure_count",
+        "throttling_failure_timestamp",
+        "drift",
+    )
+    readonly_fields = fields
 
 
-class UserWebauthnSecurityKeyInline(admin.TabularInline):
+class UserWebauthnSecurityKeyInline(ReadOnlyDeviceInline):
     model = SecurityKey
-    extra = 0
+    # django_security_keys.SecurityKeyDevice gets no inline of its own: it is a
+    # single auto-created marker row per user that makes security keys
+    # selectable at login, and carries no data beyond the keys listed here.
+    # credential_id, credential_public_key, attestation and sign_count are not
+    # secret but are opaque blobs that do not help troubleshoot a login.
+    # updated is auto_now: it moves on registration, on every successful
+    # authentication and on the passkey login toggle, so it is not a last-use
+    # time. django_security_keys records none.
     verbose_name_plural = _("User has these Webauthn Security Keys")
-    raw_id_fields = ("user",)
-    autocomplete_lookup_fields = {
-        "fk": ["user"],
-    }
+    fields = ("name", "type", "passkey_login", "created", "last_updated")
+    readonly_fields = fields
+
+    @admin.display(description=_("Last updated"))
+    def last_updated(self, obj):
+        return obj.updated
+
+
+class UserStaticDeviceInline(ReadOnlyDeviceInline):
+    model = StaticDevice
+    verbose_name_plural = _("User has these Backup Token sets")
+    fields = (
+        "name",
+        "confirmed",
+        "created_at",
+        "last_used_at",
+        "unused_token_count",
+        "throttling_failure_count",
+        "throttling_failure_timestamp",
+    )
+    readonly_fields = fields
+
+    @admin.display(description=_("Unused tokens"))
+    def unused_token_count(self, obj):
+        # the count only -- OTP_ADMIN_HIDE_SENSITIVE_DATA is unset, so
+        # django_otp's own StaticDeviceAdmin renders the token values and this
+        # page must not. the empty form has no device to count, so it stays
+        # blank rather than claiming 0 unused tokens
+        if not obj or not obj.pk:
+            return ""
+        return obj.token_set.count()
+
+
+class UserEmailDeviceInline(ReadOnlyDeviceInline):
+    model = EmailDevice
+    # an EmailDevice row is not an enrollment: get_email_device in views.py
+    # creates one for any user with a confirmed email address the first time
+    # they pass through the login wizard, and deletes it again if the address
+    # is unconfirmed. last_used_at is what says whether email OTP was ever
+    # actually used to authenticate.
+    verbose_name_plural = _("Email one-time password (auto-provisioned)")
+    fields = (
+        "token_destination",
+        "confirmed",
+        "created_at",
+        "last_used_at",
+        "throttling_failure_count",
+        "throttling_failure_timestamp",
+    )
+    readonly_fields = fields
+
+    @admin.display(description=_("Tokens delivered to"))
+    def token_destination(self, obj):
+        # django_otp mails the token to email or user.email, so a blank email
+        # column would read as "nowhere" when it means "the account address"
+        if not obj or not obj.pk:
+            return ""
+        return obj.email or obj.user.email
 
 
 class InternetExchangeAdminForm(StatusForm):
@@ -2153,6 +2251,8 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
         UserOrgAffiliationRequestInline,
         UserDeviceInline,
         UserWebauthnSecurityKeyInline,
+        UserStaticDeviceInline,
+        UserEmailDeviceInline,
     )
     readonly_fields = (
         "email_status",
