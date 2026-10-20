@@ -25,7 +25,6 @@ from peeringdb_server.models import (
     Facility,
     InternetExchange,
     IXLan,
-    Network,
     NetworkFacility,
     NetworkIXLan,
     live_statuses,
@@ -395,7 +394,6 @@ class AdvancedSearchExportView(ExportView):
         data = self.fetch(request)
         download_data = []
         for row in data:
-            net = Network.objects.get(id=row["id"])
             download_data.append(
                 collections.OrderedDict(
                     [
@@ -407,8 +405,12 @@ class AdvancedSearchExportView(ExportView):
                         ("Network Scope", row["info_scope"]),
                         ("Traffic Levels", row["info_traffic"]),
                         ("Traffic Ratio", row["info_ratio"]),
-                        ("Exchanges", net.netixlan_set.count()),
-                        ("Facilities", net.netfac_set.count()),
+                        # #2046: unique exchanges / facilities, not a count of
+                        # netixlan / netfac rows. ix_count dedupes multiple
+                        # connections to the same exchange; both exclude
+                        # soft-deleted rows.
+                        ("Exchanges", row["ix_count"]),
+                        ("Facilities", row["fac_count"]),
                     ]
                 )
             )

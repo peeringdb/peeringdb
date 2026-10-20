@@ -139,8 +139,23 @@ class AdvancedSearchExportTest(ClientCase):
             data = fh.read().rstrip()
         return data
 
+    def add_deleted_netfac(self):
+        """
+        Give Network 1 a soft-deleted netfac.
+
+        #2046: the advanced search export counted deleted rows toward a
+        network's facility total, so the export tests need a network that
+        has one.
+        """
+        with reversion.create_revision():
+            NetworkFacility.objects.create(
+                network=self.net[0], facility=self.fac[2], status="deleted"
+            )
+
     def test_export_net_json(self):
         """test json export of network search"""
+        self.add_deleted_netfac()
+
         client = Client()
         response = client.get("/export/advanced-search/net/json?name_search=Network")
         assert json.loads(response.content) == json.loads(
@@ -149,6 +164,8 @@ class AdvancedSearchExportTest(ClientCase):
 
     def test_export_net_json_pretty(self):
         """test pretty json export of network search"""
+        self.add_deleted_netfac()
+
         client = Client()
         response = client.get(
             "/export/advanced-search/net/json-pretty?name_search=Network"
@@ -164,6 +181,8 @@ class AdvancedSearchExportTest(ClientCase):
 
     def test_export_net_csv(self):
         """test csv export of network search"""
+        self.add_deleted_netfac()
+
         client = Client()
         response = client.get("/export/advanced-search/net/csv?name_search=Network")
         assert response.content.decode("utf-8").replace(
@@ -176,6 +195,63 @@ class AdvancedSearchExportTest(ClientCase):
         call_command("pdb_api_cache", date=datetime.datetime.now().strftime("%Y%m%d"))
 
         self.test_export_net_csv()
+
+    def test_export_net_exchange_count_with_repeat_and_deleted_connections(self):
+        """
+        Mirror net 28063 from #2046: 7 active netixlans across 5 distinct
+        exchanges (one exchange carries 3 connections), plus a soft-deleted
+        netixlan. The export reports unique exchanges, so neither the repeat
+        connections nor the deleted row inflate the count.
+        """
+        net = self.net[0]
+
+        with reversion.create_revision():
+            # two extra connections on the exchange the network is already on,
+            # so one exchange carries three of them
+            for _ in range(2):
+                NetworkIXLan.objects.create(
+                    ixlan=self.ixlan[0], network=net, asn=net.asn, speed=0, status="ok"
+                )
+
+            # one connection on each of the other two exchanges from setup
+            for ixlan in self.ixlan[1:3]:
+                NetworkIXLan.objects.create(
+                    ixlan=ixlan, network=net, asn=net.asn, speed=0, status="ok"
+                )
+
+            # two further exchanges, one connection each, for 5 distinct total
+            for i in (4, 5):
+                ix = InternetExchange.objects.create(
+                    name=f"Exchange {i}",
+                    media="Ethernet",
+                    country="US",
+                    city=f"City {i}",
+                    status="ok",
+                    org=self.org[0],
+                )
+                NetworkIXLan.objects.create(
+                    ixlan=ix.ixlan, network=net, asn=net.asn, speed=0, status="ok"
+                )
+
+            NetworkIXLan.objects.create(
+                ixlan=self.ixlan[0], network=net, asn=net.asn, speed=0, status="deleted"
+            )
+
+        assert net.netixlan_set.count() == 8
+        assert net.netixlan_set_active.count() == 7
+
+        net.refresh_from_db()
+        assert net.ix_count == 5
+
+        client = Client()
+        response = client.get("/export/advanced-search/net/json?name_search=Network")
+        row = next(
+            r for r in json.loads(response.content)["results"] if r["ASN"] == net.asn
+        )
+
+        # 8 netixlan rows, 7 of them active, across 5 distinct exchanges
+        assert row["Exchanges"] == 5
+        assert row["Facilities"] == 1
 
     def test_export_fac_json(self):
         """test json export of facility search"""
