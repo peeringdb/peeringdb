@@ -81,7 +81,7 @@ $(window).bind("load", function() {
   {% endif %}
 
   SecurityKeys.init({
-    url_request_registration: "{% url "security-keys-request-registration" %}",
+    url_request_registration: "{% url "security-keys-request-registration" %}{% if passkey_registration %}?passkey=1{% endif %}",
     url_request_authentication: "{% url "security-keys-request-authentication" %}",
     csrf_token:"{{ csrf_token }}"
   });

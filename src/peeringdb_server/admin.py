@@ -934,7 +934,7 @@ class IXLanInline(SanitizedAdmin, admin.StackedInline):
 
     def ixf_import_attempt_info(self, obj):
         if obj.ixf_import_attempt:
-            return mark_safe(f"<pre>{obj.ixf_import_attempt.info}</pre>")
+            return html.format_html("<pre>{}</pre>", obj.ixf_import_attempt.info)
         return ""
 
     def prefixes(self, obj):
@@ -1403,26 +1403,24 @@ class IXLanIXFMemberImportLogAdmin(
         return obj.entries.count()
 
     def ix(self, obj):
-        return mark_safe(
-            '<a href="{}">{} (ID: {})</a>'.format(
-                django.urls.reverse(
-                    "admin:peeringdb_server_internetexchange_change",
-                    args=(obj.ixlan.ix.id,),
-                ),
-                obj.ixlan.ix.name,
-                obj.ixlan.ix.id,
-            )
+        return html.format_html(
+            '<a href="{}">{} (ID: {})</a>',
+            django.urls.reverse(
+                "admin:peeringdb_server_internetexchange_change",
+                args=(obj.ixlan.ix.id,),
+            ),
+            obj.ixlan.ix.name,
+            obj.ixlan.ix.id,
         )
 
     def ixlan_name(self, obj):
-        return mark_safe(
-            '<a href="{}">{} (ID: {})</a>'.format(
-                django.urls.reverse(
-                    "admin:peeringdb_server_ixlan_change", args=(obj.ixlan.id,)
-                ),
-                obj.ixlan.name or "",
-                obj.ixlan.id,
-            )
+        return html.format_html(
+            '<a href="{}">{} (ID: {})</a>',
+            django.urls.reverse(
+                "admin:peeringdb_server_ixlan_change", args=(obj.ixlan.id,)
+            ),
+            obj.ixlan.name or "",
+            obj.ixlan.id,
         )
 
     def source(self, obj):
@@ -2497,7 +2495,7 @@ class UserPermissionAdmin(UserAdmin):
             args=(obj.id,),
         )
 
-        return mark_safe(f'<a href="{url}">{obj.username}</a>')
+        return html.format_html('<a href="{}">{}</a>', url, obj.username)
 
     def username(self, obj):
         return obj.user.username
@@ -3007,12 +3005,16 @@ class IXFMemberDataAdmin(
             url = django.urls.reverse(
                 "admin:peeringdb_server_ixfmemberdata_change", args=(requirement.id,)
             )
-            lines.append(f'<a href="{url}">{requirement} {requirement.action}</a>')
+            lines.append((url, requirement, requirement.action))
 
         if not lines:
             return _("No requirements")
 
-        return mark_safe("<br>".join(lines))
+        return html.format_html_join(
+            mark_safe("<br>"),
+            '<a href="{}">{} {}</a>',
+            lines,
+        )
 
     def netixlan(self, obj):
         if not obj.netixlan.id:

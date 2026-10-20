@@ -17,6 +17,7 @@ from django import forms
 from django.conf import settings
 from django.core.management import call_command
 from django.db import transaction
+from django.utils.html import format_html_join
 from reversion.models import Version
 
 from peeringdb_server import maintenance
@@ -112,12 +113,12 @@ class CommandLineToolWrapper:
         r = []
         for line in self.result.split("\n"):
             if line.find("[error]") > -1:
-                r.append(f'<div class="error">{line}</div>')
+                r.append(("error", line))
             elif line.find("[warning]") > -1:
-                r.append(f'<div class="warning">{line}</div>')
+                r.append(("warning", line))
             else:
-                r.append(f'<div class="info">{line}</div>')
-        return "\n".join(r)
+                r.append(("info", line))
+        return format_html_join("\n", '<div class="{}">{}</div>', r)
 
     def set_arguments(self, form_data):
         pass

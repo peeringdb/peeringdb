@@ -223,8 +223,10 @@ def debug_mail(*args):
 def make_relation_filter(field, filt, value, prefix=None):
     if prefix:
         field = re.sub(f"^{prefix}__", "", field)
-        field = re.sub(f"^{prefix}_", "", field)
-        if field == prefix:
+        # exact match only: stripping any `<prefix>_` would let
+        # `<prefix>__<prefix>_<field>` reach a field the caller never
+        # checked against FILTER_EXCLUDE (#489)
+        if field in (prefix, f"{prefix}_id"):
             field = "id"
     if filt:
         filt = {f"{field}__{filt}": value}
@@ -7345,7 +7347,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         Validates if the user has an email address that matches any email
         in the RDAP record.
 
-        Checks both the primary email and all verified secondary email addresses.
+        Only verified primary and secondary EmailAddress records prove ownership.
 
         Arguments:
             rdap: RdapAsn instance containing RDAP data
@@ -7354,12 +7356,6 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             bool: True if any user email matches RDAP emails, False otherwise
         """
 
-        # Check primary email (stored on User model)
-        for email in rdap.emails:
-            if email and self.email and email.lower() == self.email.lower():
-                return True
-
-        # Check all verified secondary emails (from allauth EmailAddress)
         for email_address in self.emailaddress_set.filter(verified=True):
             for rdap_email in rdap.emails:
                 if rdap_email and rdap_email.lower() == email_address.email.lower():

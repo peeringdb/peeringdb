@@ -58,9 +58,10 @@
 
 
 {% if user_networks %}
+{{ user_networks|json_script:"user-networks-data" }}
 <script>
   window.facilityNetworkConfig = {
-    userNetworks: {{ user_networks|safe }},
+    userNetworks: JSON.parse(document.getElementById("user-networks-data").textContent),
     facilityId: {{ instance.id }}
   };
 </script>

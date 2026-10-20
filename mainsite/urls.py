@@ -84,6 +84,12 @@ urlpatterns = [
         no_store_private(allauth.account.views.confirm_email),
         name="account_confirm_email",
     ),
+    # All password entry points must use the policy-aware MFA wizard.
+    re_path(
+        r"^accounts/login/$",
+        RedirectView.as_view(pattern_name="two_factor:login", query_string=True),
+        name="account_login",
+    ),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(
         r"^cp/peeringdb_server/organizationmerge/add/",

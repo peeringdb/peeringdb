@@ -135,20 +135,22 @@
 </div>
 
 {% if user_exchanges %}
+{{ user_exchanges|json_script:"user-exchanges-data" }}
 <script>
   // Configuration for facility exchange management
   window.facilityExchangeConfig = {
-    userExchanges: {{ user_exchanges|safe }},
+    userExchanges: JSON.parse(document.getElementById("user-exchanges-data").textContent),
     facilityId: {{ instance.id }}
   };
 </script>
 {% endif %}
 
 {% if user_carriers %}
+{{ user_carriers|json_script:"user-carriers-data" }}
 <script>
   // Configuration for facility carrier management
   window.facilityCarrierConfig = {
-    userCarriers: {{ user_carriers|safe }},
+    userCarriers: JSON.parse(document.getElementById("user-carriers-data").textContent),
     facilityId: {{ instance.id }}
   };
 </script>

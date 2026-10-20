@@ -12,6 +12,7 @@ from rest_framework import serializers
 from peeringdb_server import meta_registry
 from peeringdb_server.api_schema import BaseSchema, CustomSchemaGenerator
 from peeringdb_server.rest import REFTAG_MAP
+from peeringdb_server.serializers import FILTER_EXCLUDE
 
 # Components that legitimately expose no properties at all. `ASSet` is generated
 # from ASSetSerializer, whose Meta.fields is empty, so there is nothing to document.
@@ -258,4 +259,35 @@ def test_relation_filters_only_traverse_api_models(generated_schema):
     assert not leaked, (
         "these query params traverse into models that are not part of the API "
         "and must not be documented:\n  " + "\n  ".join(leaked)
+    )
+
+
+@pytest.mark.django_db
+def test_filter_exclude_is_not_documented(generated_schema):
+    """
+    Nothing in FILTER_EXCLUDE may be advertised as a query param, neither the
+    name itself nor anything reached through it (#489).
+    """
+    documented = {
+        param["name"]
+        for operations in generated_schema["paths"].values()
+        for operation in operations.values()
+        if isinstance(operation, dict)
+        for param in operation.get("parameters", [])
+        if param.get("in") == "query"
+    }
+
+    leaked = sorted(
+        name
+        for name in documented
+        if any(
+            name == excluded
+            or name.startswith(f"{excluded}__")
+            or excluded in name.split("__")
+            for excluded in FILTER_EXCLUDE
+        )
+    )
+    assert not leaked, (
+        "these query params are in FILTER_EXCLUDE and must not be documented:\n  "
+        + "\n  ".join(leaked)
     )

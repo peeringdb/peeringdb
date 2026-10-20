@@ -1210,6 +1210,7 @@ CONTENT_SECURITY_POLICY = {
 }
 
 MIDDLEWARE = (
+    "peeringdb_server.middleware.PermissionsPolicyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -1328,6 +1329,7 @@ MIDDLEWARE += (
     "peeringdb_server.middleware.PDBPermissionMiddleware",
     "peeringdb_server.middleware.EnforceMFAMiddleware",
     "oauth2_provider.middleware.OAuth2TokenMiddleware",
+    "peeringdb_server.middleware.OrgPasskeyAdminMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
 )
 
@@ -2013,6 +2015,9 @@ set_option("MFA_FORCE_HARD_START", None, envvar_type=str)
 # if set convert to datetime off of YYYY-MM-DD
 if MFA_FORCE_HARD_START:
     MFA_FORCE_HARD_START = datetime.strptime(MFA_FORCE_HARD_START, "%Y-%m-%d")
+
+# Enable after staff have passkeys and qualifying organization memberships.
+set_option("ADMIN_REQUIRE_PASSKEY", False)
 
 # -----------------------------------------------------------------------------
 # Test-mode read-replica wiring.

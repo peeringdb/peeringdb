@@ -2372,9 +2372,16 @@ twentyc.editable.module.register(
     },
 
     execute_register : function(trigger, container) {
+      this.components.add.editable("export", this.target.data);
+      var password = this.target.data.password;
+      if (!password) {
+        $("#errors-alert").text(gettext("Please enter your current password to add a passkey."));
+        container.editable("loading-shim", "hide");
+        return;
+      }
       SecurityKeys.request_registration(
+        password,
         (credential_json) => {
-          this.components.add.editable("export", this.target.data);
           this.target.data.credential = credential_json;
           var data = this.target.data;
           data.passkey_login = true

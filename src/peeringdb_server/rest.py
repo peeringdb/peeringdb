@@ -537,10 +537,7 @@ class ModelViewSet(viewsets.ModelViewSet):
         except ValueError:
             raise RestValidationError({"detail": "'depth' needs to be a number"})
 
-        field_names = dict(
-            [(fld.name, fld) for fld in self.model._meta.get_fields()]
-            + self.serializer_class.queryable_relations()
-        )
+        field_names = dict(self.serializer_class.filterable_fields())
 
         date_fields = ["DateTimeField", "DateField"]
 

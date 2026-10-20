@@ -508,6 +508,13 @@ def test_done_blocks_password_login_when_passkey_required(reauth_objects):
     """
     user = reauth_objects["user"]
     org = reauth_objects["org"]
+    SecurityKey.objects.create(
+        user=user,
+        name="Existing passkey",
+        passkey_login=True,
+        credential_id="existing-passkey",
+        credential_public_key="test",
+    )
 
     org.set_org_flag(dj_settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH, True)
     org.save()
@@ -615,6 +622,13 @@ def test_done_sets_session_key_on_block(reauth_objects):
     """
     user = reauth_objects["user"]
     org = reauth_objects["org"]
+    SecurityKey.objects.create(
+        user=user,
+        name="Existing passkey",
+        passkey_login=True,
+        credential_id="existing-passkey",
+        credential_public_key="test",
+    )
 
     org.set_org_flag(dj_settings.ORG_FLAGS_PASSKEY_DISABLE_PASSWORD_AUTH, True)
     org.save()
