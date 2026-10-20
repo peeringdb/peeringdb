@@ -1,16 +1,26 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import reversion
 from django.core import mail
 from django.core.management import call_command
 from django.test import override_settings
 from django.utils import timezone
 from rdap.assignment import RIRAssignmentLookup
 from rdap.exceptions import RdapNotFoundError
+from rest_framework.test import APIClient
 
 from peeringdb_server.inet import RdapInvalidRange
 from peeringdb_server.mail import mail_network_rir_status_flagged
-from peeringdb_server.models import Network, NetworkContact, Organization
+from peeringdb_server.models import (
+    InternetExchange,
+    IXLanPrefix,
+    Network,
+    NetworkContact,
+    NetworkIXLan,
+    Organization,
+    User,
+)
 
 try:
     from rdap.exceptions import RdapBootstrapError
@@ -1041,3 +1051,74 @@ def test_rir_status_reset_clears_notified():
     assert net.status == "ok"
     assert net.rir_status == "assigned"
     assert net.rir_status_notified is None
+
+
+@override_settings(KEEP_RIR_STATUS=1, RIR_STATUS_VERIFY_BEFORE_DELETE=False)
+@pytest.mark.django_db
+def test_rir_status_delete_soft_deletes_netixlans_visible_to_since():
+    """
+    GH #2057: an RIR-driven network deletion must soft-delete its netixlans
+    and bump `updated` on them and on the network, so incremental `?since=`
+    clients see them go.
+    The network's only technical PoC is also the last one, so the #923
+    last-tech-PoC rule is in play during the cascade.
+    """
+    org = Organization.objects.create(name="test org", status="ok")
+    ix = InternetExchange.objects.create(name="test ix", org=org, status="ok")
+    IXLanPrefix.objects.create(
+        ixlan=ix.ixlan, protocol="IPv4", prefix="198.51.100.0/24", status="ok"
+    )
+    net = _eligible_for_deletion(org, 64600)
+    poc = NetworkContact.objects.create(
+        network=net, role="Technical", visible="Public", status="ok"
+    )
+    # inside a revision so the net_count signal runs
+    with reversion.create_revision():
+        netixlans = [
+            NetworkIXLan.objects.create(
+                network=net,
+                ixlan=ix.ixlan,
+                asn=net.asn,
+                speed=1000,
+                ipaddr4=f"198.51.100.{n}",
+                status=status,
+            )
+            for n, status in ((10, "ok"), (11, "not-operational"))
+        ]
+    stale = now - timezone.timedelta(days=10)
+    NetworkIXLan.objects.filter(network=net).update(created=stale, updated=stale)
+    Network.objects.filter(pk=net.pk).update(created=stale, updated=stale)
+    since = int(timezone.now().timestamp()) - 1
+    ix.refresh_from_db()
+    assert ix.net_count == 1
+
+    with (
+        patch.object(
+            RIRAssignmentLookup,
+            "load_data",
+            side_effect=lambda data_path, cache_days: None,
+        ),
+        patch.object(RIRAssignmentLookup, "get_status", side_effect=lambda asn: None),
+    ):
+        call_command("pdb_rir_status", asn=net.asn, commit=True)
+
+    net.refresh_from_db()
+    poc.refresh_from_db()
+    ix.refresh_from_db()
+    assert net.status == "deleted"
+    assert net.updated > stale
+    assert poc.status == "deleted"
+    assert ix.net_count == 0
+
+    for netixlan in netixlans:
+        netixlan = NetworkIXLan.objects.get(pk=netixlan.pk)
+        assert netixlan.status == "deleted"
+        assert netixlan.updated > stale
+
+    admin = User.objects.create_superuser("admin", "admin@localhost", "admin")
+    client = APIClient()
+    client.force_authenticate(admin)
+    response = client.get("/api/netixlan", {"since": since, "net_id": net.id})
+    assert response.status_code == 200
+    rows = {row["id"]: row["status"] for row in response.json()["data"]}
+    assert rows == {netixlan.pk: "deleted" for netixlan in netixlans}
