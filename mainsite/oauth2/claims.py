@@ -3,7 +3,25 @@ from abc import ABC, abstractmethod
 from django_grainy.util import Permissions
 from oauth2_provider.models import Grant
 
+from peeringdb_server.context import (
+    current_request,
+    is_issuing_at_authorization_endpoint,
+)
 from peeringdb_server.models import OAuthAccessTokenInfo, OAuthGrantInfo
+
+
+def session_amr():
+    """
+    Returns the amr values of the user's login session for the request
+    being served
+    """
+
+    # the oauthlib request is sanitized and has no django session, so read
+    # it from the current django request
+    with current_request() as django_request:
+        if django_request:
+            return django_request.session.get("amr", [])
+    return []
 
 
 class ScopedClaim(ABC):
@@ -94,10 +112,15 @@ class Networks(ScopedClaim):
 
 class AMR(ScopedClaim):
     def enact(self, request):
+        # there is no code to look up at the authorization endpoint, and the
+        # grant of a hybrid flow is saved from the same session (#490)
+        if is_issuing_at_authorization_endpoint():
+            return session_amr()
+
         try:
             # get the grant instance by the code passed in the
             # request body
-            body = dict(request.decoded_body)
+            body = dict(request.decoded_body or [])
             code = body.get("code")
 
             try:

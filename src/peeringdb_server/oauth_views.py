@@ -21,6 +21,11 @@ from oauth2_provider.models import get_access_token_model, get_application_model
 from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
 from oauth2_provider.views.mixins import OAuthLibMixin
+from oauth2_provider.views.oidc import (
+    ConnectDiscoveryInfoView as BaseConnectDiscoveryInfoView,
+)
+
+from peeringdb_server.context import issuing_at_authorization_endpoint
 
 if TYPE_CHECKING:
     from oauth2_provider.models import AbstractApplication
@@ -75,6 +80,18 @@ class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
         # heterogeneous OAuth request data (scopes, uris, app instance, claims)
         self.oauth2_data: dict[str, Any] = {}
         return super().dispatch(request, *args, **kwargs)
+
+    def create_authorization_response(
+        self,
+        request: HttpRequest,
+        scopes: str,
+        credentials: dict[str, Any],
+        allow: bool,
+    ) -> tuple[str, dict[str, str], str, int]:
+        with issuing_at_authorization_endpoint():
+            return super().create_authorization_response(
+                request, scopes, credentials, allow
+            )
 
     def error_response(
         self,
@@ -341,12 +358,11 @@ class OAuthMetadataView(View):
             introspection_endpoint = "{}{}".format(
                 host, reverse("oauth2_provider:introspect")
             )
-        signing_algorithms = [Application.HS256_ALGORITHM]
+        # HS256 is not advertised: client secrets are hashed (migration 0115),
+        # so HS256 ID tokens cannot be signed (#2055)
+        signing_algorithms = []
         if oauth2_settings.OIDC_RSA_PRIVATE_KEY:
-            signing_algorithms = [
-                Application.RS256_ALGORITHM,
-                Application.HS256_ALGORITHM,
-            ]
+            signing_algorithms = [Application.RS256_ALGORITHM]
 
         validator_class = oauth2_settings.OAUTH2_VALIDATOR_CLASS
         validator = validator_class()
@@ -382,4 +398,22 @@ class OAuthMetadataView(View):
         }
 
         response = JsonResponse(data)
+        return response
+
+
+class ConnectDiscoveryInfoView(BaseConnectDiscoveryInfoView):
+    """
+    OIDC discovery document without HS256 in the advertised ID token
+    signing algorithms (#2055)
+    """
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        response = super().get(request, *args, **kwargs)
+        data = json.loads(response.content)
+        data["id_token_signing_alg_values_supported"] = [
+            alg
+            for alg in data["id_token_signing_alg_values_supported"]
+            if alg != Application.HS256_ALGORITHM
+        ]
+        response.content = json.dumps(data)
         return response

@@ -7,7 +7,6 @@ from django.conf import settings
 from django.urls import include, path, re_path
 from django.views.generic import RedirectView, TemplateView
 from django.views.i18n import JavaScriptCatalog
-from oauth2_provider.views import ConnectDiscoveryInfoView
 
 import peeringdb_server.api_key_views
 import peeringdb_server.data_views
@@ -51,7 +50,11 @@ from peeringdb_server.models import (
     Network,
     Organization,
 )
-from peeringdb_server.oauth_views import AuthorizationView, OAuthMetadataView
+from peeringdb_server.oauth_views import (
+    AuthorizationView,
+    ConnectDiscoveryInfoView,
+    OAuthMetadataView,
+)
 from peeringdb_server.verified_update.views import (
     view_verified_update,
     view_verified_update_accept,
@@ -519,6 +522,11 @@ urlpatterns += [
 # Oauth2
 urlpatterns += [
     re_path(r"^oauth2/authorize/", AuthorizationView.as_view(), name="authorize"),
+    # shadows the oauth2_provider route of the same path
+    re_path(
+        r"^oauth2/\.well-known/openid-configuration/?$",
+        ConnectDiscoveryInfoView.as_view(),
+    ),
 ]
 urlpatterns += [
     re_path(r"^oauth2/", include("oauth2_provider.urls", namespace="oauth2_provider")),

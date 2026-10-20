@@ -58,3 +58,13 @@ PeeringDB currently is not collecting device attestation, thus has no way to ide
 "amr": ["mfa", "swk", "swk"] # passkey with security key + plus 2fa with another security key
 "amr": ["swk"] # password less without mfa
 ```
+
+## ID token signing
+
+OpenID Connect ID tokens are signed with RS256. Verify them with the public keys published at `/oauth2/.well-known/jwks.json`.
+
+HS256 is not supported: client secrets are stored hashed, so they cannot serve as the HMAC signing key. The application form no longer offers it and discovery no longer advertises it. An application still set to HS256 gets an `unauthorized_client` error whenever an ID token would be issued, until its owner switches it to RS256.
+
+An application set to "No OIDC support" that requests the `openid` scope gets an `invalid_scope` error whenever an ID token would be issued: a 400 from the token endpoint, or for implicit and hybrid responses that include `id_token` a redirect back to the client from the authorization endpoint.
+
+Operators can list, migrate and/or notify the owners of remaining HS256 applications whose secret is hashed with `pdb_oauth_hs256` (dry run unless `--commit`).
