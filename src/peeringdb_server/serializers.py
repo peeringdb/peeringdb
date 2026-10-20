@@ -132,6 +132,10 @@ from peeringdb_server.validators import (
 
 # exclude certain query filters that would otherwise
 # be exposed to the api for filtering operations
+#
+# entries without `__` apply on every model and relation path: a relation
+# name excludes the relation and every field reached through it, a field
+# name excludes that field wherever it can be reached
 
 FILTER_EXCLUDE = [
     # unused
@@ -141,8 +145,39 @@ FILTER_EXCLUDE = [
     "ixlan__descr",
     # private
     "ixlan_set__ixf_ixp_member_list_url",
+    "ixf_ixp_member_list_url",
     "ixlan__ixf_ixp_member_list_url",
     "network__notes_private",
+    "net_set__notes_private",
+    "notes_private",
+    # credentials and private data on related internal models (#489)
+    "api_keys",
+    "oauth_applications",
+    "network_email_set",
+    "ix_email_set",
+    "ixf_member_data_set",
+    "ixf_set",
+    "affiliation_requests",
+    # model fields the api never serializes
+    "email_domains",
+    "restrict_user_emails",
+    "periodic_reauth",
+    "periodic_reauth_period",
+    "org_flags",
+    "flagged",
+    "flagged_date",
+    "ixf_ixp_import_error",
+    "ixf_ixp_import_error_notified",
+    "ixf_ixp_import_protocol_conflict",
+    "irr_as_set_status",
+    "irr_as_set_verified",
+    "irr_as_set_missing_since",
+    "irr_as_set_auto_prefix_candidate",
+    "irr_as_set_auto_prefix_checked",
+    "irr_as_set_notified",
+    "irr_as_set_verify_notified",
+    "irr_as_set_cap_notified",
+    "rir_status_notified",
     # internal
     "ixf_import_request_user",
     "ixf_import_log_set__id",
@@ -159,10 +194,6 @@ FILTER_EXCLUDE = [
     "merged_to__created",
     "merged_from__id",
     "merged_from__created",
-    "affiliation_requests__status",
-    "affiliation_requests__created",
-    "affiliation_requests__org_name",
-    "affiliation_requests__id",
 ]
 
 log = structlog.get_logger("django")
@@ -611,10 +642,57 @@ def validate_relation_filter_field(a, b):
     return False
 
 
+# relation filter keys are at most `<relation>__<field>__<lookup>`; anything
+# longer is never a valid filter and is dropped without inspecting it
+MAX_FILTER_SEGMENTS = 4
+
+
+def filter_name_forms(name):
+    """
+    The forms a filter path segment can take on its way to the ORM: as sent,
+    with every trailing `_id` removed (the ORM accepts a foreign key's attname),
+    and the queryable_field_xl translation of both.
+
+    Bounded at four forms, so checking a key stays linear in its length.
+    """
+    # a loop, not `(_id)+$`: the regex backtracks quadratically over a long
+    # `_id` run that is followed by anything else
+    end = len(name)
+    while name.endswith("_id", 0, end):
+        end -= 3
+    base = name[:end] or name
+    return {name, base, queryable_field_xl(name), queryable_field_xl(base)}
+
+
+def is_filter_excluded(path):
+    """
+    Whether a filter path (without lookup suffix) touches anything in
+    FILTER_EXCLUDE, in any form it can be translated to.
+    """
+    parts = path.split("__")
+    if len(parts) > MAX_FILTER_SEGMENTS:
+        return True
+    forms = [filter_name_forms(part) for part in parts]
+    if any(form in FILTER_EXCLUDE for part_forms in forms for form in part_forms):
+        return True
+    # compound entries are `<relation>__<field>` pairs, so consecutive
+    # segments are all that need checking
+    return any(
+        f"{a}__{b}" in FILTER_EXCLUDE
+        for left, right in zip(forms, forms[1:])
+        for a in left
+        for b in right
+    )
+
+
 def get_relation_filters(flds, serializer, **kwargs):
     rv = {}
     for k, v in list(kwargs.items()):
         m = re.match("^(.+)__(lt|lte|gt|gte|contains|startswith|in)$", k)
+        # prepare_query hands these straight to the models' related_to_*
+        # helpers, bypassing the filter vocabulary in rest.py (#489)
+        if is_filter_excluded(m.group(1) if m else k):
+            continue
         if isinstance(v, list) and v:
             v = v[0]
         if m and len(k.split("__")) <= 2:
@@ -653,7 +731,9 @@ def get_relation_filters(flds, serializer, **kwargs):
                     v = v.split(",")
                 rv["__".join(rx[:2])] = {"filt": f, "value": v}
 
-    return rv
+    # the emitted keys are rebuilt from translated and truncated segments,
+    # so check what is actually handed to the related_to_* helpers as well
+    return {key: flt for key, flt in rv.items() if not is_filter_excluded(key)}
 
 
 class RequiredForMethodValidator:
@@ -967,6 +1047,18 @@ class ModelSerializer(serializers.ModelSerializer):
         return "id" in request.GET
 
     @classmethod
+    def filterable_fields(cls):
+        """
+        Returns (name, field) pairs a list request may filter on: the model's
+        own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489).
+        """
+        return [
+            (fld.name, fld)
+            for fld in cls.Meta.model._meta.get_fields()
+            if fld.name not in FILTER_EXCLUDE
+        ] + cls.queryable_relations()
+
+    @classmethod
     def queryable_relations(self):
         """
         Returns a list of all second level queryable relation fields.
@@ -985,7 +1077,7 @@ class ModelSerializer(serializers.ModelSerializer):
                 for _fld in model._meta.get_fields():
                     field_name = f"{fld.name}__{_fld.name}"
 
-                    if field_name in FILTER_EXCLUDE:
+                    if field_name in FILTER_EXCLUDE or _fld.name in FILTER_EXCLUDE:
                         continue
 
                     if (

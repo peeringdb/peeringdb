@@ -490,7 +490,7 @@
                {% if row.required %}
                data-edit-required="yes"
                {% endif %}
-               data-edit-name="{{ row.name }}">{{ row.value|safe }}</div>
+               data-edit-name="{{ row.name }}">{{ row.value }}</div>
 
         {% elif row.type == "bool" %}
           <div class="view_value col-8 col-sm-7 col-md-8">

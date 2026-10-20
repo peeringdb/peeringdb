@@ -98,6 +98,7 @@ class LoginView(UIAwareMixin, BaseLoginView):
     pass
 
 
+@method_decorator([never_cache, login_required], name="dispatch")
 class TwoFactorDisableView(UIAwareMixin, BaseTwoFactorDisableView):
     """
     Override of TwoFactorDisableView from peeringdb_server to support template switching.

@@ -18,7 +18,13 @@ from urllib.parse import urljoin
 import django.urls
 import reversion
 import structlog
-from allauth.account.signals import email_confirmed, user_signed_up
+from allauth.account.signals import (
+    email_confirmed,
+    password_changed,
+    password_reset,
+    password_set,
+    user_signed_up,
+)
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -59,13 +65,43 @@ from peeringdb_server.models import (
     NetworkFacility,
     NetworkIXLan,
     Organization,
+    User,
     UserOrgAffiliationRequest,
+    UserPasswordReset,
     VerificationQueueItem,
     live_statuses,
 )
 from peeringdb_server.util import disable_auto_now_and_save
 
 log = structlog.getLogger("django")
+
+
+@receiver(password_changed)
+@receiver(password_reset)
+@receiver(password_set)
+def invalidate_reset_on_allauth_password_change(sender, user, **kwargs):
+    UserPasswordReset.objects.using(user._state.db).filter(user=user).delete()
+
+
+@receiver(pre_save, sender=User)
+def invalidate_reset_on_email_change(
+    sender, instance, using, raw=False, update_fields=None, **kwargs
+):
+    if (
+        raw
+        or not instance.pk
+        or (update_fields is not None and "email" not in update_fields)
+    ):
+        return
+    # Reset links were delivered to the previous primary address.
+    previous_email = (
+        sender.objects.using(using)
+        .filter(pk=instance.pk)
+        .values_list("email", flat=True)
+        .first()
+    )
+    if previous_email != instance.email:
+        UserPasswordReset.objects.using(using).filter(user_id=instance.pk).delete()
 
 
 def update_network_attribute(instance, attribute):

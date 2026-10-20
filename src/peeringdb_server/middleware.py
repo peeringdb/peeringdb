@@ -5,20 +5,28 @@ Custom django middleware.
 import base64
 import binascii
 import json
+from contextlib import nullcontext
 
 import django_read_only
 import structlog
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import (
+    BACKEND_SESSION_KEY,
+    authenticate,
+    get_user_model,
+    logout,
+)
+from django.contrib.auth.views import redirect_to_login
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import caches
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
 from django.urls import resolve, reverse
 from django.utils import timezone, translation
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.deprecation import MiddlewareMixin
+from django.utils.translation import gettext as _
 from django_ratelimit.core import get_usage
 
 from peeringdb_server.context import current_request
@@ -33,6 +41,19 @@ ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged 
 ERR_BASE64_DECODE = "Corrupt base64 input."
 ERR_UNKNOWN = "Unknown error."
 ERR_VALUE_ERROR = "Invalid Input."
+
+
+class PermissionsPolicyMiddleware(MiddlewareMixin):
+    policy = (
+        "accelerometer=(), browsing-topics=(), camera=(), display-capture=(), "
+        "geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), "
+        "midi=(), payment=(), serial=(), usb=(), "
+        "publickey-credentials-create=(self), publickey-credentials-get=(self)"
+    )
+
+    def process_response(self, request, response):
+        response["Permissions-Policy"] = self.policy
+        return response
 
 
 def get_client_ident(request):
@@ -787,6 +808,53 @@ class ActivateUserLocaleMiddleware(MiddlewareMixin):
                 translation.activate(request.user.locale)
 
 
+class OrgPasskeyAdminMiddleware(MiddlewareMixin):
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        if (
+            not settings.ADMIN_REQUIRE_PASSKEY
+            or request.resolver_match.app_name != "admin"
+            or not request.user.is_authenticated
+        ):
+            return
+        orgs = request.user.organizations
+        if not any(org.passkey_disable_password_auth for org in orgs):
+            return HttpResponseForbidden(
+                _(
+                    "Django admin access requires membership in an organization that requires passkey authentication."
+                )
+            )
+
+        # The backend is recorded by Django after verified authentication;
+        # legacy UI success markers can also be set by failed attempts.
+        passkey = request.session.get(BACKEND_SESSION_KEY) == (
+            "django_security_keys.backends.PasskeyAuthenticationBackend"
+        )
+        amr = request.session.get("amr", [])
+        extra_factor = "mfa" in amr and (
+            amr.count("swk") >= 2
+            or ("otp" in amr and not any(org.disable_totp for org in orgs))
+        )
+        if passkey and (
+            not any(org.passkey_require_mfa for org in orgs) or extra_factor
+        ):
+            return
+
+        with (
+            django_read_only.temp_writes()
+            if settings.DJANGO_READ_ONLY
+            else nullcontext()
+        ):
+            logout(request)
+            request.session["passkey_required_error"] = _(
+                "Your organization requires passkey authentication. Please log in again."
+            )
+            if settings.DJANGO_READ_ONLY:
+                # Give PDBSessionMiddleware an existing session to save when
+                # processing the response in read-only mode.
+                request.session.save()
+        return redirect_to_login(request.get_full_path())
+
+
 class EnforceMFAMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
         self.get_response = get_response
@@ -832,6 +900,25 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         user = request.user
         if not user.is_authenticated:
             return
+
+        if request.session.get("passkey_setup_required"):
+            # Enrollment never satisfies the login policy by itself. Keep this
+            # session restricted until a new passkey authentication succeeds.
+            allowed_paths = {
+                reverse("profile_passkey"),
+                reverse("two_factor:login"),
+                reverse("security-keys-request-registration"),
+                reverse("security-keys-request-authentication"),
+                reverse("javascript-catalog"),
+                "/security_keys/add",
+                "/logout",
+            }
+            if request.path in allowed_paths or (
+                request.method in {"GET", "HEAD"}
+                and request.path.startswith(settings.STATIC_URL)
+            ):
+                return
+            return redirect("profile_passkey")
 
         # After a passkey login where require_passkey_mfa is True but the user
         # has no MFA device/disable_totp is set by other org, we log them in and

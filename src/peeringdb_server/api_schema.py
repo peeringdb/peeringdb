@@ -587,9 +587,8 @@ class BaseSchema(AutoSchema):
             param["name"] for param in parameters if param.get("in") == "query"
         }
 
-        field_names = [
-            (fld.name, fld) for fld in model._meta.get_fields()
-        ] + serializer.queryable_relations()
+        # the same vocabulary rest.ModelViewSet.get_queryset filters on
+        field_names = serializer.filterable_fields()
 
         custom_filter_fields = getattr(
             self, f"{model.HandleRef.tag}_list_filter_fields", None

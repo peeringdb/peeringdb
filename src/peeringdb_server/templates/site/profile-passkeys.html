@@ -3,6 +3,12 @@
 {% block content %}
 <div class="panel">
   <h1>{% trans "Passkeys" %}</h1>
+  {% if passkey_setup_required %}
+  <div class="alert alert-warning">
+    <p>{% trans "Your organization requires passkey authentication. Register a passkey below, then sign out and log in using that passkey to continue." %}</p>
+    <a href="/logout">{% trans "Sign out" %}</a>
+  </div>
+  {% endif %}
   <div class="editable popin help marg-top-15">
     {% blocktrans trimmed %}
     Register your security key and use it as a Passkey authentication.
@@ -55,13 +61,16 @@
 
 
     <div class="row marg-top editable" data-edit-component="add">
-      <div class="col-4 col-sm-4 col-md-4">
+      <div class="col-3 col-sm-3 col-md-3">
         <div>{% trans "Register passkey" %}</div>
       </div>
-      <div class="col-6 col-sm-4 col-md-5">
+      <div class="col-4 col-sm-4 col-md-4">
         <div data-edit-type="string" data-edit-name="name" data-edit-placeholder="{% trans "Name" %}"></div>
       </div>
-      <div class="col-2 col-sm-4 col-md-3 right">
+      <div class="col-3 col-sm-3 col-md-3">
+        <div data-edit-type="password" data-edit-name="password" data-edit-placeholder="{% trans "Current password" %}"></div>
+      </div>
+      <div class="col-2 col-sm-2 col-md-2 right">
         <a class="btn btn-default" data-edit-action="register">{% trans "Register" %}</a>
       </div>
     </div>

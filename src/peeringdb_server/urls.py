@@ -67,6 +67,7 @@ from peeringdb_server.views import (
     request_api_search,
     request_logout,
     request_search,
+    request_security_key_registration,
     request_translation,
     resend_confirmation_mail,
     search_elasticsearch,
@@ -234,7 +235,7 @@ urlpatterns = [
     re_path(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
     re_path(
         r"^security_keys/request_registration$",
-        security_keys_views.request_registration,
+        request_security_key_registration,
         name="security-keys-request-registration",
     ),
     re_path(

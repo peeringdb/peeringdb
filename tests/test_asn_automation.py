@@ -325,10 +325,16 @@ class AsnAutomationTestCase(TestCase):
 
         self.user_b.email = new_email
         self.user_b.save()
+        self.user_b.recheck_affiliation_requests()
+        assert not net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
+
+        models.EmailAddress.objects.create(
+            user=self.user_b, email=new_email, verified=True
+        )
 
         self.user_b.recheck_affiliation_requests()
 
-        # Ownership should be granted automatically after email change
+        # Ownership should be granted automatically after email verification
         # Even with TICKET_CREATION_ASNAUTO=True, no tickets when RDAP validates
         assert net.org.admin_usergroup.user_set.filter(id=self.user_b.id).exists()
 

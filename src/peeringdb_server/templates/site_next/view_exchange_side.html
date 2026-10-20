@@ -187,9 +187,10 @@
 </div>
 
 {% if user_networks %}
+{{ user_networks|json_script:"user-networks-data" }}
 <script>
   window.exchangeNetworkConfig = {
-    userNetworks: {{ user_networks|safe }},
+    userNetworks: JSON.parse(document.getElementById("user-networks-data").textContent),
     ixlanId: {{ instance.id }}
   };
 </script>

@@ -31,7 +31,13 @@ import requests
 from allauth.account.models import EmailAddress
 from django.conf import settings as dj_settings
 from django.contrib.admin.models import CHANGE, LogEntry
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import (
+    BACKEND_SESSION_KEY,
+    authenticate,
+    get_user,
+    login,
+    logout,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, update_last_login
 from django.contrib.auth.signals import user_logged_in
@@ -80,6 +86,7 @@ from django_security_keys.ext.two_factor.views import (
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from django_security_keys.ext.two_factor.views import SetupView as BaseSetupView
+from django_security_keys.views import request_registration as request_key_registration
 from elasticsearch import ApiError, Elasticsearch, TransportError
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
@@ -1194,6 +1201,7 @@ def view_password_change(request):
 
         request.user.set_password(form.cleaned_data.get("password"))
         request.user.save()
+        UserPasswordReset.objects.filter(user=request.user).delete()
 
         return JsonResponse({"status": "ok"})
 
@@ -1517,6 +1525,12 @@ def view_close_account(request):
     """
     Set user's account inactive, delete email addresses and API keys and logout the session.
     """
+
+    session_user = get_user(request)
+    if not session_user.is_authenticated or session_user.pk != request.user.pk:
+        return JsonResponse(
+            {"error": _("Please log in to close your account.")}, status=403
+        )
 
     password = request.POST.get("password")
 
@@ -4147,6 +4161,12 @@ class LoginView(TwoFactorLoginView):
     PDB specific functionality and checks need to be added.
     """
 
+    def get_form_list(self):
+        # Authentication and completed factors change conditions within one
+        # request. formtools' per-request cache can otherwise omit required MFA.
+        self.__dict__.pop("_resolved_form_list", None)
+        return super().get_form_list()
+
     def get(self, *args, **kwargs):
         """
         If a user is already authenticated, don't show the
@@ -4188,28 +4208,6 @@ class LoginView(TwoFactorLoginView):
             )
 
         return kwargs
-
-    def attempt_passkey_auth(
-        self, request: WSGIRequest, **kwargs: Any
-    ) -> HttpResponseRedirect | None:
-        """
-        Wrap attempt_passkey_auth so we can set a session
-        property to indicate that the passkey auth was
-        used
-        """
-        response = super().attempt_passkey_auth(request, **kwargs)
-
-        # if `credential` in request POST is set AND
-        # we got a response from `attempt_passkey_auth`, passkey
-        # authentication was used and succeeded
-
-        credential = request.POST.get("credential", None)
-
-        if credential and response:
-            request.session["used_passkey_auth"] = True
-            request.session.save()
-
-        return response
 
     @transaction.atomic
     # @method_decorator(
@@ -4409,21 +4407,19 @@ class LoginView(TwoFactorLoginView):
 
     def set_amr(self):
         amr = []
-        done_forms = self.get_done_form_list()
-        passkey = self.request.session.get("used_passkey_auth", False)
+        completed_steps = self.storage.validated_step_data
+        passkey = self.storage.data.get("passkey_authenticated", False)
         if not passkey:
             amr.append("pwd")
         else:
             amr.append("swk")
 
-        # Check if token step was actually completed by the user by looking for the OTP token in the data
-        if "token" in done_forms:
-            token_data = self.storage.get_step_data("token")
-            # Only add "otp" to amr if the user actually entered a token
-            if token_data and token_data.get("token-otp_token"):
-                amr.append("otp")
+        # Applicable forms can include unused alternatives; only validated
+        # steps establish which factors were actually used.
+        if "token" in completed_steps or "backup" in completed_steps:
+            amr.append("otp")
 
-        if "security-key" in done_forms:
+        if "security-key" in completed_steps:
             # user used a security key to login
             # TODO: we cannot currently differentiate between
             # sub types of security keys, so we just add "swk" for now
@@ -4499,12 +4495,30 @@ class LoginView(TwoFactorLoginView):
         User authenticated successfully, set language options.
         """
 
+        user = self.get_user()
+        if (
+            self.disable_password_auth
+            and not self.storage.data.get("passkey_authenticated")
+            and not user.get_passkey_security_keys.exists()
+        ):
+            # The wizard has validated the password and any existing MFA.
+            # First-passkey enrollment must not grant normal account access.
+            login(self.request, user)
+            self.request.session["passkey_setup_required"] = True
+            self.request.session.pop("amr", None)
+            self.request.session.pop("used_passkey_auth", None)
+            self.storage.reset()
+            return redirect("profile_passkey")
+
         # Library LoginView.done() handles the disable_password_auth block and the
         # MFA-incomplete redirect. In both cases we should return the library's
         # response directly without overriding it.
         result = super().done(form_list, **kwargs)
-        # If the library blocked the login (disable_password_auth), auth.login()
-        # was never called so request.user is either absent or not authenticated.
+        # Rejected login and incomplete MFA reset the wizard's verified user.
+        # request.user may still be authenticated from an enrollment session,
+        # and a caller-selected next URL can equal the rejection redirect.
+        if not self.storage.authenticated_user:
+            return result
         # getattr guards against bare RequestFactory requests in tests where
         # AuthenticationMiddleware has not run.
         if not getattr(getattr(self.request, "user", None), "is_authenticated", False):
@@ -4517,8 +4531,18 @@ class LoginView(TwoFactorLoginView):
         if result_location and result_location != success_url:
             return result
 
+        if (
+            self.storage.data.get("passkey_authenticated")
+            and self.request.session.get(BACKEND_SESSION_KEY)
+            == "django_security_keys.backends.PasskeyAuthenticationBackend"
+        ):
+            self.request.session.pop("passkey_setup_required", None)
+
         # TODO: do this via signal instead?
 
+        self.request.session["used_passkey_auth"] = bool(
+            self.storage.data.get("passkey_authenticated")
+        )
         self.request.session["amr"] = self.set_amr()
 
         user_language = self.get_user().get_locale()
@@ -4829,7 +4853,27 @@ def search_elasticsearch(request):
 @login_required
 def view_profile_passkey(request):
     if request.user.is_authenticated:
-        return render(request, "site/profile-passkeys.html")
+        return render(
+            request,
+            "site/profile-passkeys.html",
+            {
+                "passkey_setup_required": request.session.get("passkey_setup_required"),
+                "passkey_registration": True,
+            },
+        )
+
+
+def request_security_key_registration(request):
+    response = request_key_registration(request)
+    if response.status_code != 200 or request.GET.get("passkey") != "1":
+        return response
+    # Passwordless login has no username/credential allowlist, so the
+    # authenticator must be able to discover the newly registered credential.
+    options = json.loads(response.content)
+    options.setdefault("authenticatorSelection", {}).update(
+        residentKey="required", requireResidentKey=True
+    )
+    return JsonResponse(options)
 
 
 class TwoFactorSetupView(BaseSetupView):

@@ -162,6 +162,14 @@ def clear_negative_cache():
     caches["negative"].clear()
 
 
+def ixlan_ids_with_member_list_url():
+    # the api does not filter on ixf_ixp_member_list_url (#489)
+    ids = IXLan.objects.filter(ixf_ixp_member_list_url__startswith="http").values_list(
+        "id", flat=True
+    )
+    return ",".join(str(pk) for pk in ids) or "0"
+
+
 class TestJSON(unittest.TestCase):
     rest_client = RestClient
 
@@ -1440,9 +1448,7 @@ class TestJSON(unittest.TestCase):
     ##########################################################################
 
     def test_user_001_GET_ixlan_ixf_ixp_member_list_url(self):
-        for ixlan in self.db_user.all(
-            "ixlan", ixf_ixp_member_list_url__startswith="http"
-        ):
+        for ixlan in self.db_user.all("ixlan", id__in=ixlan_ids_with_member_list_url()):
             if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
             else:
@@ -1550,7 +1556,7 @@ class TestJSON(unittest.TestCase):
 
     def test_org_member_001_GET_ixlan_ixf_ixp_member_list_url(self):
         for ixlan in self.db_org_member.all(
-            "ixlan", ixf_ixp_member_list_url__startswith="http"
+            "ixlan", id__in=ixlan_ids_with_member_list_url()
         ):
             if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
@@ -1676,7 +1682,7 @@ class TestJSON(unittest.TestCase):
 
     def test_org_admin_001_GET_ixlan_ixf_ixp_member_list_url(self):
         for ixlan in self.db_org_admin.all(
-            "ixlan", ixf_ixp_member_list_url__startswith="http"
+            "ixlan", id__in=ixlan_ids_with_member_list_url()
         ):
             if ixlan["ixf_ixp_member_list_url_visible"] in ["Public", "Users"]:
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
@@ -3982,7 +3988,7 @@ class TestJSON(unittest.TestCase):
 
     def test_guest_001_GET_ixlan_ixf_ixp_member_list_url(self):
         for ixlan in self.db_guest.all(
-            "ixlan", ixf_ixp_member_list_url__startswith="http"
+            "ixlan", id__in=ixlan_ids_with_member_list_url()
         ):
             if ixlan["ixf_ixp_member_list_url_visible"] == "Public":
                 assert ixlan["ixf_ixp_member_list_url"] == "http://localhost"
