@@ -39609,18 +39609,6 @@ paths:
           default: 0
           minimum: 0
           maximum: 2
-      - name: email
-        in: query
-        description: 'Email address for this contact
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: id
         in: query
         description: 'Unique numeric identifier for this object
@@ -39640,18 +39628,6 @@ paths:
           pagination in combination with `skip`)
         schema:
           type: integer
-      - name: name
-        in: query
-        description: 'Name of the contact, which may be a person or a team
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: net__aka
         in: query
         description: 'Other names this record is commonly known by
@@ -40161,20 +40137,6 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: phone
-        in: query
-        description: 'An E.164-formatted phone number starts with a +, followed by
-          the country code, then the national phone number (dropping the leading 0
-          in most countries), without spaces or dashes between the groups of digits
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: role
         in: query
         description: 'Function this contact serves for the network
@@ -40232,18 +40194,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - name: url
-        in: query
-        description: 'Website for this contact
-
-
-          Filter results by matching a value against this field.
-
-
-          Supported filter suffixes: `__startswith`, `__contains`, `__in`'
-        required: false
-        schema:
-          type: string
       - name: version
         in: query
         description: 'Filter results by matching a value against this field.

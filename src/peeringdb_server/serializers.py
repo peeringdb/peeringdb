@@ -196,6 +196,26 @@ FILTER_EXCLUDE = [
     "merged_from__created",
 ]
 
+# model fields that filterable_fields() and queryable_relations() leave out,
+# on the model's own endpoint and on relations into it from other endpoints.
+# Unlike FILTER_EXCLUDE a name here only applies to that model's field.
+#
+# get_relation_filters() does not consult this. Its relation keys (for example
+# net__* on /api/fac and /api/ix) are cut to two segments, so through
+# net__poc_set it reaches a contact by id only
+MODEL_FILTER_EXCLUDE = {
+    # contact details (#492, #493)
+    NetworkContact: ("name", "phone", "email", "url"),
+}
+
+
+def is_model_filter_excluded(model, name):
+    """
+    Whether a field of the given model is listed in MODEL_FILTER_EXCLUDE.
+    """
+    return name in MODEL_FILTER_EXCLUDE.get(model, ())
+
+
 log = structlog.get_logger("django")
 
 # def _(x):
@@ -1050,12 +1070,15 @@ class ModelSerializer(serializers.ModelSerializer):
     def filterable_fields(cls):
         """
         Returns (name, field) pairs a list request may filter on: the model's
-        own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489).
+        own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489) and
+        MODEL_FILTER_EXCLUDE.
         """
+        model = cls.Meta.model
         return [
             (fld.name, fld)
-            for fld in cls.Meta.model._meta.get_fields()
+            for fld in model._meta.get_fields()
             if fld.name not in FILTER_EXCLUDE
+            and not is_model_filter_excluded(model, fld.name)
         ] + cls.queryable_relations()
 
     @classmethod
@@ -1078,6 +1101,9 @@ class ModelSerializer(serializers.ModelSerializer):
                     field_name = f"{fld.name}__{_fld.name}"
 
                     if field_name in FILTER_EXCLUDE or _fld.name in FILTER_EXCLUDE:
+                        continue
+
+                    if is_model_filter_excluded(model, _fld.name):
                         continue
 
                     if (
