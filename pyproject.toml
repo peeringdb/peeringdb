@@ -70,7 +70,7 @@ dependencies = [
     # grappelli 5.0 requires django 6, so this cap moves with the django one
     "django-grappelli>=2.10.1,<5",
     "django-import-export>=3",
-    "django-oauth-toolkit>=2",
+    "django-oauth-toolkit>=3.4",
     "django-phonenumber-field>=0.6",
     "django-ratelimit>=4.0.0",
     "django-read-only>=1.15.0",

@@ -19,6 +19,7 @@ from django.contrib.auth import (
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import caches
+from django.core.exceptions import MiddlewareNotUsed
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
@@ -28,6 +29,7 @@ from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import gettext as _
 from django_ratelimit.core import get_usage
+from oauth2_provider.utils import parse_bearer_token
 
 from peeringdb_server.context import current_request
 from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
@@ -35,12 +37,22 @@ from peeringdb_server.permissions import get_key_from_request
 from peeringdb_server.settings_util import get_setting_time
 from peeringdb_server.util import NO_STORE_PRIVATE_DIRECTIVES
 
+try:
+    import uwsgi
+except ImportError:
+    # only importable inside a uWSGI process
+    uwsgi = None
+
 log = structlog.get_logger("django")
 
 ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged in. Please log out and try again."
 ERR_BASE64_DECODE = "Corrupt base64 input."
 ERR_UNKNOWN = "Unknown error."
 ERR_VALUE_ERROR = "Invalid Input."
+
+AUTH_ID_ANON = "anon"
+AUTH_ID_UNVERIFIED = "unverified"
+AUTH_ID_INVALID_KEY = "apikey_invalid"
 
 
 class PermissionsPolicyMiddleware(MiddlewareMixin):
@@ -101,6 +113,65 @@ def get_auth_identity(request):
             pass
 
     return "anonymous__guest"
+
+
+def get_auth_status(request):
+    """
+    Returns the value of the X-Auth-Status header for the request.
+    """
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        return "authenticated"
+    return "unauthenticated"
+
+
+def get_log_invalid_key_id(key):
+    """
+    Returns the caller identity to log for an API key that matched no key.
+
+    Only a key shaped like a generated one, `<prefix>.<secret>`, has a
+    public part to log; any other value may be secret throughout.
+    """
+    prefix, dot, _ = key.partition(".")
+    if (
+        dot
+        and len(prefix) == UserAPIKey.objects.key_generator.prefix_length
+        and prefix.isascii()
+        and prefix.isalnum()
+    ):
+        return f"apikey_{prefix}"
+    return AUTH_ID_INVALID_KEY
+
+
+def get_log_auth_id(request):
+    """
+    Returns the caller identity to log for the request (#487).
+
+    PDBPermissionMiddleware records it as `request.log_auth_id` where it
+    authenticates. Otherwise OAuth bearer requests log `u<user_id>_oauth`,
+    and a request without an identity logs `anon`, or `unverified` if it
+    sent credentials that were never accepted.
+    """
+    log_auth_id = getattr(request, "log_auth_id", None)
+    if log_auth_id:
+        return log_auth_id
+
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        # the same parser OAuth2TokenMiddleware authenticates with
+        if parse_bearer_token(request.META.get("HTTP_AUTHORIZATION", "")):
+            return f"u{user.id}_oauth"
+        return f"u{user.id}"
+
+    if request.META.get("HTTP_AUTHORIZATION") or get_key_from_request(request):
+        return AUTH_ID_UNVERIFIED
+
+    # without request.user AuthenticationMiddleware never evaluated the
+    # session cookie, so it may belong to a logged-in user
+    if user is None and request.COOKIES.get(settings.SESSION_COOKIE_NAME):
+        return AUTH_ID_UNVERIFIED
+
+    return AUTH_ID_ANON
 
 
 class PDBSessionMiddleware(SessionMiddleware):
@@ -181,6 +252,30 @@ class CurrentRequestContext:
             return self.get_response(request)
 
 
+class UwsgiLogVarsMiddleware:
+    """
+    Adds the caller identity to the uWSGI request log as the `auth_id` and
+    `auth_status` log variables (#487).
+
+    Not used outside uWSGI.
+    """
+
+    def __init__(self, get_response):
+        if uwsgi is None:
+            raise MiddlewareNotUsed()
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        # request logging must not be able to change a response
+        try:
+            uwsgi.set_logvar("auth_id", get_log_auth_id(request))
+            uwsgi.set_logvar("auth_status", get_auth_status(request))
+        except Exception:
+            log.error("setting uwsgi log variables failed", exc_info=True)
+        return response
+
+
 class HttpResponseUnauthorized(HttpResponse):
     status_code = 401
 
@@ -259,7 +354,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         # session auth already exists, set x-auth-id value and return
 
         if request.user.is_authenticated:
-            request.auth_id = f"u{request.user.id}"
+            request.auth_id = request.log_auth_id = f"u{request.user.id}"
 
             # request attempting to provide separate authentication while
             # already authenticated through session cookie, fail with
@@ -320,7 +415,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             # return username input in x-auth-id header
             if user:
-                request.auth_id = f"u{user.id}"
+                request.auth_id = request.log_auth_id = f"u{user.id}"
 
             # if user is not authenticated return 401 Unauthorized
             else:
@@ -329,6 +424,8 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                     request.auth_id = username[:255]
                 else:
                     request.auth_id = username
+                # the attempted username is often a mistyped password
+                request.log_auth_id = AUTH_ID_UNVERIFIED
 
                 return self.response_unauthorized(
                     request, message="Invalid username or password", status=401
@@ -351,6 +448,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
             if not api_key:
                 # If api key is not valid return 401 Unauthorized
 
+                request.log_auth_id = get_log_invalid_key_id(req_key)
                 if len(req_key) > 16:
                     req_key = req_key[:16]
                 request.auth_id = f"apikey_{req_key}"
@@ -379,7 +477,9 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 else:
                     prefix = f"u{api_key.user_id}"
 
-                request.auth_id = f"{prefix}_apikey_{api_key.prefix}"
+                request.auth_id = request.log_auth_id = (
+                    f"{prefix}_apikey_{api_key.prefix}"
+                )
                 if request.session.get("_auth_user_id") and request.user.id:
                     if int(request.user.id) == int(
                         request.session.get("_auth_user_id")

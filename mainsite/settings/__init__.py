@@ -1213,6 +1213,9 @@ MIDDLEWARE = (
     "peeringdb_server.middleware.PermissionsPolicyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # outside every middleware that can answer early (negative cache, auth,
+    # rate limits), so those responses carry the caller identity too
+    "peeringdb_server.middleware.UwsgiLogVarsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "peeringdb_server.middleware.PDBSessionMiddleware",

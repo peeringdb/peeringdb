@@ -2143,7 +2143,7 @@ requires-dist = [
     { name = "django-handleref", specifier = ">=2" },
     { name = "django-import-export", specifier = ">=3" },
     { name = "django-inet", specifier = ">=1.1.1" },
-    { name = "django-oauth-toolkit", specifier = ">=2" },
+    { name = "django-oauth-toolkit", specifier = ">=3.4" },
     { name = "django-peeringdb", git = "https://github.com/peeringdb/django-peeringdb?rev=support_202608" },
     { name = "django-phonenumber-field", specifier = ">=0.6" },
     { name = "django-ratelimit", specifier = ">=4.0.0" },
