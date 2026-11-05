@@ -1,4 +1,4 @@
-Generated on 2026-10-20 12:07:11.547813
+Generated on 2026-11-05 20:07:16.953937
 
 ## _db_command.py
 
@@ -238,8 +238,13 @@ Product-Committee error-rate report. Two layers:
                 --max-changes. Per token, not all-or-nothing: a value mixing
                 an unambiguous token with an ambiguous one comes back partly fixed,
                 and its disclosure mail names what is left rather than claiming no
-                action is needed -- one mail, not two. Each rewrite is re-validated and
-                live-confirmed against the lookup pool before it is written; a
+                action is needed -- one mail, not two. Each rewrite is re-validated
+                before it is written. On a healthy dump set the index is trusted,
+                except for a name resolved to APNIC, which is checked live against
+                IDNIC (the one registry with no dump, and the one APNIC names were
+                seen duplicated in, #499); an IRR error reply there is no answer
+                and the row is retried. Against a stale set (--allow-stale-index)
+                every changed token is confirmed against the whole lookup pool. A
                 rewrite the pool contradicts is ambiguous after all and joins
                 outreach instead of being dropped. The network is then told what
                 changed -- PeeringDB does not edit operator data silently, even
@@ -261,14 +266,13 @@ prefix. --allow-stale-index overrides that for a deliberate run.
 Both caps are batch cursors, not truncations. irr_as_set_notified records who was
 mailed. A successful auto-prefix leaves the bare bucket, while a proposed rewrite
 the live pool contradicts is recorded against that exact candidate so later runs
-skip it and advance. Both default to 100 and --commit refuses 0 ("no cap") because
-each candidate costs at least one live pool query (and can cost one per changed
-token); uncapped over the ~11k current candidates is at least ~10h, past any job
-deadline, and since the writes land after that loop a killed run would commit
-nothing and repeat forever. --max-changes bounds the candidates confirmed, not just
-the writes: a cap on writes alone still lets a run with a poor confirm rate walk
-every candidate. It also bounds the disclosure mail, one per rewrite;
---max-notifications governs outreach only.
+skip it and advance. Both default to 100 and --commit refuses 0 ("no cap").
+--max-changes caps the writes and with them the disclosure mail, one per rewrite,
+which is what keeps a run's mail volume bounded; --max-notifications governs
+outreach only. It also bounds the live lookups auto-prefix makes. On a healthy
+index only APNIC-resolved candidates need one, so the bound rarely bites, but a
+pool outage can spend two timeouts per lookup and the writes land after that loop,
+so a killed run would commit nothing.
 
 Usage:
   manage pdb_irr_as_set_cleanup [--detail] [--dump-dir PATH] [--commit]

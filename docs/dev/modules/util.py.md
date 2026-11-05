@@ -1,4 +1,4 @@
-Generated from util.py on 2026-10-20 12:07:11.547813
+Generated from util.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.util
 
@@ -18,6 +18,16 @@ Returns:
    None
 
 ---
+## cache_key_digest
+`def cache_key_digest(value)`
+
+Returns a digest of `value` to use in a cache key in its place.
+
+For request paths and query strings: they can carry credentials, and
+Django's cache backends print a cache key that is too long for memcached
+in a CacheKeyWarning, which ends up in the logs (#495).
+
+---
 ## coerce_ipaddr
 `def coerce_ipaddr(value)`
 
@@ -35,6 +45,18 @@ Generate the data for rendering the social media in view.html.
 This function will insert the generated social media data to `data`.
 
 ---
+## get_client_ident
+`def get_client_ident(request)`
+
+Get the IP address of the client.
+
+Each of the NUM_PROXIES trusted proxies in front of the app appends the
+address it received the request from to X-Forwarded-For, so the client is
+the NUM_PROXIES-th entry from the right. Entries left of it come from the
+client and are ignored, so a client cannot choose its own rate limit key.
+Falls back to REMOTE_ADDR when the header has fewer entries than that.
+
+---
 ## get_template
 `def get_template(request, template_name)`
 
@@ -49,6 +71,15 @@ Parameters:
 
 Returns:
     Template: The Django template object.
+
+---
+## normalize_client_address
+`def normalize_client_address(address)`
+
+Strips a port (`203.0.113.1:1234`, `[2001:db8::1]:443`) and unwraps an
+IPv4-mapped IPv6 address, so a client is keyed the same way however a
+proxy or socket reports it. Anything that isn't an address is returned
+unchanged.
 
 ---
 ## render

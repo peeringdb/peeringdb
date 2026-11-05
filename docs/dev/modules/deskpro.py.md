@@ -1,4 +1,4 @@
-Generated from deskpro.py on 2026-10-20 12:07:11.547813
+Generated from deskpro.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.deskpro
 
@@ -60,6 +60,16 @@ deletion of an object #696.
 `def ticket_queue_email_only(subject, body, email)`
 
 Queue a deskpro ticket for creation.
+
+---
+## ticket_queue_org_key
+`def ticket_queue_org_key(subject, body, org_key)`
+
+Queue a deskpro ticket for a request made with an organization API key.
+
+The key email is the requester, so support can reply to it. It is free
+text typed in by an org admin, so unless it is a verified address of a
+user of the key's org the ticket says so at the top.
 
 ---
 ## ticket_queue_prefixauto_approve

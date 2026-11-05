@@ -1,4 +1,4 @@
-Generated from serializers.py on 2026-10-20 12:07:11.547813
+Generated from serializers.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.serializers
 
@@ -69,6 +69,12 @@ Whether a filter path (without lookup suffix) touches anything in
 FILTER_EXCLUDE, in any form it can be translated to.
 
 ---
+## is_model_filter_excluded
+`def is_model_filter_excluded(model, name)`
+
+Whether a field of the given model is listed in MODEL_FILTER_EXCLUDE.
+
+---
 ## model_help_text
 `def model_help_text(serializer, field, field_name)`
 
@@ -78,7 +84,7 @@ serializer declares a field explicitly.
 
 ---
 ## nested
-`def nested(serializer, exclude=[], getter=None, through=None, **kwargs)`
+`def nested(serializer, exclude=[], getter=None, through=None, list_class=<class 'peeringdb_server.serializers.RequestAwareListSerializer'>, **kwargs)`
 
 Use this function to create nested serializer fields. Making
 depth work otherwise while fetching related lists via handlref remains a mystery.
@@ -686,7 +692,8 @@ possible depth.
 `def filterable_fields(cls)`
 
 Returns (name, field) pairs a list request may filter on: the model's
-own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489).
+own fields plus queryable_relations(), minus FILTER_EXCLUDE (#489) and
+MODEL_FILTER_EXCLUDE.
 
 ---
 #### is_unique_query
@@ -936,6 +943,13 @@ list comes from an explicit `ixp_update_exclude` in this same payload if
 present, otherwise from the existing instance.
 
 ---
+#### check_ixp_update_contact
+`def check_ixp_update_contact(self, instance, allow_ixp_update)`
+
+Refuses to enable automatic IX-F updates for a network without a
+contact for them
+
+---
 #### create
 `def create(self, validated_data)`
 
@@ -1147,5 +1161,27 @@ Serializer for peeringdb_server.models.User
 `def to_representation(self, instance)`
 
 Object instance -> Dict of primitive datatypes.
+
+---
+
+## VisibleContactListSerializer
+
+```
+VisibleContactListSerializer(peeringdb_server.serializers.RequestAwareListSerializer)
+```
+
+List serializer for nested contact sets.
+
+Contacts rendered in full carry their grainy namespace and are filtered
+by the permissions applicator. Contacts rendered as ids carry none, so
+ids of contacts the caller may not see are dropped here (#513).
+
+
+### Methods
+
+#### to_representation
+`def to_representation(self, data)`
+
+List of object instances -> List of dicts of primitive datatypes.
 
 ---

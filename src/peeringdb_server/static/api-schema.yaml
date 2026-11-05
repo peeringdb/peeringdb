@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: PeeringDB API
-  version: 2.84.0
+  version: 2.84.1
   description: "PeeringDB REST API\n\n## Reading PeeringDB data\n\nThe notes below\
     \ apply to every object type on this API. They describe how records\nbehave over\
     \ time, which is the part most consumers of bulk PeeringDB data need and\ncannot\
@@ -81,25 +81,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -152,25 +156,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -230,25 +238,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -369,6 +381,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -655,18 +676,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -1800,6 +1826,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -6628,18 +6663,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -7220,6 +7260,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -9115,18 +9164,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -10039,6 +10093,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -16543,25 +16606,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -17443,11 +17510,15 @@ paths:
         \ case for:\n\n\n- `org` organizations (only administrative staff users are\
         \ currently allowed to create organizations)\n- `fac` facilities\n- `net`\
         \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -20473,25 +20544,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -21705,6 +21780,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -29443,18 +29527,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -31378,18 +31467,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -31831,11 +31925,14 @@ paths:
         \ administrative staff users are currently allowed to create organizations)\n\
         - `fac` facilities\n- `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes\
         \ (if part of a new exchange)\n- `ixlan` exchange networks (if part of a new\
-        \ exchange)\n\n### Permissions\n\nTo be able to create an object, the requesting\
-        \ user requires `create` permissions to one of the\nobject's parents in the\
-        \ relationship hierarchy.\n\nFor example to create a `net` type object, the\
-        \ user needs to be permissioned to create in the organization\nthat is to\
-        \ be the network's holder entity.\n"
+        \ exchange)\n\nA `pending` object can only be retrieved by callers with update\
+        \ permission on it. Other callers,\nincluding the creator when the object\
+        \ belongs to another organization (for example a suggested\nfacility or network),\
+        \ get a `404` until it is approved.\n\n### Permissions\n\nTo be able to create\
+        \ an object, the requesting user requires `create` permissions to one of the\n\
+        object's parents in the relationship hierarchy.\n\nFor example to create a\
+        \ `net` type object, the user needs to be permissioned to create in the organization\n\
+        that is to be the network's holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -35491,25 +35588,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -36567,11 +36668,15 @@ paths:
         \ is the case for:\n\n\n- `org` organizations (only administrative staff users\
         \ are currently allowed to create organizations)\n- `fac` facilities\n- `net`\
         \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -39557,18 +39662,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -40289,11 +40399,15 @@ paths:
         \ is the case for:\n\n\n- `org` organizations (only administrative staff users\
         \ are currently allowed to create organizations)\n- `fac` facilities\n- `net`\
         \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -43116,25 +43230,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -44447,6 +44565,15 @@ paths:
         - `ixpfx` prefixes (if part of a new exchange)
 
         - `ixlan` exchange networks (if part of a new exchange)
+
+
+        A `pending` object can only be retrieved by callers with update permission
+        on it. Other callers,
+
+        including the creator when the object belongs to another organization (for
+        example a suggested
+
+        facility or network), get a `404` until it is approved.
 
 
         ### Permissions
@@ -51912,25 +52039,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -54137,11 +54268,15 @@ paths:
         \ is the case for:\n\n\n- `org` organizations (only administrative staff users\
         \ are currently allowed to create organizations)\n- `fac` facilities\n- `net`\
         \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -60933,18 +61068,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -61370,11 +61510,14 @@ paths:
         - `org` organizations (only administrative staff users are currently allowed\
         \ to create organizations)\n- `fac` facilities\n- `net` networks\n- `ix` exchanges\n\
         - `ixpfx` prefixes (if part of a new exchange)\n- `ixlan` exchange networks\
-        \ (if part of a new exchange)\n\n### Permissions\n\nTo be able to create an\
-        \ object, the requesting user requires `create` permissions to one of the\n\
-        object's parents in the relationship hierarchy.\n\nFor example to create a\
-        \ `net` type object, the user needs to be permissioned to create in the organization\n\
-        that is to be the network's holder entity.\n"
+        \ (if part of a new exchange)\n\nA `pending` object can only be retrieved\
+        \ by callers with update permission on it. Other callers,\nincluding the creator\
+        \ when the object belongs to another organization (for example a suggested\n\
+        facility or network), get a `404` until it is approved.\n\n### Permissions\n\
+        \nTo be able to create an object, the requesting user requires `create` permissions\
+        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
+        \ to create a `net` type object, the user needs to be permissioned to create\
+        \ in the organization\nthat is to be the network's holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -62841,18 +62984,23 @@ paths:
         \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
         \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
         \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nYou can spot cached responses by checking\
-        \ for the \"generated\" property inside the \"meta\" object.\n\n    \"meta\"\
-        \ : {\n        // the cached data was last regenerated at this time (epoch)\n\
-        \        \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill\
-        \ serve a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n\
-        \    ?id__in=1,2\n\n### Resultset limit\n\nAny request that does lookup queries\
-        \ and has it's **depth** parameter specified will have a result limit of 250\
-        \ entries, any entries past this limit will be truncated, at which point you\
-        \ either should be more specific with your query or use the skip and limit\
-        \ parameters to page through the result set\n\n**examples**\n\nwill serve\
-        \ a live result and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
-        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
+        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
+        \ cache was generated, are applied to cached results as they are served, so\
+        \ callers who may no longer see them do not get them from the cache. A shared\
+        \ cache (CDN) in front of the API may keep serving a cached result for up\
+        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
+        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
+        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
+        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
+        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
+        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
+        \ specified will have a result limit of 250 entries, any entries past this\
+        \ limit will be truncated, at which point you either should be more specific\
+        \ with your query or use the skip and limit parameters to page through the\
+        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
+        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
+        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -63377,11 +63525,15 @@ paths:
         \nCurrently this is the case for:\n\n\n- `org` organizations (only administrative\
         \ staff users are currently allowed to create organizations)\n- `fac` facilities\n\
         - `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -65338,25 +65490,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -65521,25 +65677,29 @@ paths:
         \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
         \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
         \nAny request that does not require lookups will be served a cached result.\
-        \ Cache is updated approximately every 15 minutes.\n\nYou can spot cached\
-        \ responses by checking for the \"generated\" property inside the \"meta\"\
-        \ object.\n\n    \"meta\" : {\n        // the cached data was last regenerated\
-        \ at this time (epoch)\n        \"generated\" : 1456121358.6301942\n    }\n\
-        \n**examples**\n\nwill serve a cached result:\n\n    ?depth=2\n\nwill serve\
-        \ a live result:\n\n    ?id__in=1,2\n\n### Resultset limit\n\nAny request\
-        \ that does lookup queries and has it's **depth** parameter specified will\
-        \ have a result limit of 250 entries, any entries past this limit will be\
-        \ truncated, at which point you either should be more specific with your query\
-        \ or use the skip and limit parameters to page through the result set\n\n\
-        **examples**\n\nwill serve a live result and a maximum of 250 rows at a time:\n\
-        \n    ?updated__gt=2011-01-01&depth=1\n\nwill serve a live result and will\
-        \ not be truncated:\n\n    ?updated__gt=2011-01-01\n\nwill serve a cached\
-        \ result and will not be truncated:\n\n    ?depth=1\n\n### Pagination\n\n\
-        #### Using skip and limit\n\nUse the skip and limit parameters to page through\
-        \ results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250 - first page\n\
-        \    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second page\n  \
-        \  ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\n####\
-        \ Using page-based pagination\n\nUse the `page` and `per_page` parameters\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
+        ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
+        \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
+        \ - first page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=250 - second\
+        \ page\n    ?updated__gt=2011-01-01&depth=1&limit=250&skip=500 - third page\n\
+        \n#### Using page-based pagination\n\nUse the `page` and `per_page` parameters\
         \ to page through results. Returns pagination metadata in the response under\
         \ `meta.pagination`.\n\n    ?page=1 - first page (default page size: 250)\n\
         \    ?page=2 - second page\n    ?page=1&per_page=100 - first page with 100\
@@ -65758,11 +65918,15 @@ paths:
         \ case for:\n\n\n- `org` organizations (only administrative staff users are\
         \ currently allowed to create organizations)\n- `fac` facilities\n- `net`\
         \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters:
       - name: id
         in: path

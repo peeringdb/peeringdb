@@ -1,4 +1,4 @@
-Generated from admin_commandline_tools.py on 2026-10-20 12:07:11.547813
+Generated from admin_commandline_tools.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.admin_commandline_tools
 
@@ -30,6 +30,13 @@ Arguments:
         needs to have a "tool" key containing the tool_id
 Returns:
     CommandLineToolWrapper instance
+
+---
+## is_listed_tool
+`def is_listed_tool(tool_id)`
+
+Whether tool_id is offered in this environment (COMMANDLINE_TOOLS).
+TOOL_MAP also holds tools that are only offered in some environments.
 
 ---
 # Classes

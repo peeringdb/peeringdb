@@ -1,4 +1,4 @@
-Generated from admin.py on 2026-10-20 12:07:11.946573
+Generated from admin.py on 2026-11-05 20:07:17.286006
 
 # peeringdb_server.admin
 
@@ -39,6 +39,12 @@ so they only contain undeleted objects and the object the instance is currently
 set to.
 
 ---
+## may_manage_account
+`def may_manage_account(request, user)`
+
+Staff and superuser accounts are managed by superusers only
+
+---
 ## merge_organizations
 `def merge_organizations(targets, target, request)`
 
@@ -70,6 +76,55 @@ whether the save leaves the exchange with nothing.
 ---
 # Classes
 ---
+
+## AccessTokenAdminCustom
+
+```
+AccessTokenAdminCustom(peeringdb_server.admin.SecretLookupGuardMixin, oauth2_provider.admin.AccessTokenAdmin)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## AccountRowGuardMixin
+
+```
+AccountRowGuardMixin(builtins.object)
+```
+
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
+
+
+## ApplicationAdminCustom
+
+```
+ApplicationAdminCustom(peeringdb_server.admin.SecretLookupGuardMixin, oauth2_provider.admin.ApplicationAdmin)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
 
 ## CampusAdmin
 
@@ -174,7 +229,7 @@ These attributes / properties will be available on instances of the class
 ## CommandLineToolAdmin
 
 ```
-CommandLineToolAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+CommandLineToolAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
 View that lets staff users run peeringdb command line tools.
@@ -188,6 +243,13 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### has_add_permission
+`def has_add_permission(self, request)`
+
+Return True if the given request has permission to add an object.
+Can be overridden by the user in subclasses.
+
+---
 #### has_delete_permission
 `def has_delete_permission(self, request, obj=None)`
 
@@ -345,13 +407,11 @@ These attributes / properties will be available on instances of the class
 ## DeskProTicketAdmin
 
 ```
-DeskProTicketAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
+DeskProTicketAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -401,16 +461,48 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+## EmailAddressAdminCustom
+
+```
+EmailAddressAdminCustom(peeringdb_server.admin.AccountRowGuardMixin, allauth.account.admin.EmailAddressAdmin)
+```
+
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## EmailDeviceAdminCustom
+
+```
+EmailDeviceAdminCustom(peeringdb_server.admin.AccountRowGuardMixin, peeringdb_server.admin.SecretLookupGuardMixin, django_otp.plugins.otp_email.admin.EmailDeviceAdmin)
+```
+
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## EnvironmentSettingAdmin
 
 ```
-EnvironmentSettingAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
+EnvironmentSettingAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -461,6 +553,25 @@ Hook for doing any extra form-wide cleaning after Field.clean() has been
 called on every field. Any ValidationError raised by this method will
 not be associated with a particular field; it will have a special-case
 association with the field named '__all__'.
+
+---
+
+## ExportMixin
+
+```
+ExportMixin(import_export.admin.ExportMixin)
+```
+
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
+
+
+### Methods
+
+#### has_export_permission
+`def has_export_permission(self, request)`
+
+Returns whether a request has export permission.
 
 ---
 
@@ -522,6 +633,25 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+## GrantAdminCustom
+
+```
+GrantAdminCustom(peeringdb_server.admin.SecretLookupGuardMixin, oauth2_provider.admin.GrantAdmin)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## ISODateTimeMixin
 
 ```
@@ -559,13 +689,11 @@ class YourModelAdmin(admin.ModelAdmin, ISODateTimeMixin):
 ## IXFImportEmailAdmin
 
 ```
-IXFImportEmailAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
+IXFImportEmailAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -587,13 +715,11 @@ and a boolean indicating if the results may contain duplicates.
 ## IXFMemberDataAdmin
 
 ```
-IXFMemberDataAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
+IXFMemberDataAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -703,13 +829,11 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## IXLanIXFMemberImportLogAdmin
 
 ```
-IXLanIXFMemberImportLogAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+IXLanIXFMemberImportLogAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -1024,6 +1148,10 @@ These attributes / properties will be available on instances of the class
 Allows one to call any actions defined in this model admin
 to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>.
 
+Actions only run on POST, where the admin's CSRF protection applies.
+Any other request, such as following the link in a ticket email, gets
+a confirmation page that posts back to the same URL.
+
 ---
 #### get_urls
 `def get_urls(self)`
@@ -1299,10 +1427,11 @@ These attributes / properties will be available on instances of the class
 ## OrganizationAPIKeyAdmin
 
 ```
-OrganizationAPIKeyAdmin(rest_framework_api_key.admin.APIKeyModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
+OrganizationAPIKeyAdmin(peeringdb_server.admin.OwnedAPIKeyAdminMixin, rest_framework_api_key.admin.APIKeyModelAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+A key acts as its owner, so only superusers create keys here or move an
+existing key to another owner.
 
 
 ### Instanced Attributes
@@ -1408,16 +1537,24 @@ request has permission to delete *any* object of the given type.
 
 ---
 
+## OwnedAPIKeyAdminMixin
+
+```
+OwnedAPIKeyAdminMixin(builtins.object)
+```
+
+A key acts as its owner, so only superusers create keys here or move an
+existing key to another owner.
+
+
 ## PartnershipAdmin
 
 ```
-PartnershipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+PartnershipAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -1505,7 +1642,7 @@ permission-to-readonly behaviour while can_delete remains true.
 Device types that django-otp throttles show the throttling columns. Only
 the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
 lockout, while django_otp's own static and email device admins have no
-throttling fields, and the static one shows every backup code.
+throttling fields.
 
 
 ### Instanced Attributes
@@ -1524,6 +1661,25 @@ Can be overridden by the user in subclasses.
 
 ---
 
+## RefreshTokenAdminCustom
+
+```
+RefreshTokenAdminCustom(peeringdb_server.admin.SecretLookupGuardMixin, oauth2_provider.admin.RefreshTokenAdmin)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## SearchLogAdmin
 
 ```
@@ -1539,10 +1695,40 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+## SecretLookupGuardMixin
+
+```
+SecretLookupGuardMixin(builtins.object)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+## SecurityKeyAdminCustom
+
+```
+SecurityKeyAdminCustom(peeringdb_server.admin.AccountRowGuardMixin, django_security_keys.admin.SecurityKeyAdmin)
+```
+
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
 ## SoftDeleteAdmin
 
 ```
-SoftDeleteAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
+SoftDeleteAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.SanitizedAdmin, django_handleref.admin.VersionAdmin, reversion.admin.VersionAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
 Soft delete admin.
@@ -1569,17 +1755,27 @@ ModelAdmin to a tuple of (callable, name, description) for each action.
 Given an inline formset save it to the database.
 
 ---
+#### version_revert_process
+`def version_revert_process(self, request, object_id, extra_context=None)`
+
+Process revert version(s)
+
+---
+#### version_rollback_process
+`def version_rollback_process(self, request, object_id, version_id, extra_context=None)`
+
+Version rollback process
+
+---
 
 ## SponsorshipAdmin
 
 ```
-SponsorshipAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
+SponsorshipAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.CustomResultLengthAdmin, django.contrib.admin.options.ModelAdmin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -1617,6 +1813,23 @@ Options for inline editing of ``model`` instances.
 Provide ``fk_name`` to specify the attribute name of the ``ForeignKey``
 from ``model`` to its parent. This is required if ``model`` has more than
 one ``ForeignKey`` to its parent.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None
+
+## StaticDeviceAdminCustom
+
+```
+StaticDeviceAdminCustom(peeringdb_server.admin.AccountRowGuardMixin, django_otp.plugins.otp_static.admin.StaticDeviceAdmin)
+```
+
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
 
 
 ### Instanced Attributes
@@ -1699,11 +1912,12 @@ an object whose parent is deleted.
 ## TOTPDeviceAdminCustom
 
 ```
-TOTPDeviceAdminCustom(django_otp.plugins.otp_totp.admin.TOTPDeviceAdmin)
+TOTPDeviceAdminCustom(peeringdb_server.admin.AccountRowGuardMixin, peeringdb_server.admin.SecretLookupGuardMixin, django_otp.plugins.otp_totp.admin.TOTPDeviceAdmin)
 ```
 
-:class:`~django.contrib.admin.ModelAdmin` for
-:class:`~django_otp.plugins.otp_totp.models.TOTPDevice`.
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
 
 
 ### Instanced Attributes
@@ -1712,13 +1926,24 @@ These attributes / properties will be available on instances of the class
 
 - media (`@property`): None
 
+### Methods
+
+#### get_fieldsets
+`def get_fieldsets(self, request, obj=None)`
+
+Hook for specifying fieldsets.
+
+---
+
 ## UserAPIKeyAdmin
 
 ```
-UserAPIKeyAdmin(rest_framework_api_key.admin.APIKeyModelAdmin)
+UserAPIKeyAdmin(peeringdb_server.admin.AccountRowGuardMixin, peeringdb_server.admin.OwnedAPIKeyAdminMixin, rest_framework_api_key.admin.APIKeyModelAdmin)
 ```
 
-Encapsulate all admin options and functionality for a given model.
+For admins of rows that belong to an account (email addresses, MFA
+devices, API keys): the rows of a staff or superuser account are added,
+changed and deleted by superusers only, as the account itself is
 
 
 ### Instanced Attributes
@@ -1730,13 +1955,11 @@ These attributes / properties will be available on instances of the class
 ## UserAdmin
 
 ```
-UserAdmin(import_export.admin.ExportMixin, peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin, peeringdb_server.admin.ISODateTimeMixin)
+UserAdmin(peeringdb_server.admin.ExportMixin, peeringdb_server.admin.ModelAdminWithVQCtrl, django.contrib.auth.admin.UserAdmin, peeringdb_server.admin.ISODateTimeMixin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -1747,11 +1970,46 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### get_readonly_fields
+`def get_readonly_fields(self, request, obj=None)`
+
+Makes the modeladmin aware that "verification_queue" is a valid
+readonly field.
+
+---
+#### has_change_permission
+`def has_change_permission(self, request, obj=None)`
+
+Return True if the given request has permission to change the given
+Django model instance, the default implementation doesn't examine the
+`obj` parameter.
+
+Can be overridden by the user in subclasses. In such case it should
+return True if the given request has permission to change the `obj`
+model instance. If `obj` is None, this should return True if the given
+request has permission to change *any* object of the given type.
+
+---
+#### has_delete_permission
+`def has_delete_permission(self, request, obj=None)`
+
+Return True if the given request has permission to delete the given
+Django model instance, the default implementation doesn't examine the
+`obj` parameter.
+
+Can be overridden by the user in subclasses. In such case it should
+return True if the given request has permission to delete the `obj`
+model instance. If `obj` is None, this should return True if the given
+request has permission to delete *any* object of the given type.
+
+---
 #### save_model
 `def save_model(self, request, obj, form, change)`
 
 Ensure EmailAddress (allauth) is created for new users created from admin page.
 Prevents orphaned User.email values (issue #1852).
+
+The new user is sent the confirmation email for that address.
 
 ---
 #### version
@@ -1827,7 +2085,7 @@ permission-to-readonly behaviour while can_delete remains true.
 Device types that django-otp throttles show the throttling columns. Only
 the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
 lockout, while django_otp's own static and email device admins have no
-throttling fields, and the static one shows every backup code.
+throttling fields.
 
 
 ### Instanced Attributes
@@ -1857,7 +2115,7 @@ permission-to-readonly behaviour while can_delete remains true.
 Device types that django-otp throttles show the throttling columns. Only
 the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
 lockout, while django_otp's own static and email device admins have no
-throttling fields, and the static one shows every backup code.
+throttling fields.
 
 
 ### Instanced Attributes
@@ -2030,10 +2288,8 @@ UserPermission(id, password, last_login, is_superuser, username, email, first_na
 UserPermissionAdmin(peeringdb_server.admin.UserAdmin)
 ```
 
-Export mixin.
-
-This is intended to be mixed with
-`ModelAdmin <https://docs.djangoproject.com/en/stable/ref/contrib/admin/>`_.
+Export needs the same permission as the changelist: view or change on
+the model. import-export alone checks only the view permission.
 
 
 ### Instanced Attributes
@@ -2054,6 +2310,15 @@ database. Note that at this point save_form() and save_model() have
 already been called.
 
 ---
+
+## UserResource
+
+```
+UserResource(import_export.resources.ModelResource)
+```
+
+ModelResource is Resource subclass for handling Django models.
+
 
 ## UserStaticDeviceInline
 
@@ -2076,7 +2341,7 @@ permission-to-readonly behaviour while can_delete remains true.
 Device types that django-otp throttles show the throttling columns. Only
 the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
 lockout, while django_otp's own static and email device admins have no
-throttling fields, and the static one shows every backup code.
+throttling fields.
 
 
 ### Instanced Attributes
@@ -2106,7 +2371,7 @@ permission-to-readonly behaviour while can_delete remains true.
 Device types that django-otp throttles show the throttling columns. Only
 the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
 lockout, while django_otp's own static and email device admins have no
-throttling fields, and the static one shows every backup code.
+throttling fields.
 
 
 ### Instanced Attributes
@@ -2139,3 +2404,22 @@ Return a tuple containing a queryset to implement the search
 and a boolean indicating if the results may contain duplicates.
 
 ---
+
+## model_admin
+
+```
+model_admin(peeringdb_server.admin.SecretLookupGuardMixin, oauth2_provider.admin.GrantAdmin)
+```
+
+Refuse changelist and export URL filters on columns that hold secrets.
+
+Django allows a filter on any of the model's own fields, so the result
+count of `?<field>__startswith=<prefix>` reads such a column one
+character at a time, for superusers as well.
+
+
+### Instanced Attributes
+
+These attributes / properties will be available on instances of the class
+
+- media (`@property`): None

@@ -1,4 +1,4 @@
-Generated from models.py on 2026-10-20 12:07:11.547813
+Generated from models.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.models
 
@@ -840,6 +840,17 @@ Argument(s):
 - net(Network)
 
 ---
+#### without_snapshot
+`def without_snapshot(cls, qset)`
+
+Returns the queryset with the stored member snapshot (`data`)
+left unloaded; the rows carry whether it is empty instead, which
+is all `remote_data_missing` needs.
+
+Rows stored before the snapshot byte budget can be arbitrarily
+large (#522).
+
+---
 
 ### Methods
 
@@ -990,6 +1001,12 @@ These attributes / properties will be available on instances of the class
 
 - descriptive_name (`@property`): Returns a descriptive label of the ixlan for logging purposes.
 - grainy_namespace (`@property`): None
+- ixf_cache_key (`@property`): Returns the cache key of this LAN's last fetched IX-F data.
+- ixf_cached_data (`@property`): Returns the last fetched IX-F data, or None if there is none
+for the LAN's current IX-F member list URL.
+- ixf_cached_entry (`@property`): Returns the cache entry (`url`, `fetched`, `data`) of the last
+fetched IX-F data, or None if there is none for the LAN's current
+IX-F member list URL.
 - ixpfx_set_active (`@property`): Returns queryset of active prefixes at this ixlan.
 - ixpfx_set_active_or_pending (`@property`): Returns queryset of active or pending prefixes at this ixlan.
 - netixlan_set_active (`@property`): Returns queryset of active netixlan objects at this ixlan.
@@ -2027,6 +2044,8 @@ of the following is True:
 - has a network under it with status=ok
 - has a facility under it with status=ok
 - has an exchange under it with status=ok
+- has a carrier under it with status=ok
+- has a campus under it with status=ok
 - disable_totp (`@property`): None
 - email_domains_list (`@property`): None
 - fac_set_active (`@property`): Returns queryset holding active facilities in this organization.
@@ -2511,7 +2530,6 @@ been confirmed, False if not.
 - get_2fa_security_keys (`@property`): None
 - get_passkey_security_keys (`@property`): None
 - has_2fa (`@property`): Returns true if the user has set up any TOTP or webauth security keys.
-- has_oauth (`@property`): None
 - hide_ixs_without_fac (`@property`): Returns whether user has enabled hiding IXs without facilities
 - is_verified_user (`@property`): Returns whether the user is verified (e.g., has been validated
 by PDB staff).
@@ -2614,6 +2632,13 @@ ownership approval. (#375)
 Used by grappelli autocomplete for representation.
 
 ---
+#### revoke_oauth_tokens
+`def revoke_oauth_tokens(self, using=None)`
+
+Revokes the user's OAuth refresh and access tokens and deletes
+their pending authorization codes and device grants
+
+---
 #### send_email_confirmation
 `def send_email_confirmation(self, request=None, signup=False, email=None)`
 
@@ -2703,9 +2728,13 @@ value specified in self.org_name
 ### Methods
 
 #### approve
-`def approve(self)`
+`def approve(self, approving_user=None, approved_by=None)`
 
 Approve request and add user to org's usergroup.
+
+`approving_user` is recorded as the approver, defaults to the
+user of the current request. `approved_by` names an approver that
+is not a user, such as an organization API key.
 
 ---
 #### cancel

@@ -1,4 +1,4 @@
-Generated from signals.py on 2026-10-20 12:07:11.547813
+Generated from signals.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.signals
 
@@ -93,6 +93,13 @@ usergroups tied to the organization.
 
 Create a user group for an organization when that
 organization is created.
+
+---
+## revoke_oauth_tokens_on_deactivation
+`def revoke_oauth_tokens_on_deactivation(sender, instance, using, raw=False, update_fields=None, **kwargs)`
+
+OAuth tokens must not outlive the account they were issued for, whether
+staff deactivate it or the user closes it.
 
 ---
 ## rir_status_initial

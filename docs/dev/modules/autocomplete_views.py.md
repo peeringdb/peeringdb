@@ -1,4 +1,4 @@
-Generated from autocomplete_views.py on 2026-10-20 12:07:11.547813
+Generated from autocomplete_views.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.autocomplete_views
 
@@ -34,6 +34,21 @@ Filter the queryset with GET['q'].
 Return the label of a result.
 
 ---
+
+## AdminLookupPermissionMixin
+
+```
+AdminLookupPermissionMixin(builtins.object)
+```
+
+Limit grappelli's lookup views to models registered on the admin site
+that the requesting user may view.
+
+Stock grappelli only checks is_staff, resolves any installed model,
+queries its default manager and applies caller supplied ORM filters
+(`query_string`) and return fields (`to_field`), which lets any staff
+account read any column of any table.
+
 
 ## AutocompleteHTMLResponse
 
@@ -422,10 +437,46 @@ Return the label of a result.
 ## PDBAdminGrappelliAutocomplete
 
 ```
-PDBAdminGrappelliAutocomplete(grappelli.views.related.AutocompleteLookup)
+PDBAdminGrappelliAutocomplete(peeringdb_server.autocomplete_views.AdminLookupPermissionMixin, grappelli.views.related.AutocompleteLookup)
 ```
 
-AutocompleteLookup
+Limit grappelli's lookup views to models registered on the admin site
+that the requesting user may view.
+
+Stock grappelli only checks is_staff, resolves any installed model,
+queries its default manager and applies caller supplied ORM filters
+(`query_string`) and return fields (`to_field`), which lets any staff
+account read any column of any table.
+
+
+## PDBAdminM2MLookup
+
+```
+PDBAdminM2MLookup(peeringdb_server.autocomplete_views.AdminLookupPermissionMixin, grappelli.views.related.M2MLookup)
+```
+
+Limit grappelli's lookup views to models registered on the admin site
+that the requesting user may view.
+
+Stock grappelli only checks is_staff, resolves any installed model,
+queries its default manager and applies caller supplied ORM filters
+(`query_string`) and return fields (`to_field`), which lets any staff
+account read any column of any table.
+
+
+## PDBAdminRelatedLookup
+
+```
+PDBAdminRelatedLookup(peeringdb_server.autocomplete_views.AdminLookupPermissionMixin, grappelli.views.related.RelatedLookup)
+```
+
+Limit grappelli's lookup views to models registered on the admin site
+that the requesting user may view.
+
+Stock grappelli only checks is_staff, resolves any installed model,
+queries its default manager and applies caller supplied ORM filters
+(`query_string`) and return fields (`to_field`), which lets any staff
+account read any column of any table.
 
 
 ## ToolHistory

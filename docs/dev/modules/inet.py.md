@@ -1,4 +1,4 @@
-Generated from inet.py on 2026-10-20 12:07:11.547813
+Generated from inet.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.inet
 
@@ -158,5 +158,22 @@ config_dir is a string pointing to a config directory
 
 Handle asns that fall into the private/documentation ranges
 manually - others are processed normally through rdap lookup.
+
+---
+#### get_bootstrap_data
+`def get_bootstrap_data(self, typ)`
+
+Return IANA bootstrap data, from the local cache file while it is
+younger than RDAP_BOOTSTRAP_CACHE_TTL hours.
+
+Overrides the client's version, which rewrites the cache file in
+place (a concurrent lookup can read it half written) and fails on
+an unreadable file.
+
+---
+#### write_bootstrap_data
+`def write_bootstrap_data(self, typ)`
+
+Fetch bootstrap data from IANA and write it to the cache file.
 
 ---

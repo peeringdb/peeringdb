@@ -1,4 +1,4 @@
-Generated from views.py on 2026-10-20 12:07:11.547813
+Generated from views.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.views
 
@@ -18,6 +18,12 @@ View definitions:
 # Functions
 ---
 
+## application_owner
+`def application_owner(org_id, user_id)`
+
+Describes an OAuth application owner for log entries
+
+---
 ## beta_sync_dt
 `def beta_sync_dt()`
 
@@ -189,6 +195,42 @@ every record that says nothing is noise. A flagged value carries its
 missing_since inline, so "since when" costs no second row.
 
 ---
+## is_id
+`def is_id(value)`
+
+True when `value` is a string an integer primary key lookup accepts
+
+---
+## is_oauth_authorize
+`def is_oauth_authorize(url)`
+
+True when `url` is a local path to one of the OAuth consent pages, which
+sit behind `oauth_views.has_recent_oauth_login`
+
+---
+## login_throttle_account
+`def login_throttle_account(username)`
+
+Returns the account the login throttle counts against. The username is
+resolved the way the login resolves it, so spellings the database
+collation treats as the same account (case, accents) share one budget.
+
+---
+## login_throttle_address
+`def login_throttle_address(request)`
+
+Returns the client address the login throttle counts against, IPv6
+addresses by their /64 as a single client usually controls all of it.
+
+---
+## login_wizard_user
+`def login_wizard_user(request)`
+
+Returns the user the login wizard in this session has verified a first
+factor for, or None. Like the wizard, it forgets the user once
+`TWO_FACTOR_LOGIN_TIMEOUT` has passed.
+
+---
 ## perform_search
 `def perform_search(q, geo, original_query, user)`
 
@@ -253,6 +295,13 @@ Allows a user to set a different email address as their primary
 contact point for peeringdb
 
 ---
+## register_security_key
+`def register_security_key(request)`
+
+Answers a rejected registration, such as a passkey that did not verify
+the user, with a 400 instead of an error page.
+
+---
 ## render_search_result
 `def render_search_result(request)`
 
@@ -267,10 +316,27 @@ Triggered by typing something in the main peeringdb search bar
 without hitting enter (quasi autocomplete).
 
 ---
+## request_security_key_authentication
+`def request_security_key_authentication(request)`
+
+Returns WebAuthn authentication options as a JSON response.
+
+Passkey login is username-less. For a second factor the user comes from
+the session, never from the request, so the options cannot be used to
+look up another user's credential ids.
+
+---
 ## update_map_visualization
 `def update_map_visualization(request)`
 
 Toggle user preference for Advanced Search map visualization.
+
+---
+## update_security_key
+`def update_security_key(request)`
+
+Turns passkey login on or off for one of the user's keys. Requires the
+current password, like registering a key.
 
 ---
 ## validator_result_cache
@@ -587,6 +653,12 @@ may manage the oauth application
 If the form is valid, save the associated model.
 
 ---
+#### get_form
+`def get_form(self)`
+
+Return an instance of the form to be used in this view.
+
+---
 
 ## DoNotRender
 
@@ -731,11 +803,25 @@ session backend serializes session data with json.dumps().
 Specify which redirect urls are valid.
 
 ---
+#### password_attempt_limited
+`def password_attempt_limited(self)`
+
+Counts a password attempt against the per client address and the per
+account limit and returns True if either is exceeded.
+
+Only posts carrying a username are counted, passkey logins and the
+second factor steps are not. The step is not taken from the wizard
+storage because the client can name the step it posts to.
+
+Attempts from an address that is already limited are not counted
+against the accounts they name, so one address cannot keep other
+users' password logins limited.
+
+---
 #### post
 `def post(self, args, kwargs)`
 
-Posts to the `auth` step of the authentication
-process need to be rate limited.
+Password attempts are rate limited, see `password_attempt_limited`.
 
 ---
 
