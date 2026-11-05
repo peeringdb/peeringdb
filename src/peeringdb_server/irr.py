@@ -10,11 +10,11 @@ questions the unambiguous-as-set work needs:
                            live check and the periodic re-verification)
 
 Both are answered against a configurable pool of full-mirror IRRd servers
-(settings.IRR_LOOKUP_SERVERS), queried over the port-43 whois interface.
-Existence checks pin one source; source completion first uses one explicit
-multi-source query per mirror and falls back to pinned checks if a response is too large or
-unrecognized. Results are cached in the "negative" (Redis) cache for
-settings.IRR_LOOKUP_CACHE_TTL seconds.
+(settings.IRR_LOOKUP_SERVERS), queried over port 43. Existence checks pin one
+source and use IRRd's `!` protocol; source completion first uses one explicit
+whois multi-source query per mirror and falls back to pinned checks if a response
+is too large or unrecognized. Results are cached in the "negative" (Redis) cache
+for settings.IRR_LOOKUP_CACHE_TTL seconds.
 
 Every outbound path fails open: a query that errors, times out, or returns an
 unrecognized response yields an "unknown" result — exists_in returns None and
@@ -22,10 +22,12 @@ sources_for returns ok=False — and never raises. A third-party IRR outage must
 not block a save or the editor. Callers decide policy: the save path rejects only
 a definitive False (provably absent), accepting None.
 
-Correctness note: a source-pinned query against a server that does not mirror
-that source returns "no entries" — a false absent. So a server's answer for a
-given source is trusted only when the server actually carries it, per the
-server's !s-lc mirror list (also the basis of coverage_report()).
+Correctness note: a whois query naming a source the server does not mirror
+fails with "%% ERROR", which the multi-source parser reads as "no entries" — a
+false absent (#502). So sources_for asks a server only for the sources it
+actually carries, per the server's !s-lc mirror list (also the basis of
+coverage_report()). A pinned `!s` for an unmirrored source fails with F and
+reads as unknown.
 """
 
 import re
@@ -42,9 +44,10 @@ from peeringdb_server.inet import IRR_SOURCE
 # reached at all (so an empty `sources` means "unknown", not "found nowhere").
 LookupResult = namedtuple("LookupResult", ["sources", "ok"])
 
-# IRRd port-43 responses to a source-pinned RPSL query start either with an RPSL
+# IRRd whois responses to an exact-name RPSL query start either with an RPSL
 # attribute line ("as-set: …", "aut-num: …") when the object exists, or with a
-# "%"-prefixed comment ("%  No entries found …") when it does not.
+# "%"-prefixed comment ("%  No entries found …") when it does not. An error
+# reply ("%% ERROR: …") starts with "%" too.
 _NO_ENTRIES_PREFIX = "%"
 _MAX_RESPONSE_BYTES = 8192
 
@@ -58,7 +61,9 @@ def _object_class(name):
     """Infer the RPSL object class to query for a single as-set token."""
     if re.fullmatch(r"AS[0-9]+", name):
         return "aut-num"
-    if "RS-" in name:
+    # A route-set name starts with RS-, alone or as a component of a hierarchical
+    # name; as-sets such as AS-FOO-CUSTOMERS-V4 merely contain it (#499).
+    if any(part.startswith("RS-") for part in name.split(":")):
         return "route-set"
     return "as-set"
 
@@ -73,8 +78,8 @@ def _timeout(server):
 
 def _send(server, payload):
     """
-    Send one query to an IRRd server over port-43 whois and return the decoded
-    response text. Raises OSError (incl. socket.timeout) on any network failure —
+    Send one query (whois or `!` protocol) to an IRRd server on port 43 and
+    return the decoded response text. Raises OSError (incl. socket.timeout) on any network failure —
     callers translate that into a fail-open "unknown".
     """
     timeout = _timeout(server)
@@ -92,8 +97,8 @@ def _send(server, payload):
                 break
             chunks.append(data)
             total += len(data)
-            # We only ever need the leading bytes (first RPSL line, or the short
-            # `!s-lc` listing). Cap the read so a huge as-set object with tens of
+            # We only ever need the leading bytes (status lines, the first RPSL
+            # lines, or the short `!s-lc` listing). Cap the read so a huge as-set object with tens of
             # thousands of `members:` lines can't blow up memory or wall-time.
             if total >= _MAX_RESPONSE_BYTES:
                 break
@@ -135,24 +140,30 @@ def _server_sources(server):
 def _pinned_exists(server, source, object_class, name):
     """
     Does `name` exist in `source` per this server? True/False when the server
-    answers definitively, None on error or an unrecognized response. Reads only
-    the first non-empty line — never the (potentially huge) object.
+    answers definitively, None on error or an unrecognized response.
+
+    Asked over IRRd's `!` protocol rather than whois (#499): there an error reply
+    ("%% ERROR: ...") starts with "%" just like "no entries", while here they are
+    distinct status lines -- A<len> found, C/D no data, F error. Reads only the
+    status lines, never the (potentially huge) object.
     """
-    query = f"-s {source} -T {object_class} {name}"
+    if object_class == "aut-num" and re.fullmatch(r"AS[0-9]+", name):
+        # `!m` is an exact key match; whois normalized AS0003333 to AS3333
+        name = "AS" + (name[2:].lstrip("0") or "0")
+    query = "\n".join(["!!", f"!s{source}", f"!m{object_class},{name}", "!q"])
     try:
         text = _send(server, query)
     except OSError:
         return None
-    for line in text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith(_NO_ENTRIES_PREFIX):
-            return False
-        if line.startswith(f"{object_class}:"):
-            return True
-        # Unrecognized first line → don't guess.
+    statuses = [line.strip() for line in text.splitlines() if line.strip()][:2]
+    # `!s` must succeed: when it fails IRRd keeps its default sources and `!m`
+    # answers from any registry
+    if len(statuses) < 2 or statuses[0] != "C":
         return None
+    if statuses[1] in ("C", "D"):
+        return False
+    if re.fullmatch(r"A[0-9]+", statuses[1]):
+        return True
     return None
 
 

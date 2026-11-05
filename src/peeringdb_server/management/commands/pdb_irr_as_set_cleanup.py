@@ -17,8 +17,13 @@ Product-Committee error-rate report. Two layers:
                 --max-changes. Per token, not all-or-nothing: a value mixing
                 an unambiguous token with an ambiguous one comes back partly fixed,
                 and its disclosure mail names what is left rather than claiming no
-                action is needed -- one mail, not two. Each rewrite is re-validated and
-                live-confirmed against the lookup pool before it is written; a
+                action is needed -- one mail, not two. Each rewrite is re-validated
+                before it is written. On a healthy dump set the index is trusted,
+                except for a name resolved to APNIC, which is checked live against
+                IDNIC (the one registry with no dump, and the one APNIC names were
+                seen duplicated in, #499); an IRR error reply there is no answer
+                and the row is retried. Against a stale set (--allow-stale-index)
+                every changed token is confirmed against the whole lookup pool. A
                 rewrite the pool contradicts is ambiguous after all and joins
                 outreach instead of being dropped. The network is then told what
                 changed -- PeeringDB does not edit operator data silently, even
@@ -40,14 +45,13 @@ prefix. --allow-stale-index overrides that for a deliberate run.
 Both caps are batch cursors, not truncations. irr_as_set_notified records who was
 mailed. A successful auto-prefix leaves the bare bucket, while a proposed rewrite
 the live pool contradicts is recorded against that exact candidate so later runs
-skip it and advance. Both default to 100 and --commit refuses 0 ("no cap") because
-each candidate costs at least one live pool query (and can cost one per changed
-token); uncapped over the ~11k current candidates is at least ~10h, past any job
-deadline, and since the writes land after that loop a killed run would commit
-nothing and repeat forever. --max-changes bounds the candidates confirmed, not just
-the writes: a cap on writes alone still lets a run with a poor confirm rate walk
-every candidate. It also bounds the disclosure mail, one per rewrite;
---max-notifications governs outreach only.
+skip it and advance. Both default to 100 and --commit refuses 0 ("no cap").
+--max-changes caps the writes and with them the disclosure mail, one per rewrite,
+which is what keeps a run's mail volume bounded; --max-notifications governs
+outreach only. It also bounds the live lookups auto-prefix makes. On a healthy
+index only APNIC-resolved candidates need one, so the bound rarely bites, but a
+pool outage can spend two timeouts per lookup and the writes land after that loop,
+so a killed run would commit nothing.
 
 Usage:
   manage pdb_irr_as_set_cleanup [--detail] [--dump-dir PATH] [--commit]
@@ -337,28 +341,81 @@ def _confirm_auto_prefix(value, new):
     `_confirm_unresolved`, which does this before merely emailing — the write path
     needs it more.
 
-    Returns CONFIRMED / CONTRADICTED / UNKNOWN rather than a boolean: a pool that
-    answers and disagrees has told us the value is genuinely ambiguous, which is an
-    outreach case, whereas a pool that cannot answer has told us nothing and must
-    only be retried. Collapsing the two would either drop rows out of the campaign
-    for good or email operators off an outage.
+    Used only against a stale dump set (--allow-stale-index); a healthy one gets
+    `_check_idnic_duplicates` instead.
+
+    Returns (outcome, detail). The outcome is CONFIRMED / CONTRADICTED / UNKNOWN
+    rather than a boolean: a pool that answers and disagrees has told us the value
+    is genuinely ambiguous, which is an outreach case, whereas a pool that cannot
+    answer has told us nothing and must only be retried. Collapsing the two would
+    either drop rows out of the campaign for good or email operators off an outage.
+    `detail` names the contradicted token and the sources the pool holds it in, so
+    the cause can be read from the log; it is None otherwise.
     """
-    for old_token, new_token in zip(
-        tokenize_irr_as_set(value), tokenize_irr_as_set(new)
-    ):
-        if old_token == new_token:
-            # the rewrite left this token alone -- either it was already prefixed,
-            # or auto-prefix declined to touch it (ambiguous, absent, placeholder,
-            # route-set). Nothing was decided about it, so there is nothing to
-            # second-guess here.
-            continue
+    for _old_token, new_token in _changed_tokens(value, new):
         source, name = irr_as_set_pinned_source(new_token)
         result = irr.sources_for(name)
         if not result.ok:
-            return UNKNOWN  # short-circuits: nothing later can settle the value
+            return UNKNOWN, None  # short-circuits: nothing later can settle the value
         if set(result.sources) != {source}:
-            return CONTRADICTED
-    return CONFIRMED
+            return CONTRADICTED, _live_sources_detail(name, result.sources)
+    return CONFIRMED, None
+
+
+def _check_idnic_duplicates(value, new):
+    """
+    Live check of a rewrite written off a healthy dump set (#499).
+
+    A healthy set has a current dump for every registry in DUMP_SOURCES, so the
+    index already knows whether a name lives in one of them or several. IDNIC is the
+    exception: it has no dump, so a name held in IDNIC as well looks like it lives
+    in one registry. IDNIC is an APNIC national registry and shares its number
+    space, and every such duplicate seen on prod was resolved to APNIC, so only
+    those tokens get one source-pinned IDNIC query each. Other tokens cost nothing.
+
+    Same (outcome, detail) contract as `_confirm_auto_prefix`.
+    """
+    for _old_token, new_token in _changed_tokens(value, new):
+        source, name = irr_as_set_pinned_source(new_token)
+        if source != "APNIC":
+            continue
+        found = irr.exists_in("IDNIC", name)
+        if found is None:
+            return UNKNOWN, None
+        if found:
+            # only IDNIC was asked live; APNIC is the index's answer
+            return CONTRADICTED, f"live: {name} in IDNIC (index: {source})"
+    return CONFIRMED, None
+
+
+def _needs_idnic_check(value, new):
+    """Whether `_check_idnic_duplicates` would make a live lookup for this rewrite."""
+    return any(
+        irr_as_set_pinned_source(new_token)[0] == "APNIC"
+        for _old_token, new_token in _changed_tokens(value, new)
+    )
+
+
+def _changed_tokens(value, new):
+    """
+    The (old, new) token pairs a rewrite changed.
+
+    A token the rewrite left alone was either already prefixed or declined by
+    auto-prefix (ambiguous, absent, placeholder, route-set). Nothing was decided
+    about it, so there is nothing to second-guess.
+    """
+    return [
+        (old_token, new_token)
+        for old_token, new_token in zip(
+            tokenize_irr_as_set(value), tokenize_irr_as_set(new)
+        )
+        if old_token != new_token
+    ]
+
+
+def _live_sources_detail(name, sources):
+    held = ", ".join(sorted(sources)) or "no registry"
+    return f"live: {name} in {held}"
 
 
 def _rewrite_error(new):
@@ -466,14 +523,15 @@ class Command(PeeringDBBaseCommand):
             type=int,
             default=100,
             help=(
-                "Cap auto-prefix candidates live-confirmed or written per run "
-                "(pass a large value to run the whole set). Only consulted "
-                "with --commit, which refuses 0. Each candidate costs at "
-                "least one pool query and can cost one per changed token. "
-                "Successful rewrites leave the bare bucket; candidates "
-                "already contradicted by the pool are skipped so later runs "
-                "keep advancing. Also caps the disclosure mail -- one per "
-                "rewrite."
+                "Cap auto-prefix writes per run, and with them the disclosure "
+                "mail -- one per rewrite (pass a large value to run the whole "
+                "set). Only consulted with --commit, which refuses 0. Also "
+                "bounds the live lookups: on a healthy index only "
+                "APNIC-resolved candidates need one (an IDNIC check); with "
+                "--allow-stale-index every candidate does. Successful "
+                "rewrites leave the bare bucket; candidates already "
+                "contradicted by the pool are skipped so later runs keep "
+                "advancing."
             ),
         )
         parser.add_argument(
@@ -525,12 +583,12 @@ class Command(PeeringDBBaseCommand):
             raise CommandError("--renotify-after-days must be zero or greater.")
 
         # "0 = no cap" is a reporting affordance, not a campaign mode: under
-        # --commit it uncaps the ~11k live pool queries, and for --max-changes the
-        # disclosure mail with it. Make the operator state the batch size.
+        # --commit it uncaps the auto-prefix writes and the disclosure mail that
+        # goes with each one. Make the operator state the batch size.
         if commit and not max_changes:
             raise CommandError(
-                "--commit needs a positive --max-changes: 0 uncaps the live pool "
-                "confirmations and the disclosure mail (default 100)."
+                "--commit needs a positive --max-changes: 0 uncaps the auto-prefix "
+                "writes and their disclosure mail (default 100)."
             )
         if commit and not max_notifications:
             raise CommandError(
@@ -542,8 +600,11 @@ class Command(PeeringDBBaseCommand):
 
         # Health first: load_index expands every dump (measured ~19s / 700MB), so a
         # dump set that cannot be written from should be rejected before paying it.
+        index_healthy = False
         if commit:
-            self._check_index_health(dump_dir, options.get("allow_stale_index"))
+            index_healthy = self._check_index_health(
+                dump_dir, options.get("allow_stale_index")
+            )
 
         index = irr_bulk.load_index(dump_dir)
 
@@ -600,7 +661,7 @@ class Command(PeeringDBBaseCommand):
             # they join outreach — appended last, behind the candidates the scan
             # already classified, so they never displace them under the cap.
             plan = self._prepare_auto_prefix(
-                to_prefix, max_changes, renotify_after_days
+                to_prefix, max_changes, renotify_after_days, index_healthy
             )
             to_notify.extend(plan.unconfirmed)
             pending = self._prepare_notifications(
@@ -638,10 +699,15 @@ class Command(PeeringDBBaseCommand):
         exists" says nothing about whether it can tell a one-registry name from a
         two-registry one — and without every registry, auto-prefix writes a source
         prefix that is simply wrong.
+
+        Returns True when the dump set is healthy, which is what lets auto-prefix
+        trust the index; False when --allow-stale-index let an unhealthy set
+        through. The flag alone does not decide it: over a healthy set it changes
+        nothing.
         """
         detail = irr_bulk.describe_dump_problems(dump_dir)
         if not detail:
-            return
+            return True
 
         if allow_stale_index:
             self.stdout.write(
@@ -649,29 +715,33 @@ class Command(PeeringDBBaseCommand):
                 "because --allow-stale-index was given; auto-prefix may write an "
                 "incorrect source for a name whose other registry is not indexed."
             )
-            return
+            return False
 
         raise CommandError(
             f"the IRR dump set is not fit to write from ({detail}). Run "
             "pdb_irr_as_set_fetch --commit, or pass --allow-stale-index to override."
         )
 
-    def _prepare_auto_prefix(self, to_prefix, max_changes, renotify_after_days):
+    def _prepare_auto_prefix(
+        self, to_prefix, max_changes, renotify_after_days, index_healthy
+    ):
         """
-        Validate and live-confirm rewrite candidates, bounded by --max-changes.
+        Validate and live-check rewrite candidates, bounded by --max-changes.
 
         Runs before the transaction opens, so third-party queries are not made with
         a write transaction held and a value that must not be written is dropped
         here rather than aborting every other write from inside the atomic block.
 
-        --max-changes bounds confirmation attempts as well as writes. A candidate
-        that fails to confirm costs the same ~3.4s live query as one that succeeds,
-        so a cap counting only successes leaves the fan-out unbounded: at a low
-        confirm rate the pass walks the entire candidate list, which is the ~10h
-        shape the cap exists to prevent, reached from the other side. An exhausted
-        lookup budget ends the pass rather than continuing — unlike the outreach
-        recheck budget, every candidate behind it needs a lookup too, so there is no
-        lookup-free work left to reach.
+        On a healthy index the batch design holds (#499): the index decides, and
+        only APNIC-resolved rewrites get a live IDNIC check. Against a stale index
+        every candidate is confirmed against the whole pool, as before.
+
+        --max-changes caps the writes, and the live lookups as a backstop. A lookup
+        that fails costs as much as one that succeeds, so a cap counting only
+        successes leaves the fan-out unbounded during a pool outage. On a healthy
+        index an exhausted lookup budget skips only the candidates that need one, so
+        the lookup-free candidates behind them are still reached. Against a stale
+        index every candidate needs a lookup, so an exhausted budget ends the pass.
 
         A definitive contradiction is a durable cursor keyed to the exact proposed
         rewrite. The same current candidate is skipped until the Network changes or
@@ -710,7 +780,7 @@ class Command(PeeringDBBaseCommand):
                 )
                 continue
 
-            if max_changes and (len(prepared) >= max_changes or lookups >= max_changes):
+            if max_changes and len(prepared) >= max_changes:
                 break
 
             error = _rewrite_error(new)
@@ -722,8 +792,19 @@ class Command(PeeringDBBaseCommand):
                 )
                 continue
 
-            lookups += 1
-            outcome = _confirm_auto_prefix(net.irr_as_set, new)
+            if index_healthy:
+                if not _needs_idnic_check(net.irr_as_set, new):
+                    prepared.append((net, new))
+                    continue
+                if max_changes and lookups >= max_changes:
+                    continue
+                lookups += 1
+                outcome, detail = _check_idnic_duplicates(net.irr_as_set, new)
+            else:
+                if max_changes and lookups >= max_changes:
+                    break
+                lookups += 1
+                outcome, detail = _confirm_auto_prefix(net.irr_as_set, new)
 
             if outcome == CONTRADICTED:
                 # The pool answered and holds the name somewhere other than the one
@@ -735,7 +816,7 @@ class Command(PeeringDBBaseCommand):
                 self.log(
                     f"[unconfirmed:ambiguous] id:{net.id} asn:{net.asn} "
                     f"'{net.irr_as_set}' -> '{new}' (the live pool does not hold the "
-                    "name in exactly that one source); routed to outreach"
+                    f"name in exactly that one source; {detail}); routed to outreach"
                 )
                 continue
 
@@ -797,8 +878,8 @@ class Command(PeeringDBBaseCommand):
         needs the operator.
 
         Rows are re-read here rather than written from the instance the scan loaded:
-        the live-confirmation pass in between costs one pool query per candidate, so
-        those instances are minutes stale and save() writes every field, reverting
+        the live-check pass in between can make a pool query per candidate, so
+        those instances can be minutes stale and save() writes every field, reverting
         any other edit the operator made in that window. Not fixable with
         update_fields -- handleref bumps `version` from a post_revision_commit hook
         that full-saves the instance anyway, so the snapshot has to be fresh.
@@ -1052,7 +1133,7 @@ class Command(PeeringDBBaseCommand):
         if max_changes and deferred > 0:
             w(
                 f"  {deferred} candidate(s) left unexamined by --max-changes "
-                f"{max_changes} (which bounds live confirmations as well as "
+                f"{max_changes} (which bounds live lookups as well as "
                 "writes); re-run to continue."
             )
         w(
