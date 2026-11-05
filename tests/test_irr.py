@@ -84,13 +84,16 @@ def make_send(present, mirror=MIRROR, fail_hosts=()):
             if objects:
                 return "\n".join(objects)
             return "%  No entries found for the selected source(s).\n\n"
-        # "-s <SOURCE> -T <class> <NAME>"
-        parts = payload.split()
-        source, name = parts[1], parts[-1]
-        object_class = parts[3]
+        # source-pinned "!!\n!s<SOURCE>\n!m<class>,<NAME>\n!q"
+        _multi, select, match, _quit = payload.split("\n")
+        source = select[2:]
+        object_class, name = match[2:].split(",")
+        if source not in mirror.get(host, []):
+            return "F One or more selected sources are unavailable.\n"
         if (source, name) in present:
-            return f"{object_class}:         {name}\ndescr: mocked\nsource: {source}\n"
-        return "%  No entries found for the selected source(s).\n\n"
+            body = f"{object_class}:         {name}\ndescr: mocked\nsource: {source}\n"
+            return f"C\nA{len(body)}\n{body}C\n"
+        return "C\nD\n"
 
     return _send
 
@@ -116,6 +119,20 @@ class TestIrrLookup:
         assert irr._object_class("AS64496") == "aut-num"
         assert irr._object_class("RS-BAR") == "route-set"
         assert irr._object_class("AS-FOO:AS-BAR") == "as-set"
+
+    @pytest.mark.parametrize(
+        "name,expected",
+        [
+            ("AS-FOO-CUSTOMERS-V4", "as-set"),
+            ("AS-IX-RS-MEMBERS", "as-set"),
+            ("AS1:AS-FOO-RS-BAR", "as-set"),
+            ("RS-FOO", "route-set"),
+            ("AS1:RS-FOO", "route-set"),
+        ],
+    )
+    def test_object_class_rs_component(self, name, expected):
+        # #499: RS- only marks a route-set at the start of a name component
+        assert irr._object_class(name) == expected
 
     # --- exists_in -----------------------------------------------------------
 
@@ -147,20 +164,72 @@ class TestIrrLookup:
         with p_send, p_cache:
             assert irr.exists_in("REACH", "AS-ONLY-RADB") is True
 
-    def test_exists_in_unknown_on_unrecognized_response(self):
-        # server mirrors the source and answers, but with a first line that is
-        # neither an RPSL object nor "% No entries" (e.g. an IRRd "F ..." error)
-        # -> treated as unknown (fail open), never a false True/False
+    @staticmethod
+    def _reply_send(reply):
+        # every server mirrors every source and answers the pinned query with `reply`
         def send(server, payload):
             if payload == "!s-lc":
                 return "A20\n" + ",".join(MIRROR[server["host"]]) + "\nC\n"
-            return "F malformed query\n"
+            return reply
 
+        return send
+
+    @pytest.mark.parametrize(
+        "reply,expected",
+        [
+            ("C\nA40\nas-set: AS-FOO\nsource: ARIN\n\nC\n", True),
+            ("C\nD\n", False),
+            ("C\nC\n", False),
+            # #499: an IRRd error is unknown, never a false absent
+            ("C\nF Internal error\n", None),
+            ("%% ERROR: internal error\n", None),
+            # a rejected !s leaves IRRd on its default sources, so the object that
+            # follows may come from any registry
+            ("F One or more selected sources are unavailable.\nA40\nas-set:\n", None),
+            ("C\n", None),
+            ("", None),
+        ],
+    )
+    def test_exists_in_reply(self, reply, expected):
         with (
-            patch("peeringdb_server.irr._send", side_effect=send),
+            patch("peeringdb_server.irr._send", side_effect=self._reply_send(reply)),
             patch("peeringdb_server.irr._cache", return_value=FakeCache()),
         ):
-            assert irr.exists_in("ARIN", "AS-FOO") is None
+            assert irr.exists_in("ARIN", "AS-FOO") is expected
+
+    def test_exists_in_query_is_source_pinned(self):
+        with (
+            patch(
+                "peeringdb_server.irr._send", side_effect=self._reply_send("C\nD\n")
+            ) as m_send,
+            patch("peeringdb_server.irr._cache", return_value=FakeCache()),
+        ):
+            irr.exists_in("ARIN", "AS64496")
+        assert m_send.call_args_list[-1].args[1] == (
+            "!!\n!sARIN\n!maut-num,AS64496\n!q"
+        )
+
+    @pytest.mark.parametrize(
+        "name,canonical",
+        [
+            ("AS0003333", "AS3333"),
+            # past int()'s 4300-digit conversion limit
+            ("AS" + "0" * 4301 + "3333", "AS3333"),
+            ("AS000", "AS0"),
+        ],
+    )
+    def test_exists_in_normalizes_zero_padded_asn(self, name, canonical):
+        # whois answered AS0003333 with the AS3333 object; `!m` matches the key
+        # exactly, so the query must carry the canonical form
+        send = make_send({("RIPE", canonical)})
+        with (
+            patch("peeringdb_server.irr._send", side_effect=send) as m_send,
+            patch("peeringdb_server.irr._cache", return_value=FakeCache()),
+        ):
+            assert irr.exists_in("RIPE", name) is True
+        assert m_send.call_args_list[-1].args[1] == (
+            f"!!\n!sRIPE\n!maut-num,{canonical}\n!q"
+        )
 
     def test_exists_in_trusts_pinned_answer_when_mirror_list_unavailable(self):
         # !s-lc returns nothing parseable (mirror list unknown), but the pinned
@@ -168,7 +237,7 @@ class TestIrrLookup:
         def send(server, payload):
             if payload == "!s-lc":
                 return "C\n"  # no source list
-            return "as-set: AS-FOO\nsource: ARIN\n"
+            return "C\nA30\nas-set: AS-FOO\nsource: ARIN\n\nC\n"
 
         with (
             patch("peeringdb_server.irr._send", side_effect=send),
@@ -184,7 +253,7 @@ class TestIrrLookup:
         def send(server, payload):
             if payload == "!s-lc":
                 return "C\n"  # no source list -> mirror list unknown
-            return "%  No entries found for the selected source(s).\n\n"
+            return "C\nD\n"
 
         with (
             patch("peeringdb_server.irr._send", side_effect=send),
@@ -218,7 +287,7 @@ class TestIrrLookup:
             assert irr.exists_in("ARIN", "AS-FOO") is True
             # only the cached exists-result matters; no extra pinned lookups
             pinned = [
-                c for c in m_send.call_args_list if c.args[1].startswith("-s ARIN")
+                c for c in m_send.call_args_list if c.args[1].startswith("!!\n!sARIN")
             ]
             assert len(pinned) == 1
             assert m_send.call_count >= calls_after_first
@@ -278,7 +347,9 @@ class TestIrrLookup:
             result = irr.sources_for("AS-LARGE")
 
         assert result.sources == frozenset({"ARIN"})
-        assert any(call.args[1].startswith("-s ARIN") for call in m_send.call_args_list)
+        assert any(
+            call.args[1].startswith("!!\n!sARIN") for call in m_send.call_args_list
+        )
 
     def test_sources_for_caches_complete_result(self):
         send = make_send({("ARIN", "AS-FOO")})

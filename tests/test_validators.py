@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.cache.backends.locmem import LocMemCache
 from django.core.exceptions import ValidationError
 from django.forms import modelform_factory
 from django.test import RequestFactory, override_settings
@@ -58,6 +59,9 @@ from peeringdb_server.validators import (
 from tests.test_ixf_member_import_protocol import setup_test_data
 
 pytestmark = pytest.mark.django_db
+
+# captured before the autouse fixture below replaces it
+REAL_EXISTS_IN = irr_module.exists_in
 
 
 @pytest.fixture(autouse=True)
@@ -790,6 +794,41 @@ def test_validate_irr_as_set_strict_multi_token_one_absent():
     msg = str(exc.value)
     assert "AS-BAR" in msg
     assert "found in" not in msg
+
+
+@override_settings(
+    IRR_AS_SET_VERIFY_EXISTENCE=True,
+    IRR_LOOKUP_SERVERS=[{"host": "irrd", "port": 43, "timeout": 5}],
+)
+@pytest.mark.parametrize(
+    "reply,rejected",
+    [
+        ("C\nD\n", True),
+        ("C\nF Internal error\n", False),
+        ("%% ERROR: internal error\n", False),
+    ],
+)
+def test_validate_irr_as_set_strict_irr_error_is_not_absent(reply, rejected):
+    # #499: only a proven absence rejects a save; an IRRd error reply is unknown
+    def send(server, payload):
+        if payload == "!s-lc":
+            return "A10\nRIPE,RADB\nC\n"
+        return reply
+
+    irr_cache = LocMemCache("irr-499", {})
+    irr_cache.clear()  # same-named instances share storage across parametrized runs
+    with (
+        patch("peeringdb_server.irr.exists_in", REAL_EXISTS_IN),
+        patch("peeringdb_server.irr._send", side_effect=send),
+        patch("peeringdb_server.irr._cache", return_value=irr_cache),
+    ):
+        if rejected:
+            with pytest.raises(ValidationError):
+                validate_irr_as_set("RIPE::AS-GHOST", strict=True)
+        else:
+            assert (
+                validate_irr_as_set("RIPE::AS-GHOST", strict=True) == "RIPE::AS-GHOST"
+            )
 
 
 def test_validate_irr_as_set_no_live_check_when_not_strict():

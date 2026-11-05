@@ -14,6 +14,7 @@ from unittest import mock
 
 import pytest
 from django.core import mail
+from django.core.cache.backends.locmem import LocMemCache
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
@@ -41,19 +42,40 @@ MULTI_DUMP = "as-set:  AS-MULTI\nsource:  RIPE\n\nas-set:  AS-MULTI\nsource:  RA
 pytestmark = pytest.mark.django_db
 
 
+# names the index resolves to APNIC, the one registry whose rewrites get a live
+# IDNIC check on a healthy dump set (#499)
+APNIC_DUMP = "as-set:  AS-FOO\nsource:  APNIC\n\nas-set:  AS-BAR\nsource:  APNIC\n"
+
+
 def live_pool(sources_by_name, default=LookupResult(frozenset(), True)):
     """
     An `irr.sources_for` side_effect driven by the queried name.
 
-    Auto-prefix now takes a live second opinion before writing (it must agree the
-    name is held by exactly the one source the index picked), so a --commit test
-    that expects a rewrite has to say what the pool reports.
+    Found-nowhere outreach, and auto-prefix against a stale dump set, take a live
+    second opinion from the whole pool, so those tests say what the pool reports.
     """
 
     def _sources_for(name, object_class=None):
         return sources_by_name.get(name.upper(), default)
 
     return _sources_for
+
+
+def idnic_pool(found_by_name, default=False, calls=None):
+    """
+    An `irr.exists_in` side_effect for the IDNIC check on APNIC-resolved rewrites.
+
+    Fails on any other source, so a test also proves the check stays pinned to
+    IDNIC. `calls`, when given, collects the queried names.
+    """
+
+    def _exists_in(source, name, object_class=None):
+        assert source == "IDNIC"
+        if calls is not None:
+            calls.append(name.upper())
+        return found_by_name.get(name.upper(), default)
+
+    return _exists_in
 
 
 @pytest.mark.parametrize(
@@ -479,19 +501,19 @@ def test_cleanup_commit_skips_row_changed_during_the_run(org, tmp_path):
     """
     A row the operator edited between classification and write is left alone.
 
-    The pool mock stands in for that window -- it fires during confirmation, which
-    is when a concurrent edit would land.
+    The IDNIC check mock stands in for that window -- it fires during the live
+    check, which is when a concurrent edit would land.
     """
     net = make_network(org, 2440, "AS-FOO")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
-    def _pool_then_edit(name, object_class=None):
+    def _pool_then_edit(source, name, object_class=None):
         # simulate the operator saving their own value mid-run
         Network.objects.filter(id=net.id).update(irr_as_set="RADB::AS-MINE")
-        return LookupResult(["RIPE"], True)
+        return False
 
     out = StringIO()
-    with mock.patch("peeringdb_server.irr.sources_for", side_effect=_pool_then_edit):
+    with mock.patch("peeringdb_server.irr.exists_in", side_effect=_pool_then_edit):
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
@@ -1253,6 +1275,30 @@ def test_cleanup_commit_allows_stale_index_with_override(org, tmp_path):
     assert "WARNING: proceeding with an unhealthy dump set" in out.getvalue()
 
 
+@pytest.mark.django_db
+def test_cleanup_commit_allow_stale_index_on_healthy_set_trusts_index(org, tmp_path):
+    # The flag only permits a stale set; over a healthy one the index still decides
+    # and no live confirm runs.
+    net = make_network(org, 2904, "AS-FOO")
+    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+
+    out = StringIO()
+    with mock.patch("peeringdb_server.irr.sources_for") as sources_for:
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--allow-stale-index",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=out,
+        )
+
+    net.refresh_from_db()
+    sources_for.assert_not_called()
+    assert net.irr_as_set == "RIPE::AS-FOO"
+    assert "WARNING: proceeding with an unhealthy dump set" not in out.getvalue()
+
+
 @override_settings(IRR_BULK_DUMP_MAX_AGE_HOURS=0)
 @pytest.mark.django_db
 def test_cleanup_commit_refuses_out_of_date_dump_set(org, tmp_path):
@@ -1301,19 +1347,18 @@ def test_load_index_ignores_staging_leftovers(tmp_path):
 def test_cleanup_contradicted_rewrite_is_routed_to_outreach(
     org, tmp_path, django_capture_on_commit_callbacks
 ):
-    # The index says AS-FOO is RIPE-only, but the live pool holds it in RIPE *and*
-    # RADB -- i.e. the index is missing RADB's dump and the name is really
-    # ambiguous. Writing RIPE::AS-FOO would be wrong, and dropping the row silently
-    # would leave it with neither a fix nor an email, so it becomes outreach.
+    # The index says AS-FOO is APNIC-only, but the live pool also holds it in
+    # IDNIC, which has no dump, so the name is really ambiguous. Writing
+    # APNIC::AS-FOO would be wrong, and dropping the row silently would leave it
+    # with neither a fix nor an email, so it becomes outreach.
     net = make_network(org, 3101, "AS-FOO")
     add_contact(net)
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
     out = StringIO()
     mail.outbox = []
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": True})
     ):
         with django_capture_on_commit_callbacks(execute=True):
             call_command(
@@ -1328,10 +1373,12 @@ def test_cleanup_contradicted_rewrite_is_routed_to_outreach(
     net.refresh_from_db()
     assert net.irr_as_set == "AS-FOO"  # not rewritten
     assert "[unconfirmed:ambiguous]" in output
+    # the log names where the name was found, so the cause can be read from it
+    assert "live: AS-FOO in IDNIC (index: APNIC)" in output
     assert "1 candidate(s) contradicted by the live IRR pool" in output
     # ...and it was actually mailed, rather than dropping out of the campaign
     assert net.irr_as_set_notified is not None
-    assert net.irr_as_set_auto_prefix_candidate == "RIPE::AS-FOO"
+    assert net.irr_as_set_auto_prefix_candidate == "APNIC::AS-FOO"
     assert net.irr_as_set_auto_prefix_checked is not None
     assert len(mail.outbox) == 1
 
@@ -1342,12 +1389,11 @@ def test_cleanup_pool_outage_is_retried_not_mailed(org, tmp_path):
     # rewritten nor mailed, so the next run can decide it properly.
     net = make_network(org, 3105, "AS-FOO")
     add_contact(net)
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
     out = StringIO()
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult([], False)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": None})
     ):
         call_command(
             "pdb_irr_as_set_cleanup",
@@ -1366,13 +1412,63 @@ def test_cleanup_pool_outage_is_retried_not_mailed(org, tmp_path):
     assert "could not answer" in out.getvalue()
 
 
+@override_settings(IRR_LOOKUP_SERVERS=[{"host": "irrd", "port": 43, "timeout": 5}])
+@pytest.mark.parametrize(
+    "reply,expected",
+    [
+        ("C\nD\n", "APNIC::AS-FOO"),
+        ("C\nF Internal error\n", "AS-FOO"),
+        ("%% ERROR: internal error\n", "AS-FOO"),
+        # a rejected !s leaves IRRd on its default sources, so the object that
+        # follows may come from any registry
+        (
+            "F One or more selected sources are unavailable.\nA30\n"
+            "as-set: AS-FOO\nsource: APNIC\nC\n",
+            "AS-FOO",
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_cleanup_idnic_error_reply_is_not_absent(org, tmp_path, reply, expected):
+    # #499: the IDNIC check authorizes an APNIC write only on a definitive "no
+    # data". An IRRd error must leave the row for the next run, not let it through.
+    net = make_network(org, 3106, "AS-FOO")
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
+
+    def _send(server, payload):
+        if payload == "!s-lc":
+            return "A16\nRIPE,APNIC,IDNIC\nC\n"
+        assert payload.startswith("!!\n!sIDNIC\n!mas-set,AS-FOO")
+        return reply
+
+    cache = LocMemCache("irr-499", {})
+    cache.clear()  # same-named instances share storage across parametrized runs
+    out = StringIO()
+    with (
+        mock.patch("peeringdb_server.irr._send", side_effect=_send),
+        mock.patch("peeringdb_server.irr._cache", return_value=cache),
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=out,
+        )
+
+    net.refresh_from_db()
+    assert net.irr_as_set == expected
+    if expected == "AS-FOO":
+        assert net.irr_as_set_auto_prefix_checked is None
+        assert "could not answer" in out.getvalue()
+
+
 @pytest.mark.django_db
 def test_cleanup_max_changes_bounds_confirmation_attempts(org, tmp_path):
-    # --max-changes must bound the live lookups, not only the writes. Every one of
-    # these candidates is contradicted, so a cap counting successes alone would
-    # never fill and the run would query the pool once per candidate -- the
-    # unbounded-fan-out shape the cap exists to prevent, reached from the other
-    # side.
+    # Against a stale index --max-changes must bound the live lookups, not only the
+    # writes. Every one of these candidates is contradicted, so a cap counting
+    # successes alone would never fill and the run would query the pool once per
+    # candidate -- the unbounded fan-out the cap exists to prevent.
     for asn in range(3201, 3207):
         make_network(org, asn, f"AS-MANY{asn}")
     dump = (
@@ -1382,7 +1478,8 @@ def test_cleanup_max_changes_bounds_confirmation_attempts(org, tmp_path):
             f"as-set: AS-MANY{asn}\nsource: RIPE" for asn in range(3201, 3207)
         )
     )
-    write_irr_dump_set(tmp_path, dump)
+    # one registry only, so the set is unhealthy and every candidate is confirmed
+    (tmp_path / "ripe.db.as-set.gz").write_bytes(gzip.compress(dump.encode()))
 
     calls = []
 
@@ -1395,6 +1492,7 @@ def test_cleanup_max_changes_bounds_confirmation_attempts(org, tmp_path):
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
+            "--allow-stale-index",
             "--dump-dir",
             str(tmp_path),
             "--max-changes",
@@ -1418,11 +1516,10 @@ def test_cleanup_contradiction_cursor_advances_without_contacts(org, tmp_path):
     # every run and the valid candidate behind it is never reached.
     first = make_network(org, 3207, "AS-FOO")
     second = make_network(org, 3208, "AS-BAR")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": True})
     ):
         call_command(
             "pdb_irr_as_set_cleanup",
@@ -1437,17 +1534,15 @@ def test_cleanup_contradiction_cursor_advances_without_contacts(org, tmp_path):
     first.refresh_from_db()
     assert first.irr_as_set == "AS-FOO"
     assert first.irr_as_set_notified is None  # no contacts, so no mail marker
-    assert first.irr_as_set_auto_prefix_candidate == "RIPE::AS-FOO"
+    assert first.irr_as_set_auto_prefix_candidate == "APNIC::AS-FOO"
     assert first.irr_as_set_auto_prefix_checked is not None
 
     calls = []
 
-    def _sources_for(name, object_class=None):
-        calls.append(name.upper())
-        return LookupResult(["RADB"], True)
-
     out = StringIO()
-    with mock.patch("peeringdb_server.irr.sources_for", side_effect=_sources_for):
+    with mock.patch(
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({}, calls=calls)
+    ):
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
@@ -1460,7 +1555,7 @@ def test_cleanup_contradiction_cursor_advances_without_contacts(org, tmp_path):
 
     second.refresh_from_db()
     assert calls == ["AS-BAR"]  # AS-FOO used no budget on the second run
-    assert second.irr_as_set == "RADB::AS-BAR"
+    assert second.irr_as_set == "APNIC::AS-BAR"
     assert (
         "1 candidate(s) skipped because the same rewrite was already" in out.getvalue()
     )
@@ -1479,12 +1574,11 @@ def test_cleanup_checked_contradiction_remains_pending_outreach(
     contradicted = make_network(org, 3213, "AS-FOO")
     add_contact(backlog, email="backlog@example.com")
     add_contact(contradicted, email="contradicted@example.com")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP + MULTI_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP + "\n" + MULTI_DUMP)
 
     mail.outbox = []
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": True})
     ):
         with django_capture_on_commit_callbacks(execute=True):
             call_command(
@@ -1502,9 +1596,9 @@ def test_cleanup_checked_contradiction_remains_pending_outreach(
         "backlog@example.com"
     ]
     assert contradicted.irr_as_set_notified is None
-    assert contradicted.irr_as_set_auto_prefix_candidate == "RIPE::AS-FOO"
+    assert contradicted.irr_as_set_auto_prefix_candidate == "APNIC::AS-FOO"
 
-    with mock.patch("peeringdb_server.irr.sources_for") as sources_for:
+    with mock.patch("peeringdb_server.irr.exists_in") as exists_in:
         with django_capture_on_commit_callbacks(execute=True):
             call_command(
                 "pdb_irr_as_set_cleanup",
@@ -1517,7 +1611,7 @@ def test_cleanup_checked_contradiction_remains_pending_outreach(
             )
 
     contradicted.refresh_from_db()
-    sources_for.assert_not_called()
+    exists_in.assert_not_called()
     assert [address for message in mail.outbox for address in message.to] == [
         "backlog@example.com",
         "contradicted@example.com",
@@ -1530,11 +1624,10 @@ def test_cleanup_changed_dump_candidate_reopens_contradiction_cursor(org, tmp_pa
     # Cursor state is keyed to the proposed rewrite, not only the bare value. If a
     # later dump derives a different source, that candidate has never been checked.
     net = make_network(org, 3209, "AS-FOO")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": True})
     ):
         call_command(
             "pdb_irr_as_set_cleanup",
@@ -1545,23 +1638,23 @@ def test_cleanup_changed_dump_candidate_reopens_contradiction_cursor(org, tmp_pa
         )
 
     net.refresh_from_db()
-    assert net.irr_as_set_auto_prefix_candidate == "RIPE::AS-FOO"
+    assert net.irr_as_set_auto_prefix_candidate == "APNIC::AS-FOO"
 
     write_irr_dump_set(tmp_path, "as-set: AS-FOO\nsource: RADB\n")
-    with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RADB"], True)}),
-    ) as sources_for:
+    out = StringIO()
+    with mock.patch("peeringdb_server.irr.exists_in") as exists_in:
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
             "--dump-dir",
             str(tmp_path),
-            stdout=StringIO(),
+            stdout=out,
         )
 
     net.refresh_from_db()
-    sources_for.assert_called_once_with("AS-FOO")
+    # a RADB rewrite on a healthy index needs no live check
+    exists_in.assert_not_called()
+    assert "[skip:already-contradicted]" not in out.getvalue()
     assert net.irr_as_set == "RADB::AS-FOO"
 
 
@@ -1591,11 +1684,10 @@ def test_cleanup_prior_found_in_many_outreach_does_not_block_auto_prefix(
     assert net.irr_as_set_auto_prefix_candidate == ""
     assert net.irr_as_set_auto_prefix_checked is None
 
-    write_irr_dump_set(tmp_path, "as-set: AS-MULTI\nsource: RIPE\n")
+    write_irr_dump_set(tmp_path, "as-set: AS-MULTI\nsource: APNIC\n")
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-MULTI": LookupResult(["RIPE"], True)}),
-    ) as sources_for:
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({})
+    ) as exists_in:
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
@@ -1605,22 +1697,22 @@ def test_cleanup_prior_found_in_many_outreach_does_not_block_auto_prefix(
         )
 
     net.refresh_from_db()
-    sources_for.assert_called_once_with("AS-MULTI")
-    assert net.irr_as_set == "RIPE::AS-MULTI"
+    exists_in.assert_called_once_with("IDNIC", "AS-MULTI")
+    assert net.irr_as_set == "APNIC::AS-MULTI"
 
 
 @pytest.mark.django_db
 def test_cleanup_renotify_after_days_reopens_contradiction_cursor(org, tmp_path):
     net = make_network(org, 3211, "AS-FOO")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
     checked_at = timezone.now() - timedelta(days=10)
     Network.objects.filter(id=net.id).update(
-        irr_as_set_auto_prefix_candidate="RIPE::AS-FOO",
+        irr_as_set_auto_prefix_candidate="APNIC::AS-FOO",
         irr_as_set_auto_prefix_checked=checked_at,
         updated=checked_at - timedelta(days=1),
     )
 
-    with mock.patch("peeringdb_server.irr.sources_for") as sources_for:
+    with mock.patch("peeringdb_server.irr.exists_in") as exists_in:
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
@@ -1630,12 +1722,11 @@ def test_cleanup_renotify_after_days_reopens_contradiction_cursor(org, tmp_path)
             "30",
             stdout=StringIO(),
         )
-    sources_for.assert_not_called()
+    exists_in.assert_not_called()
 
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE"], True)}),
-    ) as sources_for:
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({})
+    ) as exists_in:
         call_command(
             "pdb_irr_as_set_cleanup",
             "--commit",
@@ -1647,8 +1738,8 @@ def test_cleanup_renotify_after_days_reopens_contradiction_cursor(org, tmp_path)
         )
 
     net.refresh_from_db()
-    sources_for.assert_called_once_with("AS-FOO")
-    assert net.irr_as_set == "RIPE::AS-FOO"
+    exists_in.assert_called_once_with("IDNIC", "AS-FOO")
+    assert net.irr_as_set == "APNIC::AS-FOO"
 
 
 @pytest.mark.django_db
@@ -1656,12 +1747,11 @@ def test_cleanup_summary_does_not_blame_the_cap_for_unconfirmed_rows(org, tmp_pa
     # A candidate the pool contradicted is not one the cap deferred: reporting it
     # as "re-run to continue" promises progress that will never come.
     make_network(org, 3211, "AS-FOO")
-    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+    write_irr_dump_set(tmp_path, APNIC_DUMP)
 
     out = StringIO()
     with mock.patch(
-        "peeringdb_server.irr.sources_for",
-        side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        "peeringdb_server.irr.exists_in", side_effect=idnic_pool({"AS-FOO": True})
     ):
         call_command(
             "pdb_irr_as_set_cleanup",
@@ -1676,6 +1766,134 @@ def test_cleanup_summary_does_not_blame_the_cap_for_unconfirmed_rows(org, tmp_pa
 
     assert "contradicted by the live IRR pool" in output
     assert "left unexamined by --max-changes" not in output
+
+
+@pytest.mark.django_db
+def test_cleanup_healthy_index_makes_no_lookup_for_non_apnic_candidates(org, tmp_path):
+    # #499: a healthy dump set already knows whether a RIPE or RADB name lives in
+    # one registry, so those rewrites are written without asking the pool.
+    ripe = make_network(org, 3301, "AS-FOO")
+    radb = make_network(org, 3302, "AS-BAR")
+    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+
+    with (
+        mock.patch("peeringdb_server.irr.sources_for") as sources_for,
+        mock.patch("peeringdb_server.irr.exists_in") as exists_in,
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=StringIO(),
+        )
+
+    ripe.refresh_from_db()
+    radb.refresh_from_db()
+    sources_for.assert_not_called()
+    exists_in.assert_not_called()
+    assert ripe.irr_as_set == "RIPE::AS-FOO"
+    assert radb.irr_as_set == "RADB::AS-BAR"
+
+
+@pytest.mark.django_db
+def test_cleanup_apnic_candidate_makes_one_idnic_lookup(org, tmp_path):
+    # Only the APNIC token of a mixed value is checked, with one IDNIC-pinned
+    # query rather than a query per pool server.
+    net = make_network(org, 3303, "AS-FOO AS-RIPEONLY")
+    write_irr_dump_set(
+        tmp_path,
+        "as-set: AS-FOO\nsource: APNIC\n\nas-set: AS-RIPEONLY\nsource: RIPE\n",
+    )
+
+    with (
+        mock.patch("peeringdb_server.irr.sources_for") as sources_for,
+        mock.patch(
+            "peeringdb_server.irr.exists_in", side_effect=idnic_pool({})
+        ) as exists_in,
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=StringIO(),
+        )
+
+    net.refresh_from_db()
+    sources_for.assert_not_called()
+    exists_in.assert_called_once_with("IDNIC", "AS-FOO")
+    assert net.irr_as_set == "APNIC::AS-FOO RIPE::AS-RIPEONLY"
+
+
+@pytest.mark.django_db
+def test_cleanup_stale_index_contradiction_logs_live_sources(org, tmp_path):
+    # --allow-stale-index keeps the full live confirm for every changed token, and
+    # a contradiction names the sources the pool returned.
+    net = make_network(org, 3304, "AS-FOO")
+    (tmp_path / "ripe.db.as-set.gz").write_bytes(gzip.compress(SAMPLE_DUMP.encode()))
+
+    out = StringIO()
+    with (
+        mock.patch(
+            "peeringdb_server.irr.sources_for",
+            side_effect=live_pool({"AS-FOO": LookupResult(["RIPE", "RADB"], True)}),
+        ) as sources_for,
+        mock.patch("peeringdb_server.irr.exists_in") as exists_in,
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--allow-stale-index",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=out,
+        )
+
+    net.refresh_from_db()
+    sources_for.assert_called_once_with("AS-FOO")
+    exists_in.assert_not_called()
+    assert net.irr_as_set == "AS-FOO"
+    assert "live: AS-FOO in RADB, RIPE" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_cleanup_healthy_index_lookup_budget_does_not_stop_the_pass(org, tmp_path):
+    # On a healthy index the lookup backstop skips only the candidates that need a
+    # lookup. The lookup-free RIPE candidates behind them are still written.
+    for asn in range(3305, 3309):
+        make_network(org, asn, f"AS-APNIC{asn}")
+    behind = make_network(org, 3309, "AS-FOO")
+    dump = (
+        SAMPLE_DUMP
+        + "\n\n"
+        + "\n\n".join(
+            f"as-set: AS-APNIC{asn}\nsource: APNIC" for asn in range(3305, 3309)
+        )
+    )
+    write_irr_dump_set(tmp_path, dump)
+
+    calls = []
+    out = StringIO()
+    with mock.patch(
+        "peeringdb_server.irr.exists_in",
+        side_effect=idnic_pool({}, default=None, calls=calls),
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--dump-dir",
+            str(tmp_path),
+            "--max-changes",
+            "2",
+            stdout=out,
+        )
+
+    behind.refresh_from_db()
+    assert calls == ["AS-APNIC3305", "AS-APNIC3306"]
+    assert behind.irr_as_set == "RIPE::AS-FOO"
+    assert "Auto-prefixed (--commit):    1 of 5" in out.getvalue()
+    assert "2 candidate(s) left unexamined by --max-changes 2" in out.getvalue()
 
 
 @pytest.mark.django_db

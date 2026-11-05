@@ -574,8 +574,9 @@ set_bool("IRR_AS_SET_VERIFY_EXISTENCE", True)
 
 # #1973: the IRR lookup service — a pool of full-mirror IRRd servers tried in
 # order to answer "which registries hold object X?" / "does X exist in S?".
-# Each entry is a dict {host, port, timeout}; the transport is IRRd's port-43
-# whois query interface (source-pinned RPSL queries + the `!s-lc` mirror listing).
+# Each entry is a dict {host, port, timeout} and must be an IRRd server: the
+# transport is IRRd's port-43 query interface (source-pinned `!s`/`!m` existence
+# checks, multi-source whois queries and the `!s-lc` mirror listing).
 # NTT mirrors all but one of the IRR_SOURCE registries and RADB carries REACH, so
 # the two together cover all of them (NESTEGG and PANIX were retired from the list
 # in the #1973 prune). This is deployment

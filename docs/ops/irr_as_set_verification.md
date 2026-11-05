@@ -28,12 +28,12 @@ flowchart LR
   save[Save path<br/><small>REST API + admin form</small>] -->|exists_in, per token| pool
   batch[Batch jobs<br/><small>cleanup + checker</small>] -->|index first, free| index
   batch -->|live confirm on a miss| pool
-  pool[Live pool — irr.py<br/><small>one name, ~3.4s, Redis cached, fails open</small>] -->|whois :43, source-pinned| mirrors[IRRd mirrors<br/><small>rr.ntt.net, whois.radb.net</small>]
+  pool[Live pool — irr.py<br/><small>one name, ~3.4s, Redis cached, fails open</small>] -->|port 43: IRRd ! pinned, whois multi-source| mirrors[IRRd mirrors<br/><small>rr.ntt.net, whois.radb.net</small>]
   dumps[Registry dumps<br/><small>RIPE, APNIC, ARIN … + 9 via RADB</small>] -->|daily fetch — 19 files, 70 MB| index[Dump index — irr_bulk.py<br/><small>all names, in memory, per run</small>]
 ```
 
 The two resolvers differ in cost and freshness. The live pool answers one name at
-a time over whois. The dump index answers thousands of names from memory.
+a time over IRRd's port-43 query interface. The dump index answers thousands of names from memory.
 
 The live pool is the only path that reaches the outside world during a request.
 Dump-derived data is never served outward: the index exists only inside a running
@@ -186,8 +186,11 @@ enforcement rather than tightening it.
 
 - **Only a proven absence rejects.** The pool answers yes, no, or nothing.
   Nothing is not no.
-- **The index narrows, the pool claims.** Every write and every mail is confirmed
-  live first.
+- **The index decides writes, the pool confirms misses.** An auto-prefix write
+  relies on a healthy dump index. The one exception is a name the index resolved
+  to APNIC: it also gets a live IDNIC check, because IDNIC has no dump. An IRR
+  error on that check counts as no answer and the row waits for the next run. A
+  found-nowhere name is confirmed live before anyone is told it does not exist.
 - **An unhealthy dump set blocks writing.** A missing registry makes an ambiguous
   name look unambiguous, so the cleanup refuses to commit rather than write the
   wrong prefix.
