@@ -1,4 +1,4 @@
-Generated from middleware.py on 2026-10-20 12:07:11.547813
+Generated from middleware.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.middleware
 
@@ -7,6 +7,33 @@ Custom django middleware.
 # Functions
 ---
 
+## basic_auth_disabled
+`def basic_auth_disabled()`
+
+Returns True once MFA enforcement (MFA_FORCE_HARD_START) has started, from
+which point Basic authentication is refused. An unset date counts as
+started.
+
+---
+## build_log_uri
+`def build_log_uri(request)`
+
+Builds the URI to log for the request.
+
+Values of sensitive path parameters are redacted. The query string is
+kept only on API paths, where filters help abuse triage, and there only
+the parameters the API filters on are kept. Elsewhere a query string is
+replaced as a whole.
+
+---
+## find_kwarg_spans
+`def find_kwarg_spans(resolver, path, offset=0)`
+
+Resolves `path` the way `resolver` does and returns where each named
+group of the matching patterns was captured, as {name: [(start, end)]}
+offsets into the full path, outermost first, or None if nothing matches.
+
+---
 ## get_auth_identity
 `def get_auth_identity(request)`
 
@@ -22,11 +49,25 @@ This is used to cache negative authentication responses
 Returns the value of the X-Auth-Status header for the request.
 
 ---
-## get_client_ident
-`def get_client_ident(request)`
+## get_inactive_cache_key
+`def get_inactive_cache_key(identifier)`
 
-Get the IP address of the client, taking both
-X-Forwarded-For and REMOTE_ADDR into account.
+Returns the negative cache key that marks the credentials `identifier`
+stands for as inactive.
+
+The identifier can carry a Basic auth username, often a mistyped
+password, or a whole API key, so it goes into the key as a digest (#495).
+
+---
+## get_log_api_query
+`def get_log_api_query(request, match)`
+
+Returns the API query string to log, as the client sent it, with every
+parameter the API doesn't filter on replaced.
+
+Nothing under /api/ reads a credential from the query string, so a
+parameter the API ignores is the only kind that can hold one; its name
+is dropped too, a secret can be sent as the name.
 
 ---
 ## get_log_auth_id
@@ -35,9 +76,9 @@ X-Forwarded-For and REMOTE_ADDR into account.
 Returns the caller identity to log for the request (#487).
 
 PDBPermissionMiddleware records it as `request.log_auth_id` where it
-authenticates. Otherwise OAuth bearer requests log `u<user_id>_oauth`,
-and a request without an identity logs `anon`, or `unverified` if it
-sent credentials that were never accepted.
+authenticates. An OAuth access token accepted by an endpoint that takes
+one logs `u<user_id>_oauth`, and a request without an identity logs
+`anon`, or `unverified` if it sent credentials that were never accepted.
 
 ---
 ## get_log_invalid_key_id
@@ -47,6 +88,91 @@ Returns the caller identity to log for an API key that matched no key.
 
 Only a key shaped like a generated one, `<prefix>.<secret>`, has a
 public part to log; any other value may be secret throughout.
+
+---
+## get_log_path_candidates
+`def get_log_path_candidates(request)`
+
+Returns the paths the request may resolve as, in the order to try them.
+
+---
+## get_log_redacted_spans
+`def get_log_redacted_spans(request, redact)`
+
+Returns the merged spans in `request.path_info` of the path parameters
+in `redact`, a {name: value} mapping from the URL match, or None unless
+the walk captured exactly those values.
+
+---
+## get_log_uri
+`def get_log_uri(request)`
+
+Returns the URI to log for the request in place of the one it was sent
+with (#495).
+
+Never raises: request logging must not be able to change a response.
+
+---
+## get_pattern_spans
+`def get_pattern_spans(pattern, path, offset)`
+
+Returns the spans of the named groups `pattern` captures from `path`,
+matching the way the pattern does.
+
+---
+## is_basic_auth
+`def is_basic_auth(http_auth)`
+
+Returns True if the Authorization header uses the Basic scheme, in any
+case, as DRF's `BasicAuthentication` accepts it in any case too.
+
+---
+## is_log_alias_filter
+`def is_log_alias_filter(field)`
+
+Returns whether `field` is an `<alias>__<field>` relation filter of the
+serializers' prepare_query, such as `net__asn` on /api/ix, naming a
+concrete field of the aliased object.
+
+---
+## is_log_api_query_param
+`def is_log_api_query_param(name, view_class)`
+
+Returns whether the API view filters on the query parameter `name`,
+matching it the way the API does: an optional lookup suffix, then the
+serializer's field name translation.
+
+---
+## is_log_sensitive_param
+`def is_log_sensitive_param(name)`
+
+Returns whether a URL path parameter name marks its value as secret.
+
+Matches whole words, so `access_token`, `client_secret`, `user_code` and
+`apiKey` match while `zipcode` does not.
+
+---
+## redact_log_path
+`def redact_log_path(request, redact)`
+
+Returns the quoted request path with the path parameters in `redact`
+replaced, or the whole path replaced if they can't be located.
+
+---
+## resolve_for_log
+`def resolve_for_log(request)`
+
+Returns the URL match for the request, resolving it here when the
+response was returned before URL resolution.
+
+---
+## truncate_log_uri
+`def truncate_log_uri(uri)`
+
+Cuts the URI to what a uWSGI log variable holds.
+
+uWSGI stores a log variable's length in one byte and wraps longer values
+around silently.
 
 ---
 # Classes
@@ -79,6 +205,34 @@ CurrentRequestContext(builtins.object)
 Middleware that sets the current request context.
 
 This allows access to the current request from anywhere.
+
+
+### Methods
+
+#### \__call__
+`def __call__(self, request)`
+
+Call self as a function.
+
+---
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+---
+
+## HealthcheckHostMiddleware
+
+```
+HealthcheckHostMiddleware(builtins.object)
+```
+
+Gives `/healthcheck` the BASE_URL host, so load balancer and k8s probes
+pass ALLOWED_HOSTS. ALB health checks send the target address as Host
+and cannot be configured to send another one.
+
+Must run before anything that calls `request.get_host()`.
 
 
 ### Methods
@@ -262,6 +416,35 @@ Process the request before it's passed to the view.
 `def process_response(self, request, response)`
 
 Process the response before it's sent to the client.
+
+---
+
+## UwsgiLogUriMiddleware
+
+```
+UwsgiLogUriMiddleware(builtins.object)
+```
+
+Adds the request URI with secrets redacted to the uWSGI request log as
+the `log_uri` log variable (#495), for the log format to use in place of
+the URI the request was sent with.
+
+Runs first, so responses that middleware such as WhiteNoise return early
+get it too. Not used outside uWSGI.
+
+
+### Methods
+
+#### \__call__
+`def __call__(self, request)`
+
+Call self as a function.
+
+---
+#### \__init__
+`def __init__(self, get_response)`
+
+Initialize self.  See help(type(self)) for accurate signature.
 
 ---
 

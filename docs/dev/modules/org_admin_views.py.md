@@ -1,4 +1,4 @@
-Generated from org_admin_views.py on 2026-10-20 12:07:11.547813
+Generated from org_admin_views.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.org_admin_views
 
@@ -7,6 +7,22 @@ View for organization administrative actions (/org endpoint).
 # Functions
 ---
 
+## approve_affiliation_request
+`def approve_affiliation_request(uoar, approved_by, approving_user=None)`
+
+Approve a user request to affiliate with the organization and notify
+the organization's other admins.
+
+Shared by the org admin view and the organization users API.
+
+Arguments:
+
+- uoar (`UserOrgAffiliationRequest`)
+- approved_by (`str`): name shown to the admins as the approver
+- approving_user (`User`): admin that approved, not notified. None
+  when the approver is not a user, `approved_by` is recorded instead
+
+---
 ## extract_permission_id
 `def extract_permission_id(source, dest, entity, org, is_session=False)`
 
@@ -47,6 +63,10 @@ Supports bulk mode when entity_perms and org_entities are provided.
 
 Decorator function that ensures that the requesting user
 has administrative rights to the targeted organization.
+
+An admin who is due for periodic re-authentication with the
+organization has no administrative rights until they confirm
+their email, and gets a 403 that says so.
 
 Also sets "org" in kwargs.
 

@@ -1,4 +1,4 @@
-Generated from permissions.py on 2026-10-20 12:07:11.547813
+Generated from permissions.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.permissions
 
@@ -17,6 +17,13 @@ Censor API output data according to permissions using grainy Applicators.
 # Functions
 ---
 
+## adjust_permissions_for_periodic_reauth
+`def adjust_permissions_for_periodic_reauth(user, perms)`
+
+Strip the user's permissions for every organization that currently
+flags the user as needing re-authentication.
+
+---
 ## check_permissions
 `def check_permissions(obj, target, permissions, **kwargs)`
 
@@ -79,6 +86,13 @@ whether the provided object is a UserAPIKey, OrgAPIKey,
 or a different object.
 
 ---
+## org_key_email_is_verified
+`def org_key_email_is_verified(org_key)`
+
+Whether the key email is a verified email address of an active user of
+the key's organization, member or admin.
+
+---
 ## org_namespace_filter
 `def org_namespace_filter(org)`
 
@@ -92,6 +106,22 @@ A bare `namespace__startswith=org.grainy_namespace` compiles to
 The exact-match half is load-bearing: the org-root grant is stored at
 exactly `peeringdb.organization.<id>` with no trailing separator, so a
 dotted-prefix-only filter would leave it behind on every save.
+
+---
+## reauth_denial_message
+`def reauth_denial_message(holder, org=None)`
+
+Return an error message naming the organizations whose re-authentication
+requirement caused a failed permission check of the holder in this
+request, or None. Pass `org` to only report that organization.
+
+---
+## record_reauth_denial
+`def record_reauth_denial(obj, target, permissions, explicit)`
+
+If a grant stripped for periodic re-authentication would have passed a
+failed check, note the organization on the permission holder, so the
+denial can say why.
 
 ---
 ## return_org_api_key_perms
@@ -111,6 +141,18 @@ key.
 
 If the UserAPIKey is marked readonly, it downgrades
 all permissions to readonly.
+
+For a superuser, grainy's `grant_all` bypasses the permission
+set entirely, so a readonly key of a superuser gets
+ReadOnlyPermissions instead.
+
+---
+## validate_rdap_org_key
+`def validate_rdap_org_key(org_key, rdap)`
+
+The key email is typed in by an org admin and never verified, so it only
+proves RDAP ownership while it is also a verified email address of a
+current admin of the key's organization.
 
 ---
 # Classes
@@ -170,5 +212,38 @@ Return `True` if permission is granted, `False` otherwise.
 `def has_permission(self, request, view)`
 
 Return `True` if permission is granted, `False` otherwise.
+
+---
+
+## ReadOnlyPermissions
+
+```
+ReadOnlyPermissions(django_grainy.util.Permissions)
+```
+
+Permissions that read whatever the holder reads, and refuse every check
+that asks for more than read.
+
+Rewriting the permission set to read is not enough for a superuser:
+grainy's `grant_all` passes their checks without consulting it.
+
+
+### Methods
+
+#### check
+`def check(self, target, permissions, explicit=False, ignore_grant_all=False)`
+
+Check permissions for the specified target
+
+Arguments:
+    - target <object|class|str>: check permissions to this object / namespace
+    - permissions <int|str>: permission flags to check
+
+Keyword Arguments:
+    - explicit <bool>: require explicit permissions to the complete target
+        namespsace
+    - ignore_grant_all <bool>: if True the `grant_all` property will be ignored
+        during permission checks. If false, users with the `superuser` status will
+        automatically pass all the permission checks.
 
 ---

@@ -1,4 +1,4 @@
-Generated from api_key_views.py on 2026-10-20 12:07:11.547813
+Generated from api_key_views.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.api_key_views
 
@@ -12,7 +12,7 @@ Views for organization api key management.
 
 Create a new User API key.
 
-Requires a name and a readonly boolean.
+Requires the user's current password, a name and a readonly boolean.
 
 ---
 ## load_all_key_permissions

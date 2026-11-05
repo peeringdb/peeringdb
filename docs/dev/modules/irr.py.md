@@ -1,4 +1,4 @@
-Generated from irr.py on 2026-10-20 12:07:11.547813
+Generated from irr.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.irr
 
@@ -13,11 +13,11 @@ questions the unambiguous-as-set work needs:
                            live check and the periodic re-verification)
 
 Both are answered against a configurable pool of full-mirror IRRd servers
-(settings.IRR_LOOKUP_SERVERS), queried over the port-43 whois interface.
-Existence checks pin one source; source completion first uses one explicit
-multi-source query per mirror and falls back to pinned checks if a response is too large or
-unrecognized. Results are cached in the "negative" (Redis) cache for
-settings.IRR_LOOKUP_CACHE_TTL seconds.
+(settings.IRR_LOOKUP_SERVERS), queried over port 43. Existence checks pin one
+source and use IRRd's `!` protocol; source completion first uses one explicit
+whois multi-source query per mirror and falls back to pinned checks if a response
+is too large or unrecognized. Results are cached in the "negative" (Redis) cache
+for settings.IRR_LOOKUP_CACHE_TTL seconds.
 
 Every outbound path fails open: a query that errors, times out, or returns an
 unrecognized response yields an "unknown" result — exists_in returns None and
@@ -25,10 +25,12 @@ sources_for returns ok=False — and never raises. A third-party IRR outage must
 not block a save or the editor. Callers decide policy: the save path rejects only
 a definitive False (provably absent), accepting None.
 
-Correctness note: a source-pinned query against a server that does not mirror
-that source returns "no entries" — a false absent. So a server's answer for a
-given source is trusted only when the server actually carries it, per the
-server's !s-lc mirror list (also the basis of coverage_report()).
+Correctness note: a whois query naming a source the server does not mirror
+fails with "%% ERROR", which the multi-source parser reads as "no entries" — a
+false absent (#502). So sources_for asks a server only for the sources it
+actually carries, per the server's !s-lc mirror list (also the basis of
+coverage_report()). A pinned `!s` for an unmirrored source fails with F and
+reads as unknown.
 
 # Functions
 ---
@@ -43,15 +45,19 @@ Infer the RPSL object class to query for a single as-set token.
 `def _pinned_exists(server, source, object_class, name)`
 
 Does `name` exist in `source` per this server? True/False when the server
-answers definitively, None on error or an unrecognized response. Reads only
-the first non-empty line — never the (potentially huge) object.
+answers definitively, None on error or an unrecognized response.
+
+Asked over IRRd's `!` protocol rather than whois (#499): there an error reply
+("%% ERROR: ...") starts with "%" just like "no entries", while here they are
+distinct status lines -- A<len> found, C/D no data, F error. Reads only the
+status lines, never the (potentially huge) object.
 
 ---
 ## _send
 `def _send(server, payload)`
 
-Send one query to an IRRd server over port-43 whois and return the decoded
-response text. Raises OSError (incl. socket.timeout) on any network failure —
+Send one query (whois or `!` protocol) to an IRRd server on port 43 and
+return the decoded response text. Raises OSError (incl. socket.timeout) on any network failure —
 callers translate that into a fail-open "unknown".
 
 ---

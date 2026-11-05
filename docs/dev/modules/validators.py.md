@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-10-20 12:07:11.547813
+Generated from validators.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.validators
 
@@ -81,6 +81,27 @@ Collapse runs of 2+ whitespace to a single space and strip the ends - the
 collapse counterpart to validate_name (which rejects). Used by the
 pdb_normalize_name_whitespace backfill to fix rows that predate the
 validator.
+
+---
+## notification_banner_attribute_allowed
+`def notification_banner_attribute_allowed(tag, name, value)`
+
+Attribute allowlist for the notification banner, in the callable form
+bleach accepts.
+
+Links need an http(s) or a relative `href` and may open in a new tab.
+`rel` is accepted but always replaced when the banner is rendered.
+
+---
+## notification_banner_href_allowed
+`def notification_banner_href_allowed(value)`
+
+Whether a banner link target is an http(s) or relative URL.
+
+`value` is the raw attribute text, character references intact, as
+bleach hands it over at render and as validate_notification_banner reads
+it. It is normalized the way bleach's own URI check does it, and a value
+that cannot be read is refused rather than raised.
 
 ---
 ## split_irr_as_set_token
@@ -264,11 +285,45 @@ and the rules bite only on a genuine edit. Shared by the DRF serializer
 one place instead of being duplicated across those call sites.
 
 ---
+## validate_ixf_member_list_url
+`def validate_ixf_member_list_url(value)`
+
+Validate an IX-F member list URL: http or https, no credentials, and a
+host whose addresses are all public. The fetch checks it again, since
+DNS can change after the URL is saved.
+
+---
 ## validate_name
 `def validate_name(value)`
 
 Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
 whitespace is left to StripFieldMixin, so we check the stripped value.
+
+---
+## validate_notification_banner
+`def validate_notification_banner(value)`
+
+Validates notification banner markup against the banner allowlist:
+`<a>` with an http(s) or relative `href` and optionally `target="_blank"`,
+`<b>`, `<strong>`, `<i>`, `<em>` and `<br>`.
+
+The value is checked token by token as bleach's tokenizer reads it,
+before tree construction, so disallowed markup the tree builder would
+drop at render (a doctype, `<body>`, `<frame>`, a stray `</div>`) is
+refused rather than stripped. At render the tree builder may still
+rebalance the allowed tags, adding or dropping end tags, and it ignores
+attributes on end tags, as this check does.
+
+Will raise a ValidationError naming everything else that was found
+rather than dropping it silently.
+
+Arguments:
+
+- value(`str`)
+
+Returns:
+
+- validated value (`str`)
 
 ---
 ## validate_phonenumber

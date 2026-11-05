@@ -1,4 +1,8 @@
-Generated on 2026-10-20 12:07:11.547813
+Generated on 2026-11-05 20:07:16.953937
+
+## [account_adapter.py](/docs/dev/modules/account_adapter.py.md)
+
+django-allauth account adapter.
 
 ## [admin.py](/docs/dev/modules/admin.py.md)
 
@@ -171,11 +175,11 @@ questions the unambiguous-as-set work needs:
                            live check and the periodic re-verification)
 
 Both are answered against a configurable pool of full-mirror IRRd servers
-(settings.IRR_LOOKUP_SERVERS), queried over the port-43 whois interface.
-Existence checks pin one source; source completion first uses one explicit
-multi-source query per mirror and falls back to pinned checks if a response is too large or
-unrecognized. Results are cached in the "negative" (Redis) cache for
-settings.IRR_LOOKUP_CACHE_TTL seconds.
+(settings.IRR_LOOKUP_SERVERS), queried over port 43. Existence checks pin one
+source and use IRRd's `!` protocol; source completion first uses one explicit
+whois multi-source query per mirror and falls back to pinned checks if a response
+is too large or unrecognized. Results are cached in the "negative" (Redis) cache
+for settings.IRR_LOOKUP_CACHE_TTL seconds.
 
 Every outbound path fails open: a query that errors, times out, or returns an
 unrecognized response yields an "unknown" result — exists_in returns None and
@@ -183,10 +187,12 @@ sources_for returns ok=False — and never raises. A third-party IRR outage must
 not block a save or the editor. Callers decide policy: the save path rejects only
 a definitive False (provably absent), accepting None.
 
-Correctness note: a source-pinned query against a server that does not mirror
-that source returns "no entries" — a false absent. So a server's answer for a
-given source is trusted only when the server actually carries it, per the
-server's !s-lc mirror list (also the basis of coverage_report()).
+Correctness note: a whois query naming a source the server does not mirror
+fails with "%% ERROR", which the multi-source parser reads as "no entries" — a
+false absent (#502). So sources_for asks a server only for the sources it
+actually carries, per the server's !s-lc mirror list (also the basis of
+coverage_report()). A pinned `!s` for an unmirrored source fails with F and
+reads as unknown.
 
 ## [irr_bulk.py](/docs/dev/modules/irr_bulk.py.md)
 
@@ -214,6 +220,16 @@ to follow.
 Handles notifications of networks and exchanges as part of that process.
 
 A substantial part of the import logic is handled through models.py::IXFMemberData
+
+## [ixf_fetch.py](/docs/dev/modules/ixf_fetch.py.md)
+
+Bounded retrieval of IX-F member exports.
+
+The URL is supplied by exchange administrators, so it may only point at
+public addresses: every host, redirects included, is resolved and checked,
+and the connection goes to the checked address. The response is read with a
+byte budget on the decoded body and an overall deadline, and only parsed once
+it is complete.
 
 ## [location.py](/docs/dev/modules/location.py.md)
 
@@ -294,7 +310,7 @@ Please open a merge request in peeringdb/django-peeringdb for the field addition
 
 ## [oauth_views.py](/docs/dev/modules/oauth_views.py.md)
 
-# Classes
+# Functions
 
 ## [org_admin_views.py](/docs/dev/modules/org_admin_views.py.md)
 
@@ -370,6 +386,14 @@ This module constructs and executes advanced Elasticsearch queries with
 support for geo-based filtering, keyword logic (AND/OR), autocomplete search
 and partial IPv6 matching. It includes functionality to prioritize exact
 and "OR" term matches and organizes results alphabetically.
+
+## [security_keys.py](/docs/dev/modules/security_keys.py.md)
+
+Checks PeeringDB adds to django-security-keys' WebAuthn verification.
+
+They are applied in `PeeringDBServerAppConfig.ready` and belong in the
+library; they move there once the fixes can be published (#514,
+20c/django-security-keys#1).
 
 ## [serializers.py](/docs/dev/modules/serializers.py.md)
 

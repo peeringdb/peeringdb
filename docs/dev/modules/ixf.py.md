@@ -1,4 +1,4 @@
-Generated from ixf.py on 2026-10-20 12:07:11.547813
+Generated from ixf.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.ixf
 
@@ -11,6 +11,63 @@ Handles notifications of networks and exchanges as part of that process.
 
 A substantial part of the import logic is handled through models.py::IXFMemberData
 
+# Functions
+---
+
+## _safe_key_value
+`def _safe_key_value(value)`
+
+Return `value` if it is a string or an integer below 2**61 - 1, raise
+TypeError otherwise.
+
+Strings have randomized hashes, and such integers hash to themselves, so
+no two of them share a hash. Their dict slots can still be steered to
+collide, but nothing like the cost of identical hashes, and the callers
+check the deadline per connection.
+
+---
+## count_entries
+`def count_entries(data, limit)`
+
+Count the members, connections, vlans and interfaces of IX-F data,
+stopping once the count passes `limit`.
+
+---
+## encode_member_data
+`def encode_member_data(member)`
+
+Return the value IXFMemberData.data stores for a member: the member's
+JSON, stored as a JSON string as set_data(json.dumps(member)) does.
+
+---
+## quote_feed_value
+`def quote_feed_value(value, max_length=45)`
+
+Quote a value taken from an IX-F feed for an error message that is
+mailed out, so the feed cannot put free text into the mail: characters
+that do not occur in an address, ASN or VLAN id are replaced and the
+length is capped (45 is the longest textual IPv6 address).
+
+---
+## snapshot_bytes
+`def snapshot_bytes(data, limit)`
+
+Return how many bytes of member snapshots the proposal rows for IX-F
+data store: every vlan entry of a member gets a row holding the whole
+member. Stops once the total passes `limit`.
+
+---
+## vlan_group_key
+`def vlan_group_key(vlan_id)`
+
+Return the key a feed's vlan_id groups and pairs vlans by.
+
+Only IX-F vlan ids (integers 0 to 4095) and null group; anything else
+gets a key of its own. CPython's integer hashes are predictable, so
+arbitrary ids can be chosen to collide in a dict and make every insert
+scan all the previous ones.
+
+---
 # Classes
 ---
 

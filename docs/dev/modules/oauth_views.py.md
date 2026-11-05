@@ -1,7 +1,19 @@
-Generated from oauth_views.py on 2026-10-20 12:07:11.547813
+Generated from oauth_views.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.oauth_views
 
+# Functions
+---
+
+## has_recent_oauth_login
+`def has_recent_oauth_login(request)`
+
+True when the current user completed a login wizard for an OAuth
+authorization within the last `OAUTH_COOKIE_MAX_AGE` seconds.
+
+The marker is set on the session by `LoginView.done`.
+
+---
 # Classes
 ---
 
@@ -98,13 +110,31 @@ OIDC discovery document without HS256 in the advertised ID token
 signing algorithms (#2055)
 
 
+## DeviceConfirmView
+
+```
+DeviceConfirmView(peeringdb_server.oauth_views.LoginRequiredMixin, oauth2_provider.views.device.DeviceConfirmView)
+```
+
+Device flow approval, behind the same recent login as consent.
+
+
+## DeviceUserCodeView
+
+```
+DeviceUserCodeView(peeringdb_server.oauth_views.LoginRequiredMixin, oauth2_provider.views.device.DeviceUserCodeView)
+```
+
+Device flow user code entry, behind the same recent login as consent.
+
+
 ## LoginRequiredMixin
 
 ```
 LoginRequiredMixin(django.contrib.auth.mixins.AccessMixin)
 ```
 
-Verify that the current user is authenticated.
+Verify that the current user logged in for this authorization recently.
 
 
 ## OAuthMetadataView

@@ -1,4 +1,4 @@
-Generated from rest.py on 2026-10-20 12:07:11.547813
+Generated from rest.py on 2026-11-05 20:07:16.953937
 
 # peeringdb_server.rest
 
@@ -484,10 +484,34 @@ This should probably be moved to a common lib ?
 
 ### Methods
 
+#### finalize_response
+`def finalize_response(self, request, response, *args, **kwargs)`
+
+A denial carries no reason by default. When a failed permission check
+of this request would have passed with the grants periodic
+re-authentication stripped, say so instead.
+
+---
+#### get_object
+`def get_object(self)`
+
+Returns the object the view is displaying.
+
+You may want to override this if you need to provide non-standard
+queryset lookups.  Eg if objects are referenced using multiple
+keyword arguments in the url conf.
+
+---
 #### get_queryset
 `def get_queryset(self)`
 
 Prepare the queryset.
+
+---
+#### initial
+`def initial(self, request, *args, **kwargs)`
+
+Runs anything that needs to occur prior to calling the method handler.
 
 ---
 #### partial_update
@@ -617,7 +641,7 @@ ViewSet for managing users within an organization.
 
 This ViewSet provides endpoints for:
 - Listing all users in an organization
-- Adding new users to an organization
+- Approving users' pending affiliation requests to an organization
 - Updating user roles within an organization
 - Removing users from an organization
 
@@ -639,8 +663,13 @@ Error Handling:
 #### add_organization_user
 `def add_organization_user(self, request, org_id=None)`
 
-Add a user to the organization
+Approve a user's pending affiliation request to the organization
 Requires 'create' permission on org.{id}.users namespace
+
+The user identified by `user_email` needs a pending affiliation
+request to the organization. Every case where that does not hold
+gets the same response, so it does not reveal whether an account
+exists for an email address.
 
 ---
 #### check_permissions_for_action
@@ -654,6 +683,7 @@ organization API key authentication:
 1. For user API key authentication:
     - Uses User.is_org_admin() to verify if the user is an admin of the organization
     - Raises PermissionDenied if the user is not an admin
+    - A readonly key only passes PERM_READ checks
 
 2. For organization API key authentication:
     - Checks if the API key has the specific permission (read/write/update/delete)
@@ -690,6 +720,13 @@ Override to handle rate limit and other exceptions
 
 List all users associated with an organization
 Requires 'read' permission on org.{id}.users namespace
+
+---
+#### pending_affiliation_request
+`def pending_affiliation_request(self, organization, user_email)`
+
+Return the pending affiliation request to the organization from the
+one user that holds `user_email` as a verified email address, or None.
 
 ---
 #### remove_organization_user
