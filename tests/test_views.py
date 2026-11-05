@@ -1,4 +1,6 @@
 import re
+from datetime import timedelta
+from unittest import mock
 
 import pytest
 from allauth.account.models import EmailAddress
@@ -6,6 +8,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from django_grainy.models import Group
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -313,12 +316,14 @@ def test_user_api_key_generation():
     client = Client()
     client.login(username="test", password="test1234")
 
-    response = client.post("/user_keys/add")
+    response = client.post("/user_keys/add", {"password": "test1234"})
 
     assert response.status_code == 400
     assert "This field is required." in str(response.content.decode("utf-8"))
 
-    response = client.post("/user_keys/add", {"name": "test key"})
+    response = client.post(
+        "/user_keys/add", {"name": "test key", "password": "test1234"}
+    )
 
     assert response.status_code == 200
 
@@ -351,7 +356,7 @@ def test_close_account():
     client = Client()
     client.login(username="test", password="test1234")
 
-    client.post("/user_keys/add", {"name": "test key"})
+    client.post("/user_keys/add", {"name": "test key", "password": "test1234"})
     client.post("/profile/close", {"password": "test1234"})
 
     user = User.objects.get(username=f"closed-account-{user.id}")
@@ -385,14 +390,17 @@ def test_close_account_pending_user():
     client = Client()
     client.login(username="test", password="test1234")
 
-    client.post("/user_keys/add", {"name": "test key"})
+    client.post("/user_keys/add", {"name": "test key", "password": "test1234"})
     client.post("/profile/close", {"password": "test1234"})
 
     assert not User.objects.filter(username="test").exists()
 
 
 @pytest.mark.django_db
-def test_bogus_basic_auth():
+def test_bogus_basic_auth(settings):
+    # before MFA enforcement, after it every Basic request gets a 403
+    settings.MFA_FORCE_SOFT_START = timezone.now() + timedelta(days=1)
+    settings.MFA_FORCE_HARD_START = timezone.now() + timedelta(days=1)
     auth_string = "Basic YmFkOmJhZA=="
     auth_headers = {"HTTP_AUTHORIZATION": auth_string}
     client = Client()
@@ -700,3 +708,19 @@ def test_upload_delete_logo_with_inheritance(
     if model_class is not Organization:
         assert obj.logo.name == ""  # no direct logo
         assert obj.effective_logo == org.logo.url
+
+
+@pytest.mark.django_db
+def test_request_translation_plain_text(client):
+    note = "Peering <img src=x onerror=alert(1)> & policy"
+    reply = mock.Mock()
+    reply.json.return_value = {"data": {"translations": [{"translatedText": note}]}}
+
+    with mock.patch("peeringdb_server.views.requests.post", return_value=reply) as post:
+        res = client.post("/net/translate", {"note": note})
+
+    assert res.status_code == 200
+    params = post.call_args.kwargs["params"]
+    assert params["format"] == "text"
+    assert params["q"] == note
+    assert res.json()["translation"]["translatedText"] == note

@@ -25,8 +25,11 @@ from peeringdb_server.models import (
     User,
     UserOrgAffiliationRequest,
 )
-from peeringdb_server.permissions import org_namespace_filter
-from peeringdb_server.util import check_permissions
+from peeringdb_server.permissions import (
+    check_permissions,
+    org_namespace_filter,
+    reauth_denial_message,
+)
 
 from .forms import OrgAdminUserPermissionForm, OrgUserOptions
 
@@ -308,6 +311,10 @@ def org_admin_required(fnc):
     Decorator function that ensures that the requesting user
     has administrative rights to the targeted organization.
 
+    An admin who is due for periodic re-authentication with the
+    organization has no administrative rights until they confirm
+    their email, and gets a 403 that says so.
+
     Also sets "org" in kwargs.
     """
 
@@ -320,6 +327,9 @@ def org_admin_required(fnc):
         try:
             org = Organization.objects.get(id=org_id)
             if not check_permissions(request.user, org.grainy_namespace_manage, "u"):
+                message = reauth_denial_message(request.user, org)
+                if message:
+                    return JsonResponse({"non_field_errors": [message]}, status=403)
                 return JsonResponse({}, status=403)
             kwargs["org"] = org
             return fnc(request, **kwargs)
@@ -564,6 +574,48 @@ def permissions(request, **kwargs):
     return JsonResponse({"status": "ok", "permissions": perms})
 
 
+def approve_affiliation_request(uoar, approved_by, approving_user=None):
+    """
+    Approve a user request to affiliate with the organization and notify
+    the organization's other admins.
+
+    Shared by the org admin view and the organization users API.
+
+    Arguments:
+
+    - uoar (`UserOrgAffiliationRequest`)
+    - approved_by (`str`): name shown to the admins as the approver
+    - approving_user (`User`): admin that approved, not notified. None
+      when the approver is not a user, `approved_by` is recorded instead
+    """
+
+    org = uoar.org
+
+    if approving_user:
+        uoar.approve(approving_user)
+    else:
+        uoar.approve(approved_by=approved_by)
+
+    for admin_user in org.admin_usergroup.user_set.all():
+        if admin_user != approving_user:
+            with override(admin_user.locale):
+                admin_user.email_user(
+                    _("%(user_name)s's affiliation request has been approved")
+                    % {"user_name": uoar.user.full_name},
+                    loader.get_template(
+                        "email/notify-org-admin-user-affil-approved.txt"
+                    ).render(
+                        {
+                            "user": approved_by,
+                            "uoar": uoar,
+                            "org_management_url": urljoin(
+                                settings.BASE_URL, f"/org/{org.id}#users"
+                            ),
+                        }
+                    ),
+                )
+
+
 @login_required
 @csrf_protect
 @transaction.atomic
@@ -581,7 +633,11 @@ def uoar_approve(request, **kwargs):
         req_user = request.user.full_name
 
     try:
-        uoar = UserOrgAffiliationRequest.objects.get(id=request.POST.get("id"))
+        # locked, so a concurrent decision on the same request waits and then
+        # finds it no longer pending
+        uoar = UserOrgAffiliationRequest.objects.select_for_update().get(
+            id=request.POST.get("id"), status="pending"
+        )
         if uoar.org != org:
             return JsonResponse({}, status=403)
 
@@ -591,29 +647,7 @@ def uoar_approve(request, **kwargs):
             uoar.delete()
             return JsonResponse({"status": "ok"})
 
-        uoar.approve()
-
-        # notify rest of org admins that the affiliation request has been
-        # approved
-
-        for admin_user in org.admin_usergroup.user_set.all():
-            if admin_user != request.user:
-                with override(admin_user.locale):
-                    admin_user.email_user(
-                        _("%(user_name)s's affiliation request has been approved")
-                        % {"user_name": uoar.user.full_name},
-                        loader.get_template(
-                            "email/notify-org-admin-user-affil-approved.txt"
-                        ).render(
-                            {
-                                "user": req_user,
-                                "uoar": uoar,
-                                "org_management_url": urljoin(
-                                    settings.BASE_URL, f"/org/{org.id}#users"
-                                ),
-                            }
-                        ),
-                    )
+        approve_affiliation_request(uoar, req_user, request.user)
 
         return JsonResponse(
             {
@@ -644,7 +678,11 @@ def uoar_deny(request, **kwargs):
         req_user = request.user.full_name
 
     try:
-        uoar = UserOrgAffiliationRequest.objects.get(id=request.POST.get("id"))
+        # locked, so a concurrent decision on the same request waits and then
+        # finds it no longer pending
+        uoar = UserOrgAffiliationRequest.objects.select_for_update().get(
+            id=request.POST.get("id"), status="pending"
+        )
 
         if uoar.org != org:
             return JsonResponse({}, status=403)

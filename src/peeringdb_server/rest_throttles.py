@@ -16,6 +16,7 @@ from peeringdb_server.permissions import (
     get_permission_holder_from_request,
     get_user_from_request,
 )
+from peeringdb_server.util import cache_key_digest
 
 
 class IXFImportThrottle(throttling.UserRateThrottle):
@@ -413,7 +414,7 @@ class ResponseSizeThrottle(TargetedRateThrottle):
         # use the full request path plus appended query string
         # for the cache key
 
-        return f"request-size:{request.get_full_path()}"
+        return f"request-size:{cache_key_digest(request.get_full_path())}"
 
     @classmethod
     def cache_response_size(cls, request, size):
@@ -464,7 +465,7 @@ class ResponseSizeThrottle(TargetedRateThrottle):
         return size
 
     def ident_prefix(self, request):
-        return f"{request.get_full_path()}:"
+        return f"{cache_key_digest(request.get_full_path())}:"
 
     def check_user(self, request):
         return self._check_source(request, "user")

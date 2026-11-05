@@ -61,10 +61,41 @@ def view_import_ixlan_ixf_preview(request: HttpRequest, ixlan_id: str) -> HttpRe
     elif not check_permissions(request.user, ixlan, "u"):
         return error_response(_("Permission denied"), status=403)
 
+    # the preview never fetches the URL itself: it shows the data the last
+    # import or requested refresh fetched (see request_ixf_import)
     importer = ixf.Importer()
-    importer.update(ixlan, save=False, timeout=settings.IXF_FETCH_TIMEOUT)
+    importer.cache_only = True
+    importer.update(ixlan, save=False)
 
-    return pretty_response(importer.log)
+    entry = ixlan.ixf_cached_entry
+    request_status, _display = ixlan.ix.ixf_import_request_recent_status
+
+    if not entry and ixlan.ixf_ixp_member_list_url:
+        importer.log["errors"] = [
+            str(
+                _(
+                    "No IX-F data has been fetched for this LAN yet. Request an import to fetch it."
+                )
+            )
+        ]
+
+    # failed fetches are not cached, so the last error is shown from the LAN
+    if ixlan.ixf_ixp_import_error:
+        importer.log["errors"].insert(
+            0,
+            str(_("Last IX-F fetch or import failed: {}")).format(
+                ixlan.ixf_ixp_import_error
+            ),
+        )
+
+    return pretty_response(
+        {
+            **importer.log,
+            "ix_id": ixlan.ix_id,
+            "fetched": entry.get("fetched") if entry else None,
+            "request_status": request_status,
+        }
+    )
 
 
 @ratelimit(

@@ -9,7 +9,11 @@ from django.views.generic.base import RedirectView
 from two_factor.urls import urlpatterns as tf_urls
 
 import peeringdb_server.urls
-from peeringdb_server.autocomplete_views import GrappelliHandlerefAutocomplete
+from peeringdb_server.autocomplete_views import (
+    GrappelliHandlerefAutocomplete,
+    PDBAdminM2MLookup,
+    PDBAdminRelatedLookup,
+)
 from peeringdb_server.two_factor_ui_next import (
     BackupTokensView,
     LoginView,
@@ -67,7 +71,18 @@ tf_urls[0][5] = re_path(
 )
 
 urlpatterns = [
-    # override grappelli autocomplete handler
+    # override grappelli's lookup handlers so they enforce admin
+    # permissions; must precede the grappelli.urls include
+    re_path(
+        r"^grappelli/lookup/related/$",
+        PDBAdminRelatedLookup.as_view(),
+        name="grp_related_lookup",
+    ),
+    re_path(
+        r"^grappelli/lookup/m2m/$",
+        PDBAdminM2MLookup.as_view(),
+        name="grp_m2m_lookup",
+    ),
     re_path(
         r"^grappelli/lookup/autocomplete/$",
         GrappelliHandlerefAutocomplete.as_view(),
@@ -75,22 +90,43 @@ urlpatterns = [
     ),
     # grappelli admin interface improvements
     re_path(r"^grappelli/", include("grappelli.urls")),
-    # shadow allauth's confirm-email route (pattern copied verbatim from
-    # `allauth.account.urls`) so the session-bearing response is never
-    # cached by shared proxies; must precede the `allauth.urls` include
-    # and keep the name/shape that middleware and templates reverse (#2032)
+    # allauth only serves email confirmation, which our emails link to; its
+    # other views skip the project's login, signup, reset and email policies,
+    # so they redirect to our pages or are not routed. The confirm-email
+    # pattern is allauth's own, its name is reversed by middleware and
+    # templates, and no_store_private keeps it out of shared caches (#2032).
     re_path(
         r"^accounts/confirm-email/(?P<key>[-:\w]+)/$",
         no_store_private(allauth.account.views.confirm_email),
         name="account_confirm_email",
     ),
-    # All password entry points must use the policy-aware MFA wizard.
     re_path(
         r"^accounts/login/$",
         RedirectView.as_view(pattern_name="two_factor:login", query_string=True),
         name="account_login",
     ),
-    re_path(r"^accounts/", include("allauth.urls")),
+    # DRF's browsable-API login is a plain password login; send it through
+    # the wizard too (the rest_framework include stays for its logout and
+    # reverse names). /cp/login/ is redirected by two_factor's patch_admin.
+    re_path(
+        r"^api-auth/login/$",
+        RedirectView.as_view(pattern_name="two_factor:login", query_string=True),
+    ),
+    re_path(
+        r"^accounts/password/reset/$",
+        RedirectView.as_view(pattern_name="reset-password"),
+        name="account_reset_password",
+    ),
+    re_path(
+        r"^accounts/password/change/$",
+        RedirectView.as_view(pattern_name="user-profile"),
+        name="account_change_password",
+    ),
+    re_path(
+        r"^accounts/email/$",
+        RedirectView.as_view(pattern_name="user-profile"),
+        name="account_email",
+    ),
     re_path(
         r"^cp/peeringdb_server/organizationmerge/add/",
         RedirectView.as_view(
@@ -114,5 +150,6 @@ urlpatterns += [tf_urls[0][0]]
 
 # django resolves these as `handler404` / `handler403` on the urlconf module;
 # they were spelled with an underscore since bff6f7f2 and therefore never read (#2032)
+handler400 = "peeringdb_server.views.view_http_error_400"
 handler404 = "peeringdb_server.views.view_http_error_404"
 handler403 = "peeringdb_server.views.view_http_error_403"

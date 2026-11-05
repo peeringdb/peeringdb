@@ -8,7 +8,27 @@
         <li><a href="{{ obj.view_url }}">{{ obj.name|default:obj }}</a></li>
       {% endfor %}
     </ul>
-{% else %}
+{% endif %}
+{% if errors %}
+  <div class="alert alert-danger">
+    These changes could not be applied
+    <p></p>
+    <ul>
+      {% for obj, messages in errors.items %}
+        <li>
+          <p><a href="{{ obj.view_url }}">{{ obj }}</a></p>
+          <ul>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+{% if not updated_obj %}
+  {% if invalid_permissions or not errors %}
   <div class="alert alert-danger">
     {% if invalid_permissions %}
     You do not have permissions to make changes to
@@ -24,6 +44,7 @@
     {{error_message}}
     {% endif %}
   </div>
+  {% endif %}
   <button class="btn btn-warning" onclick="history.back()">Back</button>
 {% endif %}
 </div>

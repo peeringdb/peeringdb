@@ -104,6 +104,35 @@ def invalidate_reset_on_email_change(
         UserPasswordReset.objects.using(using).filter(user_id=instance.pk).delete()
 
 
+# no sender: pre_save is sent with the proxy class, and staff deactivate
+# users through the admin's UserPermission proxy
+@receiver(pre_save)
+def revoke_oauth_tokens_on_deactivation(
+    sender, instance, using, raw=False, update_fields=None, **kwargs
+):
+    """
+    OAuth tokens must not outlive the account they were issued for, whether
+    staff deactivate it or the user closes it.
+    """
+
+    if (
+        not issubclass(sender, User)
+        or raw
+        or not instance.pk
+        or instance.is_active
+        or (update_fields is not None and "is_active" not in update_fields)
+    ):
+        return
+    was_active = (
+        sender.objects.using(using)
+        .filter(pk=instance.pk)
+        .values_list("is_active", flat=True)
+        .first()
+    )
+    if was_active:
+        instance.revoke_oauth_tokens(using=using)
+
+
 def update_network_attribute(instance, attribute):
     """Updates 'attribute' field in Network whenever it's called."""
     if getattr(instance, "id"):
@@ -529,6 +558,9 @@ def _handle_new_asn_affiliation(instance, deleted_network):
         log.error("rdap_error", exc=exc, asn=instance.asn)
         raise RdapException(rdap_pretty_error_message(exc))
 
+    # Creating the org and network as "ok" from RDAP data is intentional: they
+    # describe a real network in public RIR data. Only the user's claim to
+    # them needs verifying, which is what the rest of this function does.
     instance.org, org_created = Organization.create_from_rdap(
         rdap, instance.asn, instance.org_name
     )
@@ -539,6 +571,12 @@ def _handle_new_asn_affiliation(instance, deleted_network):
         return True, None, []
 
     net, net_created = Network.create_from_rdap(rdap, instance.asn, instance.org)
+
+    # the org was matched by RDAP registrant name and is managed already,
+    # so its admins decide, not an RDAP email match (#508)
+    if instance.org.owned:
+        _handle_org_with_admins(instance)
+        return True, None, []
 
     if pdb_settings.AUTO_APPROVE_AFFILIATION:
         instance.approve()

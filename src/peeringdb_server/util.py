@@ -4,6 +4,7 @@ Assorted utility functions for peeringdb site templates.
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 from collections.abc import Callable, Iterable, Sequence
 from decimal import Decimal
@@ -36,6 +37,57 @@ NO_STORE_PRIVATE_DIRECTIVES: dict[str, bool] = {"private": True, "no_store": Tru
 no_store_private: Callable[
     [Callable[..., HttpResponse]], Callable[..., HttpResponse]
 ] = cache_control(**NO_STORE_PRIVATE_DIRECTIVES)
+
+
+def cache_key_digest(value: str) -> str:
+    """
+    Returns a digest of `value` to use in a cache key in its place.
+
+    For request paths and query strings: they can carry credentials, and
+    Django's cache backends print a cache key that is too long for memcached
+    in a CacheKeyWarning, which ends up in the logs (#495).
+    """
+    return hashlib.sha256(value.encode("utf-8", "surrogateescape")).hexdigest()
+
+
+def get_client_ident(request: HttpRequest) -> str | None:
+    """
+    Get the IP address of the client.
+
+    Each of the NUM_PROXIES trusted proxies in front of the app appends the
+    address it received the request from to X-Forwarded-For, so the client is
+    the NUM_PROXIES-th entry from the right. Entries left of it come from the
+    client and are ignored, so a client cannot choose its own rate limit key.
+    Falls back to REMOTE_ADDR when the header has fewer entries than that.
+    """
+    remote_addr = request.META.get("REMOTE_ADDR")
+    num_proxies = settings.NUM_PROXIES
+    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    addrs = [addr.strip() for addr in xff.split(",") if addr.strip()]
+    if not num_proxies or len(addrs) < num_proxies:
+        return normalize_client_address(remote_addr) if remote_addr else remote_addr
+    return normalize_client_address(addrs[-num_proxies])
+
+
+def normalize_client_address(address: str) -> str:
+    """
+    Strips a port (`203.0.113.1:1234`, `[2001:db8::1]:443`) and unwraps an
+    IPv4-mapped IPv6 address, so a client is keyed the same way however a
+    proxy or socket reports it. Anything that isn't an address is returned
+    unchanged.
+    """
+    host = address
+    if host.startswith("["):
+        host = host[1:].split("]", 1)[0]
+    elif host.count(":") == 1:
+        host = host.split(":", 1)[0]
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return address
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        return str(ip.ipv4_mapped)
+    return str(ip)
 
 
 def disable_auto_now_and_save(

@@ -1,14 +1,18 @@
 import datetime
+import json
 from datetime import timedelta
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from django.conf import settings as dj_settings
+from django.contrib.auth.models import Group
+from django.core import mail
 from django.test import Client, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_security_keys.models import SecurityKey
+from rest_framework.test import APIClient
 
 from peeringdb_server.forms import OrgUserOptions
 from peeringdb_server.models import (
@@ -17,8 +21,14 @@ from peeringdb_server.models import (
     Network,
     Organization,
     User,
+    UserAPIKey,
 )
-from peeringdb_server.org_admin_views import update_user_options
+from peeringdb_server.org_admin_views import update_user_options, users
+from peeringdb_server.permissions import (
+    check_permissions,
+    get_permission_holder_from_request,
+    init_permissions_helper,
+)
 from peeringdb_server.views import LoginView
 from tests.util import mock_csrf_session, reset_group_ids
 
@@ -32,6 +42,11 @@ def override_mfa_settings(settings):
 @pytest.fixture
 def reauth_objects():
     reset_group_ids()
+
+    # verified users read every org through the user group, as in production
+    Group.objects.get(id=dj_settings.USER_GROUP_ID).grainy_permissions.add_permission(
+        "peeringdb.organization", 1
+    )
 
     org = Organization.objects.create(name="Test", status="ok")
     org_b = Organization.objects.create(name="Test B", status="ok")
@@ -852,3 +867,458 @@ def test_get_form_kwargs_passes_passkey_credential_id(reauth_objects):
         kwargs = view.get_form_kwargs("security-key")
 
     assert kwargs.get("passkey_credential_id") == "test-cred-id-abc123"
+
+
+def _expire_reauth(org, user):
+    """
+    Turn on periodic re-auth for `org` and make `user`'s only email overdue
+    """
+
+    email, _ = EmailAddress.objects.get_or_create(
+        user=user, email=user.email, defaults={"verified": True}
+    )
+    # confirmed_date is auto_now_add, so it can only be backdated after create
+    data, _ = EmailAddressData.objects.get_or_create(email=email)
+    data.confirmed_date = timezone.now() - timedelta(days=400)
+    data.save()
+    org.periodic_reauth = True
+    org.periodic_reauth_period = "1y"
+    org.save()
+
+
+@pytest.mark.django_db
+def test_reauth_strips_org_admin_grants(reauth_objects):
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+
+    perms = init_permissions_helper(User.objects.get(id=admin.id))
+    assert perms.check(net.grainy_namespace, "u")
+    assert perms.check(org.grainy_namespace_manage, "u")
+
+    _expire_reauth(org, admin)
+
+    perms = init_permissions_helper(User.objects.get(id=admin.id))
+    assert org.grainy_namespace not in perms.pset.namespaces
+    assert not perms.check(net.grainy_namespace, "u")
+    assert not perms.check(org.grainy_namespace_manage, "u")
+    assert not perms.check(org.grainy_namespace_oauth, "u")
+
+
+@pytest.mark.django_db
+def test_reauth_strips_member_org_root_only_for_that_org(reauth_objects):
+    org, org_b = reauth_objects["org"], reauth_objects["org_b"]
+    net, net_b = reauth_objects["net"], reauth_objects["net_b"]
+    user = reauth_objects["user"]
+
+    _expire_reauth(org, user)
+
+    perms = init_permissions_helper(User.objects.get(id=user.id))
+    assert org.grainy_namespace not in perms.pset.namespaces
+    assert not perms.check(net.grainy_namespace, "u")
+    assert org_b.grainy_namespace in perms.pset.namespaces
+    assert perms.check(net_b.grainy_namespace, "u")
+
+
+@pytest.mark.django_db
+def test_reauth_applies_to_user_api_keys(reauth_objects):
+    org = reauth_objects["org"]
+    net, net_b = reauth_objects["net"], reauth_objects["net_b"]
+    user = reauth_objects["user"]
+
+    _expire_reauth(org, user)
+
+    _, key = UserAPIKey.objects.create_key(name="k", user=user)
+    request = RequestFactory().put(
+        f"/api/net/{net.id}", HTTP_AUTHORIZATION="Api-Key " + key
+    )
+    holder = get_permission_holder_from_request(request)
+    assert not check_permissions(holder, net.grainy_namespace, "u")
+    assert check_permissions(holder, net_b.grainy_namespace, "u")
+
+
+@pytest.mark.django_db
+def test_reauth_api_key_delete_error_names_org(reauth_objects):
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+
+    _expire_reauth(org, admin)
+
+    response = client.delete(reverse("api:net-detail", args=(net.id,)))
+    assert response.status_code == 403
+    assert response.json()["meta"]["error"] == (
+        f"Re-authentication required for {org.name}: confirm your email"
+    )
+
+    net.refresh_from_db()
+    assert net.name == "Test"
+    assert net.status == "ok"
+
+
+@pytest.mark.django_db
+def test_reauth_session_api_delete_error_names_org(reauth_objects):
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.force_login(admin)
+    response = client.delete(reverse("api:net-detail", args=(net.id,)))
+    assert response.status_code == 403
+    assert response.json()["meta"]["error"] == (
+        f"Re-authentication required for {org.name}: confirm your email"
+    )
+
+    net.refresh_from_db()
+    assert net.status == "ok"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("auth", ["api_key", "session"])
+def test_reauth_refused_writes_send_one_mail(reauth_objects, auth, settings):
+    """
+    The rollback of a refused write must not undo the unverified flag, which
+    would send the confirmation mail again on every write (#527)
+    """
+
+    # a replayed refusal never reaches the view, as writes spaced further
+    # apart than the negative cache expiry would
+
+    settings.NEGATIVE_CACHE_ENABLED = False
+
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    if auth == "api_key":
+        _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+        client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    else:
+        client.force_login(admin)
+
+    mail.outbox = []
+    for _ in range(3):
+        response = client.put(
+            reverse("api:net-detail", args=(net.id,)), {"name": "x"}, format="json"
+        )
+        assert response.status_code in (401, 403)
+
+    assert [message.to for message in mail.outbox] == [[admin.email]]
+    assert not EmailAddress.objects.get(user=admin, email=admin.email).verified
+
+
+@pytest.mark.django_db
+def test_reauth_write_with_key_of_inactive_user_sends_no_mail(reauth_objects, settings):
+    """
+    A key of a deactivated user is refused before re-auth is evaluated
+    """
+
+    settings.NEGATIVE_CACHE_ENABLED = False
+
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+    admin.is_active = False
+    admin.save()
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    mail.outbox = []
+    response = client.put(
+        reverse("api:net-detail", args=(net.id,)), {"name": "x"}, format="json"
+    )
+    assert response.status_code == 403
+    assert "Inactive API key" in response.json()["meta"]["error"]
+
+    assert mail.outbox == []
+    assert EmailAddress.objects.get(user=admin, email=admin.email).verified
+
+
+@pytest.mark.django_db
+def test_reauth_api_key_org_users_denied(reauth_objects):
+    org = reauth_objects["org"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+
+    url = reverse("api:organization-users-list", kwargs={"org_id": org.id})
+    response = APIClient().get(url, HTTP_AUTHORIZATION="Api-Key " + key)
+    assert response.status_code == 403
+    assert (
+        f"Re-authentication required for {org.name}: confirm your email"
+        in response.json()["meta"]["error"]
+    )
+
+
+@pytest.mark.django_db
+def test_reauth_org_admin_required(reauth_objects):
+    org = reauth_objects["org"]
+    admin = reauth_objects["user_c"]
+
+    def request_users():
+        request = RequestFactory().get(f"/org-admin/users?org_id={org.id}")
+        request.user = User.objects.get(id=admin.id)
+        return users(request)
+
+    assert request_users().status_code == 200
+
+    _expire_reauth(org, admin)
+
+    response = request_users()
+    assert response.status_code == 403
+    assert json.loads(response.content) == {
+        "non_field_errors": [
+            f"Re-authentication required for {org.name}: confirm your email"
+        ]
+    }
+
+
+@pytest.mark.django_db
+def test_reauth_error_only_for_the_target_org(reauth_objects):
+    """
+    A denial on an org the user is not due for re-auth with gives no
+    re-auth reason
+    """
+
+    org, net_b = reauth_objects["org"], reauth_objects["net_b"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.delete(reverse("api:net-detail", args=(net_b.id,)))
+    assert response.status_code == 403
+    assert "Re-authentication" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_reauth_api_key_create_error_names_org(reauth_objects):
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.post(
+        reverse("api:poc-list"),
+        {
+            "net_id": net.id,
+            "role": "Abuse",
+            "visible": "Public",
+            "name": "reauth contact",
+            "email": "contact@localhost",
+        },
+        format="json",
+    )
+    assert response.status_code in (401, 403)
+    assert response.json()["meta"]["error"] == (
+        f"Re-authentication required for {org.name}: confirm your email"
+    )
+    assert not net.poc_set.filter(name="reauth contact").exists()
+
+
+@pytest.mark.django_db
+def test_reauth_api_key_user_without_email_address(reauth_objects):
+    """
+    A key user with nothing to re-confirm keeps read access and loses write
+    access to the org, instead of erroring
+    """
+
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    operator = User.objects.create_user("operator", password="operator", email="")
+    operator.set_verified()
+    org.admin_usergroup.user_set.add(operator)
+    org.periodic_reauth = True
+    org.periodic_reauth_period = "1y"
+    org.save()
+
+    _, key = UserAPIKey.objects.create_key(name="k", user=operator)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    url = reverse("api:net-detail", args=(net.id,))
+
+    assert client.get(url).status_code == 200
+
+    response = client.delete(url)
+    assert response.status_code == 403
+    assert "Re-authentication required for Test:" in response.json()["meta"]["error"]
+
+    net.refresh_from_db()
+    assert net.status == "ok"
+
+
+def _overdue_member(org, username):
+    """
+    A plain member of `org`, with no write grant of their own, who is due for
+    re-auth
+    """
+
+    member = User.objects.create_user(
+        username, password=username, email=f"{username}@localhost"
+    )
+    member.set_verified()
+    org.usergroup.user_set.add(member)
+    _expire_reauth(org, member)
+    return member
+
+
+@pytest.mark.django_db
+def test_reauth_error_not_given_when_reauth_would_not_allow(reauth_objects):
+    """
+    Re-confirming would not give a plain member write access, so their denial
+    does not blame re-auth
+    """
+
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    member = _overdue_member(org, "member_x")
+    _, key = UserAPIKey.objects.create_key(name="k", user=member)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.delete(reverse("api:net-detail", args=(net.id,)))
+    assert response.status_code == 403
+    assert "Re-authentication" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_reauth_error_not_given_to_readonly_key(reauth_objects):
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin, readonly=True)
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.delete(reverse("api:net-detail", args=(net.id,)))
+    assert response.status_code == 403
+    assert "Re-authentication" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_reauth_error_not_given_for_patch(reauth_objects):
+    """
+    PATCH is refused for everyone, whatever re-auth says
+    """
+
+    org, net = reauth_objects["org"], reauth_objects["net"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.patch(
+        reverse("api:net-detail", args=(net.id,)), {"name": "x"}, format="json"
+    )
+    assert response.status_code == 403
+    assert "Re-authentication" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_reauth_error_not_given_for_unrelated_parent(reauth_objects):
+    """
+    A create under another org's network is not blamed on re-auth, even with
+    the overdue org named elsewhere in the payload
+    """
+
+    org, net_b = reauth_objects["org"], reauth_objects["net_b"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin)
+
+    _expire_reauth(org, admin)
+
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+    response = client.post(
+        reverse("api:poc-list"),
+        {
+            "net_id": net_b.id,
+            "org_id": org.id,
+            "role": "Abuse",
+            "visible": "Public",
+            "name": "unrelated contact",
+            "email": "contact@localhost",
+        },
+        format="json",
+    )
+    assert response.status_code in (401, 403)
+    assert "Re-authentication" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_reauth_org_admin_required_member_not_blamed(reauth_objects):
+    org = reauth_objects["org"]
+    member = _overdue_member(org, "member_y")
+
+    request = RequestFactory().get(f"/org-admin/users?org_id={org.id}")
+    request.user = User.objects.get(id=member.id)
+    response = users(request)
+    assert response.status_code == 403
+    assert json.loads(response.content) == {}
+
+
+@pytest.mark.django_db
+def test_reauth_api_key_org_users_readonly_not_blamed(reauth_objects):
+    org = reauth_objects["org"]
+    admin = reauth_objects["user_c"]
+    _, key = UserAPIKey.objects.create_key(name="k", user=admin, readonly=True)
+
+    _expire_reauth(org, admin)
+
+    url = reverse("api:organization-users-add", kwargs={"org_id": org.id})
+    response = APIClient().post(
+        url,
+        {"user_email": "user_b@domain.com", "role": "member"},
+        format="json",
+        HTTP_AUTHORIZATION="Api-Key " + key,
+    )
+    assert response.status_code == 403
+    assert "API key is readonly" in response.json()["meta"]["error"]
+
+
+@pytest.mark.django_db
+def test_reauth_error_names_only_the_denying_org(reauth_objects):
+    """
+    A user overdue in two orgs is only told about the org whose grants would
+    have allowed the request
+    """
+
+    org, org_b = reauth_objects["org"], reauth_objects["org_b"]
+    net, net_b = reauth_objects["net"], reauth_objects["net_b"]
+    user = reauth_objects["user"]
+
+    _expire_reauth(org, user)
+    org_b.periodic_reauth = True
+    org_b.periodic_reauth_period = "1y"
+    org_b.save()
+
+    _, key = UserAPIKey.objects.create_key(name="k", user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+
+    response = client.delete(reverse("api:net-detail", args=(net.id,)))
+    assert response.status_code == 403
+    assert response.json()["meta"]["error"] == (
+        f"Re-authentication required for {org.name}: confirm your email"
+    )
+
+    response = client.delete(reverse("api:net-detail", args=(net_b.id,)))
+    assert response.status_code == 403
+    assert response.json()["meta"]["error"] == (
+        f"Re-authentication required for {org_b.name}: confirm your email"
+    )

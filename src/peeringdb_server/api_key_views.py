@@ -11,6 +11,8 @@ from django.db import transaction
 from django.http import HttpRequest, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.debug import sensitive_post_parameters
+from django_security_keys.views import verify_user_password
 from grainy.const import PERM_READ
 
 from peeringdb_server.forms import OrgAdminUserPermissionForm, OrganizationAPIKeyForm
@@ -264,7 +266,11 @@ def key_permission_update(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     # org is injected (non-None) by the @org_admin_required decorator
     org = cast("Organization", kwargs.get("org"))
     prefix = request.POST.get("key_prefix")
-    key = OrganizationAPIKey.objects.get(prefix=prefix)
+
+    try:
+        key = OrganizationAPIKey.objects.get(prefix=prefix, org=org)
+    except OrganizationAPIKey.DoesNotExist:
+        return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
     kperms, perms = load_entity_permissions(org, key)
     form = OrgAdminUserPermissionForm(request.POST)
     if not form.is_valid():
@@ -292,7 +298,11 @@ def key_permission_remove(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     # org is injected (non-None) by the @org_admin_required decorator
     org = cast("Organization", kwargs.get("org"))
     prefix = request.POST.get("key_prefix")
-    key = OrganizationAPIKey.objects.get(prefix=prefix)
+
+    try:
+        key = OrganizationAPIKey.objects.get(prefix=prefix, org=org)
+    except OrganizationAPIKey.DoesNotExist:
+        return JsonResponse({"non_field_errors": [_("Key not found")]}, status=404)
 
     entity = request.POST.get("entity")
     kperms, perms = load_entity_permissions(org, key)
@@ -315,14 +325,19 @@ def convert_to_bool(data: str | None) -> bool:
     return data.lower() == "true"
 
 
+@sensitive_post_parameters("password")
 @login_required
 @transaction.atomic
 def add_user_key(request: HttpRequest, **kwargs: Any) -> JsonResponse:
     """
     Create a new User API key.
 
-    Requires a name and a readonly boolean.
+    Requires the user's current password, a name and a readonly boolean.
     """
+
+    error_response = verify_user_password(request)[1]
+    if error_response:
+        return error_response
 
     user = request.user
     name = request.POST.get("name")

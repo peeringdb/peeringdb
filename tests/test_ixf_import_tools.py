@@ -90,8 +90,11 @@ class TestImportPreview(ClientCase):
         self.ixlan.save()
 
         cache.set(
-            f"IXF-CACHE-{self.ixlan.ixf_ixp_member_list_url}",
-            json.loads(data_ixf_preview_net.json),
+            self.ixlan.ixf_cache_key,
+            {
+                "url": self.ixlan.ixf_ixp_member_list_url,
+                "data": json.loads(data_ixf_preview_net.json),
+            },
             timeout=None,
         )
 

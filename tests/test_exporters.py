@@ -12,7 +12,7 @@ from unittest.mock import patch
 import pytest
 import reversion
 from django.core.management import call_command
-from django.test import Client
+from django.test import Client, override_settings
 
 from peeringdb_server.models import (
     Facility,
@@ -161,6 +161,16 @@ class AdvancedSearchExportTest(ClientCase):
         assert json.loads(response.content) == json.loads(
             self.expected_data("net", "json")
         )
+
+    @override_settings(ALLOWED_HOSTS=["localhost"])
+    def test_export_net_json_paged(self):
+        """the API request behind a paged export builds absolute page links"""
+        client = Client(HTTP_HOST="localhost")
+        response = client.get(
+            "/export/advanced-search/net/json?name_search=Network&page=2&per_page=1"
+        )
+        assert response.status_code == 200
+        assert len(json.loads(response.content)["results"]) == 1
 
     def test_export_net_json_pretty(self):
         """test pretty json export of network search"""

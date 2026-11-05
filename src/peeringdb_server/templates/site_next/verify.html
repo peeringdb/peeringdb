@@ -49,7 +49,6 @@
       <!-- Authentication -->
       {% include "site_next/profile-authentication.html" %}
 
-      {% if not request.user.has_oauth %}
       <!-- CHANGE EMAIL -->
       {% include "site_next/profile-change-email.html" %}
       <!-- CHANGE PASSWORD -->
@@ -58,7 +57,6 @@
       {% include "site_next/profile-change-username.html" %}
       <!-- CHANGE NAME -->
       {% include "site_next/profile-change-name.html" %}
-      {% endif %}
 
       <!-- API Keys -->
       {% include "site_next/profile-api-keys.html" %}

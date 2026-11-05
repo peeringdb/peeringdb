@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlparse
 
+from django.conf import settings
 from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.core.signing import BadSignature
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import resolve_url
 from django.urls import reverse
@@ -20,6 +21,10 @@ from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_application_model
 from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
+from oauth2_provider.views.device import DeviceConfirmView as BaseDeviceConfirmView
+from oauth2_provider.views.device import (
+    DeviceUserCodeView as BaseDeviceUserCodeView,
+)
 from oauth2_provider.views.mixins import OAuthLibMixin
 from oauth2_provider.views.oidc import (
     ConnectDiscoveryInfoView as BaseConnectDiscoveryInfoView,
@@ -33,13 +38,29 @@ if TYPE_CHECKING:
 log: logging.Logger = logging.getLogger("oauth2_provider")
 
 
+def has_recent_oauth_login(request: HttpRequest) -> bool:
+    """
+    True when the current user completed a login wizard for an OAuth
+    authorization within the last `OAUTH_COOKIE_MAX_AGE` seconds.
+
+    The marker is set on the session by `LoginView.done`.
+    """
+    if not request.user.is_authenticated:
+        return False
+    marker = request.session.get("oauth_login")
+    if not isinstance(marker, dict) or marker.get("user_id") != request.user.pk:
+        return False
+    login_at = marker.get("at")
+    if not isinstance(login_at, int | float):
+        return False
+    return time.time() - login_at <= settings.OAUTH_COOKIE_MAX_AGE
+
+
 class LoginRequiredMixin(AccessMixin):
-    """Verify that the current user is authenticated."""
+    """Verify that the current user logged in for this authorization recently."""
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        try:
-            request.get_signed_cookie("oauth_session")
-        except (KeyError, BadSignature):
+        if not has_recent_oauth_login(request):
             return self.handle_no_permission()
         response = super().dispatch(request, *args, **kwargs)
         return response
@@ -63,6 +84,14 @@ class LoginRequiredMixin(AccessMixin):
             resolved_login_url,
             self.get_redirect_field_name(),
         )
+
+
+class DeviceUserCodeView(LoginRequiredMixin, BaseDeviceUserCodeView):
+    """Device flow user code entry, behind the same recent login as consent."""
+
+
+class DeviceConfirmView(LoginRequiredMixin, BaseDeviceConfirmView):
+    """Device flow approval, behind the same recent login as consent."""
 
 
 class BaseAuthorizationView(LoginRequiredMixin, OAuthLibMixin, View):
@@ -382,7 +411,6 @@ class OAuthMetadataView(View):
             "grant_types_supported": [
                 "authorization_code",
                 "implicit",
-                "password",
                 "client_credentials",
                 "openid hybrid",
             ],

@@ -33,6 +33,28 @@ from peeringdb_server.serializers import (
 
 logger = logging.getLogger(__name__)
 
+ADD_ORGANIZATION_USER_DESCRIPTION = """Approves a user's pending affiliation request to the organization.
+
+Users join an organization by requesting affiliation themselves. This
+operation approves such a request, it cannot add a user who has not asked
+to join.
+
+`user_email` has to be a verified email address of the requesting user's
+account. The user becomes a `member`, or an `admin` if `role` is `admin` or
+the organization has no users yet. The response is the user as the
+organization's user list shows it.
+
+If there is no matching pending request, the response is `400` with the same
+error message in every case: unknown or unverified address, a user who
+already belongs to the organization, or an address the organization's email
+domain restriction does not allow.
+
+### Permissions
+
+An admin of the organization using a user API key, or an organization API
+key with `create` permission on `peeringdb.organization.{org_id}.users`.
+"""
+
 
 @functools.cache
 def _get_return_annotation(method):
@@ -329,6 +351,32 @@ class BaseSchema(AutoSchema):
             op_dict["requestBody"]["content"][content_type]["schema"] = {
                 "type": "object",
             }
+            return op_dict
+
+        # adding an org user approves the user's own affiliation request, the
+        # generic create description and body do not apply
+        elif args[0] == "/api/org/{org_id}/users/add/":
+            op_dict["description"] = ADD_ORGANIZATION_USER_DESCRIPTION
+            schema = {
+                "type": "object",
+                "properties": {
+                    "user_email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Verified email address of the user whose affiliation request is approved",
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": ["admin", "member"],
+                        "default": "member",
+                        "description": "`admin` makes the user an admin of the organization",
+                    },
+                },
+                "required": ["user_email"],
+            }
+            # the view reads request.data, so form posts take the same body
+            for content in op_dict["requestBody"]["content"].values():
+                content["schema"] = deepcopy(schema)
             return op_dict
 
         # if set net side or set ix side, schema expects a fac_id

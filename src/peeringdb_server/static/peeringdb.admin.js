@@ -9,6 +9,25 @@ PeeringDBAdmin = {
   init : function() {
     if($('#org-merge-tool').length > 0)
       this.OrgMergeTool.init();
+    this.initPostActions();
+  },
+
+  // links carrying data-post-action submit a POST with the page's csrf
+  // token; they sit inside the change form, which cannot hold a nested form.
+  // a modifier click follows the link to the confirmation page instead
+  initPostActions : function() {
+    $(document).on("click", "a[data-post-action]", function(e) {
+      if(e.which !== 1 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)
+        return;
+      e.preventDefault();
+      var form = $('<form method="post">').attr("action", $(this).attr("data-post-action"));
+      form.append(
+        $('<input type="hidden" name="csrfmiddlewaretoken">').val(
+          $('input[name="csrfmiddlewaretoken"]').first().val()
+        )
+      );
+      form.appendTo("body").submit();
+    });
   },
 
   OrgMergeTool : {
@@ -65,7 +84,10 @@ PeeringDBAdmin = {
       });
       $.ajax({
         url : "merge",
-        method : "GET",
+        method : "POST",
+        headers : {
+          "X-CSRFToken" : this.tool().find('input[name="csrfmiddlewaretoken"]').val()
+        },
         data : {
           "ids" : orgs.join(","),
           "id" : this.targetOrgId

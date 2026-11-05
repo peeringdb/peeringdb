@@ -23,6 +23,7 @@ import traceback
 
 import reversion
 import unidecode
+from allauth.account.models import EmailAddress
 from django.apps import apps
 from django.conf import settings
 from django.conf import settings as dj_settings
@@ -35,7 +36,7 @@ from django.core.exceptions import (
 )
 from django.db import connection, transaction
 from django.db.models import DateTimeField, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import re_path
 from django.utils import timezone
@@ -47,7 +48,8 @@ from grainy.const import PERM_CREATE, PERM_DELETE, PERM_READ, PERM_UPDATE
 from rest_framework import permissions, routers, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action, api_view, permission_classes, schema
-from rest_framework.exceptions import APIException, ParseError
+from rest_framework.exceptions import APIException, NotAuthenticated, ParseError
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
 from rest_framework.exceptions import ValidationError as RestValidationError
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
@@ -74,9 +76,13 @@ from peeringdb_server.models import (
     ProtectedAction,
     User,
     UserAPIKey,
+    UserOrgAffiliationRequest,
     live_statuses,
 )
-from peeringdb_server.org_admin_views import save_user_permissions
+from peeringdb_server.org_admin_views import (
+    approve_affiliation_request,
+    save_user_permissions,
+)
 from peeringdb_server.pagination import UnlimitedIfNoPagePagination
 from peeringdb_server.permissions import (
     APIPermissionsApplicator,
@@ -86,6 +92,8 @@ from peeringdb_server.permissions import (
     get_permission_holder_from_request,
     get_user_from_request,
     get_user_key_from_request,
+    init_permissions_helper,
+    reauth_denial_message,
 )
 from peeringdb_server.rest_throttles import (
     IRRLookupThrottle,
@@ -108,6 +116,11 @@ from peeringdb_server.util import coerce_ipaddr
 from peeringdb_server.views import extract_query, perform_search
 
 RATELIMITS = dj_settings.RATELIMITS
+
+ADD_ORGANIZATION_USER_NO_REQUEST = (
+    "No pending affiliation request to this organization from a user with this "
+    "verified email address. The user needs to request affiliation first."
+)
 
 logger = logging.getLogger(__name__)
 
@@ -489,6 +502,46 @@ class ModelViewSet(viewsets.ModelViewSet):
         InactiveKeyBlock,
     )
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+
+        # resolved before the write handler's transaction: a refusal rolls
+        # that back, and with it the unverified flag periodic re-auth sets,
+        # so the confirmation mail would go out again on every write (#527)
+
+        if request.method not in permissions.SAFE_METHODS:
+            init_permissions_helper(get_permission_holder_from_request(request))
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        """
+        A denial carries no reason by default. When a failed permission check
+        of this request would have passed with the grants periodic
+        re-authentication stripped, say so instead.
+        """
+
+        response = super().finalize_response(request, response, *args, **kwargs)
+
+        if response.status_code not in (401, 403):
+            return response
+
+        message = reauth_denial_message(getattr(request, "_permission_holder", None))
+        if not message:
+            return response
+
+        data = response.data or {}
+        generic = (
+            None,
+            NotAuthenticated.default_detail,
+            DRFPermissionDenied.default_detail,
+        )
+        if not isinstance(data, dict) or set(data) - {"detail"}:
+            return response
+        if data.get("detail") not in generic:
+            return response
+
+        response.data = {"detail": message}
+        return response
+
     def get_queryset(self):
         """
         Prepare the queryset.
@@ -857,6 +910,22 @@ class ModelViewSet(viewsets.ModelViewSet):
             d = time.time() - t
             print(f"done in {d:.5f} seconds, {len(connection.queries)} queries")
 
+    def get_object(self):
+        obj = super().get_object()
+
+        # pending objects are returned only to callers with update
+        # permission on them (#513). A campus is pending while it has fewer
+        # than two facilities and stays public.
+        if (
+            self.request.method in permissions.SAFE_METHODS
+            and obj.status == "pending"
+            and obj.HandleRef.tag != "campus"
+            and not check_permissions_from_request(self.request, obj, PERM_UPDATE)
+        ):
+            raise Http404(f"No {self.model._meta.object_name} matches the given query.")
+
+        return obj
+
     @client_check()
     def retrieve(self, request, *args, **kwargs):
         # could add fk relationships here, one at a time, but we need to define
@@ -1171,15 +1240,17 @@ class CampusFacilityMixin:
         Allows the org to reject a campus listing at their facility
         """
 
-        fac = Facility.objects.get(id=self.kwargs.get("fac_id"))
+        fac = get_object_or_404(Facility, id=self.kwargs.get("fac_id"))
+
+        # check before answering anything about the facility, it may be
+        # pending (#513)
+        if not check_permissions_from_request(request, fac, "u"):
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         if not fac.campus_id:
             return Response(FacilitySerializer(fac).data)
 
         campus = fac.campus
-
-        if not check_permissions_from_request(request, fac, "u"):
-            return Response(status=status.HTTP_403_FORBIDDEN)
 
         fac.campus_id = None
         fac.save()
@@ -1217,7 +1288,7 @@ class NetworkIXLanMixin:
         If fac_id is null, the net_side will be unset. Permissions are checked before saving changes.
         """
         return self._set_side(
-            request, side="net_side", attr="netfac_set", obj="net", model=Network
+            request, side="net_side", attr="netfac_set_active", obj="net", model=Network
         )
 
     @transaction.atomic
@@ -1229,7 +1300,11 @@ class NetworkIXLanMixin:
         If fac_id is null, the ix_side will be unset. Permissions are checked before saving changes.
         """
         return self._set_side(
-            request, side="ix_side", attr="ixfac_set", obj="ix", model=InternetExchange
+            request,
+            side="ix_side",
+            attr="ixfac_set_active",
+            obj="ix",
+            model=InternetExchange,
         )
 
     def _set_side(self, request, side, attr, obj, model):
@@ -1260,7 +1335,7 @@ class NetworkIXLanMixin:
                         facility_id=fac_id
                     )
                     facility = facility_relation.facility
-                except model.DoesNotExist:
+                except ObjectDoesNotExist:
                     return Response(
                         {"detail": "Facility not found."},
                         status=status.HTTP_404_NOT_FOUND,
@@ -1685,7 +1760,7 @@ class OrganizationUsersViewSet(GenericViewSet):
 
     This ViewSet provides endpoints for:
     - Listing all users in an organization
-    - Adding new users to an organization
+    - Approving users' pending affiliation requests to an organization
     - Updating user roles within an organization
     - Removing users from an organization
 
@@ -1736,6 +1811,7 @@ class OrganizationUsersViewSet(GenericViewSet):
         1. For user API key authentication:
             - Uses User.is_org_admin() to verify if the user is an admin of the organization
             - Raises PermissionDenied if the user is not an admin
+            - A readonly key only passes PERM_READ checks
 
         2. For organization API key authentication:
             - Checks if the API key has the specific permission (read/write/update/delete)
@@ -1762,6 +1838,19 @@ class OrganizationUsersViewSet(GenericViewSet):
             user = permission_holder.user
             if not user.is_org_admin(organization):
                 raise PermissionDenied("User is not an admin of this organization")
+
+            # this viewset does not go through grainy, so the readonly
+            # downgrade in return_user_api_key_perms does not apply here
+
+            if permission_holder.readonly and permission_type != PERM_READ:
+                raise PermissionDenied("API key is readonly")
+
+            # admin rights are all this endpoint asks for, so an admin due for
+            # re-auth is refused because of it
+
+            if organization.user_requires_reauth(user):
+                permission_holder.reauth_denied_orgs = {organization.id: organization}
+                raise PermissionDenied(reauth_denial_message(permission_holder))
             return
 
         if isinstance(permission_holder, OrganizationAPIKey):
@@ -1820,11 +1909,64 @@ class OrganizationUsersViewSet(GenericViewSet):
             )
             raise
 
+    def pending_affiliation_request(self, organization, user_email):
+        """
+        Return the pending affiliation request to the organization from the
+        one user that holds `user_email` as a verified email address, or None.
+        """
+
+        # compare in python, the db collation may be accent-insensitive
+        email = user_email.lower()
+        user_ids = {
+            address.user_id
+            for address in EmailAddress.objects.filter(
+                verified=True,
+                user__is_active=True,
+                user__affiliation_requests__org=organization,
+                user__affiliation_requests__status="pending",
+            )
+            if address.email.lower() == email
+        }
+
+        if len(user_ids) != 1:
+            return None
+
+        # locked, so a concurrent decision on the same request waits and then
+        # finds it no longer pending
+        uoar = (
+            UserOrgAffiliationRequest.objects.select_for_update()
+            .filter(org=organization, status="pending", user_id=user_ids.pop())
+            .first()
+        )
+
+        if not uoar:
+            return None
+
+        user = uoar.user
+
+        if user.is_org_admin(organization) or user.is_org_member(organization):
+            return None
+
+        # the restriction may have been turned on after the request was made
+        if organization.restrict_user_emails:
+            invalid_emails, valid_emails = organization.user_meets_email_requirements(
+                user, verified_only=True
+            )
+            if invalid_emails and not valid_emails:
+                return None
+
+        return uoar
+
     @action(detail=True, methods=["POST"])
     def add_organization_user(self, request, org_id=None):
         """
-        Add a user to the organization
+        Approve a user's pending affiliation request to the organization
         Requires 'create' permission on org.{id}.users namespace
+
+        The user identified by `user_email` needs a pending affiliation
+        request to the organization. Every case where that does not hold
+        gets the same response, so it does not reveal whether an account
+        exists for an email address.
         """
         try:
             self.check_permissions_for_action(PERM_CREATE)
@@ -1838,23 +1980,6 @@ class OrganizationUsersViewSet(GenericViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            existing_users = self.get_queryset()
-            if existing_users.filter(email=user_email).exists():
-                return Response(
-                    {"detail": "User is already in the organization"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            user = get_object_or_404(User, email=user_email)
-
-            if not user.emailaddress_set.filter(
-                verified=True, email=user_email
-            ).exists():
-                return Response(
-                    {"detail": "User email is not verified"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
             serializer = UserSerializer(
                 data={"role": request.data.get("role", "member")}
             )
@@ -1865,19 +1990,32 @@ class OrganizationUsersViewSet(GenericViewSet):
                 )
             role = serializer.validated_data["role"]
 
-            if role == "admin":
-                organization.admin_usergroup.user_set.add(user)
+            permission_holder = get_permission_holder_from_request(request)
+
+            if isinstance(permission_holder, UserAPIKey):
+                approved_by = permission_holder.user.full_name
+                approving_user = permission_holder.user
             else:
-                organization.usergroup.user_set.add(user)
+                approved_by = f"Organization API key {permission_holder.prefix}"
+                approving_user = None
 
-            # a user already in either group is refused above, so whoever
-            # reaches this point held no role here a moment ago and anything
-            # they still carry for this org is a leftover that would shadow the
-            # group grant their new role gives them (#2038). Nothing legitimate
-            # can exist yet either: a non-member cannot be permissioned through
-            # the org UI (`target_user_validate`).
+            with transaction.atomic():
+                uoar = self.pending_affiliation_request(organization, str(user_email))
 
-            save_user_permissions(organization, user, {})
+                if not uoar:
+                    return Response(
+                        {"detail": ADD_ORGANIZATION_USER_NO_REQUEST},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                user = uoar.user
+                approve_affiliation_request(uoar, approved_by, approving_user)
+
+                # approval makes the user a member, or an admin if the org
+                # had no users yet
+                if role == "admin" and not user.is_org_admin(organization):
+                    organization.usergroup.user_set.remove(user)
+                    organization.admin_usergroup.user_set.add(user)
 
             return Response(
                 UserSerializer(user, context={"organization": organization}).data,
@@ -2058,6 +2196,16 @@ def search_api_view(request):
     auth = auth_header.split()
     if len(auth) != 2 or not auth[1].strip():
         return JsonResponse({"error": "API key cannot be empty"}, status=401)
+
+    # enable_api_key_auth only resolves the Api-Key scheme and leaves any
+    # other Authorization header unchecked (#513)
+    if auth[0].lower() != "api-key":
+        return JsonResponse(
+            {
+                "error": "No API key provided. Please include an Authorization header with your API key."
+            },
+            status=401,
+        )
 
     q, geo, original_query = extract_query(request)
 

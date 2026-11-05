@@ -13,6 +13,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_security_keys.models import SecurityKey, UserHandle
 
 from peeringdb_server.models import Organization, User
+from tests.util import oauth_login_marker
 
 pytestmark = pytest.mark.django_db
 PASSWORD = "enrollment-test-password"
@@ -36,16 +37,30 @@ def enrollment_user(settings):
     return user
 
 
-def password_login(client, user, password=PASSWORD):
+def password_login(client, user, password=PASSWORD, next="/cp/"):
     return client.post(
         reverse("two_factor:login"),
         {
             "login_view-current_step": "auth",
             "auth-username": user.username,
             "auth-password": password,
-            "next": "/cp/",
+            "next": next,
         },
     )
+
+
+def test_restricted_enrollment_drops_oauth_login(client, enrollment_user):
+    client.force_login(enrollment_user)
+    session = client.session
+    session["oauth_login"] = oauth_login_marker(enrollment_user)
+    session.save()
+    response = password_login(
+        client, enrollment_user, next="/oauth2/authorize/?client_id=x"
+    )
+    assert response.status_code == 302
+    assert response["Location"] == reverse("profile_passkey")
+    assert client.session["passkey_setup_required"] is True
+    assert "oauth_login" not in client.session
 
 
 @pytest.mark.parametrize("verified", [False, True])
@@ -100,7 +115,7 @@ def test_missing_passkey_enters_restricted_enrollment(
         "/oauth2/authorize/",
     ]:
         assert client.post(path).status_code == 302, path
-    assert "oauth_session" not in client.cookies
+    assert "oauth_login" not in client.session
 
 
 def test_wrong_password_cannot_start_enrollment(client, enrollment_user):
@@ -270,7 +285,7 @@ def test_registration_keeps_session_restricted_until_passkey_login(
             response = method(path)
             assert response.status_code == 302, path
             assert response["Location"] == reverse("profile_passkey"), path
-    assert "oauth_session" not in client.cookies
+    assert "oauth_login" not in client.session
 
     handle = UserHandle.require_for_user(enrollment_user)
     credential = json.dumps(
@@ -308,7 +323,7 @@ def test_registration_keeps_session_restricted_until_passkey_login(
 
 def test_enrollment_can_sign_out(client, enrollment_user):
     password_login(client, enrollment_user)
-    assert client.get("/logout").status_code == 302
+    assert client.post("/logout").status_code == 302
     assert SESSION_KEY not in client.session
     assert not client.session.get("passkey_setup_required")
 

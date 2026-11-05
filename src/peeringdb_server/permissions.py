@@ -18,14 +18,16 @@ from typing import TYPE_CHECKING, Any
 
 # from django_grainy.rest import ModelViewSetPermissions, PermissionDenied
 import grainy.const as grainy_constant
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
 
 # from django_grainy.const import *
-from django_grainy.helpers import request_method_to_flag
+from django_grainy.helpers import int_flags, request_method_to_flag
+from django_grainy.helpers import namespace as grainy_namespace
 from django_grainy.util import Permissions
-from grainy.core import NamespaceKeyApplicator
+from grainy.core import NamespaceKeyApplicator, PermissionSet
 from rest_framework.permissions import BasePermission
 from rest_framework_api_key.permissions import KeyParser
 
@@ -87,11 +89,45 @@ def get_email_from_user_or_key(request: HttpRequest) -> str | None:
     return None
 
 
+def org_key_email_is_verified(org_key: OrganizationAPIKey) -> bool:
+    """
+    Whether the key email is a verified email address of an active user of
+    the key's organization, member or admin.
+    """
+    if not org_key.email:
+        return False
+
+    org = org_key.org
+    emails = EmailAddress.objects.filter(
+        verified=True,
+        user__is_active=True,
+        user__groups__in=[org.usergroup, org.admin_usergroup],
+    ).values_list("email", flat=True)
+
+    # compare in python, the db collation may be accent-insensitive
+    key_email = org_key.email.lower()
+    return any(email.lower() == key_email for email in emails)
+
+
 def validate_rdap_org_key(org_key: OrganizationAPIKey, rdap: RdapObject) -> bool:
-    for email in rdap.emails:
-        if email and email.lower() == org_key.email.lower():
-            return True
-    return False
+    """
+    The key email is typed in by an org admin and never verified, so it only
+    proves RDAP ownership while it is also a verified email address of a
+    current admin of the key's organization.
+    """
+    if not any(
+        email and email.lower() == org_key.email.lower() for email in rdap.emails
+    ):
+        return False
+
+    # compare in python, the db collation may be accent-insensitive
+    admin_emails = EmailAddress.objects.filter(
+        verified=True,
+        user__is_active=True,
+        user__groups=org_key.org.admin_usergroup,
+    ).values_list("email", flat=True)
+    key_email = org_key.email.lower()
+    return any(email.lower() == key_email for email in admin_emails)
 
 
 def get_key_from_request(request: HttpRequest) -> str | None:
@@ -208,7 +244,69 @@ def check_permissions(obj: Any, target: Any, permissions: int, **kwargs: Any) ->
     if not hasattr(obj, "_permissions_util"):
         obj._permissions_util = init_permissions_helper(obj)
 
-    return obj._permissions_util.check(target, permissions, **kwargs)
+    allowed = obj._permissions_util.check(target, permissions, **kwargs)
+    if not allowed:
+        record_reauth_denial(obj, target, permissions, kwargs.get("explicit", False))
+    return allowed
+
+
+def record_reauth_denial(
+    obj: Any, target: Any, permissions: int | str, explicit: bool
+) -> None:
+    """
+    If a grant stripped for periodic re-authentication would have passed a
+    failed check, note the organization on the permission holder, so the
+    denial can say why.
+    """
+    # `obj` and `target` stay Any, see check_permissions
+
+    perms = obj._permissions_util
+    if not getattr(perms, "reauth_stripped", None):
+        return
+
+    # the live set is final once the helper is initialized, so each restored
+    # set is built once. A single update() indexes once, where the dict
+    # constructor re-indexes after every namespace
+
+    if not hasattr(perms, "reauth_restored"):
+        live = {ns: perm.value for ns, perm in perms.pset.permissions.items()}
+        perms.reauth_restored = []
+        for org, stripped in perms.reauth_stripped:
+            restored = PermissionSet()
+            restored.update({**live, **stripped})
+            perms.reauth_restored.append((org, restored))
+
+    for org, restored in perms.reauth_restored:
+        if restored.check(
+            grainy_namespace(target), int_flags(permissions), explicit=explicit
+        ):
+            if not hasattr(obj, "reauth_denied_orgs"):
+                obj.reauth_denied_orgs = {}
+            obj.reauth_denied_orgs[org.id] = org
+
+
+class ReadOnlyPermissions(Permissions):
+    """
+    Permissions that read whatever the holder reads, and refuse every check
+    that asks for more than read.
+
+    Rewriting the permission set to read is not enough for a superuser:
+    grainy's `grant_all` passes their checks without consulting it.
+    """
+
+    def check(
+        self,
+        target: Any,
+        permissions: int | str,
+        explicit: bool = False,
+        ignore_grant_all: bool = False,
+    ) -> bool:
+        # `target` stays Any: forwarded to grainy's open-ended check()
+        if int_flags(permissions) & ~grainy_constant.PERM_READ:
+            return False
+        return super().check(
+            target, permissions, explicit=explicit, ignore_grant_all=ignore_grant_all
+        )
 
 
 def init_permissions_helper(obj: Any) -> Permissions:
@@ -229,11 +327,39 @@ def init_permissions_helper(obj: Any) -> Permissions:
     else:
         perms = Permissions(obj)
         if isinstance(obj, User):
-            for org in obj.organizations:
-                org.adjust_permissions_for_periodic_reauth(obj, perms)
+            adjust_permissions_for_periodic_reauth(obj, perms)
 
     obj._permissions_util = perms
     return perms
+
+
+def adjust_permissions_for_periodic_reauth(user: User, perms: Permissions) -> None:
+    """
+    Strip the user's permissions for every organization that currently
+    flags the user as needing re-authentication.
+    """
+
+    for org in user.organizations:
+        org.adjust_permissions_for_periodic_reauth(user, perms)
+
+
+def reauth_denial_message(holder: Any, org: Organization | None = None) -> str | None:
+    """
+    Return an error message naming the organizations whose re-authentication
+    requirement caused a failed permission check of the holder in this
+    request, or None. Pass `org` to only report that organization.
+    """
+    # `holder` stays Any: any permission holder, read through getattr
+
+    denied = getattr(holder, "reauth_denied_orgs", None) or {}
+    names = sorted(
+        denied_org.name
+        for denied_org in denied.values()
+        if org is None or denied_org.id == org.id
+    )
+    if not names:
+        return None
+    return f"Re-authentication required for {', '.join(names)}: confirm your email"
 
 
 def return_user_api_key_perms(key: UserAPIKey) -> Permissions:
@@ -244,15 +370,34 @@ def return_user_api_key_perms(key: UserAPIKey) -> Permissions:
 
     If the UserAPIKey is marked readonly, it downgrades
     all permissions to readonly.
+
+    For a superuser, grainy's `grant_all` bypasses the permission
+    set entirely, so a readonly key of a superuser gets
+    ReadOnlyPermissions instead.
     """
     user = key.user
+
+    if key.readonly is True and user.is_superuser:
+        return ReadOnlyPermissions(user)
+
     permissions = Permissions(user)
+
+    # the key acts as its user, so it inherits the user's re-auth restriction
+
+    adjust_permissions_for_periodic_reauth(user, permissions)
 
     if key.readonly is True:
         readonly_perms = {
             ns: grainy_constant.PERM_READ for ns in permissions.pset.namespaces
         }
         permissions.pset.update(readonly_perms)
+
+        # re-confirming would only give a readonly key read back
+
+        permissions.reauth_stripped = [
+            (org, dict.fromkeys(stripped, grainy_constant.PERM_READ))
+            for org, stripped in getattr(permissions, "reauth_stripped", [])
+        ]
 
     return permissions
 

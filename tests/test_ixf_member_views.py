@@ -7,6 +7,7 @@ import reversion
 from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from peeringdb_server import ixf
 from peeringdb_server.models import (
@@ -514,6 +515,8 @@ def admin_user():
     admin_user.save()
     admin_user.set_password("admin")
     admin_user.save()
+    # without a second factor the MFA middleware redirects staff
+    TOTPDevice.objects.create(user=admin_user, name="phone", confirmed=True)
     return admin_user
 
 

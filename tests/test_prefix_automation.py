@@ -2,6 +2,7 @@ import base64
 import datetime
 from unittest.mock import patch
 
+import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.auth.models import Group
 from django.test import TestCase, override_settings
@@ -9,6 +10,14 @@ from rest_framework.test import APIClient
 
 import peeringdb_server.models as models
 from tests.util import setup_test_data
+
+
+@pytest.fixture(autouse=True)
+def feed_url_check_offline():
+    # creating the exchange checks the feed URL's addresses; keep the
+    # lookup of example.com off the network
+    with patch("peeringdb_server.ixf_fetch.check_url"):
+        yield
 
 
 @override_settings(
@@ -365,6 +374,79 @@ class IXFPrefixAutomationTestCase(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["status"], "pending")
         self.assertNotIn("ixf_pending_reason", response.data)
+
+    @override_settings(TICKET_CREATION_PREFIXAUTO=False)
+    def test_rdap_lookalike_email_goes_pending(self):
+        """
+        A verified address that only matches the RDAP contact under an
+        accent-insensitive collation must not auto-approve the IX.
+        """
+        ixf_data = setup_test_data("ixf.prefixauto.valid")
+
+        # the real RDAP contact has no account, so the lookalike can be stored
+        EmailAddress.objects.filter(user=self.user_ok).delete()
+
+        for idx, email in enumerate(["hóstmaster@uen.org", "hostmaster@uén.org"]):
+            with self.subTest(email=email):
+                username = f"ixf_lookalike_{idx}"
+                user = models.User.objects.create_user(
+                    username,
+                    f"{username}@example.com",
+                    username,
+                    is_superuser=True,
+                    is_staff=True,
+                )
+                EmailAddress.objects.create(
+                    user=user, email=email, verified=True, primary=True
+                )
+                self.base_org.usergroup.user_set.add(user)
+                Group.objects.get(name="user").user_set.add(user)
+
+                client = APIClient()
+                auth = base64.b64encode(f"{username}:{username}".encode()).decode()
+                client.credentials(HTTP_AUTHORIZATION=f"Basic {auth}")
+                payload = {
+                    **self.payload,
+                    "name": f"testIXF lookalike {idx}",
+                    "prefix": f"205.127.{237 + idx}.0/24",
+                }
+
+                with (
+                    patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+                    patch(
+                        "peeringdb_server.auto_approval.Importer.fetch",
+                        return_value=ixf_data,
+                    ),
+                ):
+                    self._rdap_mock(mock_rdap)
+                    response = client.post("/api/ix", data=payload, format="json")
+
+                self.assertEqual(response.status_code, 201)
+                self.assertEqual(response.data["status"], "pending")
+                self.assertNotIn("ixf_pending_reason", response.data)
+
+    @override_settings(TICKET_CREATION_PREFIXAUTO=False)
+    def test_rdap_mixed_case_email_auto_approved(self):
+        """
+        A verified address that differs from the RDAP contact only in case
+        still auto-approves the IX.
+        """
+        EmailAddress.objects.filter(user=self.user_ok).update(
+            email="HostMaster@UEN.org"
+        )
+        ixf_data = setup_test_data("ixf.prefixauto.valid")
+
+        with (
+            patch("peeringdb_server.auto_approval.RdapLookup") as mock_rdap,
+            patch(
+                "peeringdb_server.auto_approval.Importer.fetch", return_value=ixf_data
+            ),
+        ):
+            self._rdap_mock(mock_rdap)
+            response = self.client.post("/api/ix", data=self.payload, format="json")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], "ok")
 
     @override_settings(TICKET_CREATION_PREFIXAUTO=False)
     def test_ixf_feed_http_error_goes_pending(self):

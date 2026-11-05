@@ -20,6 +20,10 @@ class PeeringDBServerAppConfig(AppConfig):
 
         from django.core import checks
 
+        from peeringdb_server.security_keys import patch_security_keys
+
+        patch_security_keys()
+
         from peeringdb_server.meta_registry import check_meta_registry
 
         # registry <-> schema drift check for object metadata (#1751)

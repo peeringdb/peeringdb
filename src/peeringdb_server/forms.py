@@ -186,9 +186,16 @@ class UserCreationForm(auth_forms.UserCreationForm):
                 "response": recaptcha,
                 "remoteip": get_client_ip(self.request),
             }
-            cpt_response = requests.post(
-                dj_settings.RECAPTCHA_VERIFY_URL, params=cpt_params
-            ).json()
+            try:
+                cpt_response = requests.post(
+                    dj_settings.RECAPTCHA_VERIFY_URL,
+                    params=cpt_params,
+                    timeout=(3, 10),
+                ).json()
+            except (requests.RequestException, ValueError):
+                raise forms.ValidationError(
+                    _("reCAPTCHA could not be verified, please try again")
+                )
             if not cpt_response.get("success"):
                 raise forms.ValidationError(_("reCAPTCHA invalid"))
         else:

@@ -1,7 +1,11 @@
 import json
+from unittest.mock import patch
 
 from allauth.account.models import EmailAddress
-from django.test import TestCase
+from django.conf import settings
+from django.contrib.auth.models import Group
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django_grainy.util import Permissions
 from grainy.const import (
@@ -12,6 +16,7 @@ from grainy.const import (
     PERM_UPDATE,
 )
 from rest_framework.test import APIClient
+from reversion.models import Revision
 
 from peeringdb_server.models import (
     Organization,
@@ -19,13 +24,20 @@ from peeringdb_server.models import (
     OrganizationAPIPermission,
     User,
     UserAPIKey,
+    UserOrgAffiliationRequest,
 )
+from peeringdb_server.rest import ADD_ORGANIZATION_USER_NO_REQUEST
+from peeringdb_server.rest_throttles import OrganizationUsersThrottle
 
 
 class OrganizationUsersViewSetTests(TestCase):
     def setUp(self):
         """Set up test client and common headers"""
         self.client = APIClient()
+
+        # approving an affiliation request moves the user to the user group
+        Group.objects.get_or_create(name="guest", id=settings.GUEST_GROUP_ID)
+        Group.objects.get_or_create(name="user", id=settings.USER_GROUP_ID)
         self.admin_user = User.objects.create_user(
             "admin", "admin@localhost", first_name="admin", last_name="admin"
         )
@@ -93,6 +105,16 @@ class OrganizationUsersViewSetTests(TestCase):
         )
         user.grainy_permissions.create(
             namespace=f"{org.grainy_namespace}.network", permission=permission
+        )
+
+    def _request_affiliation(self, user, org=None):
+        """
+        File a pending affiliation request from `user` to `org` (default: the
+        test org).
+        """
+
+        return UserOrgAffiliationRequest.objects.create(
+            org=org or self.org, user=user, status="pending"
         )
 
     def _can(self, user, namespace, flag):
@@ -166,6 +188,7 @@ class OrganizationUsersViewSetTests(TestCase):
         EmailAddress.objects.create(
             user=member, email="member2@localhost", primary=True, verified=True
         )
+        self._request_affiliation(member)
 
         response = self.client.post(
             url,
@@ -187,6 +210,7 @@ class OrganizationUsersViewSetTests(TestCase):
         EmailAddress.objects.create(
             user=member, email="member2@localhost", primary=True, verified=True
         )
+        self._request_affiliation(member)
 
         OrganizationAPIPermission.objects.create(
             org_api_key=self.org_key_instance,
@@ -382,6 +406,7 @@ class OrganizationUsersViewSetTests(TestCase):
         EmailAddress.objects.create(
             user=member, email="member2@localhost", primary=True, verified=True
         )
+        self._request_affiliation(member)
         self._seed_org_permissions(member, self.org, PERM_CRUD)
 
         url = reverse("api:organization-users-add", kwargs={"org_id": self.org.id})
@@ -526,16 +551,17 @@ class OrganizationUsersViewSetTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("User is already in the organization", data["meta"]["error"])
+        self.assertIn(ADD_ORGANIZATION_USER_NO_REQUEST, data["meta"]["error"])
 
     def test_add_user_unverified_email(self):
         """
-        Tests that member2 cannot be added to the organization since"
-        their email is not verified
+        Tests that member2 cannot be added to the organization since
+        their email is not verified, even with a pending request
         """
-        User.objects.create_user(
+        member = User.objects.create_user(
             "member2", "member2@localhost", first_name="member2", last_name="member"
         )
+        self._request_affiliation(member)
 
         OrganizationAPIPermission.objects.create(
             org_api_key=self.org_key_instance,
@@ -554,7 +580,7 @@ class OrganizationUsersViewSetTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertIn("User email is not verified", data["meta"]["error"])
+        self.assertIn(ADD_ORGANIZATION_USER_NO_REQUEST, data["meta"]["error"])
 
     def test_add_user_invalid_role(self):
         member = User.objects.create_user(
@@ -830,3 +856,257 @@ class OrganizationUsersViewSetTests(TestCase):
         self.assertEqual(response.status_code, 400)
         data = response.json()
         self.assertIn("user_email is required", data["meta"]["error"])
+
+    def _readonly_admin_headers(self):
+        _, key = UserAPIKey.objects.create_key(
+            name="readonly admin key", user=self.admin_user, readonly=True
+        )
+        return {"HTTP_AUTHORIZATION": f"api-key {key}"}
+
+    def test_readonly_admin_key_list_users(self):
+        url = reverse("api:organization-users-list", kwargs={"org_id": self.org.id})
+        response = self.client.get(url, **self._readonly_admin_headers())
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_readonly_admin_key_cannot_add_admin(self):
+        attacker = User.objects.create_user("attacker", "attacker@localhost")
+        EmailAddress.objects.create(
+            user=attacker, email="attacker@localhost", primary=True, verified=True
+        )
+        url = reverse("api:organization-users-add", kwargs={"org_id": self.org.id})
+        response = self.client.post(
+            url,
+            data=json.dumps({"user_email": "attacker@localhost", "role": "admin"}),
+            content_type="application/json",
+            **self._readonly_admin_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("API key is readonly", response.json()["meta"]["error"])
+        self.assertFalse(attacker.is_org_admin(self.org))
+        self.assertFalse(attacker.is_org_member(self.org))
+
+    def test_readonly_admin_key_cannot_update_role(self):
+        url = reverse(
+            "api:organization-users-update-role",
+            kwargs={"org_id": self.org.id, "user_id": self.member1.id},
+        )
+        response = self.client.put(
+            url,
+            data=json.dumps({"role": "admin"}),
+            content_type="application/json",
+            **self._readonly_admin_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(self.member1.is_org_admin(self.org))
+        self.assertTrue(self.member1.is_org_member(self.org))
+
+    def test_readonly_admin_key_cannot_remove_user(self):
+        url = reverse("api:organization-users-remove", kwargs={"org_id": self.org.id})
+        response = self.client.delete(
+            url,
+            data=json.dumps({"user_email": "admin@localhost"}),
+            content_type="application/json",
+            **self._readonly_admin_headers(),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(self.admin_user.is_org_admin(self.org))
+
+    def _post_add(self, data, headers):
+        url = reverse("api:organization-users-add", kwargs={"org_id": self.org.id})
+        return self.client.post(
+            url, data=json.dumps(data), content_type="application/json", **headers
+        )
+
+    def _verified_user(self, username, email):
+        user = User.objects.create_user(
+            username, email, first_name=username, last_name="user"
+        )
+        EmailAddress.objects.create(user=user, email=email, primary=True, verified=True)
+        return user
+
+    def test_add_user_failures_share_one_response(self):
+        """
+        Test that nothing about the account behind an email address can be
+        told from a failed add: no account, no request, an unverified
+        address, a closed account, a member or admin with a pending request,
+        a denied request, a request to another org, two pending requesters
+        sharing the address and an accent variant of a requester's address
+        all get the same response
+        """
+
+        self._verified_user("norequest", "norequest@localhost")
+
+        closed = self._verified_user("closed", "closed@localhost")
+        self._request_affiliation(closed)
+        closed.is_active = False
+        closed.save()
+
+        # joined after asking, so their requests are still pending
+        member2 = self._verified_user("member2", "member2@localhost")
+        admin2 = self._verified_user("admin2", "admin2@localhost")
+        pending = [
+            self._request_affiliation(member2),
+            self._request_affiliation(admin2),
+        ]
+        self.org.usergroup.user_set.add(member2)
+        self.org.admin_usergroup.user_set.add(admin2)
+
+        unverified = User.objects.create_user("unverified", "unverified@localhost")
+        EmailAddress.objects.create(
+            user=unverified, email="unverified@localhost", verified=False
+        )
+        self._request_affiliation(unverified)
+
+        # legacy data: the db does not enforce unique verified addresses
+        for username in ("dup1", "dup2"):
+            dup = self._verified_user(username, f"{username}@localhost")
+            EmailAddress.objects.create(
+                user=dup, email="shared@localhost", verified=True
+            )
+            pending.append(self._request_affiliation(dup))
+
+        # the db collation would match these, the comparison must not
+        jose = self._verified_user("jose", "jos\u00e9@localhost")
+        pending.append(self._request_affiliation(jose))
+
+        denied = self._verified_user("denied", "denied@localhost")
+        self._request_affiliation(denied).deny()
+
+        other_org = Organization.objects.create(name="Other", status="ok")
+        elsewhere = self._verified_user("elsewhere", "elsewhere@localhost")
+        self._request_affiliation(elsewhere, org=other_org)
+
+        responses = []
+        with patch.object(
+            OrganizationUsersThrottle, "allow_request", return_value=True
+        ):
+            for email in (
+                "nobody@localhost",
+                "norequest@localhost",
+                "unverified@localhost",
+                "closed@localhost",
+                "member@localhost",
+                "member2@localhost",
+                "admin2@localhost",
+                "denied@localhost",
+                "elsewhere@localhost",
+                "shared@localhost",
+                "jose@localhost",
+            ):
+                response = self._post_add({"user_email": email}, self.headers_admin)
+                responses.append((email, response.status_code, response.content))
+
+        self.assertEqual(responses[0][1], 400)
+        self.assertIn(
+            ADD_ORGANIZATION_USER_NO_REQUEST,
+            json.loads(responses[0][2])["meta"]["error"],
+        )
+        for email, status_code, content in responses:
+            self.assertEqual(status_code, 400, email)
+            self.assertEqual(content, responses[0][2], email)
+
+        self.assertEqual(
+            set(self.org.usergroup.user_set.all()), {self.member1, member2}
+        )
+        self.assertEqual(
+            set(self.org.admin_usergroup.user_set.all()), {self.admin_user, admin2}
+        )
+        for uoar in pending:
+            uoar.refresh_from_db()
+            self.assertEqual(uoar.status, "pending")
+
+    @override_settings(MAIL_DEBUG=False)
+    def test_add_user_approves_pending_request(self):
+        """
+        Test that adding a user with a pending request approves it the way
+        the org admin view does, and the response shows only the user list
+        fields
+        """
+
+        OrganizationAPIPermission.objects.create(
+            org_api_key=self.org_key_instance,
+            namespace=self.namespace,
+            permission=PERM_CREATE,
+        )
+        member = self._verified_user("member2", "member2@localhost")
+        self._request_affiliation(member)
+        mail.outbox = []
+
+        response = self._post_add({"user_email": "Member2@localhost"}, self.headers_org)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            set(response.json()["data"][0].keys()),
+            {
+                "id",
+                "first_name",
+                "last_name",
+                "full_name",
+                "is_active",
+                "date_joined",
+                "status",
+                "role",
+            },
+        )
+        self.assertTrue(member.is_org_member(self.org))
+        self.assertFalse(member.is_org_admin(self.org))
+        self.assertFalse(
+            UserOrgAffiliationRequest.objects.filter(
+                user=member, org=self.org, status="pending"
+            ).exists()
+        )
+
+        # the org's admins learn about it as they do for a web approval
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.admin_user.email])
+        self.assertIn(self.org_key_instance.prefix, mail.outbox[0].body)
+
+        # an org key is not a user, the revision names the key instead
+        revision = Revision.objects.latest("id")
+        self.assertIsNone(revision.user)
+        self.assertIn(self.org_key_instance.prefix, revision.comment)
+
+    def test_add_user_role_admin(self):
+        member = self._verified_user("member2", "member2@localhost")
+        self._request_affiliation(member)
+
+        response = self._post_add(
+            {"user_email": "member2@localhost", "role": "admin"}, self.headers_admin
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["data"][0]["role"], "admin")
+        self.assertTrue(member.is_org_admin(self.org))
+        self.assertFalse(member.is_org_member(self.org))
+
+        # the approval is attributed to the user the API key belongs to
+        self.assertEqual(Revision.objects.latest("id").user, self.admin_user)
+
+    def test_add_user_restricted_email_domain(self):
+        """
+        Test that the org's email domain restriction holds for a request
+        filed before the restriction was turned on
+        """
+
+        member = self._verified_user("member2", "member2@localhost")
+        uoar = self._request_affiliation(member)
+
+        self.org.restrict_user_emails = True
+        self.org.email_domains = "example.com"
+        self.org.save()
+
+        response = self._post_add(
+            {"user_email": "member2@localhost"}, self.headers_admin
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json()["meta"]["error"], ADD_ORGANIZATION_USER_NO_REQUEST
+        )
+        self.assertFalse(member.is_org_member(self.org))
+        uoar.refresh_from_db()
+        self.assertEqual(uoar.status, "pending")

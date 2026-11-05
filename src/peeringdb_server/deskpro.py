@@ -15,7 +15,11 @@ from django.utils.translation import override
 
 from peeringdb_server.inet import RdapNotFoundError
 from peeringdb_server.models import DeskProTicket, is_suggested
-from peeringdb_server.permissions import get_org_key_from_request, get_user_from_request
+from peeringdb_server.permissions import (
+    get_org_key_from_request,
+    get_user_from_request,
+    org_key_email_is_verified,
+)
 
 
 def ticket_queue(subject, body, user):
@@ -37,6 +41,24 @@ def ticket_queue_email_only(subject, body, email):
         email=email,
         user=None,
     )
+
+
+def ticket_queue_org_key(subject, body, org_key):
+    """
+    Queue a deskpro ticket for a request made with an organization API key.
+
+    The key email is the requester, so support can reply to it. It is free
+    text typed in by an org admin, so unless it is a verified address of a
+    user of the key's org the ticket says so at the top.
+    """
+
+    if not org_key_email_is_verified(org_key):
+        notice = loader.get_template(
+            "email/notify-pdb-admin-org-key-unverified-requester.txt"
+        ).render({"org_key": org_key})
+        body = f"{notice.strip()}\n\n{body}"
+
+    return ticket_queue_email_only(subject, body, org_key.email)
 
 
 class APIError(IOError):
@@ -77,14 +99,14 @@ def ticket_queue_asnauto_skipvq(request, org, net, rir_data):
 
     org_key = get_org_key_from_request(request)
     if org_key:
-        ticket_queue_email_only(
+        ticket_queue_org_key(
             f"[ASNAUTO] Network '{net_name}' approved for existing Org '{org_name}'",
             loader.get_template(
                 "email/notify-pdb-admin-asnauto-skipvq-org-key.txt"
             ).render(
                 {"org_key": org_key, "org": org, "net": net, "rir_data": rir_data}
             ),
-            org_key.email,
+            org_key,
         )
 
 
@@ -232,7 +254,7 @@ def ticket_queue_vqi_notify(instance, rdap):
         )
 
     elif org_key:
-        ticket = ticket_queue_email_only(
+        ticket = ticket_queue_org_key(
             title,
             loader.get_template("email/notify-pdb-admin-vq-org-key.txt").render(
                 {
@@ -244,7 +266,7 @@ def ticket_queue_vqi_notify(instance, rdap):
                     "edit_url": f"{settings.BASE_URL}{instance.item_admin_url}",
                 }
             ),
-            org_key.email,
+            org_key,
         )
 
     if ticket:
@@ -274,13 +296,13 @@ def ticket_queue_rdap_error(request, asn, error):
 
     org_key = get_org_key_from_request(request)
     if org_key:
-        subject = f"[RDAP_ERR] {org_key.email} - AS{asn}"
-        ticket_queue_email_only(
+        subject = f"[RDAP_ERR] {org_key.org.name} (API key {org_key.prefix}) - AS{asn}"
+        ticket_queue_org_key(
             subject,
             loader.get_template("email/notify-pdb-admin-rdap-error-org-key.txt").render(
                 {"org_key": org_key, "asn": asn, "error_details": error_message}
             ),
-            org_key.email,
+            org_key,
         )
 
 
@@ -617,7 +639,7 @@ def ticket_queue_deletion_prevented(request, instance):
     # Create ticket if request was made by OrgAPIKey
     org_key = get_org_key_from_request(request)
     if org_key:
-        ticket_queue_email_only(
+        ticket_queue_org_key(
             subject,
             loader.get_template(
                 "email/notify-pdb-admin-deletion-prevented-org-key.txt"
@@ -632,7 +654,7 @@ def ticket_queue_deletion_prevented(request, instance):
                     ),
                 }
             ),
-            org_key.email,
+            org_key,
         )
 
 

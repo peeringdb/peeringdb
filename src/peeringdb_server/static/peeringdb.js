@@ -187,19 +187,23 @@ PeeringDB = {
       var note = ps.join(' xx22xx ');
       var source = ''; //$('select[name="language-to"]').val();
       var tgt = ''; //$('select[name="language-to"]').val();
-      $.post('translate', 'note=' + note + '&target=' + tgt + '&source=' + source)
+      $.post('translate', {note: note, target: tgt, source: source})
        .done(function(reply){
           if('undefined' != typeof(reply.error)){
               var message = ('undefined' != typeof(reply.error.error))? reply.error.error.message : JSON.stringify(reply.error);
-              note_o.parent().append( '<div class="editable popin error">' + message + '</div>')
+              note_o.parent().append($('<div class="editable popin error"></div>').text(message))
               return;
           }
           if('undefined' == typeof(reply.translation) || 'undefined' == typeof(reply.translation.translatedText)){
               note_o.parent().append( '<div class="editable popin error">Unknown error</div>')
               return;
           }
-          var translation = reply.translation.translatedText.split(' xx22xx ').join('</p><p>');
-          note_o.parent().append( '<div class="editable popin info"><p>' + translation + '</p></div>')
+          // notes and the translation are user content, render them as text
+          var popin = $('<div class="editable popin info"></div>');
+          reply.translation.translatedText.split(' xx22xx ').forEach(function(part){
+            popin.append($('<p></p>').text(part));
+          });
+          note_o.parent().append(popin)
        })
        .fail(function(a,b,c){
          console.log(a,b,c);
@@ -1176,6 +1180,41 @@ PeeringDB.IXFPreview = twentyc.cls.define(
       }
 
       this.wire_export(renderTo);
+      this.render_status(result);
+    },
+
+    render_status : function(result) {
+
+      /**
+       * Show when the previewed IX-F data was fetched and whether a
+       * refresh is pending, and wire the refresh button. The preview
+       * does not fetch the data itself, a refresh goes through the
+       * import request queue.
+       *
+       * @method render_status
+       * @param {Object} result - result as returned from the preview request
+       */
+
+      var status = $("#ixf-preview-status");
+      if(!status.length)
+        return;
+
+      var parts = [];
+      if(result.fetched)
+        parts.push(gettext("Showing IX-F data fetched at") + " " + result.fetched + ".");
+      if(result.request_status == "queued" || result.request_status == "importing")
+        parts.push(gettext("A refresh has been requested and will run shortly."));
+      status.text(parts.join(" "));
+
+      $("[data-ixf-refresh]").off("click").on("click", function() {
+        $.post(`/api/ix/${result.ix_id}/request_ixf_import`).done(() => {
+          result.request_status = "queued";
+          this.render_status(result);
+          $('.ixf-import-request-status').addClass("alert alert-warning").text(gettext("Queued"));
+        }).fail(() => {
+          status.text(gettext("Could not request a refresh, please try again later."));
+        });
+      }.bind(this));
     },
 
     render_errors : function(errors, renderTo) {
@@ -2159,6 +2198,7 @@ twentyc.editable.module.register(
           response.name = response.name + " (" + gettext("read-write") + ")";
         this.add(data.entity, trigger, container, response);
         this.api_key_popin(response.key)
+        this.components.add.find('[data-edit-name="password"] input').val("");
       }.bind(this));
     },
 
@@ -2192,6 +2232,7 @@ twentyc.editable.module.register(
       this.components.add.editable("export", this.target.data);
       var data = this.target.data;
       var id = data.prefix = row.data("edit-id")
+      delete data.password;
       this.target.execute("revoke", trigger, function(response) {
         this.listing_remove(id, row, trigger, container);
       }.bind(this));
@@ -2279,13 +2320,23 @@ twentyc.editable.module.register(
       var currentStatus = currentKeyMode.text().trim();
       var isAllowedLogin = currentStatus === "Allow login";
 
+      var form = {};
+      this.components.add.editable("export", form);
+      if (!form.password) {
+          $("#errors-alert").html(`<div class="alert alert-danger">${gettext("Please enter your current password in the password field below to change whether a key allows login.")}</div>`);
+          container.editable("loading-shim", "hide");
+          return;
+      }
+
       this.target.data = {
           id: row.data("edit-id"),
-          passkey_login: !isAllowedLogin
+          passkey_login: !isAllowedLogin,
+          password: form.password
       };
 
       this.target.execute("update-security-key", this.components.add, (response) => {
           if (response.status === "ok") {
+              this.components.add.find('[data-edit-name="password"] input').val("");
               if (response.passkey_login) {
                 currentKeyMode.text("Allow login");
                 trigger.text("Disallow login");
@@ -4372,7 +4423,7 @@ twentyc.editable.module.register(
     finalize_port_location: function(port_location){
       fac_id = port_location.data("edit-value")
       fac_name = port_location.data("edit-autocomplete-text")
-      fac_link = `<a href="/fac/${fac_id}">${fac_name}</a>`
+      fac_link = $('<a></a>').attr("href", "/fac/"+fac_id).text(fac_name)
       port_location.html(fac_link)
     },
     waitForEdit: function () {

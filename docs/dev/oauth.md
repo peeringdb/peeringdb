@@ -41,6 +41,27 @@ class PeeringDBOAuth2(BaseOAuth2):
         return data
 ```
 
+## Where access tokens are accepted
+
+An OAuth access token (`Authorization: Bearer <token>`) is accepted only by:
+
+- `/profile/v1`, which needs the `profile` scope and adds email, networks and AMR data for the `email`, `networks` and `amr` scopes
+- the OpenID Connect and OAuth endpoints under `/oauth2/`, such as `/oauth2/userinfo/`
+
+Everywhere else the token is ignored: a website view treats the request as anonymous. The REST API answers `401` with "OAuth access tokens are not accepted by the API, use an API key." Use an API key for API access.
+
+Deactivating or closing an account revokes its access and refresh tokens and deletes its pending authorization codes and device grants. `/profile/v1`, userinfo, token refresh and the authorization code exchange also refuse tokens of an inactive account.
+
+## Grant types
+
+New applications should use the authorization code grant with PKCE. The resource owner password credentials grant is not supported. The token endpoint answers `grant_type=password` with `400 unsupported_grant_type` without checking the credentials, also for applications registered with it before. The application form no longer offers it and the server metadata no longer advertises it. Access and refresh tokens of an application still set to it are refused, and it must switch to another grant type before its settings can be saved.
+
+## Token lifetimes
+
+Access tokens last 10 hours (the django-oauth-toolkit default).
+
+A refresh token expires `OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS` after its last access token expired, 90 days by default. Every refresh issues a new pair and restarts the clock, so only clients that stop refreshing for that long have to send their user through authorization again. The expiry is enforced when the client refreshes. Set the environment variable to `0` to turn expiry off.
+
 ## AMR values
 
 PeeringDB currently is not collecting device attestation, thus has no way to identify the authentication method according to RFC 8176 (https://datatracker.ietf.org/doc/html/rfc8176). However, we are collecting the following AMR values:

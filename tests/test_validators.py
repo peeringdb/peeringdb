@@ -1092,7 +1092,10 @@ def test_ghost_peer_vs_real_peer_one_netixlan():
     # setup IX-F cache
 
     data = setup_test_data("ixf.member.1")
-    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+    cache.set(
+        ix.ixlan.ixf_cache_key,
+        {"url": ix.ixlan.ixf_ixp_member_list_url, "data": data},
+    )
 
     ix = ixlan.ix
 
@@ -1199,7 +1202,10 @@ def test_ghost_peer_vs_real_peer_two_netixlan():
     # setup IX-F data
 
     data = setup_test_data("ixf.member.1")
-    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+    cache.set(
+        ix.ixlan.ixf_cache_key,
+        {"url": ix.ixlan.ixf_ixp_member_list_url, "data": data},
+    )
 
     ix = ixlan.ix
 
@@ -1307,7 +1313,10 @@ def test_ghost_peer_vs_real_peer_two_netixlan_partial():
     # setup IX-F data
 
     data = setup_test_data("ixf.member.1")
-    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", data)
+    cache.set(
+        ix.ixlan.ixf_cache_key,
+        {"url": ix.ixlan.ixf_ixp_member_list_url, "data": data},
+    )
 
     ix = ixlan.ix
 
@@ -1408,7 +1417,10 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
     )
     # setup IX-F data
 
-    cache.set(f"IXF-CACHE-{ix.ixlan.ixf_ixp_member_list_url}", {"invalid": "data"})
+    cache.set(
+        ix.ixlan.ixf_cache_key,
+        {"url": ix.ixlan.ixf_ixp_member_list_url, "data": {"invalid": "data"}},
+    )
 
     ix = ixlan.ix
 
@@ -1548,6 +1560,35 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         ([{"service": "mastodon", "identifier": "test_fail.com"}], False),
         ([{"service": "whatsapp", "identifier": "abc123"}], False),
         ([{"service": "whatsapp", "identifier": "08123456789"}], False),
+        (
+            [{"service": "wechat", "identifier": "peering"}],
+            [{"service": "wechat", "identifier": "peering"}],
+        ),
+        (
+            [{"service": "wechat", "identifier": "peer_ing-01"}],
+            [{"service": "wechat", "identifier": "peer_ing-01"}],
+        ),
+        ([{"service": "wechat", "identifier": "peer"}], False),  # too short
+        ([{"service": "wechat", "identifier": "a" * 21}], False),  # too long
+        ([{"service": "wechat", "identifier": "1peering"}], False),  # leading digit
+        ([{"service": "wechat", "identifier": "peering.cn"}], False),
+        ([{"service": "wechat", "identifier": "https://x.com/peering"}], False),
+        ([{"service": "wechat", "identifier": 'https://x.com/"><b>x</b>'}], False),
+        (
+            [
+                {
+                    "service": "website",
+                    "identifier": 'https://x.com/"><svg/onload=alert(1)>',
+                }
+            ],
+            False,
+        ),
+        (
+            [{"service": "mastodon", "identifier": "https://x.com/'onmouseover='x"}],
+            False,
+        ),
+        ([{"service": "qq", "identifier": "https://x.com/<b>"}], False),
+        ([{"service": "website", "identifier": "https://x.com/a b"}], False),
         (
             {"service": "website", "identifier": "https://www.example.com"},
             False,

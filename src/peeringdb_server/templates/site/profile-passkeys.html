@@ -6,7 +6,10 @@
   {% if passkey_setup_required %}
   <div class="alert alert-warning">
     <p>{% trans "Your organization requires passkey authentication. Register a passkey below, then sign out and log in using that passkey to continue." %}</p>
-    <a href="/logout">{% trans "Sign out" %}</a>
+    <form method="post" action="/logout">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-link p-0">{% trans "Sign out" %}</button>
+    </form>
   </div>
   {% endif %}
   <div class="editable popin help marg-top-15">

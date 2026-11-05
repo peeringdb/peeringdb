@@ -76,6 +76,8 @@ Depth can be one of three values:
 
 Any request that does not require lookups will be served a cached result. Cache is updated approximately every 15 minutes.
 
+Contacts (`poc`) deleted or restricted to `Users` or `Private`, and IX-F member list URLs restricted after the cache was generated, are applied to cached results as they are served, so callers who may no longer see them do not get them from the cache. A shared cache (CDN) in front of the API may keep serving a cached result for up to 15 minutes.
+
 You can spot cached responses by checking for the "generated" property inside the "meta" object.
 
     "meta" : {

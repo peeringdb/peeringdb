@@ -12,6 +12,7 @@ from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DataChangeWatchedObject,
     EmailAddress,
+    EmailAddressData,
     Network,
     NetworkIXLan,
     User,
@@ -42,7 +43,12 @@ def _datachange_objects():
         username="watcher", email="watcher@localhost", password="watcher"
     )
 
-    EmailAddress.objects.create(user=user, email="watcher@localhost")
+    # generated orgs require periodic re-auth, so the admin needs a confirmed
+    # address to keep their permissions
+    email = EmailAddress.objects.create(
+        user=user, email="watcher@localhost", verified=True
+    )
+    EmailAddressData.objects.create(email=email)
 
     watched = DataChangeWatchedObject.objects.create(
         user=user, ref_tag="net", object_id=net.id

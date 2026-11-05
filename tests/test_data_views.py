@@ -1,6 +1,7 @@
 import pytest
 from django.core.management import call_command
 from django.test import Client
+from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from peeringdb_server.models import (
     Organization,
@@ -74,6 +75,8 @@ def test_generic(name, user, count, status):
         _user.is_superuser = True
         _user.is_staff = True
         _user.save()
+        # without a second factor the MFA middleware redirects staff
+        TOTPDevice.objects.create(user=_user, name="phone", confirmed=True)
 
     org.usergroup.user_set.add(_user)
 

@@ -78,7 +78,7 @@
           <tbody>
             {% for field, values in data.diff.items %}
             <tr>
-              <td><input data-element="selected-field" name="data[][{{ field }}]" value="{{ values.new }}" type="checkbox" checked> {{ values.label }}</td>
+              <td><input data-element="selected-field" name="data[{{ forloop.parentloop.counter0 }}][{{ field }}]" value="{{ values.new }}" type="checkbox" checked> {{ values.label }}</td>
               <td>{{ values.old }}</td>
               <td>{{ values.new }}</td>
             </tr>

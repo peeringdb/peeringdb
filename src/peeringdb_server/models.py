@@ -37,7 +37,6 @@ import django_peeringdb.models as pdb_models
 import oauth2_provider.models as oauth2
 import reversion
 from allauth.account.models import EmailAddress, EmailConfirmation
-from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -86,6 +85,8 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set,
+    validate_ixf_member_list_url,
+    validate_notification_banner,
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
@@ -886,9 +887,13 @@ class UserOrgAffiliationRequest(StripFieldMixin):
             return self.org_name
         return self.asn
 
-    def approve(self):
+    def approve(self, approving_user=None, approved_by=None):
         """
         Approve request and add user to org's usergroup.
+
+        `approving_user` is recorded as the approver, defaults to the
+        user of the current request. `approved_by` names an approver that
+        is not a user, such as an organization API key.
         """
 
         if self.org_id:
@@ -921,7 +926,7 @@ class UserOrgAffiliationRequest(StripFieldMixin):
             if not self.user.is_verified_user:
                 self.user.set_verified()
 
-            self.track_approval()
+            self.track_approval(approving_user, approved_by)
 
             # since it was approved, we don't need to keep the
             # request item around
@@ -929,15 +934,19 @@ class UserOrgAffiliationRequest(StripFieldMixin):
             self.delete()
 
     @reversion.create_revision()
-    def track_approval(self):
+    def track_approval(self, approving_user=None, approved_by=None):
         with current_request() as request:
             # reversion does not track object deletions directly (which is what happens
             # when the reuqest is approved, so we do a preliminary save to make sure a
             # revision is created for the approval action)
-            if request:
+            #
+            # API key requests are anonymous, so their approver is passed in
+            if approving_user:
+                reversion.set_user(approving_user)
+            elif not approved_by and request and request.user.is_authenticated:
                 reversion.set_user(request.user)
             reversion.set_comment(
-                f"Approval of affiliation request from {self.user.full_name} to {self.org} by {reversion.get_user()}"
+                f"Approval of affiliation request from {self.user.full_name} to {self.org} by {approved_by or reversion.get_user()}"
             )
             self.status = "processing-approval"
             self.save()
@@ -1369,12 +1378,16 @@ class Organization(
         - has a network under it with status=ok
         - has a facility under it with status=ok
         - has an exchange under it with status=ok
+        - has a carrier under it with status=ok
+        - has a campus under it with status=ok
         """
 
         is_empty = (
             self.ix_set_active.count() == 0
             and self.fac_set_active.count() == 0
             and self.net_set_active.count() == 0
+            and self.carrier_set_active.count() == 0
+            and self.campus_set_active.count() == 0
         )
 
         if not is_empty:
@@ -1404,6 +1417,8 @@ class Organization(
             not self.ix_set.filter(status__in=["ok", "pending"]).exists()
             and not self.fac_set.filter(status__in=["ok", "pending"]).exists()
             and not self.net_set.filter(status__in=["ok", "pending"]).exists()
+            and not self.carrier_set.filter(status__in=["ok", "pending"]).exists()
+            and not self.campus_set.filter(status__in=["ok", "pending"]).exists()
         )
 
     @property
@@ -1421,9 +1436,10 @@ class Organization(
         them by asn.
         """
         r = {}
+        client = RdapLookup()
         for net in self.net_set_active:
             try:
-                rdap = RdapLookup().get_asn(net.asn)
+                rdap = client.get_asn(net.asn)
                 if rdap:
                     r[net.asn] = rdap
             except RdapNotFoundError:
@@ -1705,10 +1721,19 @@ class Organization(
         restricted_mail, email_list = self.user_meets_email_requirements(user)
         email_list += restricted_mail
 
-        email = email_list[0]
+        email = None
+        if email_list:
+            email = user.emailaddress_set.filter(email=email_list[0]).first()
 
-        # will raise an error if not exists
-        email = user.emailaddress_set.get(email=email)
+        if email is None:
+            # nothing on the account can be re-confirmed (e.g. an operational
+            # user created without an email address), so access stays
+            # restricted, and there is no address to send a confirmation to
+
+            if not hasattr(user, "orgs_require_reauth"):
+                user.orgs_require_reauth = []
+            user.orgs_require_reauth.append((self, user.email))
+            return True
 
         # check if the email address has been confirmed within the specified
         # period.
@@ -1754,9 +1779,26 @@ class Organization(
         """
 
         if self.user_requires_reauth(user):
+            # the grants that carry access sit at the exact org roots, so a
+            # dotted-prefix-only match would leave them in place (#2039)
+
+            roots = (self.grainy_namespace, self.grainy_namespace_manage)
+            stripped = {}
             for namespace in list(perms.pset.namespaces):
-                if f"peeringdb.organization.{self.id}." in namespace:
+                if any(
+                    namespace == root or namespace.startswith(f"{root}.")
+                    for root in roots
+                ):
+                    stripped[namespace] = perms.pset.permissions[namespace].value
                     del perms.pset[namespace]
+
+            # kept so a denial can be traced back to re-auth (see
+            # permissions.check_permissions)
+
+            if stripped:
+                if not hasattr(perms, "reauth_stripped"):
+                    perms.reauth_stripped = []
+                perms.reauth_stripped.append((self, stripped))
 
 
 def default_time_s():
@@ -2669,13 +2711,11 @@ class InternetExchange(
         - ipaddr6 (`str`|`ipaddress.ip_address`)
         """
 
-        url = self.ixlan.ixf_ixp_member_list_url
-
-        if not url:
+        if not self.ixlan.ixf_ixp_member_list_url:
             # IX-F url not specified
             return (False, False)
 
-        ixf_data = cache.get(f"IXF-CACHE-{url}")
+        ixf_data = self.ixlan.ixf_cached_data
 
         if not ixf_data:
             # IX-F cache doesnt exist
@@ -3420,6 +3460,36 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
         return self.ixf_ixp_import_enabled and self.ixf_ixp_member_list_url
 
     @property
+    def ixf_cache_key(self):
+        """
+        Returns the cache key of this LAN's last fetched IX-F data.
+        """
+        return f"IXF-CACHE-ixlan-{self.id}"
+
+    @property
+    def ixf_cached_entry(self):
+        """
+        Returns the cache entry (`url`, `fetched`, `data`) of the last
+        fetched IX-F data, or None if there is none for the LAN's current
+        IX-F member list URL.
+        """
+        entry = cache.get(self.ixf_cache_key)
+        if not isinstance(entry, dict):
+            return None
+        if entry.get("url") != self.ixf_ixp_member_list_url:
+            return None
+        return entry
+
+    @property
+    def ixf_cached_data(self):
+        """
+        Returns the last fetched IX-F data, or None if there is none
+        for the LAN's current IX-F member list URL.
+        """
+        entry = self.ixf_cached_entry
+        return entry.get("data") if entry else None
+
+    @property
     def view_url(self):
         """
         Return the URL to related networks web view.
@@ -3483,6 +3553,20 @@ class IXLan(pdb_models.IXLanBase, StripFieldMixin):
                     "Cannot enable IX-F import without specifying the IX-F member list url"
                 )
             )
+
+        # covers writes that skip the API serializer (verified update, /cp);
+        # an unchanged URL is checked when it is fetched
+        if self.ixf_ixp_member_list_url:
+            stored = (
+                IXLan.objects.filter(id=self.id)
+                .values_list("ixf_ixp_member_list_url", flat=True)
+                .first()
+            )
+            if self.ixf_ixp_member_list_url != stored:
+                try:
+                    validate_ixf_member_list_url(self.ixf_ixp_member_list_url)
+                except ValidationError as exc:
+                    raise ValidationError({"ixf_ixp_member_list_url": exc.messages})
 
         return super().clean()
 
@@ -3988,6 +4072,23 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         return filters
 
     @classmethod
+    def without_snapshot(cls, qset):
+        """
+        Returns the queryset with the stored member snapshot (`data`)
+        left unloaded; the rows carry whether it is empty instead, which
+        is all `remote_data_missing` needs.
+
+        Rows stored before the snapshot byte budget can be arbitrarily
+        large (#522).
+        """
+        return qset.defer("data").annotate(
+            data_missing=models.ExpressionWrapper(
+                models.Q(data="{}") | models.Q(data=""),
+                output_field=models.BooleanField(),
+            )
+        )
+
+    @classmethod
     def instantiate(cls, asn, ipaddr4, ipaddr6, ixlan, **kwargs):
         """
         Returns an IXFMemberData object.
@@ -4038,9 +4139,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
             instance._previous_error = instance.error
 
             instance.fetched = fetched
-            instance._meta.get_field("updated").auto_now = False
-            instance.save()
-            instance._meta.get_field("updated").auto_now = True
+            # only `fetched` changed; saving the whole row would rewrite
+            # its snapshot on every import and preview
+            instance.save(update_fields=["fetched"])
 
         except cls.DoesNotExist:
             ip_args = {}
@@ -4081,6 +4182,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
 
         if "data" in kwargs:
             instance.set_data(kwargs.get("data"))
+        elif "data_encoded" in kwargs:
+            # already in the stored format, see Importer.member_data
+            instance.data = kwargs["data_encoded"]
 
         return instance
 
@@ -4543,6 +4647,9 @@ class IXFMemberData(pdb_models.NetworkIXLanBase, StripFieldMixin):
         If not it indicates that it does not exist at the
         IX-F source.
         """
+
+        if hasattr(self, "data_missing") and "data" in self.get_deferred_fields():
+            return self.data_missing
 
         return self.data == "{}" or not self.data
 
@@ -6999,10 +7106,6 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def has_oauth(self):
-        return SocialAccount.objects.filter(user=self).count() > 0
-
-    @property
     def email_confirmed(self):
         """
         Returns True if the email specified by the user has
@@ -7116,6 +7219,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         ownership approval. (#375)
         """
 
+        client = RdapLookup()
         for req in self.pending_affiliation_requests.filter(asn__gt=0):
             # we dont want to re-evaluate for affiliation requests
             # with organizations that already have admin users managing them
@@ -7127,7 +7231,7 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
             # UOAR in place — the admin already received a ticket on creation
             # and recreating would fire the signal again and queue a duplicate.
             try:
-                rdap = RdapLookup().get_asn(req.asn)
+                rdap = client.get_asn(req.asn)
             except RdapNotFoundError:
                 continue
             except Exception as exc:
@@ -7386,6 +7490,19 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
         self.groups.clear()
         self.emailaddress_set.all().delete()
         self.api_keys.all().delete()
+
+    def revoke_oauth_tokens(self, using=None):
+        """
+        Revokes the user's OAuth refresh and access tokens and deletes
+        their pending authorization codes and device grants
+        """
+
+        refresh_tokens = oauth2.get_refresh_token_model().objects.using(using)
+        for refresh_token in refresh_tokens.filter(user=self, revoked__isnull=True):
+            refresh_token.revoke()
+        oauth2.get_access_token_model().objects.using(using).filter(user=self).delete()
+        oauth2.get_grant_model().objects.using(using).filter(user=self).delete()
+        oauth2.get_device_grant_model().objects.using(using).filter(user=self).delete()
 
 
 class UserAPIKey(AbstractAPIKey, StripFieldMixin):
@@ -7773,6 +7890,7 @@ class EnvironmentSetting(StripFieldMixin):
         "API_THROTTLE_ORGANIZATION_USERS": [validate_api_rate],
         "RATELIMIT_WEB_PAGE_RATE": [validate_django_ratelimit_rate],
         "AUTO_IX_APPROVAL_ENABLED": [validate_bool],
+        "NOTIFICATION_BANNER_CONTENT": [validate_notification_banner],
     }
 
     @classmethod

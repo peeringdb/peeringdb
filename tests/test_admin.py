@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
 from django.core.management import call_command
-from django.test import Client, RequestFactory, TestCase
+from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django_grainy.models import GroupPermission
@@ -25,6 +25,12 @@ import peeringdb_server.admin as admin
 import peeringdb_server.models as models
 
 
+# the admin accounts here have neither a confirmed email address nor a second
+# factor, so the MFA rollout is kept in the future for them
+@override_settings(
+    MFA_FORCE_SOFT_START=timezone.now() + datetime.timedelta(days=10),
+    MFA_FORCE_HARD_START=timezone.now() + datetime.timedelta(days=20),
+)
 class AdminTests(TestCase):
     """
     Test peeringdb django admin functionality

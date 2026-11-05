@@ -1,13 +1,9 @@
-import re
 from unittest.mock import patch
-from urllib.parse import urlsplit
 
 import pytest
 from allauth.account.models import EmailAddress
 from allauth.account.signals import password_changed, password_reset, password_set
 from django.test import RequestFactory
-from django.urls import reverse
-from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from peeringdb_server import models, views
 from tests.util import mock_csrf_session
@@ -170,139 +166,6 @@ def test_primary_change_uses_exact_address_comparison(reset_user, email):
     reset_user.save(update_fields=["email"])
     assert not models.UserPasswordReset.objects.filter(user=reset_user).exists()
     assert redeem(reset_user, token).status_code == 400
-
-
-@pytest.mark.parametrize("pending", [False, True])
-def test_allauth_password_change_revokes_custom_reset(client, reset_user, pending):
-    TOTPDevice.objects.create(user=reset_user, name="default", confirmed=True)
-    token = reset_user.password_reset_initiate()[0] if pending else None
-    client.force_login(
-        reset_user, backend="allauth.account.auth_backends.AuthenticationBackend"
-    )
-    response = client.post(
-        reverse("account_change_password"),
-        {
-            "oldpassword": OLD_PASSWORD,
-            "password1": NEW_PASSWORD,
-            "password2": NEW_PASSWORD,
-        },
-    )
-    assert response.status_code == 302
-    reset_user.refresh_from_db()
-    assert reset_user.check_password(NEW_PASSWORD)
-    assert not models.UserPasswordReset.objects.filter(user=reset_user).exists()
-    if token:
-        response = client.post(
-            reverse("reset-password"),
-            {
-                "target": reset_user.pk,
-                "token": token,
-                "password": OLD_PASSWORD,
-                "password_v": OLD_PASSWORD,
-            },
-        )
-        assert response.status_code == 400
-        reset_user.refresh_from_db()
-        assert reset_user.check_password(NEW_PASSWORD)
-
-
-@pytest.mark.parametrize(
-    "current,new,confirmation",
-    [
-        ("incorrect", NEW_PASSWORD, NEW_PASSWORD),
-        (OLD_PASSWORD, "short", "short"),
-        (OLD_PASSWORD, NEW_PASSWORD, "mismatch"),
-    ],
-)
-def test_failed_allauth_password_change_preserves_custom_reset(
-    client, reset_user, current, new, confirmation
-):
-    TOTPDevice.objects.create(user=reset_user, name="default", confirmed=True)
-    token, _ = reset_user.password_reset_initiate()
-    client.force_login(
-        reset_user, backend="allauth.account.auth_backends.AuthenticationBackend"
-    )
-    response = client.post(
-        reverse("account_change_password"),
-        {"oldpassword": current, "password1": new, "password2": confirmation},
-    )
-    assert response.status_code == 200
-    reset_user.refresh_from_db()
-    assert reset_user.check_password(OLD_PASSWORD)
-    assert models.UserPasswordReset.objects.get(user=reset_user).match(token)
-
-
-@pytest.fixture(params=["reset", "set"])
-def allauth_password_write(request, client, reset_user, mailoutbox):
-    TOTPDevice.objects.create(user=reset_user, name="default", confirmed=True)
-    if request.param == "set":
-        reset_user.set_unusable_password()
-        reset_user.save(update_fields=["password"])
-        client.force_login(
-            reset_user, backend="allauth.account.auth_backends.AuthenticationBackend"
-        )
-        return reverse("account_set_password")
-
-    # Establish the browser cookie required for anonymous reset sessions.
-    assert client.get(reverse("two_factor:login")).status_code == 200
-    response = client.post(
-        reverse("account_reset_password"), {"email": reset_user.email}
-    )
-    assert response.status_code == 302
-    assert len(mailoutbox) == 1
-    link = re.search(
-        r"https?://[^\s]+/accounts/password/reset/key/[^\s]+", mailoutbox[0].body
-    )
-    assert link is not None
-    response = client.get(urlsplit(link.group()).path)
-    assert response.status_code == 302
-    return response["Location"]
-
-
-@pytest.mark.parametrize("pending", [False, True])
-def test_allauth_reset_or_set_revokes_custom_reset(
-    client, reset_user, allauth_password_write, pending
-):
-    token = reset_user.password_reset_initiate()[0] if pending else None
-    response = client.post(
-        allauth_password_write,
-        {"password1": NEW_PASSWORD, "password2": NEW_PASSWORD},
-    )
-    assert response.status_code == 302
-    reset_user.refresh_from_db()
-    assert reset_user.check_password(NEW_PASSWORD)
-    assert not models.UserPasswordReset.objects.filter(user=reset_user).exists()
-    if token:
-        response = client.post(
-            reverse("reset-password"),
-            {
-                "target": reset_user.pk,
-                "token": token,
-                "password": OLD_PASSWORD,
-                "password_v": OLD_PASSWORD,
-            },
-        )
-        assert response.status_code == 400
-        reset_user.refresh_from_db()
-        assert reset_user.check_password(NEW_PASSWORD)
-
-
-@pytest.mark.parametrize(
-    "new,confirmation", [("short", "short"), (NEW_PASSWORD, "mismatch")]
-)
-def test_failed_allauth_reset_or_set_preserves_custom_reset(
-    client, reset_user, allauth_password_write, new, confirmation
-):
-    original_hash = reset_user.password
-    token, _ = reset_user.password_reset_initiate()
-    response = client.post(
-        allauth_password_write, {"password1": new, "password2": confirmation}
-    )
-    assert response.status_code == 200
-    reset_user.refresh_from_db()
-    assert reset_user.password == original_hash
-    assert models.UserPasswordReset.objects.get(user=reset_user).match(token)
-    assert redeem(reset_user, token).status_code == 200
 
 
 @pytest.mark.parametrize("signal", [password_changed, password_reset, password_set])

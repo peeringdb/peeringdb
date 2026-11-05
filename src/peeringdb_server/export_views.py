@@ -318,8 +318,11 @@ class AdvancedSearchExportView(ExportView):
         request_factory = APIRequestFactory()
         viewset = RestViewSets[self.tag].as_view({"get": "list"})
 
+        # pagination links are absolute, so keep the caller's (validated) host
+        # instead of the factory's "testserver"
         api_request = request_factory.get(
-            f"/api/{self.tag}/?{urllib.parse.urlencode(params)}"
+            f"/api/{self.tag}/?{urllib.parse.urlencode(params)}",
+            HTTP_HOST=request.get_host(),
         )
         api_request.session = request.session
 

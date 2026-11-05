@@ -65568,50 +65568,40 @@ paths:
   /api/org/{org_id}/users/add/:
     post:
       operationId: create user
-      description: 'Creates a new `user` type object.
+      description: 'Approves a user''s pending affiliation request to the organization.
 
 
-        ## Creating objects
+        Users join an organization by requesting affiliation themselves. This
+
+        operation approves such a request, it cannot add a user who has not asked
+
+        to join.
 
 
-        ### Status `pending`
+        `user_email` has to be a verified email address of the requesting user''s
+
+        account. The user becomes a `member`, or an `admin` if `role` is `admin` or
+
+        the organization has no users yet. The response is the user as the
+
+        organization''s user list shows it.
 
 
-        Some object types will be flagged as `pending` until they have been reviewed
-        and approved by peeringdb staff.
+        If there is no matching pending request, the response is `400` with the same
 
+        error message in every case: unknown or unverified address, a user who
 
-        Currently this is the case for:
+        already belongs to the organization, or an address the organization''s email
 
-
-
-        - `org` organizations (only administrative staff users are currently allowed
-        to create organizations)
-
-        - `fac` facilities
-
-        - `net` networks
-
-        - `ix` exchanges
-
-        - `ixpfx` prefixes (if part of a new exchange)
-
-        - `ixlan` exchange networks (if part of a new exchange)
+        domain restriction does not allow.
 
 
         ### Permissions
 
 
-        To be able to create an object, the requesting user requires `create` permissions
-        to one of the
+        An admin of the organization using a user API key, or an organization API
 
-        object''s parents in the relationship hierarchy.
-
-
-        For example to create a `net` type object, the user needs to be permissioned
-        to create in the organization
-
-        that is to be the network''s holder entity.
+        key with `create` permission on `peeringdb.organization.{org_id}.users`.
 
         '
       parameters:
@@ -65627,51 +65617,56 @@ paths:
             schema:
               type: object
               properties:
-                id:
-                  type: integer
-                  readOnly: true
-                  description: Unique numeric identifier for this object
-                first_name:
+                user_email:
                   type: string
-                  description: Given name of the user
-                  maxLength: 254
-                last_name:
-                  type: string
-                  description: Family name of the user
-                  maxLength: 254
-                full_name:
-                  type: string
-                  readOnly: true
-                  description: First and last name of the user, combined
-                is_active:
-                  type: boolean
-                  description: Whether this account is enabled. `false` for a closed
-                    or administratively disabled account, which cannot sign in
-                date_joined:
-                  type: string
-                  format: date-time
-                  readOnly: true
-                  description: Time this user account was registered
-                status:
-                  type: string
-                  readOnly: true
-                  description: 'Account state: `ok` once the account has been approved,
-                    either by the organization it affiliated with or by PeeringDB
-                    staff, `pending` until then. Unrelated to email address confirmation'
+                  format: email
+                  description: Verified email address of the user whose affiliation
+                    request is approved
                 role:
+                  type: string
                   enum:
                   - admin
                   - member
-                  type: string
                   default: member
-                  description: 'This user''s role in the organization: `admin` can
-                    manage the organization, `member` cannot'
+                  description: '`admin` makes the user an admin of the organization'
+              required:
+              - user_email
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/User'
+              type: object
+              properties:
+                user_email:
+                  type: string
+                  format: email
+                  description: Verified email address of the user whose affiliation
+                    request is approved
+                role:
+                  type: string
+                  enum:
+                  - admin
+                  - member
+                  default: member
+                  description: '`admin` makes the user an admin of the organization'
+              required:
+              - user_email
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/User'
+              type: object
+              properties:
+                user_email:
+                  type: string
+                  format: email
+                  description: Verified email address of the user whose affiliation
+                    request is approved
+                role:
+                  type: string
+                  enum:
+                  - admin
+                  - member
+                  default: member
+                  description: '`admin` makes the user an admin of the organization'
+              required:
+              - user_email
       responses:
         '201':
           content:

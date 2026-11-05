@@ -43,7 +43,17 @@ def _validate_ixf_feed(
         return False, "no IX-F member list URL provided"
 
     importer = Importer()
-    data = importer.fetch(ixf_ixp_member_list_url, timeout=settings.IXF_FETCH_TIMEOUT)
+    try:
+        # runs inside the API request, hence the shorter deadline: a feed
+        # slower than that leaves the exchange pending for manual approval
+        data = importer.fetch(
+            ixf_ixp_member_list_url, deadline=settings.IXF_PREFIXAUTO_FETCH_TIMEOUT
+        )
+    except Exception as exc:
+        # fetch reports failures as pdb_error; this keeps an unforeseen one
+        # from failing the exchange creation
+        log.error("ixf_prefixauto_fetch_failed", error=repr(exc))
+        return False, "IX-F feed error: IX-F data could not be processed"
 
     if data.get("pdb_error"):
         log.warning(
@@ -54,7 +64,13 @@ def _validate_ixf_feed(
         return False, f"IX-F feed error: {data['pdb_error']}"
 
     member_list = data.get("member_list", [])
-    unique_asns = {m.get("asnum") for m in member_list if m.get("asnum") is not None}
+    # the feed is untrusted: only integer AS numbers in the 32-bit range
+    # count, anything else would break the set or the query below
+    unique_asns = {
+        asn
+        for asn in (m.get("asnum") for m in member_list if isinstance(m, dict))
+        if isinstance(asn, int) and not isinstance(asn, bool) and 0 < asn < 2**32
+    }
 
     if len(unique_asns) < min_asn_count:
         return False, (
@@ -102,12 +118,22 @@ def auto_approve_ix(
     auto_approve = False
     ixf_reason = ""
 
-    email_address = user.emailaddress_set.filter(email__in=rdap.emails, verified=True)
-    if email_address.exists():
+    # compare in python, the db collation may be accent-insensitive
+    rdap_emails = {email.lower() for email in rdap.emails if email}
+    verified_emails = user.emailaddress_set.filter(verified=True).values_list(
+        "email", flat=True
+    )
+    if any(email.lower() in rdap_emails for email in verified_emails):
         # RDAP check passed — now validate the IX-F feed
-        ixf_valid, ixf_reason = _validate_ixf_feed(
-            ixf_ixp_member_list_url, submitting_org
-        )
+        try:
+            ixf_valid, ixf_reason = _validate_ixf_feed(
+                ixf_ixp_member_list_url, submitting_org
+            )
+        except Exception as exc:
+            # the feed must never fail the exchange creation itself
+            log.error("ixf_prefixauto_validation_error", error=repr(exc))
+            ixf_valid = False
+            ixf_reason = "IX-F feed error: IX-F data could not be processed"
         if ixf_valid:
             auto_approve = True
         else:

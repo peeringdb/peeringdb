@@ -21,8 +21,7 @@
     <div class="col-md-2 col-sm-3 col-12"></div>
   </div>
 
-  {% include "site/oauth-login.html" with OAUTH_ENABLED=OAUTH_ENABLED %}
-  <div class="row{% if not OAUTH_ENABLED %} marg-top-15{% endif %}" id="container-create-account">
+  <div class="row marg-top-15" id="container-create-account">
     <div class="col-md-4 col-sm-3 col-12"></div>
 
     <!-- REGISTER VIA SITE -->
@@ -106,7 +105,6 @@ $('#form-create-account').each(function(idx) {
   $(this).on("action-success:submit", function(ev, data) {
     $('#success-create-account').show();
     $('#container-create-account').hide();
-    $('#container-oauth').hide();
     window.document.location.href = "/verify"
   })
   $(this).on("action-error:submit", function(ev, data) {

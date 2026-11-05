@@ -2,4 +2,4 @@ Organization API Key (prefix: {{org_key.prefix}}) has run into an RDAP Lookup Er
 
 ASN: {{ asn }}
 Error Details: {{ error_details }}
-Org APIKey Email: {{org_key.email}}
+Org API Key Email: {{org_key.email}}

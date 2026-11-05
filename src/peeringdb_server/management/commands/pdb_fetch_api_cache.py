@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
         for tag in tags:
             url = urljoin(f"{settings.PEERINGDB_SYNC_CACHE_URL}/", tag) + "-0.json"
-            response = requests.get(url)
+            response = requests.get(url, timeout=(3, 10))
 
             # Make sure the request was successful
             if response.status_code == 200:

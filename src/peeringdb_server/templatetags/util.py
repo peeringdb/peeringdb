@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import datetime
 import random
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 import bleach
 import markdown
 import tld
 from allauth.account.models import EmailAddress
+from bleach.html5lib_shim import Filter
 from django import template
 from django.conf import settings as dj_settings
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_countries import countries
@@ -29,6 +31,11 @@ from peeringdb_server.models import (
     format_speed,
 )
 from peeringdb_server.org_admin_views import permission_ids
+from peeringdb_server.validators import (
+    NOTIFICATION_BANNER_PROTOCOLS,
+    NOTIFICATION_BANNER_TAGS,
+    notification_banner_attribute_allowed,
+)
 from peeringdb_server.views import DoNotRender
 
 if TYPE_CHECKING:
@@ -299,6 +306,43 @@ def render_markdown(value: str) -> str:
     )
 
 
+class ForceLinkRelFilter(Filter):
+    """
+    Sets rel="noopener noreferrer" on every link, replacing any rel given.
+    """
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        for token in super().__iter__():
+            if token["type"] in ("StartTag", "EmptyTag") and token["name"] == "a":
+                token["data"] = {
+                    **token["data"],
+                    (None, "rel"): "noopener noreferrer",
+                }
+            yield token
+
+
+@register.filter
+def sanitize_notification_banner(value: str) -> str:
+    """
+    Render-time counterpart of validate_notification_banner: the banner can
+    also come from the environment or a row saved before validation, so
+    anything outside the allowlist is stripped here.
+    """
+    # a Cleaner keeps parser state and is not thread-safe, so one per call
+    cleaner = bleach.sanitizer.Cleaner(
+        tags=NOTIFICATION_BANNER_TAGS,
+        attributes=notification_banner_attribute_allowed,
+        protocols=NOTIFICATION_BANNER_PROTOCOLS,
+        strip=True,
+        filters=[ForceLinkRelFilter],
+    )
+    try:
+        return mark_safe(cleaner.clean(value))
+    except ValueError:
+        # the banner is on every page, so plain text beats a 500 on all of them
+        return mark_safe(bleach.clean(value, tags=set(), strip=True))
+
+
 @register.filter
 def org_emails(org: Organization, user: User) -> tuple[list[str], list[str]]:
     return org.user_meets_email_requirements(user)
@@ -370,9 +414,11 @@ def social_media_link(identifier: str, service: str) -> str:
     format = SOCIAL_MEDIA_URL_FORMATS[service]
     if format:
         url = format.replace("{identifier}", identifier)
-        return mark_safe(f'<a href="{url}" target="_blank">{identifier}</a>')
+        return format_html('<a href="{}" target="_blank">{}</a>', url, identifier)
     elif identifier.startswith("https://"):
-        return mark_safe(f'<a href="{identifier}" target="_blank">{identifier}</a>')
+        return format_html(
+            '<a href="{}" target="_blank">{}</a>', identifier, identifier
+        )
 
     return identifier
 

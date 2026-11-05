@@ -20,7 +20,6 @@ import pytest
 from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.core.signing import get_cookie_signer
 from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -35,7 +34,7 @@ from oauth2_provider.settings import oauth2_settings
 
 from mainsite.oauth2.validators import OIDCValidator, hs256_signing_unavailable
 from peeringdb_server.models import OAuthApplication, Organization, User
-from tests.util import reset_group_ids
+from tests.util import oauth_login_marker, reset_group_ids
 
 pytestmark = pytest.mark.django_db
 
@@ -185,11 +184,8 @@ def oauth_session_login(client, user):
     client.force_login(user)
     session = client.session
     session["amr"] = ["pwd"]
-    session["oauth_session"] = True
+    session["oauth_login"] = oauth_login_marker(user)
     session.save()
-    client.cookies["oauth_session"] = get_cookie_signer(salt="oauth_session").sign(
-        session.session_key
-    )
 
 
 def authorization_code(client, user, scope="openid profile"):

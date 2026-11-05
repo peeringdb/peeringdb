@@ -14,6 +14,10 @@ Currently this is the case for:
 - `ixpfx` prefixes (if part of a new exchange)
 - `ixlan` exchange networks (if part of a new exchange)
 
+A `pending` object can only be retrieved by callers with update permission on it. Other callers,
+including the creator when the object belongs to another organization (for example a suggested
+facility or network), get a `404` until it is approved.
+
 ### Permissions
 
 To be able to create an object, the requesting user requires `create` permissions to one of the

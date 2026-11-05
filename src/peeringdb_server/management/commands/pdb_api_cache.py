@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import time
 import traceback
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -164,7 +165,11 @@ class Command(BaseCommand):
             "info",
             f"Caching depths {depths} for timestamp: {last_updated}",
         )
-        request_factory = APIRequestFactory()
+        # serializers build absolute urls (e.g. logos on local media storage)
+        # from the request, so it needs the site host, not "testserver"
+        base_url = urlsplit(settings.BASE_URL)
+        request_factory = APIRequestFactory(HTTP_HOST=base_url.netloc)
+        secure = base_url.scheme == "https"
         renderer = MetaJSONRenderer()
 
         settings.API_DEPTH_ROW_LIMIT = 0
@@ -192,11 +197,13 @@ class Command(BaseCommand):
                     self.log(tag, f"generating depth {depth} to {tmpdir.name}...")
                     if depth:
                         request = request_factory.get(
-                            f"/api/{tag}?depth={depth}&updated__lte={last_updated}Z&_ctf"
+                            f"/api/{tag}?depth={depth}&updated__lte={last_updated}Z&_ctf",
+                            secure=secure,
                         )
                     else:
                         request = request_factory.get(
-                            f"/api/{tag}?updated__lte={last_updated}Z&_ctf"
+                            f"/api/{tag}?updated__lte={last_updated}Z&_ctf",
+                            secure=secure,
                         )
                     request.user = request_user
                     vs = viewset.as_view({"get": "list"})
