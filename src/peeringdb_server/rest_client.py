@@ -34,7 +34,7 @@ class RestClient:
         self._url = parse.urlparse(self.url)
         self.user = None
         self.password = None
-        self.timeout = None
+        self.timeout = (3, 10)
         self.verbose = False
 
         # overwrite any param from keyword args
@@ -63,7 +63,13 @@ class RestClient:
                 url = f"{self.url}/{typ}"
 
         return requests.request(
-            method, url, params=params, data=data, auth=auth, headers=headers
+            method,
+            url,
+            params=params,
+            data=data,
+            auth=auth,
+            headers=headers,
+            timeout=self.timeout,
         )
 
     def _throw(self, res, data):

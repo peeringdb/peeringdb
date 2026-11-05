@@ -1,7 +1,8 @@
 import pytest
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
 from django.urls import reverse
 from django_grainy.models import UserPermission
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from grainy.const import PERM_CRUD, PERM_READ
 from rest_framework.test import APIClient
 
@@ -11,6 +12,7 @@ from peeringdb_server.models import (
     Group,
     InternetExchange,
     Network,
+    NetworkContact,
     Organization,
     OrganizationAPIKey,
     OrganizationAPIPermission,
@@ -367,6 +369,108 @@ def test_get_network_w_user_key(network, user, org):
 
 
 @pytest.mark.django_db
+def test_check_permissions_on_superuser_key_request_readonly(admin_user):
+    """
+    A readonly key of a superuser reads everything its owner reads and
+    writes nothing
+    """
+
+    api_key, key = UserAPIKey.objects.create_key(
+        name="test key", user=admin_user, readonly=True
+    )
+
+    request = RequestFactory().put("/api/net/1", HTTP_AUTHORIZATION="Api-Key " + key)
+    perm_obj = get_permission_holder_from_request(request)
+    assert perm_obj == api_key
+
+    for namespace in [
+        "peeringdb.organization.1.network.1",
+        "peeringdb.organization.1.network.1.poc_set.private",
+        "peeringdb.manage_organization.1",
+    ]:
+        assert check_permissions(perm_obj, namespace, "r")
+        # the API output filter checks private fields explicitly
+        assert check_permissions(perm_obj, namespace, "r", explicit=True)
+        assert check_permissions(perm_obj, namespace, "c") is False
+        assert check_permissions(perm_obj, namespace, "u") is False
+        assert check_permissions(perm_obj, namespace, "d") is False
+        assert check_permissions(perm_obj, namespace, "cr") is False
+
+
+@pytest.mark.django_db
+def test_read_private_data_w_superuser_readonly_key(network, exchange, admin_user):
+    poc = NetworkContact.objects.create(
+        network=network,
+        status="ok",
+        role="Abuse",
+        visible="Private",
+        name="private contact",
+        email="private@localhost",
+    )
+    ixlan = exchange.ixlan
+    ixlan.ixf_ixp_member_list_url = "https://example.invalid/private-feed.json"
+    ixlan.ixf_ixp_member_list_url_visible = "Private"
+    ixlan.save()
+
+    _, key = UserAPIKey.objects.create_key(
+        name="test key", user=admin_user, readonly=True
+    )
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+
+    response = client.get(reverse("api:poc-detail", args=(poc.id,)))
+    assert response.status_code == 200
+    assert response.json()["data"][0]["email"] == "private@localhost"
+
+    response = client.get(reverse("api:ixlan-detail", args=(ixlan.id,)))
+    assert response.status_code == 200
+    assert response.json()["data"][0]["ixf_ixp_member_list_url"] == (
+        "https://example.invalid/private-feed.json"
+    )
+
+
+@pytest.mark.django_db
+def test_check_permissions_on_superuser_key_request_crud(admin_user):
+    _, key = UserAPIKey.objects.create_key(name="test key", user=admin_user)
+
+    request = RequestFactory().put("/api/net/1", HTTP_AUTHORIZATION="Api-Key " + key)
+    perm_obj = get_permission_holder_from_request(request)
+    namespace = "peeringdb.organization.1.network.1"
+
+    assert check_permissions(perm_obj, namespace, "u")
+    assert check_permissions(perm_obj, namespace, "d")
+
+
+@pytest.mark.django_db
+def test_update_network_w_superuser_readonly_key(network, admin_user, org):
+    _, key = UserAPIKey.objects.create_key(
+        name="test key", user=admin_user, readonly=True
+    )
+    url = reverse("api:net-detail", args=(network.id,))
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key " + key)
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    response = client.put(
+        url,
+        {"name": "changed", "org_id": org.id, "asn": network.asn},
+        format="json",
+    )
+    # denied API key writes answer 401 from the permission class, and 403
+    # from the destroy view's own check, as they do for any other key
+    assert response.status_code == 401
+
+    response = client.delete(url)
+    assert response.status_code == 403
+
+    network.refresh_from_db()
+    assert network.name == "test network"
+    assert network.status == "ok"
+
+
+@pytest.mark.django_db
 def test_bogus_api_key(network):
     url = reverse("api:net-detail", args=(network.id,))
     key = "abcd"
@@ -617,3 +721,47 @@ def test_get_exchange_w_org_key(org, exchange, groups):
     ix_from_api = response.json()["data"][0]
     assert ix_from_api["name"] == exchange.name
     assert ix_from_api["org_id"] == exchange.org.id
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("ui_next", [True, False])
+def test_profile_offers_readonly_keys_to_superusers(
+    admin_user, network, org, settings, ui_next
+):
+    admin_user.opt_flags = settings.USER_OPT_FLAG_UI_NEXT
+    if not ui_next:
+        admin_user.opt_flags |= settings.USER_OPT_FLAG_UI_NEXT_REJECTED
+    admin_user.save()
+    TOTPDevice.objects.create(user=admin_user, name="phone", confirmed=True)
+    client = Client()
+    client.force_login(admin_user)
+
+    response = client.get("/profile")
+    assert response.status_code == 200
+    template = ("site_next" if ui_next else "site") + "/profile-api-keys.html"
+    assert template in [t.name for t in response.templates]
+    content = response.content.decode()
+    assert 'data-edit-name="readonly"' in content
+    assert "cannot be made read only" not in content
+
+    response = client.post(
+        "/user_keys/add",
+        {"name": "read-only superuser key", "readonly": "true", "password": "admin"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["readonly"] is True
+    assert UserAPIKey.objects.get(prefix=data["prefix"]).readonly
+
+    api_client = APIClient()
+    api_client.credentials(HTTP_AUTHORIZATION="Api-Key " + data["key"])
+    url = reverse("api:net-detail", args=(network.id,))
+    assert api_client.get(url).status_code == 200
+    response = api_client.put(
+        url,
+        {"name": "changed", "org_id": org.id, "asn": network.asn},
+        format="json",
+    )
+    assert response.status_code == 401
+    network.refresh_from_db()
+    assert network.name == "test network"

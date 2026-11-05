@@ -53,6 +53,8 @@ from peeringdb_server.models import (
 from peeringdb_server.oauth_views import (
     AuthorizationView,
     ConnectDiscoveryInfoView,
+    DeviceConfirmView,
+    DeviceUserCodeView,
     OAuthMetadataView,
 )
 from peeringdb_server.verified_update.views import (
@@ -67,15 +69,18 @@ from peeringdb_server.views import (
     profile_add_email,
     profile_delete_email,
     profile_set_primary_email,
+    register_security_key,
     request_api_search,
     request_logout,
     request_search,
+    request_security_key_authentication,
     request_security_key_registration,
     request_translation,
     resend_confirmation_mail,
     search_elasticsearch,
     unwatch_network,
     update_map_visualization,
+    update_security_key,
     update_ui_versions,
     update_user_options,
     validator_result_cache,
@@ -234,7 +239,11 @@ urlpatterns = [
     ),
     re_path(rf"^{Network.handleref.tag}$", view_network_by_query),
     re_path(r"^asn/(?P<asn>\d+)/?$", view_network_by_asn, name="net-view-asn"),
-    re_path(r"^user_keys/add$", peeringdb_server.api_key_views.add_user_key),
+    re_path(
+        r"^user_keys/add$",
+        peeringdb_server.api_key_views.add_user_key,
+        name="user-keys-add",
+    ),
     re_path(r"^user_keys/revoke$", peeringdb_server.api_key_views.remove_user_key),
     re_path(
         r"^security_keys/request_registration$",
@@ -243,7 +252,7 @@ urlpatterns = [
     ),
     re_path(
         r"^security_keys/request_authentication$",
-        security_keys_views.request_authentication,
+        request_security_key_authentication,
         name="security-keys-request-authentication",
     ),
     re_path(
@@ -252,9 +261,10 @@ urlpatterns = [
     ),
     re_path(
         r"^security_keys/update-security-key$",
-        security_keys_views.update_security_key,
+        update_security_key,
+        name="security-keys-update",
     ),
-    re_path(r"^security_keys/add$", security_keys_views.register_security_key),
+    re_path(r"^security_keys/add$", register_security_key),
     re_path(r"^security_keys/remove$", security_keys_views.remove_security_key),
     re_path(r"^org_admin/users$", peeringdb_server.org_admin_views.users),
     re_path(
@@ -522,6 +532,13 @@ urlpatterns += [
 # Oauth2
 urlpatterns += [
     re_path(r"^oauth2/authorize/", AuthorizationView.as_view(), name="authorize"),
+    # shadow the oauth2_provider device flow consent routes of the same path
+    re_path(r"^oauth2/device/$", DeviceUserCodeView.as_view(), name="device"),
+    re_path(
+        r"^oauth2/device-confirm/(?P<client_id>[-\w]+)/(?P<user_code>[-\w]+)$",
+        DeviceConfirmView.as_view(),
+        name="device-confirm",
+    ),
     # shadows the oauth2_provider route of the same path
     re_path(
         r"^oauth2/\.well-known/openid-configuration/?$",

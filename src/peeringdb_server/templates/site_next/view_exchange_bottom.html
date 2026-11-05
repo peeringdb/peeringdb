@@ -197,6 +197,12 @@
       </div>
       <div class="modal-body">
         <p>{% blocktrans %}The actual import will run once per day at 00:00Z - use this to preview the changes that will be done{% endblocktrans %}</p>
+        {% if instance.ixlan.ixf_ixp_import_enabled %}
+        <p>{% blocktrans %}The preview shows the IX-F data PeeringDB fetched last. "Request import" fetches it again and runs the import within a few minutes.{% endblocktrans %}</p>
+        {% else %}
+        <p>{% blocktrans %}The preview shows the IX-F data PeeringDB fetched last. "Refresh data" fetches it again within a few minutes; with IX-F import disabled nothing is imported.{% endblocktrans %}</p>
+        {% endif %}
+        <p id="ixf-preview-status"></p>
         <div class="ixf-log" id="ixf-log">
           <ul class="nav nav-tabs" role="tablist">
             <li role="presentation" class="active nav-item">
@@ -234,6 +240,7 @@
         <span class="me-auto">
           <button type="button" class="btn btn-default btn-sm" data-ixf-export="csv"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> CSV</button>
           <button type="button" class="btn btn-default btn-sm" data-ixf-export="json"><svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 0 24 24" width="15px" fill="#FFFFFF"><path d="M0 0h24v24H0z" fill="none"/><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> JSON</button>
+          <button type="button" class="btn btn-default btn-sm" data-ixf-refresh>{% if instance.ixlan.ixf_ixp_import_enabled %}{% trans "Request import" %}{% else %}{% trans "Refresh data" %}{% endif %}</button>
         </span>
         <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
       </div>

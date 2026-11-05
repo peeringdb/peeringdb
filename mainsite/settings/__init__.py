@@ -5,6 +5,7 @@ import os
 import sys
 import warnings
 from datetime import datetime
+from urllib.parse import urlsplit
 
 import django.conf.global_settings
 import django.conf.locale
@@ -657,7 +658,12 @@ set_option("DATA_QUALITY_VALIDATE_PARENT_STATUS", True)
 set_option(
     "RATELIMITS",
     {
+        # password attempts on the login form, per client address (IPv6 by
+        # /64) and per account; passkey and second factor steps are not
+        # counted. Successful logins count too, so many users behind one
+        # address can see the slow-down.
         "request_login_POST": "4/m",
+        "request_login_username_POST": "4/m",
         "request_translation": "2/m",
         "resend_confirmation_mail": "2/m",
         "view_request_ownership_POST": "3/m",
@@ -723,10 +729,16 @@ set_option("NEGATIVE_CACHE_ENABLED", True)
 # Set to empty string to disable rate limiting
 set_option("RATELIMIT_WEB_PAGE_RATE", "120/m")
 
+# Number of trusted proxies in front of the app that append to
+# X-Forwarded-For. Rate limits and the negative cache key on the client
+# address they report (see util.get_client_ident). Production has one,
+# the AWS load balancer. Too low keys every request on a proxy address, too
+# high lets clients pick their own key.
+set_option("NUM_PROXIES", 1)
+
 
 # Django config
 
-ALLOWED_HOSTS = ["*"]
 SITE_ID = 1
 
 TIME_ZONE = "UTC"
@@ -801,9 +813,9 @@ set_bool("DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS", True)
 # of treating "unknown" as "over limit" (django-ratelimit defaults to closed).
 # Tradeoff: every per-IP/per-user django_ratelimit limiter — middleware
 # RATELIMIT_WEB_PAGE_RATE, view-level decorators on signup/email/IX-F flows,
-# API throttles via get_usage() — becomes unenforced during a Redis outage.
-# Login brute-force protection is unaffected because that limiter is currently
-# disabled. Acceptable here because the alternative is 429ing every request.
+# API throttles via get_usage(), the login throttle — becomes unenforced
+# during a Redis outage. Acceptable here because the alternative is 429ing
+# every request.
 set_bool("RATELIMIT_FAIL_OPEN", True)
 
 # keep database connection open for n seconds
@@ -916,6 +928,10 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
+# error reports mailed to the admins mask credentials sent to any view
+DEFAULT_EXCEPTION_REPORTER = "peeringdb_server.log.ExceptionReporter"
+DEFAULT_EXCEPTION_REPORTER_FILTER = "peeringdb_server.log.ExceptionReporterFilter"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -999,6 +1015,13 @@ LOGGING = {
             "handlers": ["logfile"],
             "level": "DEBUG",
         },
+        # requests for hosts outside ALLOWED_HOSTS are scanner noise; keep
+        # them out of the throttled error emails so real errors still go out
+        "django.security.DisallowedHost": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
 
@@ -1021,9 +1044,6 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "allauth",
     "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",
-    "allauth.socialaccount.providers.facebook",
     "django_bootstrap5",
     "corsheaders",
     "crispy_forms",
@@ -1149,10 +1169,12 @@ set_option(
     "CSP_POLICY_STYLE_SRC",
     [
         "'self'",
-        "fonts.googleapis.com",
         "'unsafe-inline'",
         # Google Maps stylesheets
         "maps.gstatic.com",
+        # the Maps JS API injects its own font stylesheet; our pages self-host
+        # their fonts
+        "fonts.googleapis.com",
     ],
 )
 set_option(
@@ -1162,19 +1184,24 @@ set_option(
         "www.google.com",
         "www.googletagmanager.com",
         "www.gstatic.com",
-        "cdn.redoc.ly",
         "'unsafe-inline'",
         # Google Maps API
         "maps.googleapis.com",
     ],
 )
 set_option("CSP_POLICY_FRAME_SRC", ["'self'", "www.google.com", "'unsafe-inline'"])
-set_option("CSP_POLICY_FONT_SRC", ["'self'", "fonts.gstatic.com"])
+set_option(
+    "CSP_POLICY_FONT_SRC",
+    [
+        "'self'",
+        # font files for the Maps JS API stylesheet (see style-src)
+        "fonts.gstatic.com",
+    ],
+)
 set_option(
     "CSP_POLICY_IMG_SRC",
     [
         "'self'",
-        "cdn.redoc.ly",
         "data:",
         # Google Maps tiles and images
         "maps.googleapis.com",
@@ -1210,6 +1237,9 @@ CONTENT_SECURITY_POLICY = {
 }
 
 MIDDLEWARE = (
+    # outside everything, so static files and early answers get it too
+    "peeringdb_server.middleware.UwsgiLogUriMiddleware",
+    "peeringdb_server.middleware.HealthcheckHostMiddleware",
     "peeringdb_server.middleware.PermissionsPolicyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -1266,6 +1296,10 @@ DEFAULT_FROM_EMAIL = SERVER_EMAIL
 OTP_EMAIL_SENDER = SERVER_EMAIL
 OTP_EMAIL_SUBJECT = "One time password request"
 
+# keep TOTP seeds, provisioning QR codes and backup tokens out of /cp for
+# every account, superusers included
+OTP_ADMIN_HIDE_SENSITIVE_DATA = True
+
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = "mainsite.wsgi.application"
@@ -1274,6 +1308,11 @@ WSGI_APPLICATION = "mainsite.wsgi.application"
 AUTH_USER_MODEL = "peeringdb_server.User"
 
 GRAPPELLI_ADMIN_TITLE = "PeeringDB"
+
+# /cp exports require the model's view permission, otherwise any staff
+# account can export every table that has an export button. The admin's own
+# ExportMixin also accepts change permission, as the changelist does
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
 
 TABLE_PREFIX = "peeringdb_"
 ABSTRACT_ONLY = True
@@ -1299,9 +1338,6 @@ CORS_ALLOW_METHODS = ["GET", "OPTIONS"]
 
 ## OAuth2
 
-# allows PeeringDB to use external OAuth2 sources
-set_bool("OAUTH_ENABLED", False)
-
 # https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id12
 # default changed to True in django-oauth-toolkit v2, set to False for now
 # to avoid breaking existing clients
@@ -1314,12 +1350,14 @@ set_bool("OIDC_ENABLED", True)
 set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
 
+# OAuth access tokens are deliberately neither an authentication backend nor
+# middleware here: /profile/v1 and the /oauth2/ endpoints validate them
+# themselves, so a token never stands in for a session anywhere else
+
 AUTHENTICATION_BACKENDS += (
     # for passkey auth using security-key
     # this needs to be first so it can do some clean up
     "django_security_keys.backends.PasskeyAuthenticationBackend",
-    # for OAuth provider
-    "oauth2_provider.backends.OAuth2Backend",
     # for OAuth against external sources
     "allauth.account.auth_backends.AuthenticationBackend",
 )
@@ -1331,7 +1369,6 @@ MIDDLEWARE += (
     "peeringdb_server.middleware.PDBCommonMiddleware",
     "peeringdb_server.middleware.PDBPermissionMiddleware",
     "peeringdb_server.middleware.EnforceMFAMiddleware",
-    "oauth2_provider.middleware.OAuth2TokenMiddleware",
     "peeringdb_server.middleware.OrgPasskeyAdminMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
 )
@@ -1345,8 +1382,13 @@ MIDDLEWARE += (
 if DATABASE_REPLICA_CONFIGURED and DATABASE_REPLICA_ROUTING_ENABLED:
     MIDDLEWARE += ("peeringdb_server.db_replica.ReadReplicaRouterMiddleware",)
 
+# a refresh token expires this many seconds after its last access token did,
+# so every refresh restarts the clock. 0 turns expiry off.
+set_option("OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS", 90 * 24 * 60 * 60)
+
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": OIDC_ENABLED,
+    "REFRESH_TOKEN_EXPIRE_SECONDS": OAUTH2_REFRESH_TOKEN_EXPIRE_SECONDS,
     "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
     "PKCE_REQUIRED": PKCE_REQUIRED,
     "OAUTH2_VALIDATOR_CLASS": "mainsite.oauth2.validators.OIDCValidator",
@@ -1359,6 +1401,9 @@ OAUTH2_PROVIDER = {
     },
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
+    # refuses the password grant and drops it from django-oauth-toolkit's own
+    # server metadata view (#519)
+    "COMPLIANT_BCP_RFC9700_PASSWORD_GRANT": True,
 }
 
 
@@ -1369,8 +1414,8 @@ set_option("OAUTH2_PROVIDER_APPLICATION_MODEL", "oauth2_provider.Application")
 set_option("OAUTH2_PROVIDER_GRANT_MODEL", "oauth2_provider.Grant")
 set_option("OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL", "oauth2_provider.AccessToken")
 
-# This is setting is for cookie timeout for oauth sessions.
-# After the timeout, the ongoing oauth session would expire.
+# How long, in seconds, a login for an OAuth authorization stays valid for
+# the consent screen. The name predates the move from a cookie to the session.
 
 set_option("OAUTH_COOKIE_MAX_AGE", 1800)
 
@@ -1503,6 +1548,9 @@ set_bool("RDAP_SELF_BOOTSTRAP", True)
 # put it under the main cache dir
 set_option("RDAP_BOOTSTRAP_DIR", os.path.join(BASE_DIR, "api-cache", "rdap-bootstrap"))
 set_bool("RDAP_IGNORE_RECURSE_ERRORS", True)
+# hours the IANA bootstrap file in RDAP_BOOTSTRAP_DIR is used before it is
+# fetched again (pdb_rdap_cache refreshes it)
+set_option("RDAP_BOOTSTRAP_CACHE_TTL", 25)
 
 ## PeeringDB
 
@@ -1539,6 +1587,7 @@ set_option("PASSWORD_RESET_URL", os.path.join(BASE_URL, "reset-password"))
 # Sets the maximum allowed length for user passwords.
 set_option("MAX_LENGTH_PASSWORD", 1024)
 
+ACCOUNT_ADAPTER = "peeringdb_server.account_adapter.AccountAdapter"
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "/login"
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "/verify"
 
@@ -1562,6 +1611,33 @@ if RELEASE_ENV == "prod":
     )
 else:
     set_option("WEBAUTHN_ORIGIN", [BASE_URL.rstrip("/")])
+
+
+def hosts_from_settings(urls, cookie_domain):
+    """
+    Returns the host names of `urls` plus the session cookie domain, in the
+    form ALLOWED_HOSTS expects. The cookie domain counts as its own name
+    only: a leading dot would match every subdomain, including dangling ones.
+    """
+    hosts = []
+    for url in urls:
+        host = urlsplit(url).hostname
+        if host and ":" in host:
+            host = f"[{host}]"
+        if host:
+            hosts.append(host)
+    if cookie_domain and cookie_domain.strip("."):
+        hosts.append(cookie_domain.strip(".").lower())
+    return list(dict.fromkeys(hosts))
+
+
+# Django trusts the Host header only for these, and absolute links in emails
+# (build_absolute_uri) are built from it, so never default to "*"
+set_option(
+    "ALLOWED_HOSTS",
+    hosts_from_settings([BASE_URL, *WEBAUTHN_ORIGIN], SESSION_COOKIE_DOMAIN),
+)
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 
 # collect webauthn device attestation
@@ -1640,6 +1716,11 @@ set_option("AUTO_IX_APPROVAL_ENABLED", True)
 # of a new internet exchange (#1832)
 set_option("IXF_PREFIXAUTO_MIN_ASN_COUNT", 3)
 
+# seconds the IX-F feed fetch may take in total while an exchange is created
+# via the API; a feed that takes longer leaves the exchange pending for
+# manual approval
+set_option("IXF_PREFIXAUTO_FETCH_TIMEOUT", 10)
+
 # number of days of a conflict being unresolved before
 # deskpro ticket is created
 set_option("IXF_IMPORTER_DAYS_UNTIL_TICKET", 6)
@@ -1707,9 +1788,9 @@ set_option(
     "The tutorial environment is automatically restored from production when a new release is deployed. Any changes made here will not be permanent.",
 )
 
-# Site-wide notification banner. HTML is rendered as-is, so this must only
-# be set by trusted operators (env var) or staff (EnvironmentSetting override).
-# When empty the banner is not rendered.
+# Site-wide notification banner, overridable by staff through an
+# EnvironmentSetting. Only links, bold, italic and line breaks are rendered,
+# anything else is stripped. When empty the banner is not rendered.
 set_option("NOTIFICATION_BANNER_CONTENT", "")
 
 #'guest' user group
@@ -1815,8 +1896,29 @@ set_option("MAIL_DEBUG", DEBUG)
 # Setting for automated resending of failed ixf import emails
 set_option("IXF_RESEND_FAILED_EMAILS", False)
 
-# Set value for IX-F fetch timeout
+# Seconds an IX-F export fetch may wait for a connection or for the next
+# data while reading (idle timeout)
 set_option("IXF_FETCH_TIMEOUT", 30)
+
+# Seconds fetching an IX-F export and preparing its data may take in total,
+# redirects included; the import that follows is bounded by IXF_MAX_ENTRIES
+# and IXF_MAX_SNAPSHOT_BYTES
+set_option("IXF_FETCH_DEADLINE", 60)
+
+# Largest IX-F export accepted, in bytes after decompression
+set_option("IXF_FETCH_MAX_BYTES", 10 * 1024 * 1024)
+
+# Most entries (members, connections, vlans and interfaces together) an IX-F
+# export may have; larger exports fail before the import parses them
+set_option("IXF_MAX_ENTRIES", 50000)
+
+# Most bytes of member snapshots an IX-F import may store: each proposal row
+# holds its whole member, so a member counts once per vlan entry; larger
+# exports fail before the import parses them
+set_option("IXF_MAX_SNAPSHOT_BYTES", 64 * 1024 * 1024)
+
+# Seconds fetched IX-F data stays in the cache (one entry per ixlan)
+set_option("IXF_CACHE_TIMEOUT", 3 * 24 * 3600)
 
 # Setting for number of days before deleting childless Organizations
 set_option("ORG_CHILDLESS_DELETE_DURATION", 90)

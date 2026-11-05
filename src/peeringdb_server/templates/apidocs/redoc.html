@@ -6,7 +6,8 @@
     <!-- needed for adaptive design -->
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static "fonts/montserrat/montserrat.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "fonts/roboto/roboto.css" %}" />
     <!-- ReDoc doesn't change outer page styles -->
     <style>
       body {
@@ -33,6 +34,6 @@
     <redoc spec-url='{% static "api-schema.yaml" %}'></redoc>
     <div class="footer">{% include "apidocs/resources.html" %}</div>
 
-    <script src="https://cdn.redoc.ly/redoc/v2.0.0/bundles/redoc.standalone.js"> </script>
+    <script src="{% static "redoc/redoc.standalone.js" %}"></script>
   </body>
 </html>

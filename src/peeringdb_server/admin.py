@@ -20,6 +20,7 @@ import re
 
 import django.urls
 import reversion
+from allauth.account.admin import EmailAddressAdmin
 from allauth.account.models import EmailAddress
 from django import forms as baseForms
 from django.conf import settings
@@ -33,9 +34,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.constants import LOOKUP_SEP
 from django.db.utils import OperationalError
 from django.forms import DecimalField
-from django.http import HttpResponseForbidden, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotAllowed,
+    HttpResponseRedirect,
+    JsonResponse,
+)
 from django.shortcuts import redirect
 from django.template import loader
 from django.template.response import TemplateResponse
@@ -45,16 +54,33 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from django_grainy.admin import UserPermissionInlineAdmin
 from django_handleref.admin import VersionAdmin as HandleRefVersionAdmin
+from django_otp.plugins.otp_email.admin import EmailDeviceAdmin
 from django_otp.plugins.otp_email.models import EmailDevice
+from django_otp.plugins.otp_static.admin import StaticDeviceAdmin
 from django_otp.plugins.otp_static.models import StaticDevice
 from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_peeringdb.const import NET_TYPES_MULTI_CHOICE
+from django_security_keys.admin import SecurityKeyAdmin
 from django_security_keys.models import SecurityKey
-from import_export.admin import ExportMixin
+from import_export import resources
+from import_export.admin import ExportMixin as BaseExportMixin
+from oauth2_provider.admin import (
+    AccessTokenAdmin,
+    ApplicationAdmin,
+    GrantAdmin,
+    RefreshTokenAdmin,
+)
+from oauth2_provider.models import (
+    get_access_token_model,
+    get_application_model,
+    get_grant_model,
+    get_refresh_token_model,
+)
 from rest_framework_api_key.admin import APIKeyModelAdmin
 from rest_framework_api_key.models import APIKey
 from reversion.admin import VersionAdmin
+from reversion.models import Version as ReversionVersion
 
 import peeringdb_server.admin_commandline_tools as acltools
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
@@ -128,7 +154,6 @@ delete_selected.short_description = "HARD DELETE - Proceed with caution"
 
 PERMISSION_APP_LABELS = [
     "peeringdb_server",
-    "socialaccount",
     "sites",
     "auth",
     "account",
@@ -472,6 +497,10 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
         """
         Allows one to call any actions defined in this model admin
         to be called via an admin view placed at <model_name>/<id>/<action>/<action_name>.
+
+        Actions only run on POST, where the admin's CSRF protection applies.
+        Any other request, such as following the link in a ticket email, gets
+        a confirmation page that posts back to the same URL.
         """
         if not request.user.is_superuser:
             return HttpResponseForbidden(request)
@@ -479,14 +508,30 @@ class ModelAdminWithUrlActions(admin.ModelAdmin):
         obj = self.get_queryset(request).filter(pk=object_id)
         if obj.exists():
             redir = self.make_redirect(obj, action)
-            action = self.get_action(action)
+            # only declared actions, get_action would resolve any attribute
+            action = self.get_actions(request).get(action)
             if action:
+                if request.method != "POST":
+                    return self.action_confirmation_view(request, obj.first(), action)
                 action[0](self, request, obj)
                 return redir
                 # return redirect("admin:%s_%s_changelist" % (opts.app_label, opts.model_name))
         return redirect(
             f"admin:{obj.model._meta.app_label}_{obj.model._meta.model_name}_changelist"
         )
+
+    def action_confirmation_view(self, request, obj, action):
+        opts = self.model._meta
+        context = dict(
+            self.admin_site.each_context(request),
+            title=action[2],
+            object=obj,
+            opts=opts,
+            cancel_url=django.urls.reverse(
+                f"admin:{opts.app_label}_{opts.model_name}_changelist"
+            ),
+        )
+        return TemplateResponse(request, "admin/url_action_confirmation.html", context)
 
     def get_urls(self):
         """
@@ -735,6 +780,33 @@ class CustomResultLengthAdmin:
         return cl
 
 
+class ExportMixin(BaseExportMixin):
+    """
+    Export needs the same permission as the changelist: view or change on
+    the model. import-export alone checks only the view permission.
+    """
+
+    def has_export_permission(self, request):
+        return self.has_view_or_change_permission(request)
+
+
+class SecretLookupGuardMixin:
+    """
+    Refuse changelist and export URL filters on columns that hold secrets.
+
+    Django allows a filter on any of the model's own fields, so the result
+    count of `?<field>__startswith=<prefix>` reads such a column one
+    character at a time, for superusers as well.
+    """
+
+    secret_lookup_fields: tuple[str, ...] = ()
+
+    def lookup_allowed(self, lookup, value, request=None):
+        if lookup.split(LOOKUP_SEP, 1)[0] in self.secret_lookup_fields:
+            return False
+        return super().lookup_allowed(lookup, value, request)
+
+
 class SanitizedAdmin(CustomResultLengthAdmin):
     def get_readonly_fields(self, request, obj=None):
         return ("version",) + tuple(super().get_readonly_fields(request, obj=obj))
@@ -769,6 +841,34 @@ class SoftDeleteAdmin(
         if "delete_selected" in actions:
             del actions["delete_selected"]
         return actions
+
+    # the history rollback and revert views change data, so they only run on
+    # POST, where the admin's CSRF protection applies (their forms post)
+
+    def version_rollback_process(
+        self, request, object_id, version_id, extra_context=None
+    ):
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+        if (
+            request.user.is_superuser
+            and not ReversionVersion.objects.filter(
+                id=version_id,
+                object_id=str(object_id),
+                content_type=ContentType.objects.get_for_model(self.model),
+            ).exists()
+        ):
+            raise Http404
+        return super().version_rollback_process(
+            request, object_id, version_id, extra_context=extra_context
+        )
+
+    def version_revert_process(self, request, object_id, extra_context=None):
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+        return super().version_revert_process(
+            request, object_id, extra_context=extra_context
+        )
 
 
 class ISODateTimeMixin:
@@ -892,10 +992,15 @@ class ModelAdminWithVQCtrl:
         ).first()
 
         if vq:
-            return mark_safe(
-                '<a class="grp-button" href="{}">{}</a> &nbsp;  &nbsp; <a class="grp-button grp-delete-link" href="{}">{}</a>'.format(
-                    vq.approve_admin_url, _("APPROVE"), vq.deny_admin_url, _("DENY")
-                )
+            # peeringdb.admin.js posts these, the change form they sit in
+            # cannot hold a form of their own
+            return html.format_html(
+                '<a class="grp-button" href="{0}" data-post-action="{0}">{1}</a> &nbsp;  &nbsp; '
+                '<a class="grp-button grp-delete-link" href="{2}" data-post-action="{2}">{3}</a>',
+                vq.approve_admin_url,
+                _("APPROVE"),
+                vq.deny_admin_url,
+                _("DENY"),
             )
         return _("APPROVED")
 
@@ -1041,7 +1146,7 @@ class ReadOnlyDeviceInline(admin.TabularInline):
     Device types that django-otp throttles show the throttling columns. Only
     the TOTP section sets show_change_link: TOTPDeviceAdminCustom can clear a
     lockout, while django_otp's own static and email device admins have no
-    throttling fields, and the static one shows every backup code.
+    throttling fields.
     """
 
     extra = 0
@@ -1104,10 +1209,9 @@ class UserStaticDeviceInline(ReadOnlyDeviceInline):
 
     @admin.display(description=_("Unused tokens"))
     def unused_token_count(self, obj):
-        # the count only -- OTP_ADMIN_HIDE_SENSITIVE_DATA is unset, so
-        # django_otp's own StaticDeviceAdmin renders the token values and this
-        # page must not. the empty form has no device to count, so it stays
-        # blank rather than claiming 0 unused tokens
+        # the count only, never the token values. the empty form has no
+        # device to count, so it stays blank rather than claiming 0 unused
+        # tokens
         if not obj or not obj.pk:
             return ""
         return obj.token_set.count()
@@ -1559,8 +1663,14 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin)
     def get_urls(self):
         urls = super().get_urls()
         my_urls = [
-            re_path(r"^org-merge-tool/merge$", self.org_merge_tool_merge_action),
-            re_path(r"^org-merge-tool/$", self.org_merge_tool_view),
+            re_path(
+                r"^org-merge-tool/merge$",
+                self.admin_site.admin_view(self.org_merge_tool_merge_action),
+            ),
+            re_path(
+                r"^org-merge-tool/$",
+                self.admin_site.admin_view(self.org_merge_tool_view),
+            ),
         ]
         return my_urls + urls
 
@@ -1568,13 +1678,18 @@ class OrganizationAdmin(ModelAdminWithVQCtrl, SoftDeleteAdmin, ISODateTimeMixin)
         if not request.user.is_superuser:
             return HttpResponseForbidden()
 
+        if request.method != "POST":
+            return HttpResponseNotAllowed(["POST"])
+
         try:
-            orgs = Organization.objects.filter(id__in=request.GET.get("ids").split(","))
+            orgs = Organization.objects.filter(
+                id__in=request.POST.get("ids", "").split(",")
+            )
         except ValueError:
             return JsonResponse({"error": _("Malformed organization ids")}, status=400)
 
         try:
-            org = Organization.objects.get(id=request.GET.get("id"))
+            org = Organization.objects.get(id=request.POST.get("id"))
         except Organization.DoesNotExist:
             return JsonResponse(
                 {"error": _("Merge target organization does not exist")}, status=400
@@ -1619,14 +1734,14 @@ class OrganizationMergeLog(ModelAdminWithUrlActions):
     inlines = (OrganizationMergeEntities,)
 
     def undo_merge(self, obj):
-        return mark_safe(
-            '<a class="grp-button grp-delete-link" href="{}">{}</a>'.format(
-                django.urls.reverse(
-                    "admin:peeringdb_server_organizationmerge_actions",
-                    args=(obj.id, "undo"),
-                ),
-                _("Undo merge"),
-            )
+        url = django.urls.reverse(
+            "admin:peeringdb_server_organizationmerge_actions",
+            args=(obj.id, "undo"),
+        )
+        return html.format_html(
+            '<a class="grp-button grp-delete-link" href="{0}" data-post-action="{0}">{1}</a>',
+            url,
+            _("Undo merge"),
         )
 
     @transaction.atomic
@@ -2317,8 +2432,63 @@ class UserGroupForm(UserChangeForm):
             self.fields["groups"].queryset = Group.objects.all().order_by("id")
 
 
+class UserResource(resources.ModelResource):
+    class Meta:
+        model = User
+        # password hashes and direct permission grants stay out of the
+        # export for everyone, superusers included
+        exclude = ("password", "user_permissions")
+
+
+def may_manage_account(request, user):
+    """
+    Staff and superuser accounts are managed by superusers only
+    """
+    return request.user.is_superuser or not (user.is_staff or user.is_superuser)
+
+
+class AccountRowGuardMixin:
+    """
+    For admins of rows that belong to an account (email addresses, MFA
+    devices, API keys): the rows of a staff or superuser account are added,
+    changed and deleted by superusers only, as the account itself is
+    """
+
+    def may_manage_row(self, request, obj):
+        return obj is None or may_manage_account(request, obj.user)
+
+    def has_change_permission(self, request, obj=None):
+        return super().has_change_permission(request, obj) and self.may_manage_row(
+            request, obj
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        return super().has_delete_permission(request, obj) and self.may_manage_row(
+            request, obj
+        )
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if request.user.is_superuser:
+            return form
+
+        class AccountRowForm(form):
+            def clean_user(self):
+                user = self.cleaned_data["user"]
+                if user is not None and not may_manage_account(request, user):
+                    raise ValidationError(
+                        _(
+                            "Only superusers can do this for a staff or superuser account"
+                        )
+                    )
+                return user
+
+        return AccountRowForm
+
+
 class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
     form = UserAdminChangeForm
+    resource_classes = [UserResource]
     inlines = (
         UserOrgAffiliationRequestInline,
         UserDeviceInline,
@@ -2389,10 +2559,35 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
         if name == "Permissions":
             grp["fields"] += ("view_permissions",)
 
+    # staff and superuser accounts, and the flags that make one, are
+    # managed by superusers only
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = tuple(super().get_readonly_fields(request, obj))
+        if not request.user.is_superuser:
+            fields += ("is_active", "is_staff", "is_superuser")
+        return fields
+
+    def may_manage(self, request, obj):
+        return obj is None or may_manage_account(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        # also guards the password change view
+        return super().has_change_permission(request, obj) and self.may_manage(
+            request, obj
+        )
+
+    def has_delete_permission(self, request, obj=None):
+        return super().has_delete_permission(request, obj) and self.may_manage(
+            request, obj
+        )
+
     def save_model(self, request, obj, form, change):
         """
         Ensure EmailAddress (allauth) is created for new users created from admin page.
         Prevents orphaned User.email values (issue #1852).
+
+        The new user is sent the confirmation email for that address.
         """
         super().save_model(request, obj, form, change)
         if not change and obj.email:
@@ -2404,6 +2599,7 @@ class UserAdmin(ExportMixin, ModelAdminWithVQCtrl, UserAdmin, ISODateTimeMixin):
                     "primary": True,
                 },
             )
+            obj.send_email_confirmation(request=request)
 
     def version(self, obj):
         """
@@ -2604,6 +2800,10 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def has_add_permission(self, request):
+        # the tools change data across every model they touch
+        return request.user.is_superuser
+
     def download(self, obj):
         tool = acltools.get_tool_from_data({"tool": obj.tool})
 
@@ -2626,17 +2826,17 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         my_urls = [
             re_path(
                 r"^prepare/$",
-                self.prepare_command_view,
+                self.admin_site.admin_view(self.prepare_command_view),
                 name="peeringdb_server_commandlinetool_prepare",
             ),
             re_path(
                 r"^preview/$",
-                self.preview_command_view,
+                self.admin_site.admin_view(self.preview_command_view),
                 name="peeringdb_server_commandlinetool_preview",
             ),
             re_path(
                 r"^run/$",
-                self.run_command_view,
+                self.admin_site.admin_view(self.run_command_view),
                 name="peeringdb_server_commandlinetool_run",
             ),
         ]
@@ -2691,6 +2891,9 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         if not self.has_add_permission(request):
             return HttpResponseForbidden()
 
+        if not acltools.is_listed_tool(request.POST.get("tool")):
+            return HttpResponseBadRequest(_("Unknown tool"))
+
         context = dict(self.admin_site.each_context(request))
         if request.method == "POST":
             tool = acltools.get_tool_from_data(request.POST)
@@ -2731,6 +2934,9 @@ class CommandLineToolAdmin(ExportMixin, CustomResultLengthAdmin, admin.ModelAdmi
         """
         if not self.has_add_permission(request):
             return HttpResponseForbidden()
+
+        if not acltools.is_listed_tool(request.POST.get("tool")):
+            return HttpResponseBadRequest(_("Unknown tool"))
 
         context = dict(self.admin_site.each_context(request))
         if request.method == "POST":
@@ -3092,10 +3298,31 @@ class EnvironmentSettingAdmin(
         return obj.set_value(form.cleaned_data["value"])
 
 
-class OrganizationAPIKeyAdmin(APIKeyModelAdmin, ISODateTimeMixin):
+class OwnedAPIKeyAdminMixin:
+    """
+    A key acts as its owner, so only superusers create keys here or move an
+    existing key to another owner.
+    """
+
+    owner_field = None
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = tuple(super().get_readonly_fields(request, obj))
+        if obj is not None and not request.user.is_superuser:
+            fields += (self.owner_field,)
+        return fields
+
+
+class OrganizationAPIKeyAdmin(
+    OwnedAPIKeyAdminMixin, APIKeyModelAdmin, ISODateTimeMixin
+):
     list_display = ["org", "prefix", "name", "status", "iso_created", "revoked"]
     search_fields = ("prefix", "org__name")
 
+    owner_field = "org"
     raw_id_fields = ("org",)
 
     autocomplete_lookup_fields = {
@@ -3105,7 +3332,7 @@ class OrganizationAPIKeyAdmin(APIKeyModelAdmin, ISODateTimeMixin):
     }
 
 
-class UserAPIKeyAdmin(APIKeyModelAdmin):
+class UserAPIKeyAdmin(AccountRowGuardMixin, OwnedAPIKeyAdminMixin, APIKeyModelAdmin):
     list_display = [
         "user",
         "prefix",
@@ -3117,6 +3344,7 @@ class UserAPIKeyAdmin(APIKeyModelAdmin):
     ]
     search_fields = ("prefix", "user__username", "user__email")
 
+    owner_field = "user"
     raw_id_fields = ("user",)
 
     autocomplete_lookup_fields = {
@@ -3289,15 +3517,42 @@ class UserOrgAffiliationRequestHistoryAdmin(admin.ModelAdmin):
         return False
 
 
-class TOTPDeviceAdminCustom(TOTPDeviceAdmin):
+class TOTPDeviceAdminCustom(
+    AccountRowGuardMixin, SecretLookupGuardMixin, TOTPDeviceAdmin
+):
     list_display = ["get_username", "name", "confirmed"]
     search_fields = ("user__username", "name")
+
+    # the shared secret (key) of an existing device is never shown; the add
+    # form keeps it, as django-otp does, since that seed is being created
+    fieldsets = [
+        ("Identity", {"fields": ["user", "name", "confirmed"]}),
+        ("Timestamps", {"fields": ["created_at", "last_used_at"]}),
+        ("Configuration", {"fields": ["step", "t0", "digits", "tolerance"]}),
+        ("State", {"fields": ["drift"]}),
+        (
+            "Throttling",
+            {"fields": ["throttling_failure_timestamp", "throttling_failure_count"]},
+        ),
+    ]
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return [
+                (title, {"fields": ["key", *opts["fields"]]})
+                if title == "Configuration"
+                else (title, opts)
+                for title, opts in self.fieldsets
+            ]
+        return self.fieldsets
 
     def get_username(self, obj):
         return obj.user.username
 
     get_username.admin_order_field = "user__username"
     get_username.short_description = "user"
+
+    secret_lookup_fields = ("key",)
 
 
 @admin.register(SearchLog)
@@ -3339,3 +3594,69 @@ admin.site.unregister(APIKey)
 admin.site.register(OrganizationAPIKey, OrganizationAPIKeyAdmin)
 admin.site.register(UserAPIKey, UserAPIKeyAdmin)
 admin.site.register(GeoCoordinateCache, GeoCoordinateAdmin)
+
+
+class EmailDeviceAdminCustom(
+    AccountRowGuardMixin, SecretLookupGuardMixin, EmailDeviceAdmin
+):
+    secret_lookup_fields = ("token",)
+
+
+class StaticDeviceAdminCustom(AccountRowGuardMixin, StaticDeviceAdmin):
+    pass
+
+
+class SecurityKeyAdminCustom(AccountRowGuardMixin, SecurityKeyAdmin):
+    pass
+
+
+class EmailAddressAdminCustom(AccountRowGuardMixin, EmailAddressAdmin):
+    @admin.action(
+        permissions=["change"],
+        description=EmailAddressAdmin.make_verified.short_description,
+    )
+    def make_verified(self, request, queryset):
+        if not request.user.is_superuser:
+            staff_rows = queryset.filter(
+                Q(user__is_staff=True) | Q(user__is_superuser=True)
+            )
+            for email_address in staff_rows:
+                self.message_user(
+                    request,
+                    _(
+                        "Skipped {email}: only superusers can verify addresses of staff accounts."
+                    ).format(email=email_address.email),
+                    level=messages.WARNING,
+                )
+            queryset = queryset.exclude(pk__in=staff_rows.values("pk"))
+        super().make_verified(request, queryset)
+
+
+class ApplicationAdminCustom(SecretLookupGuardMixin, ApplicationAdmin):
+    secret_lookup_fields = ("client_secret",)
+
+
+class AccessTokenAdminCustom(SecretLookupGuardMixin, AccessTokenAdmin):
+    secret_lookup_fields = ("token", "token_checksum")
+
+
+class RefreshTokenAdminCustom(SecretLookupGuardMixin, RefreshTokenAdmin):
+    secret_lookup_fields = ("token", "token_checksum")
+
+
+class GrantAdminCustom(SecretLookupGuardMixin, GrantAdmin):
+    secret_lookup_fields = ("code",)
+
+
+for model, model_admin in (
+    (EmailDevice, EmailDeviceAdminCustom),
+    (StaticDevice, StaticDeviceAdminCustom),
+    (SecurityKey, SecurityKeyAdminCustom),
+    (EmailAddress, EmailAddressAdminCustom),
+    (get_application_model(), ApplicationAdminCustom),
+    (get_access_token_model(), AccessTokenAdminCustom),
+    (get_refresh_token_model(), RefreshTokenAdminCustom),
+    (get_grant_model(), GrantAdminCustom),
+):
+    admin.site.unregister(model)
+    admin.site.register(model, model_admin)

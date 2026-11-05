@@ -9,19 +9,22 @@ Handles notifications of networks and exchanges as part of that process.
 A substantial part of the import logic is handled through models.py::IXFMemberData
 """
 
+import collections
 import datetime
 import ipaddress
 import json
 import re
+import time
 from smtplib import SMTPException
 
 import django
-import requests
 import reversion
+import structlog
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.mail.message import EmailMultiAlternatives
+from django.core.validators import validate_email
 from django.db import transaction
 from django.db.models import Q
 from django.template import loader
@@ -29,6 +32,7 @@ from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 
 import peeringdb_server.deskpro as deskpro
+from peeringdb_server import ixf_fetch
 from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DeskProTicket,
@@ -45,6 +49,10 @@ from peeringdb_server.models import (
     ValidationErrorEncoder,
     live_statuses,
 )
+
+log = structlog.get_logger("django")
+
+INTERNAL_ERROR = "Error: The import failed with an internal error"
 
 REASON_ENTRY_GONE_FROM_REMOTE = _(
     "The entry for (asn and IPv4 and IPv6) does not exist "
@@ -63,6 +71,112 @@ REASON_VALUES_CHANGED = _(
 REASON_IP_REASSIGNED_TO_DIFFERENT_ASN = _(
     "The IP address has been reassigned to a different ASN in the exchange's IX-F data"
 )
+
+
+def vlan_group_key(vlan_id):
+    """
+    Return the key a feed's vlan_id groups and pairs vlans by.
+
+    Only IX-F vlan ids (integers 0 to 4095) and null group; anything else
+    gets a key of its own. CPython's integer hashes are predictable, so
+    arbitrary ids can be chosen to collide in a dict and make every insert
+    scan all the previous ones.
+    """
+    if vlan_id is None:
+        # feeds set optional properties to null (#1244)
+        return None
+    if (
+        isinstance(vlan_id, int)
+        and not isinstance(vlan_id, bool)
+        and 0 <= vlan_id <= 4095
+    ):
+        return vlan_id
+    return object()
+
+
+def count_entries(data, limit):
+    """
+    Count the members, connections, vlans and interfaces of IX-F data,
+    stopping once the count passes `limit`.
+    """
+
+    def items(container, name):
+        value = container.get(name) if isinstance(container, dict) else None
+        return value if isinstance(value, list) else []
+
+    count = 0
+    for member in items(data, "member_list"):
+        count += 1
+        for connection in items(member, "connection_list"):
+            count += 1 + len(items(connection, "vlan_list"))
+            count += len(items(connection, "if_list"))
+            if count > limit:
+                return count
+        if count > limit:
+            return count
+    return count
+
+
+def encode_member_data(member):
+    """
+    Return the value IXFMemberData.data stores for a member: the member's
+    JSON, stored as a JSON string as set_data(json.dumps(member)) does.
+    """
+    return json.dumps(json.dumps(member))
+
+
+def snapshot_bytes(data, limit):
+    """
+    Return how many bytes of member snapshots the proposal rows for IX-F
+    data store: every vlan entry of a member gets a row holding the whole
+    member. Stops once the total passes `limit`.
+    """
+
+    def items(container, name):
+        value = container.get(name) if isinstance(container, dict) else None
+        return value if isinstance(value, list) else []
+
+    total = 0
+    for member in items(data, "member_list"):
+        vlans = sum(
+            len(items(connection, "vlan_list"))
+            for connection in items(member, "connection_list")
+        )
+        if vlans:
+            total += vlans * len(encode_member_data(member))
+            if total > limit:
+                return total
+    return total
+
+
+def _safe_key_value(value):
+    """
+    Return `value` if it is a string or an integer below 2**61 - 1, raise
+    TypeError otherwise.
+
+    Strings have randomized hashes, and such integers hash to themselves, so
+    no two of them share a hash. Their dict slots can still be steered to
+    collide, but nothing like the cost of identical hashes, and the callers
+    check the deadline per connection.
+    """
+    if isinstance(value, str):
+        return value
+    if isinstance(value, int) and 0 <= value < 2**61 - 1:
+        return value
+    raise TypeError(f"unsafe key value {type(value).__name__}")
+
+
+def quote_feed_value(value, max_length=45):
+    """
+    Quote a value taken from an IX-F feed for an error message that is
+    mailed out, so the feed cannot put free text into the mail: characters
+    that do not occur in an address, ASN or VLAN id are replaced and the
+    length is capped (45 is the longest textual IPv6 address).
+    """
+    text = re.sub(r"[^0-9A-Za-z.:/_-]", "?", f"{value}")
+    if len(text) > max_length:
+        text = f"{text[:max_length]}..."
+    return f"'{text}'"
 
 
 class MultipleVlansInPrefix(ValueError):
@@ -84,19 +198,13 @@ class MultipleVlansInPrefix(ValueError):
         asn = conflict_info.get("asn", "Unknown")
         path = conflict_info.get("path", "Unknown")
 
-        vlan_obj = conflict_info.get("vlan_obj", {})
-        vlan_obj_str = json.dumps(vlan_obj, indent=2) if vlan_obj else ""
-
         detail_msg = (
             f"\nError occurred at {path}"
             f"\n"
-            f"\nASN: {asn}"
-            f"\nFirst VLAN ID: {first_vlan}"
-            f"\nConflicting VLAN ID: {conflicting_vlan}"
+            f"\nASN: {quote_feed_value(asn)}"
+            f"\nFirst VLAN ID: {quote_feed_value(first_vlan)}"
+            f"\nConflicting VLAN ID: {quote_feed_value(conflicting_vlan)}"
         )
-
-        if vlan_obj_str:
-            detail_msg += f"\n\nConflicting VLAN object:\n```\n{vlan_obj_str}\n```"
 
         super().__init__(
             _(
@@ -196,7 +304,8 @@ class Importer:
         }
         self.pending_save = []
         self.deletions = {}
-        self.asns = []
+        self.asns = set()
+        self._member_json = None
         self.ixlan = ixlan
         self.vlan = None
         self.save = save
@@ -208,7 +317,7 @@ class Importer:
         self.emails = 0
         self._facility_cache = {}
 
-    def fetch(self, url, timeout=5):
+    def fetch(self, url, timeout=None, deadline=None):
         """
         Retrieve ixf member export data from the url.
 
@@ -220,59 +329,81 @@ class Importer:
             - url <str>
 
         Keyword arguments:
-            - timeout <float>: max time to spend on request
+            - timeout <float>: seconds a connect or a single read may wait
+              for data, IXF_FETCH_TIMEOUT by default
+            - deadline <float>: seconds fetching and processing may take in
+              total, IXF_FETCH_DEADLINE by default
         """
 
         if not url:
             return {"pdb_error": _("IX-F import url not specified")}
 
+        if timeout is None:
+            timeout = settings.IXF_FETCH_TIMEOUT
+        if deadline is None:
+            deadline = settings.IXF_FETCH_DEADLINE
+
+        # the deadline covers processing the data too
+        ends = time.monotonic() + deadline
+
         try:
-            result = requests.get(url, timeout=timeout)
+            data = ixf_fetch.fetch_json(url, timeout=deadline, read_timeout=timeout)
+            if not isinstance(data, dict):
+                return {"pdb_error": _("IX-F data is not a JSON object")}
+            return self.sanitize(data, deadline=ends)
+        except ixf_fetch.FetchError as exc:
+            return {"pdb_error": f"{exc}"}
         except Exception as exc:
-            return {"pdb_error": exc}
+            # whatever else the fetched data breaks gets a fixed message,
+            # the details stay in the server log
+            log.warning("ixf_data_error", url=url, error=repr(exc))
+            return {"pdb_error": _("IX-F data could not be processed")}
 
-        if result.status_code != 200:
-            return {"pdb_error": f"Got HTTP status {result.status_code}"}
-
-        try:
-            data = result.json()
-        except Exception:
-            data = {"pdb_error": _("No JSON could be parsed")}
-            return data
-
-        data = self.sanitize(data)
-
-        # locally cache result
-
-        if data and not data.get("pdb_error"):
-            cache.set(self.cache_key(url), data, timeout=None)
-
-        return data
-
-    def cache_key(self, url):
+    def cache_key(self, ixlan):
         """
         Return the django cache key to use for caching IX-F data.
 
         Argument:
 
-            url <str>
+            ixlan <IXLan>
         """
 
-        return f"IXF-CACHE-{url}"
+        return ixlan.ixf_cache_key
 
-    def fetch_cached(self, url):
+    def cache_store(self, ixlan, url, data):
+        """
+        Cache fetched IX-F data for the ixlan, one entry per ixlan that
+        expires after IXF_CACHE_TIMEOUT seconds.
+
+        Data with errors, or larger than IXF_FETCH_MAX_BYTES once
+        serialized, is not cached.
+        """
+
+        if not data or data.get("pdb_error"):
+            return
+
+        if len(json.dumps(data, separators=(",", ":"))) > settings.IXF_FETCH_MAX_BYTES:
+            return
+
+        cache.set(
+            self.cache_key(ixlan),
+            {"url": url, "fetched": self.now.isoformat(), "data": data},
+            timeout=settings.IXF_CACHE_TIMEOUT,
+        )
+
+    def fetch_cached(self, ixlan):
         """
         Return locally cached IX-F data.
 
         Arguments:
 
-            url <str>
+            ixlan <IXLan>
         """
 
-        if not url:
+        if not ixlan.ixf_ixp_member_list_url:
             return {"pdb_error": _("IX-F import url not specified")}
 
-        data = cache.get(self.cache_key(url))
+        data = ixlan.ixf_cached_data
 
         if data is None:
             return {
@@ -315,67 +446,126 @@ class Importer:
         if_list_match = if_list_1 == if_list_2
         return state_match and if_list_match
 
-    def find_connections_that_match(self, connection, connection_list):
-        cxns_that_match = []
-        for connection2 in connection_list:
-            if self.connections_match(connection, connection2):
-                cxns_that_match.append(connection2)
+    def connection_key(self, connection):
+        """
+        Return what two connections must share for their vlans to be
+        paired, see `connections_match`.
+        """
+        return (
+            connection.get("state", "undefined"),
+            tuple(self.get_if_speed_list(connection)),
+        )
 
-        if len(cxns_that_match) == 0:
-            return None
+    def match_vlans_across_connections(self, connection_list, deadline=None):
+        """
+        Move vlan entries that only carry one protocol to an earlier
+        connection with the same state and interface speeds whose vlan of the
+        same id lacks that protocol (AMS-IX for example lists ipv4 and ipv6
+        as separate connections).
 
-        return cxns_that_match
+        For each lone vlan the first match is taken, in connection and then
+        vlan_list order, from the connections that come after it. The
+        candidates are indexed by connection key, vlan id and the protocols a
+        vlan carries, so the work grows linearly with the feed: comparing
+        every connection with every later one made a feed of a few thousand
+        connections take longer than the import may run.
+        """
 
-    def match_vlans_across_connections(self, connection_list):
+        def check_deadline():
+            if deadline is not None and time.monotonic() > deadline:
+                raise ixf_fetch.FetchError(_("Processing the IX-F data took too long"))
+
+        # each distinct connection key is replaced by a small number, so
+        # index lookups don't hash a key as long as the connection's if_list
+        key_ids = {}
+        connection_keys = []
+        for connection in connection_list:
+            check_deadline()
+            try:
+                state, speeds = self.connection_key(connection)
+                key = (_safe_key_value(state), tuple(map(_safe_key_value, speeds)))
+                key_id = key_ids.setdefault(key, len(key_ids))
+            except (TypeError, AttributeError):
+                # an if_list or state that is not what IX-F describes (speeds
+                # that can't be sorted, entries that aren't objects, values
+                # that can't be keys): this connection pairs with no other
+                key_id = object()
+            connection_keys.append(key_id)
+
+        # (key id, vlan_id, has_ipv4, has_ipv6) -> deque of
+        # (connection index, position in its vlan_list, vlan), in feed order
+        candidates = {}
+        for index, connection in enumerate(connection_list):
+            check_deadline()
+            for position, vlan in enumerate(connection.get("vlan_list", [])):
+                kind = (
+                    connection_keys[index],
+                    vlan_group_key(vlan.get("vlan_id", 0)),
+                    bool(vlan.get("ipv4")),
+                    bool(vlan.get("ipv6")),
+                )
+                candidates.setdefault(kind, collections.deque()).append(
+                    (index, position, vlan)
+                )
+
+        moved = set()
         modified_connection_list = []
 
-        for i, connection in enumerate(connection_list):
-            """
-            If there aren't any vlans in the connection at
-            all, skip it. (This might happen in the course
-            of matching vlans).
-            """
+        for index, connection in enumerate(connection_list):
+            check_deadline()
+
+            if moved and connection.get("vlan_list"):
+                connection["vlan_list"] = [
+                    vlan for vlan in connection["vlan_list"] if id(vlan) not in moved
+                ]
+
+            # If there aren't any vlans in the connection at all, skip it
+            # (vlans may have moved to an earlier connection).
             if len(connection.get("vlan_list", [])) == 0:
                 continue
 
-            remaining_connections = connection_list[i + 1 :]
             vlans_needing_pair = self.find_vlan_needing_pair(connection)
-            # If there aren't any vlans that need to be paired,
-            # we're done looking at this connection
             if vlans_needing_pair is None:
                 modified_connection_list.append(connection)
                 continue
 
-            cxns_that_match = self.find_connections_that_match(
-                connection, remaining_connections
-            )
-            # If there aren't any connections we could match up,
-            # we're done looking at this connection
-            if cxns_that_match is None:
-                modified_connection_list.append(connection)
-                continue
-
-            # If we have vlans we want to match, and
-            # at least one connection we can look for
-            # start looking
+            key_id = connection_keys[index]
             for lone_vlan in vlans_needing_pair:
-                matching_vlan = self.find_matching_vlan(lone_vlan, cxns_that_match)
-                # if we found one we need to transfer it
-                if matching_vlan is not None:
-                    # matching vlan goes into connection vlan_list
-                    connection["vlan_list"].append(matching_vlan)
+                check_deadline()
+                vlan_id = vlan_group_key(lone_vlan.get("vlan_id", 0))
+                # a vlan matches when it does not carry a protocol the
+                # lone vlan already has (see `vlan_matches`)
+                if lone_vlan.get("ipv4"):
+                    kinds = (
+                        (key_id, vlan_id, False, True),
+                        (key_id, vlan_id, False, False),
+                    )
+                else:
+                    kinds = (
+                        (key_id, vlan_id, True, False),
+                        (key_id, vlan_id, False, False),
+                    )
+
+                best = None
+                for kind in kinds:
+                    queue = candidates.get(kind)
+                    # only connections after this one are candidates
+                    while queue and queue[0][0] <= index:
+                        queue.popleft()
+                    # first by connection, then by position in its vlan_list
+                    if queue and (best is None or queue[0][:2] < best[0][:2]):
+                        best = queue
+
+                if best is None:
+                    continue
+
+                _owner, _position, matching_vlan = best.popleft()
+                moved.add(id(matching_vlan))
+                # matching vlan goes into connection vlan_list
+                connection["vlan_list"].append(matching_vlan)
 
             modified_connection_list.append(connection)
         return modified_connection_list
-
-    def find_matching_vlan(self, lone_vlan, connections_that_match):
-        for connection in connections_that_match:
-            for j, potential_vlan in enumerate(connection["vlan_list"]):
-                if self.vlan_matches(lone_vlan, potential_vlan):
-                    # Matching vlan gets deleted from other connection
-                    return connection["vlan_list"].pop(j)
-
-        return None
 
     def vlan_matches(self, vlan1, vlan2):
         vlan_ids_match = vlan1.get("vlan_id", 0) == vlan2.get("vlan_id", 0)
@@ -405,7 +595,7 @@ class Importer:
             # to default to 0 so we can still group based
             # on that
 
-            id = vlan.get("vlan_id", 0)
+            id = vlan_group_key(vlan.get("vlan_id", 0))
 
             # the IX-F schema allows setting ipv4 and ipv6 to
             # null, in which case remove the property
@@ -454,36 +644,58 @@ class Importer:
 
         return sanitized
 
-    def sanitize(self, data):
+    def sanitize(self, data, deadline=None):
         """
         Take ixf data dict and run sanitization on it.
+
+        Keyword arguments:
+            - deadline <float>: time.monotonic() value after which
+              processing stops with a FetchError
         """
+
+        def check_deadline():
+            if deadline is not None and time.monotonic() > deadline:
+                raise ixf_fetch.FetchError(_("Processing the IX-F data took too long"))
 
         invalid = None
         ipv4_addresses = {}
         ipv6_addresses = {}
 
-        # dedupe identical entries in member list
-        member_list = [json.dumps(m) for m in data.get("member_list", [])]
-        member_list = [json.loads(m) for m in set(member_list)]
+        # dedupe identical entries in member list (keeping the feed's order)
+        seen = set()
+        member_list = []
+        for member in data.get("member_list", []):
+            check_deadline()
+            encoded = json.dumps(member)
+            if encoded not in seen:
+                seen.add(encoded)
+                member_list.append(json.loads(encoded))
 
         # This fixes instances where ixps provide two separate entries for
         # vlans in vlan_list for ipv4 and ipv6 (AMS-IX for example)
+        def require_list(container, name):
+            # the IX-F schema has arrays here; anything else would be
+            # iterated without being counted against IXF_MAX_ENTRIES
+            value = container.get(name)
+            if value is None:
+                container.pop(name, None)
+            elif not isinstance(value, list):
+                raise ixf_fetch.FetchError(
+                    _("IX-F data has a non-list {}").format(name)
+                )
+
         for member in member_list:
+            check_deadline()
+            require_list(member, "connection_list")
+
             # handle `null` properties inside connection list
 
             for conn in member.get("connection_list", []):
-                # handle case where IX-F feed has set `vlan_list` to `null` (#1244)
-                # treat same as if it wasn't set at all
-
-                if conn.get("vlan_list", []) is None:
-                    conn.pop("vlan_list")
-
-                # handle case where IX-F feed has set `if_list` to `null` (#1244)
-                # treat same as if it wasn't set at all
-
-                if conn.get("if_list", []) is None:
-                    conn.pop("if_list")
+                check_deadline()
+                # `vlan_list` or `if_list` set to `null` is treated as not
+                # set at all (#1244)
+                require_list(conn, "vlan_list")
+                require_list(conn, "if_list")
 
                 # handle case where optional properties in if_list entries are set to `null` (#1602)
                 # treat same as if they weren't set at all
@@ -494,10 +706,11 @@ class Importer:
             asn = member.get("asnum")
 
             connection_list = self.match_vlans_across_connections(
-                member.get("connection_list", [])
+                member.get("connection_list", []), deadline=deadline
             )
 
             for conn in connection_list:
+                check_deadline()
                 conn["vlan_list"] = self.sanitize_vlans(conn.get("vlan_list", []))
                 vlans = conn["vlan_list"]
 
@@ -509,12 +722,19 @@ class Importer:
                 ipv4 = vlans[0].get("ipv4", {}).get("address")
                 ipv6 = vlans[0].get("ipv6", {}).get("address")
 
+                # addresses are text; anything else is not a dict key here
+                # (crafted integer hashes collide) and fails in parse
+                if not isinstance(ipv4, str):
+                    ipv4 = None
+                if not isinstance(ipv6, str):
+                    ipv6 = None
+
                 ixf_id = (asn, ipv4, ipv6)
 
                 if ipv4 and ipv4 in ipv4_addresses:
                     invalid = _(
                         "Address {} assigned to more than one distinct connection"
-                    ).format(ipv4)
+                    ).format(quote_feed_value(ipv4))
                     break
 
                 ipv4_addresses[ipv4] = ixf_id
@@ -522,7 +742,7 @@ class Importer:
                 if ipv6 and ipv6 in ipv6_addresses:
                     invalid = _(
                         "Address {} assigned to more than one distinct connection"
-                    ).format(ipv6)
+                    ).format(quote_feed_value(ipv6))
                     break
 
                 ipv6_addresses[ipv6] = ixf_id
@@ -533,7 +753,7 @@ class Importer:
 
         return data
 
-    def update(self, ixlan, save=True, data=None, timeout=5, asn=None):
+    def update(self, ixlan, save=True, data=None, timeout=None, asn=None):
         """
         Sync netixlans under this ixlan from ixf member export json data (specs
         can be found at https://github.com/euro-ix/json-schemas).
@@ -543,6 +763,9 @@ class Importer:
 
         Keyword Arguments:
             - save (bool): commit changes to db
+            - timeout (float): seconds a connect or a single read of the
+              fetch may wait for data, IXF_FETCH_TIMEOUT by default; the
+              fetch as a whole is bounded by IXF_FETCH_DEADLINE
             - asn (int): only process changes for this ASN
 
         Returns:
@@ -556,13 +779,18 @@ class Importer:
         try:
             if data is None:
                 if self.cache_only:
-                    data = self.fetch_cached(ixlan.ixf_ixp_member_list_url)
+                    data = self.fetch_cached(ixlan)
                 else:
-                    data = self.fetch(ixlan.ixf_ixp_member_list_url, timeout=timeout)
+                    url = ixlan.ixf_ixp_member_list_url
+                    data = self.fetch(url, timeout=timeout)
+                    # previews (save=False) never write the cache
+                    if save or self.skip_import:
+                        self.cache_store(ixlan, url, data)
         except Exception as exc:
             # any errors happening during retrieval and sanitization are fatal
             # and will be logged and the import will be aborted
             self.log_error(f"Internal Error: {exc}", save=save)
+            self.record_internal_error()
             return False
 
         # bail if there has been any errors during sanitize() or fetch()
@@ -577,7 +805,33 @@ class Importer:
             return False
 
         if self.skip_import:
+            if save:
+                self.clear_import_error()
             return True
+
+        # parsing does database work per member and vlan, so the amount of
+        # it is bounded before it starts
+        if count_entries(data, settings.IXF_MAX_ENTRIES) > settings.IXF_MAX_ENTRIES:
+            error = _("IX-F data has more than {} entries").format(
+                settings.IXF_MAX_ENTRIES
+            )
+            self.notify_error(error, data.get("schema_email", False))
+            self.log_error(error, save=save)
+            return False
+
+        # every proposal row stores its whole member, so the rows of a
+        # member with many vlans can add up to far more than the export
+        if (
+            snapshot_bytes(data, settings.IXF_MAX_SNAPSHOT_BYTES)
+            > settings.IXF_MAX_SNAPSHOT_BYTES
+        ):
+            error = _(
+                "IX-F member data repeated across its vlan entries is larger "
+                "than {} bytes"
+            ).format(settings.IXF_MAX_SNAPSHOT_BYTES)
+            self.notify_error(error, data.get("schema_email", False))
+            self.log_error(error, save=save)
+            return False
 
         try:
             # parse the ixf data
@@ -597,16 +851,13 @@ class Importer:
         except Exception as exc:
             # any errors when parsing the data are fatal and will be logged and the import will be aborted
             self.log_error(f"Internal Error: {exc}", save=save)
+            self.record_internal_error()
             return False
 
-        # null IX-F error note on ixlan if it had error'd before
-        if self.ixlan.ixf_ixp_import_error:
-            with transaction.atomic():
-                with reversion.create_revision():
-                    reversion.set_user(self.ticket_user)
-                    self.ixlan.ixf_ixp_import_error = None
-                    self.ixlan.ixf_ixp_import_error_notified = None
-                    self.ixlan.save()
+        # previews (save=False) leave the last error in place, it is what
+        # they show when the data could not be fetched
+        if save:
+            self.clear_import_error()
 
         with transaction.atomic():
             # process any netixlans that need to be deleted
@@ -650,6 +901,34 @@ class Importer:
             self.save_log()
 
         return True
+
+    def record_internal_error(self):
+        """
+        Mark the ixlan's import as failed with a fixed message, so the
+        failure shows on the exchange; the attempt log keeps the detail.
+        """
+        if not self.save:
+            return
+        try:
+            with transaction.atomic():
+                type(self.ixlan).objects.filter(id=self.ixlan.id).update(
+                    ixf_ixp_import_error=INTERNAL_ERROR
+                )
+            self.ixlan.ixf_ixp_import_error = INTERNAL_ERROR
+        except Exception as exc:
+            log.error("ixf_record_error_failed", ixlan=self.ixlan.id, error=repr(exc))
+
+    def clear_import_error(self):
+        """
+        Null the IX-F error note on the ixlan if it had error'd before.
+        """
+        if self.ixlan.ixf_ixp_import_error:
+            with transaction.atomic():
+                with reversion.create_revision():
+                    reversion.set_user(self.ticket_user)
+                    self.ixlan.ixf_ixp_import_error = None
+                    self.ixlan.ixf_ixp_import_error_notified = None
+                    self.ixlan.save()
 
     def update_ix(self):
         """
@@ -847,7 +1126,7 @@ class Importer:
 
         # clean up old IX-F memeber data objects
 
-        for ixf_member in qset:
+        for ixf_member in IXFMemberData.without_snapshot(qset).iterator():
             # proposed deletion got fulfilled
 
             if ixf_member.action == "delete":
@@ -943,9 +1222,15 @@ class Importer:
             if self.asn and asn != self.asn:
                 continue
 
-            # keep track of asns we find in the IX-F data
-            if asn not in self.asns:
-                self.asns.append(asn)
+            # keep track of asns we find in the IX-F data (a set; an asn
+            # that is not a safe key is not a valid one either)
+            try:
+                self.asns.add(_safe_key_value(asn))
+            except TypeError:
+                pass
+
+            # serialized once per member, not once per vlan
+            self._member_json = None
 
             if Network.objects.filter(asn=asn).exists():
                 network = Network.objects.get(asn=asn)
@@ -1016,6 +1301,15 @@ class Importer:
         """
 
         asn = member["asnum"]
+
+        # serialized once for all of the connection's vlans; only
+        # parse_speed adds to it, before the vlans are parsed
+        connection_errors = None
+        if getattr(self, "connection_errors", None):
+            connection_errors = json.dumps(
+                self.connection_errors, cls=ValidationErrorEncoder
+            )
+
         for vlan_index, lan in enumerate(vlan_list):
             # Update current path for vlan
             self.current_path["vlan"] = vlan_index
@@ -1063,13 +1357,19 @@ class Importer:
 
                 ixf_id = tuple(ixf_id)
 
-            except (ipaddress.AddressValueError, ValueError) as exc:
-                self.invalid_ip_errors.append(f"{exc}")
-                self.log_error(
-                    _("Ip address error '{}' in vlan_list entry for vlan_id {}").format(
-                        exc, lan.get("vlan_id")
-                    )
+            except (ipaddress.AddressValueError, ValueError):
+                # ipv4 is parsed first, so if it parsed it was ipv6 that failed
+                if not ipv4_addr or isinstance(ipv4_addr, ipaddress.IPv4Address):
+                    invalid_addr = ipv6_addr
+                else:
+                    invalid_addr = ipv4_addr
+                error = _(
+                    "Invalid IP address {} in vlan_list entry for vlan_id {}"
+                ).format(
+                    quote_feed_value(invalid_addr), quote_feed_value(lan.get("vlan_id"))
                 )
+                self.invalid_ip_errors.append(f"{error}")
+                self.log_error(error)
                 continue
 
             ipv4_valid_for_ixlan = self.ixlan.test_ipv4_address(ipv4_addr)
@@ -1113,7 +1413,6 @@ class Importer:
                     "conflicting_vlan": vlan,
                     "asn": asn,
                     "path": path,
-                    "vlan_obj": lan,
                 }
                 raise MultipleVlansInPrefix(self, conflict_info)
 
@@ -1195,7 +1494,7 @@ class Importer:
                     operational=operational,
                     is_rs_peer=is_rs_peer,
                     facility=facility,
-                    data=json.dumps(member),
+                    data_encoded=self.member_data(member),
                     ixlan=self.ixlan,
                     save=self.save,
                 )
@@ -1207,14 +1506,22 @@ class Importer:
                 self.log_error(f"{exc}")
                 continue
 
-            if self.connection_errors:
-                ixf_member_data.error = json.dumps(
-                    self.connection_errors, cls=ValidationErrorEncoder
-                )
+            if connection_errors:
+                ixf_member_data.error = connection_errors
             else:
                 ixf_member_data.error = ixf_member_data.previous_error
 
             self.pending_save.append(ixf_member_data)
+
+    def member_data(self, member):
+        """
+        Return the value IXFMemberData.data stores for this member row,
+        encoded once per member and shared by all of its vlans (see
+        encode_member_data).
+        """
+        if self._member_json is None:
+            self._member_json = encode_member_data(member)
+        return self._member_json
 
     def parse_speed(self, if_list):
         """
@@ -1246,9 +1553,12 @@ class Importer:
         switch_map = {}
         for ixp in data.get("ixp_list", []):
             for switch in ixp.get("switch", []):
-                switch_id = switch.get("id")
-                if switch_id is not None:
-                    switch_map[switch_id] = switch
+                try:
+                    # ids are feed values; unsafe ones can't be dict keys
+                    switch_id = _safe_key_value(switch.get("id"))
+                except TypeError:
+                    continue
+                switch_map[switch_id] = switch
         return switch_map
 
     def parse_facility_id(self, if_list, switch_map=None):
@@ -1266,7 +1576,10 @@ class Importer:
                     facility_id = switch_map[switch_id].get("pdb_facility_id")
 
             if facility_id is not None:
-                facility_ids.add(facility_id)
+                try:
+                    facility_ids.add(_safe_key_value(facility_id))
+                except TypeError:
+                    continue
 
         if len(facility_ids) == 1:
             return facility_ids.pop()
@@ -2094,14 +2407,26 @@ class Importer:
         now = django.utils.timezone.now()
         max_age = now - datetime.timedelta(days=notify_period)
 
+        # check the date of when the IX-F information that suggests
+        # the netixlan removal was last seen in the IX-F data.
+        # ignore any that were not seen the last time the importer ran
+        #
+        # this is to catch edge cases where the ix has had i turned off
+        # for a while, turned it back on and now needs to process
+        # current vs old data. (#1360)
+        #
+        # only proposals refreshed since this import started are walked,
+        # which bounds the walk by the feed size (#522)
+
         qset = IXFMemberData.objects.filter(
             Q(extra_notifications_net_date__lte=max_age)
             | Q(extra_notifications_net_date__isnull=True),
             created__lte=max_age,
+            fetched__gt=self.now,
         )
         qset = qset.exclude(extra_notifications_net_num__gte=notify_max)
 
-        for ixf_member_data in qset:
+        for ixf_member_data in IXFMemberData.without_snapshot(qset).iterator():
             # stale networks are only indicated by `delete` proposals
 
             if ixf_member_data.action != "delete":
@@ -2114,17 +2439,6 @@ class Importer:
             # both ips and is present at the ix.
 
             if ixf_member_data.requirement_of_id:
-                continue
-
-            # check the date of when the IX-F information that suggests
-            # the netixlan removal was last seen in the IX-F data.
-            # ignore any that were not seen the last time the importer ran
-            #
-            # this is to catch edge cases where the ix has had i turned off
-            # for a while, turned it back on and now needs to process
-            # current vs old data. (#1360)
-
-            if ixf_member_data.fetched <= self.now:
                 continue
 
             ixf_member_data.extra_notifications_net_num += 1
@@ -2164,15 +2478,28 @@ class Importer:
 
         # stale netixlan removal only happens after the network
         # has been notified a number of times
+        #
+        # check the date of when the IX-F information that suggests
+        # the netixlan removal was last seen in the IX-F data.
+        # ignore any that were not seen the last time the importer ran
+        #
+        # this is to catch edge cases where the ix has had i turned off
+        # for a while, turned it back on and now needs to process
+        # current vs old data. (#1360)
+        #
+        # only proposals refreshed since this import started are walked,
+        # which bounds the walk by the feed size (#522)
 
-        qset = IXFMemberData.objects.filter(extra_notifications_net_num__gte=notify_max)
+        qset = IXFMemberData.objects.filter(
+            extra_notifications_net_num__gte=notify_max, fetched__gt=self.now
+        )
 
         if cleanup_days > 0:
             now = django.utils.timezone.now()
             max_age = now - datetime.timedelta(days=cleanup_days)
             qset = qset.filter(created__lte=max_age)
 
-        for ixf_member_data in qset:
+        for ixf_member_data in IXFMemberData.without_snapshot(qset).iterator():
             action = ixf_member_data.action
 
             # stale networks are only indicated by delete proposals
@@ -2187,17 +2514,6 @@ class Importer:
             # both ips and is present at the ix.
 
             if ixf_member_data.requirement_of_id:
-                continue
-
-            # check the date of when the IX-F information that suggests
-            # the netixlan removal was last seen in the IX-F data.
-            # ignore any that were not seen the last time the importer ran
-            #
-            # this is to catch edge cases where the ix has had i turned off
-            # for a while, turned it back on and now needs to process
-            # current vs old data. (#1360)
-
-            if ixf_member_data.fetched <= self.now:
                 continue
 
             if ixf_member_data.netixlan is not None and ixf_member_data.netixlan.id:
@@ -2378,13 +2694,25 @@ class Importer:
         # AC does not want ticket here as per #794
         # self._ticket(ixf_member_data, subject, message)
 
-        if schema_email:
-            schema_recipients = [schema_email]
-            self._email(subject, message, schema_recipients, ix=ixf_member_data.ix)
-        elif ixf_member_data.ix_contacts:
-            self._email(
-                subject, message, ixf_member_data.ix_contacts, ix=ixf_member_data.ix
-            )
+        # the exchange's own contacts always get it, the feed's schema_email
+        # (usually whoever maintains the export) in addition
+        recipients = [email for email in ixf_member_data.ix_contacts if email]
+        if self._is_email(schema_email) and schema_email.lower() not in {
+            email.lower() for email in recipients
+        }:
+            recipients.append(schema_email)
+
+        self._email(subject, message, recipients, ix=ixf_member_data.ix)
+
+    @staticmethod
+    def _is_email(value):
+        if not isinstance(value, str):
+            return False
+        try:
+            validate_email(value)
+        except ValidationError:
+            return False
+        return True
 
     def log_error(self, error, save=False):
         """

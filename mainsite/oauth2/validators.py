@@ -1,10 +1,17 @@
 from django.core.exceptions import ImproperlyConfigured
 from oauth2_provider.oauth2_validators import Grant, OAuth2Validator
-from oauthlib.oauth2.rfc6749.errors import InvalidScopeError, UnauthorizedClientError
+from oauthlib.oauth2.rfc6749.errors import (
+    InvalidScopeError,
+    UnauthorizedClientError,
+    UnsupportedGrantTypeError,
+)
 
 from mainsite.oauth2 import claims
 from mainsite.oauth2.scopes import SupportedScopes
-from peeringdb_server.context import is_issuing_at_authorization_endpoint
+from peeringdb_server.context import (
+    current_request,
+    is_issuing_at_authorization_endpoint,
+)
 from peeringdb_server.models import OAuthAccessTokenInfo, OAuthGrantInfo
 
 # import SessionStore
@@ -21,6 +28,12 @@ OPENID_UNSUPPORTED = (
     "This application does not support OpenID Connect, so no ID token can be "
     "issued for the openid scope. The application owner can enable it by "
     "selecting RS256 in the application settings."
+)
+
+
+PASSWORD_GRANT_UNSUPPORTED = (
+    "The resource owner password credentials grant is not supported. "
+    "Use the authorization code grant with PKCE instead."
 )
 
 
@@ -60,6 +73,18 @@ def hs256_signing_unavailable(application):
     return False
 
 
+def uses_password_grant(application):
+    """
+    Returns True for an application registered with the password grant,
+    whose tokens are refused since that grant is no longer supported (#519)
+    """
+
+    return (
+        application is not None
+        and application.authorization_grant_type == application.GRANT_PASSWORD
+    )
+
+
 class OIDCValidator(OAuth2Validator):
     # https://django-oauth-toolkit.readthedocs.io/en/latest/changelog.html#id12
     oidc_claim_scope = None
@@ -87,6 +112,69 @@ class OIDCValidator(OAuth2Validator):
             ("networks", claims.Networks([SupportedScopes.NETWORKS])),
             ("amr", claims.AMR([SupportedScopes.OPENID])),
         ]
+
+    def validate_bearer_token(self, token, scopes, request):
+        """
+        Refuses tokens of deactivated users and of applications registered
+        with the password grant (#519), and records the token's user on the
+        request as `oauth_user` for the request log
+
+        Only endpoints that validate the token themselves get here, and they
+        must not treat the request as a logged-in session, so `request.user`
+        is left alone.
+        """
+
+        valid = super().validate_bearer_token(token, scopes, request)
+        # client credentials tokens have no user
+        if valid and (request.user is None or not request.user.is_active):
+            request.oauth2_error = {
+                "error": "invalid_token",
+                "error_description": "The access token is invalid.",
+            }
+            return False
+        if valid and uses_password_grant(request.client):
+            request.oauth2_error = {
+                "error": "invalid_token",
+                "error_description": "The access token is invalid.",
+            }
+            return False
+        if valid:
+            with current_request() as django_request:
+                if django_request is not None:
+                    django_request.oauth_user = request.user
+        return valid
+
+    def validate_user(self, username, password, client, request, *args, **kwargs):
+        """
+        Refuses the password grant without checking the credentials (#519)
+
+        oauthlib calls this before validate_grant_type, where
+        COMPLIANT_BCP_RFC9700_PASSWORD_GRANT refuses it, so the refusal has to
+        happen here for the response not to depend on the password.
+        """
+
+        raise UnsupportedGrantTypeError(
+            description=PASSWORD_GRANT_UNSUPPORTED, request=request
+        )
+
+    def validate_refresh_token(self, refresh_token, client, request, *args, **kwargs):
+        """
+        Refuses refresh tokens of deactivated users and of applications
+        registered with the password grant (#519)
+        """
+
+        valid = super().validate_refresh_token(
+            refresh_token, client, request, *args, **kwargs
+        )
+        return valid and request.user.is_active and not uses_password_grant(client)
+
+    def validate_code(self, client_id, code, client, request, *args, **kwargs):
+        """
+        Refuses authorization codes of deactivated users
+        """
+
+        valid = super().validate_code(client_id, code, client, request, *args, **kwargs)
+        return valid and request.user.is_active
 
     def _create_access_token(self, expires, request, token, source_refresh_token=None):
         """

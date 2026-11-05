@@ -3,16 +3,18 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import jwt
 import pytest
-from django.core.signing import get_cookie_signer
+from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
 from django.test import Client
 from django.urls import reverse
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from oauth2_provider.models import AccessToken, Application, RefreshToken
 from oauth2_provider.settings import oauth2_settings
 from oauthlib.oauth2.rfc6749.endpoints.authorization import AuthorizationEndpoint
 
 from mainsite.oauth2.validators import OIDCValidator
 from peeringdb_server.models import OAuthApplication, Organization, User
-from tests.util import reset_group_ids
+from tests.util import oauth_login_marker, reset_group_ids
 
 
 def override_app_model():
@@ -153,6 +155,8 @@ def test_app_superuser_access(oauth2_apps):
     superuser = User.objects.create_superuser(
         "superuser", "superuser@localhost", "superuser"
     )
+    # without a second factor the MFA middleware redirects staff
+    TOTPDevice.objects.create(user=superuser, name="phone", confirmed=True)
 
     client = Client()
     client.force_login(superuser)
@@ -380,6 +384,217 @@ def test_app_registration_and_update(oauth2_org_admin_user):
     restore_app_model()
 
 
+def app_update_form_data(app, org=None, **kwargs):
+    form_data = {
+        "org": org.id if org else "",
+        "name": app.name,
+        "client_id": app.client_id,
+        "client_secret": "client_secret",
+        "client_type": OAuthApplication.CLIENT_CONFIDENTIAL,
+        "redirect_uris": "https://example.com",
+        "authorization_grant_type": OAuthApplication.GRANT_AUTHORIZATION_CODE,
+        "algorithm": "",
+    }
+    form_data.update(kwargs)
+    return form_data
+
+
+def ownership_log_entries(app):
+    return LogEntry.objects.filter(
+        content_type=ContentType.objects.get_for_model(OAuthApplication),
+        object_id=str(app.id),
+        change_message__startswith="Ownership changed",
+    )
+
+
+@pytest.mark.django_db
+def test_app_update_org_app_cannot_become_personal(oauth2_apps):
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+    user = user_app.user
+
+    client = Client()
+    client.force_login(user)
+    url = reverse("oauth2_provider:update", args=(org_app.id,))
+
+    resp = client.get(url)
+    assert resp.status_code == 200
+    assert '<option value="">' not in resp.content.decode("utf-8")
+
+    org_id = org_app.org_id
+    resp = client.post(url, app_update_form_data(org_app))
+
+    assert resp.status_code == 200
+    assert "This field is required" in resp.content.decode("utf-8")
+    org_app.refresh_from_db()
+    assert org_app.org_id == org_id
+    assert org_app.user_id is None
+    assert not ownership_log_entries(org_app).exists()
+
+    # personal apps keep the empty choice
+    resp = client.get(reverse("oauth2_provider:update", args=(user_app.id,)))
+    assert '<option value="" selected>' in resp.content.decode("utf-8")
+
+    restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_update_move_between_admin_orgs(oauth2_apps):
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+    user = user_app.user
+    org = org_app.org
+    org_b = Organization.objects.create(name="Test Org 002", status="ok")
+    org_b.admin_usergroup.user_set.add(user)
+
+    client = Client()
+    client.force_login(user)
+    url = reverse("oauth2_provider:update", args=(org_app.id,))
+
+    resp = client.post(url, app_update_form_data(org_app, org_b))
+
+    assert resp.status_code == 302
+    org_app.refresh_from_db()
+    assert org_app.org_id == org_b.id
+    assert org_app.user_id is None
+
+    entry = ownership_log_entries(org_app).get()
+    assert entry.user_id == user.id
+    assert entry.change_message == (
+        f"Ownership changed from org {org.id} to org {org_b.id}"
+    )
+
+    # saving without an ownership change adds no entry
+    resp = client.post(url, app_update_form_data(org_app, org_b, name="Renamed"))
+    assert resp.status_code == 302
+    assert ownership_log_entries(org_app).count() == 1
+
+    restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_update_personal_app_into_org_logged(oauth2_apps):
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+    user = user_app.user
+    org = org_app.org
+
+    client = Client()
+    client.force_login(user)
+    url = reverse("oauth2_provider:update", args=(user_app.id,))
+
+    resp = client.post(url, app_update_form_data(user_app, org))
+
+    assert resp.status_code == 302
+    user_app.refresh_from_db()
+    assert user_app.org_id == org.id
+    assert user_app.user_id is None
+    assert ownership_log_entries(user_app).get().change_message == (
+        f"Ownership changed from user {user.id} to org {org.id}"
+    )
+
+    restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_dual_owner_row_needs_org_admin(oauth2_apps):
+    """
+    A user left on an org owned application (legacy rows) does not keep
+    access once they stop administering the org
+    """
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+    user = user_app.user
+    org = org_app.org
+
+    OAuthApplication.objects.filter(id=org_app.id).update(user=user)
+    org.admin_usergroup.user_set.remove(user)
+
+    client = Client()
+    client.force_login(user)
+
+    resp = client.get(reverse("oauth2_provider:list"))
+    assert resp.status_code == 200
+    assert org_app.name not in resp.content.decode("utf-8")
+
+    for view in ("detail", "update"):
+        resp = client.get(reverse(f"oauth2_provider:{view}", args=(org_app.id,)))
+        assert resp.status_code == 404, view
+
+    url = reverse("oauth2_provider:update", args=(org_app.id,))
+    resp = client.post(url, app_update_form_data(org_app, org, name="Taken"))
+    assert resp.status_code == 404
+
+    resp = client.post(reverse("oauth2_provider:delete", args=(org_app.id,)))
+    assert resp.status_code == 404
+    org_app.refresh_from_db()
+    assert org_app.name == "Org app"
+
+    # an org admin saving the row drops the stray user and the log says so
+    org.admin_usergroup.user_set.add(user)
+    resp = client.post(url, app_update_form_data(org_app, org))
+    assert resp.status_code == 302
+    org_app.refresh_from_db()
+    assert org_app.user_id is None
+    assert ownership_log_entries(org_app).get().change_message == (
+        f"Ownership changed from org {org.id} (user {user.id}) to org {org.id}"
+    )
+
+    restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_update_superuser_keeps_org(oauth2_apps):
+    override_app_model()
+
+    user_app, org_app, other_app = oauth2_apps
+
+    superuser = User.objects.create_superuser(
+        "superuser", "superuser@localhost", "superuser"
+    )
+    TOTPDevice.objects.create(user=superuser, name="phone", confirmed=True)
+
+    client = Client()
+    client.force_login(superuser)
+    url = reverse("oauth2_provider:update", args=(other_app.id,))
+
+    resp = client.get(url)
+    content = resp.content.decode("utf-8")
+    assert (
+        f'<option value="{other_app.org.id}" selected>{other_app.org.name}</option>'
+        in content
+    )
+
+    resp = client.post(url, app_update_form_data(other_app))
+    assert resp.status_code == 200
+    other_app.refresh_from_db()
+    assert other_app.user_id is None
+
+    # the current org is added, not every org
+    resp = client.post(url, app_update_form_data(other_app, org_app.org))
+    assert resp.status_code == 200
+    assert "That choice is not one of the available choices" in resp.content.decode(
+        "utf-8"
+    )
+    other_app.refresh_from_db()
+    assert other_app.org_id != org_app.org_id
+
+    resp = client.post(
+        url, app_update_form_data(other_app, other_app.org, name="Renamed")
+    )
+    assert resp.status_code == 302
+    other_app.refresh_from_db()
+    assert other_app.name == "Renamed"
+    assert other_app.user_id is None
+    assert not ownership_log_entries(other_app).exists()
+
+    restore_app_model()
+
+
 @pytest.mark.django_db
 def test_oauth_authorization_process(oauth2_org_admin_user):
     user, _, _ = oauth2_org_admin_user
@@ -425,13 +640,10 @@ def test_oauth_authorization_process(oauth2_org_admin_user):
     # Log in the user
     client.force_login(user)
 
-    # Set the oauth_session cookie
+    # Mark the session as logged in for an OAuth authorization
     session = client.session
-    session["oauth_session"] = True
+    session["oauth_login"] = oauth_login_marker(user)
     session.save()
-    cookie_signer = get_cookie_signer(salt="oauth_session")
-    signed_session_cookie = cookie_signer.sign(session.session_key)
-    client.cookies["oauth_session"] = signed_session_cookie
 
     # Test the authorization request
     auth_url = reverse("oauth2_provider:authorize")
@@ -552,14 +764,11 @@ def test_oauth_authorization_process_amr(oauth2_org_admin_user):
     # Log in the user
     client.force_login(user)
 
-    # Set the oauth_session cookie
+    # Mark the session as logged in for an OAuth authorization
     session = client.session
     session["amr"] = ["pwd"]
-    session["oauth_session"] = True
+    session["oauth_login"] = oauth_login_marker(user)
     session.save()
-    cookie_signer = get_cookie_signer(salt="oauth_session")
-    signed_session_cookie = cookie_signer.sign(session.session_key)
-    client.cookies["oauth_session"] = signed_session_cookie
 
     # Test the authorization request
     auth_url = reverse("oauth2_provider:authorize")
@@ -685,14 +894,11 @@ def test_oauth_authorization_process_oidc_amr(oauth2_org_admin_user):
     # Log in the user
     client.force_login(user)
 
-    # Set the oauth_session cookie
+    # Mark the session as logged in for an OAuth authorization
     session = client.session
     session["amr"] = ["pwd"]
-    session["oauth_session"] = True
+    session["oauth_login"] = oauth_login_marker(user)
     session.save()
-    cookie_signer = get_cookie_signer(salt="oauth_session")
-    signed_session_cookie = cookie_signer.sign(session.session_key)
-    client.cookies["oauth_session"] = signed_session_cookie
 
     # Test the authorization request
     auth_url = reverse("oauth2_provider:authorize")
@@ -781,10 +987,8 @@ def authorize_at_endpoint(user, app_grant_type, response_type, scope, **extra_pa
     client.force_login(user)
     session = client.session
     session["amr"] = ["pwd", "mfa"]
-    session["oauth_session"] = True
+    session["oauth_login"] = oauth_login_marker(user)
     session.save()
-    cookie_signer = get_cookie_signer(salt="oauth_session")
-    client.cookies["oauth_session"] = cookie_signer.sign(session.session_key)
 
     auth_url = reverse("oauth2_provider:authorize")
     auth_params = {
@@ -997,13 +1201,8 @@ class TestOAuthAuthorizationAMR:
         # Set session data
         session = client.session
         session["amr"] = amr_values
-        session["oauth_session"] = True
+        session["oauth_login"] = oauth_login_marker(user)
         session.save()
-
-        # Set up OAuth session cookie
-        cookie_signer = get_cookie_signer(salt="oauth_session")
-        signed_session_cookie = cookie_signer.sign(session.session_key)
-        client.cookies["oauth_session"] = signed_session_cookie
 
         # Authorization request
         auth_url = reverse("oauth2_provider:authorize")

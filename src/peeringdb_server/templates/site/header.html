@@ -33,7 +33,7 @@
 
 <link rel="shortcut icon" type="image/png" href="{{STATIC_URL}}favicon.ico"/>
 {% block css %}
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}fonts/material-icons/material-icons.css" />
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}bootstrap/css/bootstrap.css" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}autocomplete/jquery.autocomplete-light.css" />
@@ -184,7 +184,12 @@ $(window).bind("load", function() {
                 <li><a class="dropdown-item" href="/suggest/fac">{% trans "Suggest Facility" %}</a></li>
                 {% endif %}
                 <li><a class="dropdown-item" href="/profile">{% trans "Profile" %}</a></li>
-                <li><a class="dropdown-item" href="/logout">{% trans "Logout" %}</a></li>
+                <li>
+                  <form method="post" action="/logout">
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item">{% trans "Logout" %}</button>
+                  </form>
+                </li>
               </ul>
             </div>
           {% else %}

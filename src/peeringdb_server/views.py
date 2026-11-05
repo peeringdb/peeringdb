@@ -14,10 +14,13 @@ View definitions:
 """
 
 import datetime
+import ipaddress
 import json
 import logging
 import os
 import re
+import time
+import unicodedata
 import uuid
 from typing import Any, Union
 from urllib.parse import urlparse
@@ -35,6 +38,7 @@ from django.contrib.auth import (
     BACKEND_SESSION_KEY,
     authenticate,
     get_user,
+    load_backend,
     login,
     logout,
 )
@@ -67,10 +71,12 @@ from django.urls import Resolver404, resolve, reverse
 from django.utils import translation
 from django.utils.crypto import constant_time_compare
 from django.utils.decorators import method_decorator
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.debug import sensitive_post_parameters
 from django.views.decorators.http import require_http_methods
 from django_grainy.util import Permissions
 from django_otp.plugins.otp_email.models import EmailDevice
@@ -80,18 +86,31 @@ from django_peeringdb.const import (
     POC_ROLE_HELP_TEXT,
     WEBSITE_OVERRIDE_HELP_TEXT,
 )
+from django_ratelimit.core import get_usage
 from django_ratelimit.decorators import ratelimit
 from django_security_keys.ext.two_factor.views import (
     DisableView as TwoFactorDisableView,  # noqa
 )
 from django_security_keys.ext.two_factor.views import LoginView as TwoFactorLoginView
 from django_security_keys.ext.two_factor.views import SetupView as BaseSetupView
+from django_security_keys.models import SecurityKey
+from django_security_keys.utils import convert_to_bool
+from django_security_keys.views import (
+    register_security_key as library_register_security_key,
+)
 from django_security_keys.views import request_registration as request_key_registration
+from django_security_keys.views import (
+    update_security_key as library_update_security_key,
+)
+from django_security_keys.views import verify_user_password
 from elasticsearch import ApiError, Elasticsearch, TransportError
+from formtools.wizard.views import normalize_name
 from grainy.const import PERM_CREATE, PERM_CRUD, PERM_DELETE, PERM_UPDATE
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
+from oauth2_provider.settings import oauth2_settings
+from webauthn.helpers.exceptions import WebAuthnException
 
 import peeringdb_server.geo
 from peeringdb_server import location, settings
@@ -145,6 +164,11 @@ from peeringdb_server.models import (
     UserOrgAffiliationRequest,
     UserPasswordReset,
 )
+from peeringdb_server.oauth_views import (
+    AuthorizationView,
+    DeviceConfirmView,
+    DeviceUserCodeView,
+)
 from peeringdb_server.org_admin_views import load_all_user_permissions
 from peeringdb_server.permissions import APIPermissionsApplicator, check_permissions
 from peeringdb_server.search_v2 import (
@@ -168,6 +192,7 @@ from peeringdb_server.stats import get_fac_stats, get_ix_stats
 from peeringdb_server.stats import stats as global_stats
 from peeringdb_server.util import (
     generate_social_media_render_data,
+    get_client_ident,
     get_template,
     no_store_private,
     objfac_tupple,
@@ -183,7 +208,6 @@ RATELIMITS = dj_settings.RATELIMITS
 
 BASE_ENV = {
     "RECAPTCHA_PUBLIC_KEY": dj_settings.RECAPTCHA_PUBLIC_KEY,
-    "OAUTH_ENABLED": dj_settings.OAUTH_ENABLED,
     "PEERINGDB_VERSION": settings.PEERINGDB_VERSION,
     "TUTORIAL_MODE": settings.TUTORIAL_MODE,
     "RELEASE_ENV": settings.RELEASE_ENV,
@@ -202,12 +226,35 @@ def field_help(model, field):
     return model._meta.get_field(field).help_text
 
 
+def is_id(value):
+    """
+    True when `value` is a string an integer primary key lookup accepts
+    """
+    # int() refuses strings longer than sys.get_int_max_str_digits()
+    return bool(value) and len(value) <= 18 and value.isascii() and value.isdigit()
+
+
 def is_oauth_authorize(url):
+    """
+    True when `url` is a local path to one of the OAuth consent pages, which
+    sit behind `oauth_views.has_recent_oauth_login`
+    """
     try:
-        match = resolve(url)
-        return match.url_name == "authorize"
+        parsed = urlparse(url)
+    except ValueError:
+        return False
+    # the path alone would also match the same path on any other host
+    if parsed.scheme or parsed.netloc:
+        return False
+    try:
+        match = resolve(parsed.path)
     except Resolver404:
         return False
+    return getattr(match.func, "view_class", None) in (
+        AuthorizationView,
+        DeviceUserCodeView,
+        DeviceConfirmView,
+    )
 
 
 def export_permissions(user, entity):
@@ -352,6 +399,15 @@ def view_http_error_403(request, exception=None):
     return HttpResponseForbidden(template.render(make_env(), request))
 
 
+def view_http_error_400(request, exception=None):
+    # a refused Host header lands here before the session middleware ran;
+    # django's default handler needs the session (CSRF_USE_SESSIONS) and
+    # turns the 400 into a crash
+    return HttpResponseBadRequest(
+        "<h1>Bad Request (400)</h1>", content_type="text/html"
+    )
+
+
 def view_http_error_csrf(request, reason):
     # #2032: django's `REASON_NO_CSRF_COOKIE` ("CSRF cookie not set.") is
     # misleading with `CSRF_USE_SESSIONS` enabled, where no CSRF cookie exists -
@@ -492,7 +548,11 @@ def cancel_affiliation_request(request, uoar_id):
     # belongs to requesting user
 
     try:
-        affiliation_request = request.user.pending_affiliation_requests.get(id=uoar_id)
+        affiliation_request = (
+            request.user.pending_affiliation_requests.select_for_update().get(
+                id=uoar_id
+            )
+        )
     except UserOrgAffiliationRequest.DoesNotExist:
         return view_http_error_404(request)
 
@@ -674,9 +734,33 @@ def resend_confirmation_mail(request):
             ],
         )
 
-    request.user.send_email_confirmation(
-        request=request, email=request.POST.get("email")
+    # only addresses already on the account: send_email_confirmation creates
+    # a missing one, and adding addresses must go through profile_add_email
+    # and its password check
+    user = request.user
+    email = (request.POST.get("email") or user.email or "").strip()
+    address = next(
+        (
+            address
+            for address in user.emailaddress_set.all()
+            if address.email.lower() == email.lower()
+        ),
+        None,
     )
+    if address:
+        email = address.email
+    if (
+        not email
+        or (address is None and email.lower() != (user.email or "").lower())
+        or (address is not None and address.verified)
+    ):
+        response = view_index(
+            request, errors=[_("This email address cannot be confirmed")]
+        )
+        response.status_code = 400
+        return response
+
+    user.send_email_confirmation(request=request, email=email)
     return view_index(request, errors=[_("We have resent your confirmation email")])
 
 
@@ -774,6 +858,19 @@ def view_set_user_locale(request):
 # OAuth application management overrides
 
 
+def application_owner(org_id, user_id):
+    """
+    Describes an OAuth application owner for log entries
+    """
+    if org_id and user_id:
+        return f"org {org_id} (user {user_id})"
+    if org_id:
+        return f"org {org_id}"
+    if user_id:
+        return f"user {user_id}"
+    return "no owner"
+
+
 class ApplicationOwnerMixin:
     """
     OAuth mixin it that filters application queryset for ownership
@@ -793,8 +890,10 @@ class ApplicationOwnerMixin:
 
         org_ids = [org.id for org in self.request.user.admin_organizations]
 
+        # A user set on an org owned application (legacy rows) grants nothing,
+        # otherwise an admin removed from the org would keep the app (#512).
         return get_application_model().objects.filter(
-            Q(user=self.request.user) | Q(org_id__in=org_ids)
+            Q(user=self.request.user, org__isnull=True) | Q(org_id__in=org_ids)
         )
 
 
@@ -887,6 +986,32 @@ class ApplicationFormMixin:
             return value
 
         algorithm_field.clean = validate_algorithm
+
+        # The password grant is refused at the token endpoint (#519). As with
+        # HS256, an app registered with it keeps the choice but cannot save it.
+        password_grant = get_application_model().GRANT_PASSWORD
+        grant_type_field = form.fields["authorization_grant_type"]
+        if form.instance.authorization_grant_type != password_grant:
+            grant_type_field.choices = [
+                choice
+                for choice in grant_type_field.choices
+                if choice[0] != password_grant
+            ]
+
+        original_grant_type_clean = grant_type_field.clean
+
+        def validate_grant_type(value):
+            value = original_grant_type_clean(value)
+            if value == password_grant:
+                raise ValidationError(
+                    _(
+                        "The resource owner password-based grant is no longer "
+                        "supported. Select authorization code and use PKCE."
+                    )
+                )
+            return value
+
+        grant_type_field.clean = validate_grant_type
         return form
 
 
@@ -941,10 +1066,47 @@ oauth2_views.ApplicationDelete = ApplicationDelete
 class ApplicationUpdate(
     ApplicationOwnerMixin, ApplicationFormMixin, oauth2_views.ApplicationUpdate
 ):
+    def get_form(self):
+        form = super().get_form()
+
+        # An org owned application stays with an organization (#512). The
+        # current org remains a valid choice so that users who can manage the
+        # application without administering its org (superusers) can save it.
+        if form.instance.org_id:
+            org_field = form.fields["org"]
+            org_field.queryset = org_field.queryset | Organization.objects.filter(
+                id=form.instance.org_id
+            )
+            org_field.required = True
+            org_field.empty_label = None
+        return form
+
+    @transaction.atomic
     def form_valid(self, form):
+        previous = (
+            get_application_model()
+            .objects.filter(pk=form.instance.pk)
+            .values("org_id", "user_id")
+            .first()
+        )
         if not form.instance.org and not form.instance.user:
             form.instance.user = self.request.user
-        return super().form_valid(form)
+        response = super().form_valid(form)
+
+        current = {"org_id": self.object.org_id, "user_id": self.object.user_id}
+        if previous and previous != current:
+            LogEntry.objects.log_action(
+                self.request.user.id,
+                ContentType.objects.get_for_model(self.object).id,
+                self.object.id,
+                f"{self.object}",
+                CHANGE,
+                change_message=(
+                    f"Ownership changed from {application_owner(**previous)} "
+                    f"to {application_owner(**current)}"
+                ),
+            )
+        return response
 
 
 oauth2_views.ApplicationUpdate = ApplicationUpdate
@@ -953,7 +1115,9 @@ oauth2_views.ApplicationUpdate = ApplicationUpdate
 # OAuth profile
 
 
-@protected_resource(scopes=["profile"])
+@protected_resource(
+    scopes=["profile"], validator_cls=oauth2_settings.OAUTH2_VALIDATOR_CLASS
+)
 def view_profile_v1(request):
     oauth = get_oauthlib_core()
     scope_email, _request = oauth.verify_request(request, scopes=["email"])
@@ -964,19 +1128,20 @@ def view_profile_v1(request):
     if "pretty" in request.GET:
         json_params["indent"] = 2
 
-    user = request.user
+    # the token's user, request.user is not set from an access token
+    user = request.resource_owner
 
     data = dict(
-        id=request.user.id,
-        given_name=request.user.first_name,
-        family_name=request.user.last_name,
-        name=request.user.full_name,
+        id=user.id,
+        given_name=user.first_name,
+        family_name=user.last_name,
+        name=user.full_name,
         verified_user=user.is_verified_user,
     )
 
     # only add email fields if email scope is present
     if scope_email:
-        data.update(dict(email=request.user.email, verified_email=user.email_confirmed))
+        data.update(dict(email=user.email, verified_email=user.email_confirmed))
 
     # only add ddnetworks if networks scope is present
     if scope_networks:
@@ -1024,6 +1189,7 @@ def view_verify(request):
     return HttpResponse(template.render(env, request))
 
 
+@sensitive_post_parameters("password")
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -1202,6 +1368,7 @@ def profile_set_primary_email(request):
     return JsonResponse({"status": "ok"})
 
 
+@sensitive_post_parameters("password_c", "password", "password_v")
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -1212,13 +1379,10 @@ def view_password_change(request):
     elif request.method == "POST":
         password_c = request.POST.get("password_c")
 
-        if not request.user.has_oauth:
-            if not authenticate(username=request.user.username, password=password_c):
-                return JsonResponse(
-                    {"status": "auth", "password_c": _("Wrong password")}, status=400
-                )
-        else:
-            return JsonResponse({"status": "auth"}, status=401)
+        if not authenticate(username=request.user.username, password=password_c):
+            return JsonResponse(
+                {"status": "auth", "password_c": _("Wrong password")}, status=400
+            )
 
         form = PasswordChangeForm(request.POST)
         if not form.is_valid():
@@ -1263,6 +1427,7 @@ def view_profile_name_change(request):
     return view_verify(request)
 
 
+@sensitive_post_parameters("password")
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -1273,13 +1438,10 @@ def view_username_change(request):
     elif request.method == "POST":
         password = request.POST.get("password")
 
-        if not request.user.has_oauth:
-            if not authenticate(username=request.user.username, password=password):
-                return JsonResponse(
-                    {"status": "auth", "password": _("Wrong password")}, status=400
-                )
-        else:
-            return JsonResponse({"status": "auth"}, status=401)
+        if not authenticate(username=request.user.username, password=password):
+            return JsonResponse(
+                {"status": "auth", "password": _("Wrong password")}, status=400
+            )
 
         form = UsernameChangeForm(request.POST)
         if not form.is_valid():
@@ -1383,6 +1545,7 @@ def view_username_retrieve_complete(request):
     return render(request, "site/username-retrieve-complete.html", env)
 
 
+@sensitive_post_parameters("token", "password", "password_v")
 @no_store_private
 @csrf_protect
 @ensure_csrf_cookie
@@ -1399,7 +1562,7 @@ def view_password_reset(request):
         env["token"] = token = request.GET.get("token")
         env["target"] = target = request.GET.get("target")
 
-        if token and target:
+        if token and is_id(target):
             pr = UserPasswordReset.objects.filter(user_id=target).first()
             env["pr"] = pr
 
@@ -1419,7 +1582,7 @@ def view_password_reset(request):
             if not form.is_valid():
                 return JsonResponse(form.errors, status=400)
 
-            user = User.objects.filter(id=target).first()
+            user = User.objects.filter(id=target).first() if is_id(target) else None
 
             err_invalid_token_msg = _("Invalid Security Token")
             err_expired_msg = ('{} <a href="/reset-password">{}</a>').format(
@@ -1460,6 +1623,7 @@ def view_password_reset(request):
         return JsonResponse({"status": "ok"})
 
 
+@sensitive_post_parameters("password1", "password2")
 @no_store_private
 @csrf_protect
 @ensure_csrf_cookie
@@ -1543,6 +1707,7 @@ def view_registration(request):
         return JsonResponse({"status": "ok"})
 
 
+@sensitive_post_parameters("password")
 @csrf_protect
 @ensure_csrf_cookie
 @login_required
@@ -4142,6 +4307,8 @@ def request_search(request):
     return render_search_result(request)
 
 
+# POST only, so the CSRF check applies and other sites can't log users out
+@require_http_methods(["POST"])
 @transaction.atomic
 def request_logout(request):
     if dj_settings.DJANGO_READ_ONLY:
@@ -4151,6 +4318,33 @@ def request_logout(request):
         logout(request)
 
     return redirect("/")
+
+
+def login_throttle_address(request):
+    """
+    Returns the client address the login throttle counts against, IPv6
+    addresses by their /64 as a single client usually controls all of it.
+    """
+    address = get_client_ident(request)
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return address
+    if ip.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False))
+    return str(ip)
+
+
+def login_throttle_account(username):
+    """
+    Returns the account the login throttle counts against. The username is
+    resolved the way the login resolves it, so spellings the database
+    collation treats as the same account (case, accents) share one budget.
+    """
+    try:
+        return f"user:{User._default_manager.get_by_natural_key(username).pk}"
+    except (User.DoesNotExist, User.MultipleObjectsReturned):
+        return f"username:{username.casefold()}"
 
 
 # We are using django-otp's EmailDevice model
@@ -4234,19 +4428,51 @@ class LoginView(TwoFactorLoginView):
 
         return kwargs
 
+    def password_attempt_limited(self):
+        """
+        Counts a password attempt against the per client address and the per
+        account limit and returns True if either is exceeded.
+
+        Only posts carrying a username are counted, passkey logins and the
+        second factor steps are not. The step is not taken from the wizard
+        storage because the client can name the step it posts to.
+
+        Attempts from an address that is already limited are not counted
+        against the accounts they name, so one address cannot keep other
+        users' password logins limited.
+        """
+        request = self.request
+        # normalized like the login form's username field
+        username = unicodedata.normalize(
+            "NFKC", request.POST.get("auth-username", "")
+        ).strip()
+        if not username:
+            return False
+
+        return self.rate_limited(
+            "request_login_POST", login_throttle_address(request)
+        ) or self.rate_limited(
+            "request_login_username_POST", login_throttle_account(username)
+        )
+
+    def rate_limited(self, group, ident):
+        usage = get_usage(
+            self.request,
+            group=group,
+            key=lambda _group, _request: ident,
+            rate=RATELIMITS[group],
+            increment=True,
+        )
+        return bool(usage and usage["should_limit"])
+
     @transaction.atomic
-    # @method_decorator(
-    #     ratelimit(key="ip", rate=RATELIMITS["request_login_POST"], method="POST")
-    # )
     def post(self, *args, **kwargs):
         """
-        Posts to the `auth` step of the authentication
-        process need to be rate limited.
+        Password attempts are rate limited, see `password_attempt_limited`.
         """
         request = self.request
 
-        was_limited = getattr(self.request, "limited", False)
-        if self.get_step_index() == 0 and was_limited:
+        if self.password_attempt_limited():
             self.rate_limit_message = _(
                 "Please wait a bit before trying to login again."
             )
@@ -4363,6 +4589,13 @@ class LoginView(TwoFactorLoginView):
 
         redir = self.request.POST.get("next") or self.request.GET.get("next") or "/"
 
+        if not url_has_allowed_host_and_scheme(
+            redir,
+            allowed_hosts={self.request.get_host()},
+            require_https=self.request.is_secure(),
+        ):
+            return "/"
+
         # if the redirect url is to logout that makes little
         # sense as the user would get logged out immediately
         # after logging in, substitute with a redirect to `/` instead
@@ -4375,10 +4608,8 @@ class LoginView(TwoFactorLoginView):
         try:
             resolve(redir)
         except Resolver404:
-            # url could not be resolved to a view, so it's likely
-            # invalid or pointing somewhere externally, the only
-            # external urls we want to allow are the redirect urls
-            # of oauth applications set up in peeringdb
+            # url could not be resolved to a view as is, allow it only
+            # when it is a local OAuth consent page (with a query string)
 
             if not is_oauth_authorize(redir):
                 redir = "/"
@@ -4532,6 +4763,7 @@ class LoginView(TwoFactorLoginView):
             self.request.session["passkey_setup_required"] = True
             self.request.session.pop("amr", None)
             self.request.session.pop("used_passkey_auth", None)
+            self.request.session.pop("oauth_login", None)
             self.storage.reset()
             return redirect("profile_passkey")
 
@@ -4574,11 +4806,10 @@ class LoginView(TwoFactorLoginView):
         translation.activate(user_language)
         response = redirect(success_url)
         if is_oauth_authorize(success_url):
-            response.set_signed_cookie(
-                "oauth_session",
-                self.request.user,
-                max_age=dj_settings.OAUTH_COOKIE_MAX_AGE,
-            )
+            self.request.session["oauth_login"] = {
+                "user_id": self.request.user.pk,
+                "at": time.time(),
+            }
         response.set_cookie(
             dj_settings.LANGUAGE_COOKIE_NAME,
             user_language,
@@ -4609,8 +4840,17 @@ def request_translation(request, data_type):
             "key": dj_settings.GOOGLE_GEOLOC_API_KEY,
             "q": note,
             "target": target,
+            # google defaults to html, which keeps markup in the note intact
+            "format": "text",
         }
-        reply = requests.post(translationURL, params=call_params).json()
+        try:
+            reply = requests.post(
+                translationURL, params=call_params, timeout=(3, 10)
+            ).json()
+        except (requests.RequestException, ValueError):
+            return JsonResponse(
+                {"status": "error", "error": "Translation service unavailable"}
+            )
 
         if "data" not in reply:
             return JsonResponse({"status": request.POST, "error": reply})
@@ -4888,17 +5128,121 @@ def view_profile_passkey(request):
         )
 
 
+@sensitive_post_parameters("password")
 def request_security_key_registration(request):
     response = request_key_registration(request)
     if response.status_code != 200 or request.GET.get("passkey") != "1":
         return response
     # Passwordless login has no username/credential allowlist, so the
     # authenticator must be able to discover the newly registered credential.
+    # A passkey is the whole login, so it must verify the user (PIN or
+    # biometric) as well.
     options = json.loads(response.content)
     options.setdefault("authenticatorSelection", {}).update(
-        residentKey="required", requireResidentKey=True
+        residentKey="required", requireResidentKey=True, userVerification="required"
     )
     return JsonResponse(options)
+
+
+def login_wizard_user(request):
+    """
+    Returns the user the login wizard in this session has verified a first
+    factor for, or None. Like the wizard, it forgets the user once
+    `TWO_FACTOR_LOGIN_TIMEOUT` has passed.
+    """
+
+    # the storage key formtools derives from the view class name
+    data = request.session.get(f"wizard_{normalize_name(LoginView.__name__)}", {})
+    if not data.get("user_pk") or not data.get("user_backend"):
+        return None
+    timeout = getattr(dj_settings, "TWO_FACTOR_LOGIN_TIMEOUT", 600)
+    if timeout and time.time() > data.get("authentication_time", 0) + timeout:
+        return None
+    return load_backend(data["user_backend"]).get_user(data["user_pk"])
+
+
+def request_security_key_authentication(request):
+    """
+    Returns WebAuthn authentication options as a JSON response.
+
+    Passkey login is username-less. For a second factor the user comes from
+    the session, never from the request, so the options cannot be used to
+    look up another user's credential ids.
+    """
+
+    for_login = convert_to_bool(request.POST.get("for_login", False))
+    ignore_credential_filter = convert_to_bool(
+        request.POST.get("ignore_credential_filter", False)
+    )
+
+    # only the second factor may list all of a user's keys
+    if for_login and ignore_credential_filter:
+        return JsonResponse(
+            {"non_field_errors": _("Invalid authentication parameters")}, status=400
+        )
+
+    username = None
+    if not for_login:
+        # The wizard user comes first: a signed-in user can log in as another
+        # account through the wizard (OAuth authorize, passkey enrollment).
+        user = login_wizard_user(request)
+        if not user and request.user.is_authenticated:
+            user = request.user
+        if not user:
+            return JsonResponse(
+                {"non_field_errors": _("No username supplied")}, status=400
+            )
+        username = user.username
+
+    return JsonResponse(
+        json.loads(
+            SecurityKey.generate_authentication(
+                username,
+                request.session,
+                for_login=for_login,
+                ignore_credential_filter=ignore_credential_filter,
+            )
+        )
+    )
+
+
+@sensitive_post_parameters("password")
+@login_required
+def update_security_key(request):
+    """
+    Turns passkey login on or off for one of the user's keys. Requires the
+    current password, like registering a key.
+    """
+
+    error_response = verify_user_password(request)[1]
+    if error_response:
+        return error_response
+    return library_update_security_key(request)
+
+
+@sensitive_post_parameters("password", "credential")
+def register_security_key(request):
+    """
+    Answers a rejected registration, such as a passkey that did not verify
+    the user, with a 400 instead of an error page.
+    """
+
+    try:
+        return library_register_security_key(request)
+    except ValueError as exc:
+        logger.warning("Security key registration rejected: %s", exc)
+        return JsonResponse({"non_field_errors": [str(exc)]}, status=400)
+    except WebAuthnException as exc:
+        # e.g. a stale challenge after options were requested again elsewhere
+        logger.warning("Security key registration failed: %s", exc)
+        return JsonResponse(
+            {
+                "non_field_errors": [
+                    _("Security key registration failed. Please try again.")
+                ]
+            },
+            status=400,
+        )
 
 
 class TwoFactorSetupView(BaseSetupView):

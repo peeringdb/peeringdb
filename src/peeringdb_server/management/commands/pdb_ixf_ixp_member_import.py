@@ -105,6 +105,18 @@ class Command(BaseCommand):
         error_str += traceback.format_exc()
         self.runtime_errors.append(error_str)
 
+    def record_import_failure(self, ixlan):
+        """
+        Mark the ixlan as failed when its import raised, so the failure shows
+        on the exchange instead of only in this command's output.
+        """
+        try:
+            IXLan.objects.filter(id=ixlan.id).update(
+                ixf_ixp_import_error=ixf.INTERNAL_ERROR
+            )
+        except Exception as exc:
+            self.store_runtime_error(exc, ixlan=ixlan)
+
     def write_runtime_errors(self):
         for error in self.runtime_errors:
             self.stderr.write(error)
@@ -269,7 +281,11 @@ class Command(BaseCommand):
             )
             try:
                 importer = ixf.Importer()
-                importer.skip_import = self.skip_import
+                # a requested import on a LAN with import disabled only
+                # refreshes the data the preview shows
+                importer.skip_import = self.skip_import or (
+                    process_requested is not None and not ixlan.ixf_ixp_import_enabled
+                )
                 importer.cache_only = self.cache
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 success = None
@@ -300,6 +316,8 @@ class Command(BaseCommand):
 
             except Exception as inst:
                 self.store_runtime_error(inst, ixlan=ixlan)
+                if self.commit:
+                    self.record_import_failure(ixlan)
             finally:
                 if process_requested is not None:
                     if success:

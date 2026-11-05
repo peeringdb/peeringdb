@@ -16,6 +16,7 @@ from dal import autocomplete
 from django import forms
 from django.conf import settings
 from django.core.management import call_command
+from django.core.validators import URLValidator
 from django.db import transaction
 from django.utils.html import format_html_join
 from reversion.models import Version
@@ -40,6 +41,14 @@ TOOL_MAP = {}
 def register_tool(cls):
     TOOL_MAP[cls.tool] = cls
     return cls
+
+
+def is_listed_tool(tool_id):
+    """
+    Whether tool_id is offered in this environment (COMMANDLINE_TOOLS).
+    TOOL_MAP also holds tools that are only offered in some environments.
+    """
+    return tool_id in dict(COMMANDLINE_TOOLS)
 
 
 def get_tool(tool_id, form):
@@ -352,7 +361,9 @@ class ToolReset(CommandLineToolWrapper):
             required=False, initial=True, help_text=_("Load data from peeringdb API")
         )
         load_data_url = forms.CharField(
-            required=False, initial="https://www.peeringdb.com/api"
+            required=False,
+            initial="https://www.peeringdb.com/api",
+            validators=[URLValidator(schemes=["http", "https"])],
         )
 
     @property

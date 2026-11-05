@@ -175,7 +175,9 @@ def facilities(request: HttpRequest) -> JsonResponse:
         {
             "facilities": [
                 {"id": fac.id, "name": str(fac.name)}
-                for fac in models.Facility.handleref.all().undeleted().order_by("name")
+                for fac in models.Facility.handleref.filter(status="ok").order_by(
+                    "name"
+                )
             ]
         }
     )
@@ -335,8 +337,7 @@ def campus_facilities(request: HttpRequest) -> JsonResponse:
         {
             "campus_facilities": {
                 fac.id: {"campus_id": fac.campus_id, "name": str(fac.name)}
-                for fac in models.Facility.handleref.all()
-                .undeleted()
+                for fac in models.Facility.handleref.filter(status="ok")
                 .exclude(campus__isnull=True)
                 .order_by("name")
             }

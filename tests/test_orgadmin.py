@@ -559,6 +559,69 @@ class OrgAdminTests(TestCase):
         self.assertEqual(self._org_namespaces(key, org_5.grainy_namespace), set())
         self.assertEqual(self._org_namespaces(key, foreign_root), {foreign_namespace})
 
+    def _key_permission_request(self, action, prefix, data=None):
+        url = "/org_admin/key_permissions/%s?org_id=%d" % (action, self.org.id)
+        request = self.factory.post(url, data={"key_prefix": prefix, **(data or {})})
+        mock_csrf_session(request)
+        request.user = self.org_admin
+        view = getattr(api_key_views, f"key_permission_{action}")
+        return view(request)
+
+    def test_key_permission_update_own_org_key(self):
+        key, _ = models.OrganizationAPIKey.objects.create_key(
+            name="own key", org=self.org, email="key@localhost"
+        )
+
+        resp = self._key_permission_request(
+            "update", key.prefix, {"entity": f"org.{self.org.id}", "perms": 15}
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(
+            self.org.grainy_namespace,
+            self._org_namespaces(key, self.org.grainy_namespace),
+        )
+
+    def test_key_permission_update_other_org_key(self):
+        """
+        Test that an org admin cannot grant permissions on their org to a key
+        that belongs to another org
+        """
+
+        key, _ = models.OrganizationAPIKey.objects.create_key(
+            name="other key", org=self.org_other, email="key@localhost"
+        )
+
+        resp = self._key_permission_request(
+            "update", key.prefix, {"entity": f"org.{self.org.id}", "perms": 15}
+        )
+
+        self.assertEqual(resp.status_code, 404)
+        self.assertNotIn("is_readonly", json.loads(resp.content))
+        self.assertFalse(key.grainy_permissions.exists())
+
+    def test_key_permission_remove_other_org_key(self):
+        key, _ = models.OrganizationAPIKey.objects.create_key(
+            name="other key", org=self.org_other, email="key@localhost"
+        )
+        models.OrganizationAPIPermission.objects.create(
+            org_api_key=key, namespace=self.org.grainy_namespace, permission=PERM_READ
+        )
+
+        resp = self._key_permission_request(
+            "remove", key.prefix, {"entity": f"org.{self.org.id}"}
+        )
+
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(key.grainy_permissions.count(), 1)
+
+    def test_key_permission_unknown_prefix(self):
+        for action in ["update", "remove"]:
+            resp = self._key_permission_request(
+                action, "notakey0", {"entity": f"org.{self.org.id}", "perms": 15}
+            )
+            self.assertEqual(resp.status_code, 404)
+
     def test_manage_user_delete_prefix_collision(self):
         """
         Test the reported entry point (#2039): an admin of org 5 removing a

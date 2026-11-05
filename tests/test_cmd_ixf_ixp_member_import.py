@@ -26,6 +26,10 @@ from peeringdb_server.models import (
 from .util import setup_test_data
 
 
+def cache_ixf_data(ixlan, url, data):
+    cache.set(ixlan.ixf_cache_key, {"url": url, "data": data}, timeout=None)
+
+
 @pytest.mark.django_db
 def test_import_error_status(entities):
     ixlan = entities["ixlan"]
@@ -48,15 +52,13 @@ def test_import_processed_count(entities_base):
     ixf_import_data = setup_test_data("ixf.member.0")
 
     importer = ixf.Importer()
-    cache.set(
-        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
-    )
     ixlans = entities_base["ixlan"]
     for ixlan in ixlans:
         ixlan.ixf_ixp_import_enabled = False
         ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
         importer.update(ixlan, data=None)
         ixlan.ix.request_ixf_import()
+        cache_ixf_data(ixlan, "http://www.localhost.com", ixf_import_data)
 
     call_command(
         "pdb_ixf_ixp_member_import", process_requested=1, commit=True, cache=True
@@ -76,15 +78,13 @@ def test_import_not_processed_import_url_empty(entities_base):
     ixf_import_data = setup_test_data("ixf.member.0")
 
     importer = ixf.Importer()
-    cache.set(
-        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
-    )
     ixlans = entities_base["ixlan"]
     for ixlan in ixlans:
         ixlan.ixf_ixp_import_enabled = False
         ixlan.ixf_ixp_member_list_url = ""
         importer.update(ixlan, data=None)
         ixlan.ix.request_ixf_import()
+        cache_ixf_data(ixlan, "http://www.localhost.com", ixf_import_data)
 
     call_command(
         "pdb_ixf_ixp_member_import", process_requested=1, commit=True, cache=True
@@ -101,15 +101,13 @@ def test_ignore_import_enabled(entities_base):
     ixf_import_data = setup_test_data("ixf.member.0")
 
     importer = ixf.Importer()
-    cache.set(
-        importer.cache_key("http://www.localhost.com"), ixf_import_data, timeout=None
-    )
     ixlans = entities_base["ixlan"]
     for ixlan in ixlans:
         ixlan.ixf_ixp_import_enabled = True
         ixlan.ixf_ixp_member_list_url = "http://www.localhost.com"
         importer.update(ixlan, data=None)
         ixlan.ix.request_ixf_import()
+        cache_ixf_data(ixlan, "http://www.localhost.com", ixf_import_data)
 
     call_command(
         "pdb_ixf_ixp_member_import", process_requested=0, commit=None, cache=True
@@ -726,3 +724,37 @@ def unsent_emails(entities):
         emails.append(net_email)
 
     return emails
+
+
+@pytest.mark.django_db
+def test_import_failure_recorded_on_ixlan(entities, mocker):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_member_list_url = "https://ixf.example/feed.json"
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.save()
+
+    mocker.patch.object(ixf.Importer, "update", side_effect=RuntimeError("boom"))
+
+    with pytest.raises(SystemExit):
+        call_command("pdb_ixf_ixp_member_import", commit=True, ixlan=[ixlan.id])
+
+    ixlan.refresh_from_db()
+    assert ixlan.ixf_ixp_import_error == (
+        "Error: The import failed with an internal error"
+    )
+
+
+@pytest.mark.django_db
+def test_import_failure_not_recorded_without_commit(entities, mocker):
+    ixlan = entities["ixlan"]
+    ixlan.ixf_ixp_member_list_url = "https://ixf.example/feed.json"
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.save()
+
+    mocker.patch.object(ixf.Importer, "update", side_effect=RuntimeError("boom"))
+
+    with pytest.raises(SystemExit):
+        call_command("pdb_ixf_ixp_member_import", ixlan=[ixlan.id])
+
+    ixlan.refresh_from_db()
+    assert not ixlan.ixf_ixp_import_error

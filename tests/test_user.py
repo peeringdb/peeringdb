@@ -302,6 +302,31 @@ class UserTests(TestCase):
         resp = views.view_password_reset(request)
         self.assertEqual(resp.status_code, 400)
 
+    def test_password_reset_non_numeric_target(self):
+        """
+        A target that is not a user id is an invalid link, not a 500 (#525)
+        """
+        token, hashed = self.user_a.password_reset_initiate()
+        client = Client(raise_request_exception=False)
+        # an oversized number exceeds the int() digit limit
+        for target in ("abc", "1x", "²", "9" * 5000):
+            resp = client.get("/reset-password", {"token": token, "target": target})
+            self.assertEqual(resp.status_code, 200)
+            self.assertNotContains(resp, self.user_a.username)
+
+            request = self.factory.post(
+                "/reset-password",
+                data={
+                    "target": target,
+                    "token": token,
+                    "password": "abcdefghjikl",
+                    "password_v": "abcdefghjikl",
+                },
+            )
+            mock_csrf_session(request)
+            resp = views.view_password_reset(request)
+            self.assertEqual(resp.status_code, 400)
+
     def test_password_change(self):
         """Test user password change with various scenarios."""
         client = Client()

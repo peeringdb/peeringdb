@@ -12,13 +12,19 @@ from operator import attrgetter
 
 from dal import autocomplete
 from django import http
-from django.core.exceptions import ObjectDoesNotExist
+from django.contrib import admin
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import IntegerField, Q, Value
 from django.db.models.functions import Lower
 from django.utils import html
 from django.utils.encoding import smart_str
 from grappelli.views.related import AutocompleteLookup as GrappelliAutocomplete
-from grappelli.views.related import get_autocomplete_search_fields, get_label
+from grappelli.views.related import (
+    M2MLookup,
+    RelatedLookup,
+    get_autocomplete_search_fields,
+    get_label,
+)
 from reversion.models import Version
 
 from peeringdb_server.admin_commandline_tools import TOOL_MAP
@@ -35,7 +41,47 @@ from peeringdb_server.models import (
 )
 
 
-class PDBAdminGrappelliAutocomplete(GrappelliAutocomplete):
+class AdminLookupPermissionMixin:
+    """
+    Limit grappelli's lookup views to models registered on the admin site
+    that the requesting user may view.
+
+    Stock grappelli only checks is_staff, resolves any installed model,
+    queries its default manager and applies caller supplied ORM filters
+    (`query_string`) and return fields (`to_field`), which lets any staff
+    account read any column of any table.
+    """
+
+    def get_model(self):
+        model = super().get_model()
+        model_admin = admin.site._registry.get(model)
+        if model_admin is None or not model_admin.has_view_permission(self.request):
+            raise PermissionDenied
+
+        to_field = self.GET.get("to_field")
+        if to_field is not None and not model_admin.to_field_allowed(
+            self.request, to_field
+        ):
+            raise PermissionDenied
+
+        self.model_admin = model_admin
+        return model
+
+    def get_filtered_queryset(self, qs):
+        # query_string is ignored: no admin relation here uses
+        # limit_choices_to, so it only ever carried caller chosen filters
+        return self.model_admin.get_queryset(self.request)
+
+
+class PDBAdminRelatedLookup(AdminLookupPermissionMixin, RelatedLookup):
+    pass
+
+
+class PDBAdminM2MLookup(AdminLookupPermissionMixin, M2MLookup):
+    pass
+
+
+class PDBAdminGrappelliAutocomplete(AdminLookupPermissionMixin, GrappelliAutocomplete):
     def get_data(self):
         # limit qs to 250 items
         return [

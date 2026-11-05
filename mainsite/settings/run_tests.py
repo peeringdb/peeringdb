@@ -61,7 +61,10 @@ RATELIMITS = {
     "view_request_ownership_GET": "3/m",
     "view_username_retrieve_initiate": "2/m",
     "view_request_ownership_POST": "3/m",
-    "request_login_POST": "10/m",
+    # high enough that tests logging in repeatedly never hit it,
+    # tests/test_login_throttle.py sets its own
+    "request_login_POST": "100/m",
+    "request_login_username_POST": "100/m",
     "view_verify_POST": "2/m",
     "request_translation": "10/m",
     "view_import_ixlan_ixf_preview": "1/m",

@@ -52,7 +52,7 @@ from django_peeringdb.const import (
     SOCIAL_MEDIA_SERVICES,
 )
 from django_peeringdb.models.abstract import AddressModel
-from grainy.const import PERM_DELETE, PERM_UPDATE
+from grainy.const import PERM_DELETE, PERM_READ, PERM_UPDATE
 from PIL import Image
 from rest_framework import serializers, validators
 from rest_framework.exceptions import NotFound, Throttled
@@ -119,6 +119,7 @@ from peeringdb_server.validators import (
     validate_info_prefixes4,
     validate_info_prefixes6,
     validate_irr_as_set_on_change,
+    validate_ixf_member_list_url,
     validate_latitude,
     validate_longitude,
     validate_name,
@@ -1655,6 +1656,8 @@ class ModelSerializer(serializers.ModelSerializer):
 
                     self.instance = instance
 
+                    self._reclaim = True
+
                     if type(instance) in QUEUE_ENABLED:
                         self._reapprove = True
                         self._undelete = False
@@ -1779,7 +1782,47 @@ class RequestAwareListSerializer(serializers.ListSerializer):
         return [self.child.to_representation(self.child.extract(item)) for item in data]
 
 
-def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
+class VisibleContactListSerializer(RequestAwareListSerializer):
+    """
+    List serializer for nested contact sets.
+
+    Contacts rendered in full carry their grainy namespace and are filtered
+    by the permissions applicator. Contacts rendered as ids carry none, so
+    ids of contacts the caller may not see are dropped here (#513).
+    """
+
+    def to_representation(self, data):
+        rv = []
+        for item in data:
+            item = self.child.extract(item)
+            rendered = self.child.to_representation(item)
+            if isinstance(rendered, dict) or self.may_list_id(item):
+                rv.append(rendered)
+        return rv
+
+    def may_list_id(self, poc):
+        if poc.visible == "Public":
+            return True
+
+        request = self.request
+
+        # the api cache is rendered once for every caller
+        if not request or getattr(settings, "GENERATING_API_CACHE", False):
+            return False
+
+        return check_permissions_from_request(
+            request, poc.grainy_namespace, PERM_READ, explicit=True
+        )
+
+
+def nested(
+    serializer,
+    exclude=[],
+    getter=None,
+    through=None,
+    list_class=RequestAwareListSerializer,
+    **kwargs,
+):
     """
     Use this function to create nested serializer fields. Making
     depth work otherwise while fetching related lists via handlref remains a mystery.
@@ -1789,7 +1832,7 @@ def nested(serializer, exclude=[], getter=None, through=None, **kwargs):
 
     class NestedSerializer(serializer):
         class Meta(serializer.Meta):
-            list_serializer_class = RequestAwareListSerializer
+            list_serializer_class = list_class
             fields = field_set
             orig_name = serializer.__name__
 
@@ -2597,7 +2640,25 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             return ModelSerializer.create(self, validated_data)
         return super().create(validated_data)
 
+    def _validate_campus(self, data):
+        # the campus add-facility endpoint only joins facilities of the
+        # campus's own organization, the generic routes must not bypass
+        # that (#524). An unchanged campus is not re-checked.
+        campus = data.get("campus")
+        if not campus or campus.id == getattr(self.instance, "campus_id", None):
+            return
+        org = data.get("org") or getattr(self.instance, "org", None)
+        if campus.org_id != getattr(org, "id", None):
+            raise serializers.ValidationError(
+                {
+                    "campus_id": _(
+                        "A facility can only join a campus of its own organization"
+                    )
+                }
+            )
+
     def validate(self, data):
+        self._validate_campus(data)
         if getattr(self, "_raw_location_changed", False):
             self.validate_raw_location(data)
         if (
@@ -3241,7 +3302,7 @@ class NetworkIXLanSerializer(ModelSerializer):
             "planned_status_change_date",
         ] + HandleRefSerializer.Meta.fields
 
-        read_only_fields = ["net_side_id", "ix_side_id", "operational"]
+        read_only_fields = ["operational"]
         related_fields = ["net", "ixlan"]
         list_exclude = ["net", "ixlan"]
 
@@ -3431,8 +3492,61 @@ class NetworkIXLanSerializer(ModelSerializer):
                 )
             )
 
+    def _validate_sides(self, data):
+        # the set-net-side / set-ix-side endpoints own these rules, the
+        # generic routes must not bypass them (#524). A side kept unchanged
+        # on the same network and exchange is not re-checked, stored sides
+        # may predate the rules.
+        instance = self.instance
+        network = data.get("network") or getattr(instance, "network", None)
+        ixlan = data.get("ixlan") or getattr(instance, "ixlan", None)
+        net_moved = instance is not None and network.id != instance.network_id
+        ix_moved = instance is not None and ixlan.id != instance.ixlan_id
+
+        # a deleted connection reclaimed by its address is a new connection:
+        # the network side belongs to the previous network, the exchange side
+        # to the previous member at the previous exchange
+        if getattr(self, "_reclaim", False):
+            if net_moved:
+                instance.net_side = None
+            if net_moved or ix_moved:
+                instance.ix_side = None
+
+        net_side = data.get("net_side", getattr(instance, "net_side", None))
+        if (
+            net_side
+            and (net_moved or net_side.id != getattr(instance, "net_side_id", None))
+            and not network.netfac_set_active.filter(facility=net_side).exists()
+        ):
+            raise serializers.ValidationError(
+                {"net_side_id": _("The network is not present at this facility")}
+            )
+
+        ix_side = data.get("ix_side", getattr(instance, "ix_side", None))
+        ix_side_changed = getattr(ix_side, "id", None) != getattr(
+            instance, "ix_side_id", None
+        )
+        # a connection moved to another exchange may drop the old exchange's
+        # side, but not carry it over
+        if not (ix_side_changed or ix_moved) or (ix_moved and ix_side is None):
+            return
+        request = self.context.get("request")
+        if not request or not check_permissions_from_request(request, ixlan.ix, "c"):
+            raise serializers.ValidationError(
+                {
+                    "ix_side_id": _(
+                        "Only admins of the exchange can set or unset the exchange side"
+                    )
+                }
+            )
+        if ix_side and not ixlan.ix.ixfac_set_active.filter(facility=ix_side).exists():
+            raise serializers.ValidationError(
+                {"ix_side_id": _("The exchange is not present at this facility")}
+            )
+
     def validate(self, data):
         self._validate_network_contact(data)
+        self._validate_sides(data)
 
         # #1751: fold the flat UI fields into the document first, then
         # validate the whole thing against the typed key registry --
@@ -3640,6 +3754,7 @@ class NetworkSerializer(ModelSerializer):
     poc_set = nested(
         NetworkContactSerializer,
         exclude=["net_id", "net"],
+        list_class=VisibleContactListSerializer,
         source="poc_set_active_prefetched",
     )
 
@@ -4050,12 +4165,17 @@ class NetworkSerializer(ModelSerializer):
 
         if not validate_rdap_user_or_key(request, rdap):
             user_email = get_email_from_user_or_key(request)
+            org_key_note = ""
+            if get_org_key_from_request(request):
+                org_key_note = f"""
+
+The email address of an organization API key ({user_email}) must also be a verified email address of an administrator of the organization."""
             raise RestValidationError(
                 {
                     "non_field_errors": [
                         f"""We could not validate that the record for AS{asn} contains your email address ({user_email}).
 
-Please add this email address ({user_email}) to the RIR record for AS{asn} and try again.
+Please add this email address ({user_email}) to the RIR record for AS{asn} and try again.{org_key_note}
 
 If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
                     ],
@@ -4110,17 +4230,11 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
 
         return representation
 
-    def update(self, instance, validated_data):
-        request = self._context.get("request")
-        allow_ixp_update = validated_data.get("allow_ixp_update")
-
-        if validated_data.get("asn") != instance.asn:
-            raise serializers.ValidationError(
-                {
-                    "asn": _("ASN cannot be changed."),
-                }
-            )
-
+    def check_ixp_update_contact(self, instance, allow_ixp_update):
+        """
+        Refuses to enable automatic IX-F updates for a network without a
+        contact for them
+        """
         if (
             allow_ixp_update
             and not instance.poc_set_active.filter(
@@ -4136,6 +4250,19 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
                     ),
                 }
             )
+
+    def update(self, instance, validated_data):
+        request = self._context.get("request")
+        allow_ixp_update = validated_data.get("allow_ixp_update")
+
+        if validated_data.get("asn") != instance.asn:
+            raise serializers.ValidationError(
+                {
+                    "asn": _("ASN cannot be changed."),
+                }
+            )
+
+        self.check_ixp_update_contact(instance, allow_ixp_update)
 
         # if allow_ixp_update was turned on apply all existing suggestions for the network. (#499)
 
@@ -4448,6 +4575,13 @@ class IXLanSerializer(ModelSerializer):
         # as per #903 this should always return false as the field
         # is now deprecated
         return False
+
+    def validate_ixf_ixp_member_list_url(self, value):
+        # an unchanged URL is checked when it is fetched, so saving other
+        # fields keeps working if its host has moved since
+        if self.instance is None or value != self.instance.ixf_ixp_member_list_url:
+            validate_ixf_member_list_url(value)
+        return value
 
     def validate(self, data):
         # Per issue 846
@@ -4888,6 +5022,12 @@ class InternetExchangeSerializer(ModelSerializer):
 
     def get_proto_unicast(self, inst) -> bool:
         return inst.derived_proto_unicast
+
+    def validate_ixf_ixp_member_list_url(self, value):
+        # only used on create, see the field
+        if self.instance is None:
+            validate_ixf_member_list_url(value)
+        return value
 
     def validate(self, data):
         social_media = data.get("social_media")

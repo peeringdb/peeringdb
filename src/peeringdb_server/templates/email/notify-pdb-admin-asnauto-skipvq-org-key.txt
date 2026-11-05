@@ -5,5 +5,5 @@
 Organization API Key (prefix:{{ prefix }}) with email '{{ email }}' created Network {{ n_name }} AS{{ n_asn }} (<a href="{{ n_url }}">{{n_id}}</a>) under organization {{ o_name }} (<a href="{{ o_url }}">{{ o_id }}</a>).
 {% endblocktrans %}
 
-{% trans "As the key's email address was successfully matched against RiR entry data this network has skipped the verification queue." %}
+{% trans "As the key's email address was matched against RiR entry data and is a verified email address of an administrator of the key's organization, this network has skipped the verification queue." %}
 {% endlanguage %}

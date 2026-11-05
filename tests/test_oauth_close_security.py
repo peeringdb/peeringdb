@@ -34,7 +34,9 @@ def test_bearer_token_cannot_close_account_even_with_password(client, close_user
         {"password": PASSWORD},
         HTTP_AUTHORIZATION="Bearer close-security-token",
     )
-    assert response.status_code == 403
+    # an access token is no session, so this is an anonymous request
+    assert response.status_code == 302
+    assert response.url.startswith("/account/login/")
     assert SESSION_KEY not in client.session
     close_user.refresh_from_db()
     assert close_user.is_active

@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<p style="margin-top: 10px"><strong style="font-size: 15px">{{ object }}</strong></p>
+
+<form method="post">{% csrf_token %}
+  <div style="margin-top:10px">
+    <input type="submit" value="{% trans "Confirm" %}"/>
+    <a href="{{ cancel_url }}" class="grp-button grp-delete-link">{% trans "Cancel" %}</a>
+  </div>
+</form>
+{% endblock %}

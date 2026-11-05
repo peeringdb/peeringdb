@@ -32,6 +32,9 @@ from peeringdb_server.serializers import NetworkSerializer
 
 from .util import setup_test_data
 
+# a stored member snapshot from before the snapshot byte budget (#522)
+LARGE_SNAPSHOT = json.dumps({"asnum": 1101, "pad": "x" * 100000})
+
 
 @pytest.mark.django_db
 def test_invalid_member_type(entities):
@@ -1429,11 +1432,11 @@ def test_ixf_v6_address_in_ipaddr4_field_is_rejected(net_key):
     assert importer.update(ixlan, data=data) is True
 
     # the bad address was reported as an invalid IP, not silently accepted
-    assert any("Expected 4 octets" in err for err in importer.invalid_ip_errors)
+    assert any("Invalid IP address" in err for err in importer.invalid_ip_errors)
 
     # and the exchange was notified of the feed error
     assert ixlan.ixf_ixp_import_error
-    assert "Expected 4 octets" in ixlan.ixf_ixp_import_error
+    assert "Invalid IP address" in ixlan.ixf_ixp_import_error
 
     # nothing invalid was persisted for this member
     assert not IXFMemberData.objects.filter(ixlan=ixlan, asn=network.asn).exists()
@@ -3910,6 +3913,256 @@ def test_ixlan_add_netixlan_no_redundant_save_on_null_ip(entities):
 
     assert netixlan4.version == 1
     assert netixlan6.version == 1
+
+
+def _proposal(ixlan, net, host, fetched, data="{}", live_netixlan=True, **kwargs):
+    """
+    Create an IX-F proposal created before the stale netixlan period,
+    optionally with a live netixlan at the same addresses.
+    """
+
+    if ixlan.ix.name == "Test Exchange One":
+        ipaddr4, ipaddr6 = f"195.69.147.{host}", f"2001:7f8:1::a500:1101:{host}"
+    else:
+        ipaddr4, ipaddr6 = f"195.66.225.{host}", f"2001:7f8:4::a500:1101:{host}"
+
+    if live_netixlan:
+        NetworkIXLan.objects.create(
+            network=net,
+            ixlan=ixlan,
+            asn=net.asn,
+            speed=10000,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            status="ok",
+            is_rs_peer=True,
+            operational=True,
+        )
+
+    ixm = IXFMemberData.objects.create(
+        asn=net.asn,
+        ipaddr4=ipaddr4,
+        ipaddr6=ipaddr6,
+        ixlan=ixlan,
+        speed=10000,
+        fetched=fetched,
+        operational=True,
+        is_rs_peer=True,
+        status="ok",
+        data=data,
+        **kwargs,
+    )
+    IXFMemberData.objects.filter(id=ixm.id).update(
+        created=ixm.created
+        - datetime.timedelta(days=settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD + 1),
+        fetched=fetched,
+    )
+    return ixm
+
+
+def _record_loads(monkeypatch):
+    """
+    Record every IXFMemberData row loaded from the database as
+    (id, whether its snapshot was loaded).
+    """
+
+    loads = []
+    from_db = IXFMemberData.from_db.__func__
+
+    def record(cls, db, field_names, values):
+        instance = from_db(cls, db, field_names, values)
+        loads.append((instance.id, "data" in field_names))
+        return instance
+
+    monkeypatch.setattr(IXFMemberData, "from_db", classmethod(record))
+    return loads
+
+
+def _stale_proposals(importer, notified):
+    entities = entities_base()
+    ixlan, other_ixlan = entities["ixlan"]
+    net = entities["net"]["UPDATE_DISABLED_2"]
+    importer.reset(ixlan=ixlan, save=True)
+
+    now = importer.now
+    after = now + datetime.timedelta(seconds=1)
+    before = now - datetime.timedelta(seconds=1)
+    kwargs = {"extra_notifications_net_num": notified}
+
+    add = _proposal(
+        ixlan, net, 5, after, data=LARGE_SNAPSHOT, live_netixlan=False, **kwargs
+    )
+    return {
+        "seen": _proposal(ixlan, net, 1, after, **kwargs),
+        "at_start": _proposal(ixlan, net, 2, now, **kwargs),
+        "unseen": _proposal(ixlan, net, 3, before, **kwargs),
+        "other_ix": _proposal(other_ixlan, net, 4, before, **kwargs),
+        # another exchange's proposal refreshed during this import, which
+        # the walk acted on before #522 as well
+        "other_seen": _proposal(other_ixlan, net, 7, after, **kwargs),
+        "add": add,
+        "requirement": _proposal(ixlan, net, 6, after, requirement_of=add, **kwargs),
+    }
+
+
+@pytest.mark.django_db
+def test_without_snapshot_remote_data_missing():
+    entities = entities_base()
+    ixlan = entities["ixlan"][0]
+    net = entities["net"]["UPDATE_DISABLED_2"]
+    now = datetime.datetime.now(datetime.UTC)
+
+    rows = [
+        _proposal(ixlan, net, 1, now, data="{}"),
+        _proposal(ixlan, net, 2, now, data=""),
+        _proposal(ixlan, net, 3, now, data=LARGE_SNAPSHOT),
+    ]
+
+    qset = IXFMemberData.objects.filter(id__in=[row.id for row in rows])
+
+    for ixm in IXFMemberData.without_snapshot(qset):
+        assert "data" in ixm.get_deferred_fields()
+        loaded = IXFMemberData.objects.get(id=ixm.id)
+        assert ixm.remote_data_missing == loaded.remote_data_missing
+        assert ixm.action == loaded.action
+        # answering did not load the snapshot
+        assert "data" in ixm.get_deferred_fields()
+
+
+@pytest.mark.django_db
+def test_cleanup_aged_proposals_bounded(monkeypatch):
+    """
+    The aged proposal pass removes the same stale netixlans as before (#522)
+    and leaves proposals the current import did not see unloaded.
+    """
+
+    importer = ixf.Importer()
+    rows = _stale_proposals(importer, settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT)
+    loads = _record_loads(monkeypatch)
+
+    importer.cleanup_aged_proposals()
+
+    removed = {
+        ipaddress.ip_address("195.69.147.1"),
+        ipaddress.ip_address("195.66.225.7"),
+    }
+
+    assert set(IXFMemberData.objects.values_list("id", flat=True)) == {
+        row.id for name, row in rows.items() if name not in ("seen", "other_seen")
+    }
+    assert {
+        info["netixlan"].ipaddr4 for info in importer.actions_taken["delete"]
+    } == removed
+    assert (
+        set(
+            NetworkIXLan.objects.filter(status="deleted").values_list(
+                "ipaddr4", flat=True
+            )
+        )
+        == removed
+    )
+    assert {row_id for row_id, _ in loads} <= {
+        rows["seen"].id,
+        rows["other_seen"].id,
+        rows["add"].id,
+        rows["requirement"].id,
+    }
+    # requirements are read through requirement_set, with their snapshot
+    assert {row_id for row_id, data in loads if data} <= {rows["requirement"].id}
+
+
+@pytest.mark.django_db
+def test_notify_stale_netixlans_bounded(monkeypatch):
+    """
+    Stale netixlan re-notification counts the same proposals as before (#522)
+    and leaves proposals the current import did not see unloaded.
+    """
+
+    importer = ixf.Importer()
+    rows = _stale_proposals(importer, 0)
+    loads = _record_loads(monkeypatch)
+
+    importer.notify_stale_netixlans()
+
+    notified = dict(
+        IXFMemberData.objects.values_list("id", "extra_notifications_net_num")
+    )
+    assert notified == {
+        row.id: 1 if name in ("seen", "other_seen") else 0 for name, row in rows.items()
+    }
+    assert {n["ixf_member_data"].id for n in importer.notifications} == {
+        rows["seen"].id,
+        rows["other_seen"].id,
+    }
+    assert {row_id for row_id, _ in loads} <= {
+        rows["seen"].id,
+        rows["other_seen"].id,
+        rows["add"].id,
+        rows["requirement"].id,
+    }
+    # saving a notified proposal reloads its snapshot (StripFieldMixin),
+    # requirements are read through requirement_set
+    assert {row_id for row_id, data in loads if data} <= {
+        rows["seen"].id,
+        rows["other_seen"].id,
+        rows["requirement"].id,
+    }
+
+
+@pytest.mark.django_db
+def test_cleanup_ixf_member_data_without_snapshot(monkeypatch):
+    """
+    Cleanup resolves the same proposals as before without loading their
+    stored snapshots (#522).
+    """
+
+    entities = entities_base()
+    ixlan, other_ixlan = entities["ixlan"]
+    net = entities["net"]["UPDATE_DISABLED_2"]
+    importer = ixf.Importer()
+    importer.reset(ixlan=ixlan, save=True)
+    now = importer.now
+
+    # a ticketed proposal renders its resolved notification
+    noop = _proposal(
+        ixlan, net, 1, now, data=LARGE_SNAPSHOT, deskpro_id=522, deskpro_ref="IXF-522"
+    )
+    gone = _proposal(ixlan, net, 2, now, data=LARGE_SNAPSHOT, live_netixlan=False)
+    still = _proposal(ixlan, net, 3, now, data=LARGE_SNAPSHOT, live_netixlan=False)
+    delete = _proposal(ixlan, net, 4, now)
+    other_ix = _proposal(other_ixlan, net, 5, now, data=LARGE_SNAPSHOT)
+
+    importer.ixf_ids.append(IXFMemberData.objects.get(id=still.id).ixf_id)
+    assert [
+        IXFMemberData.objects.get(id=row.id).action
+        for row in (noop, gone, still, delete, other_ix)
+    ] == ["noop", "add", "add", "delete", "noop"]
+
+    loads = _record_loads(monkeypatch)
+
+    importer.cleanup_ixf_member_data()
+
+    assert set(IXFMemberData.objects.values_list("id", flat=True)) == {
+        still.id,
+        delete.id,
+        other_ix.id,
+    }
+    assert [
+        (str(n["ixf_member_data"].ipaddr4), n["typ"], n["action"])
+        for n in importer.notifications
+    ] == [
+        (str(noop.ipaddr4), "resolved", "noop"),
+        (str(gone.ipaddr4), "resolved", "add"),
+    ]
+    assert loads
+    assert [row_id for row_id, data in loads if data] == []
+
+    # resolved proposals are deleted, their notifications still render
+    importer.notify_proposals()
+
+    ticket = DeskProTicket.objects.get(deskpro_id=522)
+    assert f'- Exchange: <a href="{ixlan.ix.view_url}"' in ticket.body
+    assert [row_id for row_id, data in loads if data] == []
 
 
 # FIXTURES

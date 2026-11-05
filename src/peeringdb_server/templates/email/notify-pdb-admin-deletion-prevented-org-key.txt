@@ -1,4 +1,4 @@
-Organization APIKey (prefix: {{ org_key.prefix }}, email: {{ org_key.email }}) tried to delete the following object:
+Organization API Key (prefix: {{ org_key.prefix }}) of organization {{ org_key.org.name }} tried to delete the following object:
 
 {{ instance.HandleRef.tag }}-{{ instance.id }}: {{ instance }}
 
@@ -7,3 +7,5 @@ The deletion was prevented because of the following reason(s):
 {{ instance.not_deletable_reason }}
 
 <a href="{{ admin_url }}">{{ admin_url }}</a>
+
+Org API Key Email: {{ org_key.email }}

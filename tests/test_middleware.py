@@ -17,17 +17,20 @@ from django.test import (
 from django.urls import reverse
 from django.urls.resolvers import ResolverMatch
 from django.utils.timezone import make_aware
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from oauth2_provider.models import AccessToken
 from rest_framework.response import Response
 from rest_framework.test import APIClient, APITestCase
 
 from peeringdb_server.middleware import (
     ERR_BASE64_DECODE,
+    ERR_BASIC_AUTH_DEPRECATED,
     ERR_VALUE_ERROR,
     CacheControlMiddleware,
     EnforceMFAMiddleware,
     PDBCommonMiddleware,
     RedisNegativeCacheMiddleware,
+    get_inactive_cache_key,
 )
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
 
@@ -95,6 +98,12 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.headers.get("X-Auth-ID"), "bogus")
         self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
+
+    def test_unprintable_apikey_auth_id_response(self):
+        self.client.credentials(HTTP_AUTHORIZATION="Api-Key bo\r\ngus")
+        response = self.client.get("/api/fac")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.headers.get("X-Auth-ID"), "apikey_bo__gus")
 
     def test_auth_id_api_key(self):
         user = User.objects.create(username="test_user")
@@ -182,6 +191,11 @@ class PDBPermissionMiddlewareTest(APITestCase):
         self.assertEqual(response.headers.get("X-Auth-Status"), "unauthenticated")
 
 
+# Basic auth reaches the credential check only before MFA enforcement
+@override_settings(
+    MFA_FORCE_SOFT_START=make_aware(datetime(2099, 1, 1)),
+    MFA_FORCE_HARD_START=make_aware(datetime(2099, 1, 1)),
+)
 class RedisNegativeCacheMiddlewareTest(APITestCase):
     """
     Test case for RedisNegativeCacheMiddleware class
@@ -464,6 +478,8 @@ def test_pdb_negative_cache_ratelimit_staff_exempt(mock_resolve):
     staff_user = User.objects.create(username="staff_user", is_staff=True)
     staff_user.set_password("staff_password")
     staff_user.save()
+    # without a second factor the MFA middleware redirects staff first
+    TOTPDevice.objects.create(user=staff_user, name="phone", confirmed=True)
 
     def mock_view_repsonse(request):
         return HttpResponse("Response 403", status=403)
@@ -524,11 +540,22 @@ class ActivateUserLocaleMiddlewareTests(APITestCase):
         ("123", 400, ERR_BASE64_DECODE, False),
         ("https://testbad:testpass@beta.peeringdb.com", 400, ERR_BASE64_DECODE, False),
         ("Ym9ndXM6Ym9ndXM=", 401, "Invalid username or password", False),
+        (
+            base64.b64encode(b"bogus\r\nX-Injected: 1:bogus").decode(),
+            400,
+            ERR_VALUE_ERROR,
+            False,
+        ),
+        (base64.b64encode(b"bo\x00gus:bogus").decode(), 400, ERR_VALUE_ERROR, False),
         (None, 200, "Invalid username or password", True),
     ),
 )
 @pytest.mark.django_db
-@override_settings(CSRF_USE_SESSIONS=False)
+@override_settings(
+    CSRF_USE_SESSIONS=False,
+    MFA_FORCE_SOFT_START=make_aware(datetime(2099, 1, 1)),
+    MFA_FORCE_HARD_START=make_aware(datetime(2099, 1, 1)),
+)
 def test_auth_basic(auth, status_code, message, success):
     if success:
         user = User.objects.create(username="test_user")
@@ -540,17 +567,99 @@ def test_auth_basic(auth, status_code, message, success):
     res = client.get("/api/fac", **headers)
     json = res.json()
     if success:
-        if MFA_FORCE_HARD_START or MFA_FORCE_SOFT_START:
-            assert res.status_code == 403
-            assert (
-                json["meta"].get("error")
-                == "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
-            )
-            return
         assert json["meta"].get("error") is None
     else:
         assert json["meta"]["error"] == message
     assert res.status_code == status_code
+
+
+@pytest.mark.django_db
+@override_settings(
+    DEBUG=False,
+    ADMINS=[("Ops", "ops@localhost")],
+    MFA_FORCE_SOFT_START=make_aware(datetime(2099, 1, 1)),
+    MFA_FORCE_HARD_START=make_aware(datetime(2099, 1, 1)),
+)
+def test_auth_basic_unprintable_username_sends_no_error_mail(mailoutbox):
+    """
+    A line break in a refused username used to end the request in a 500,
+    which spent the error-mail budget for everyone (#525)
+    """
+    caches["error_emails"].clear()
+    auth = base64.b64encode(b"bogus\r\nX-Injected: 1:bogus").decode()
+    client = Client(raise_request_exception=False)
+    for _ in range(settings.ERROR_EMAILS_LIMIT + 1):
+        res = client.get("/api/fac", HTTP_AUTHORIZATION=f"Basic {auth}")
+        assert res.status_code == 400
+        assert "X-Auth-ID" not in res.headers
+    assert not [m for m in mailoutbox if "Internal Server Error" in m.subject]
+
+
+@pytest.mark.parametrize(
+    "auth",
+    (
+        "base64",
+        "Ym9ndXM6Ym9ndXM=",
+        base64.b64encode(b"test_user:test_user").decode("utf-8"),
+    ),
+)
+@pytest.mark.parametrize("hard_start", (None, make_aware(datetime(2000, 1, 1))))
+@pytest.mark.parametrize("scheme", ("Basic", "basic", "BASIC"))
+@pytest.mark.django_db
+def test_auth_basic_refused_under_mfa_enforcement(settings, auth, hard_start, scheme):
+    """
+    Once enforcement has started every Basic request gets the same 403,
+    whatever the credentials, as the password is never checked. DRF accepts
+    the scheme in any case, so the refusal must too.
+    """
+
+    settings.MFA_FORCE_SOFT_START = None
+    settings.MFA_FORCE_HARD_START = hard_start
+    user = User.objects.create(username="test_user")
+    user.set_password("test_user")
+    user.save()
+    res = Client().get("/api/fac", HTTP_AUTHORIZATION=f"{scheme} {auth}")
+    assert res.status_code == 403
+    assert res.json() == {"meta": {"error": ERR_BASIC_AUTH_DEPRECATED}}
+    assert "no-store" in res["Cache-Control"]
+
+
+@pytest.mark.parametrize("scheme", ("Basic", "basic"))
+@pytest.mark.parametrize("has_mfa", (False, True))
+@pytest.mark.parametrize("method", ("delete", "put"))
+@pytest.mark.django_db
+def test_basic_auth_write_does_not_execute_under_mfa_enforcement(
+    settings, method, has_mfa, scheme
+):
+    """
+    The refusal has to happen before the view, a 403 that replaces the
+    response afterwards leaves the write in place.
+    """
+
+    reset_group_ids()
+    settings.MFA_FORCE_SOFT_START = make_aware(datetime.now() - timedelta(days=2))
+    settings.MFA_FORCE_HARD_START = make_aware(datetime.now() - timedelta(days=1))
+    admin = User.objects.create_user(
+        "basic-writer",
+        password="basic-writer-password",
+        status="ok",
+        is_staff=True,
+        is_superuser=True,
+    )
+    if has_mfa:
+        TOTPDevice.objects.create(user=admin, name="default", confirmed=True)
+    org = Organization.objects.create(name="Basic write org", status="ok")
+    encoded = base64.b64encode(b"basic-writer:basic-writer-password").decode()
+    res = getattr(Client(), method)(
+        f"/api/org/{org.id}",
+        data='{"name": "Basic write org renamed"}',
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"{scheme} {encoded}",
+    )
+    assert res.status_code == 403
+    org.refresh_from_db()
+    assert org.status == "ok"
+    assert org.name == "Basic write org"
 
 
 class TestEnforceMFAMiddleware(TestCase):
@@ -566,58 +675,6 @@ class TestEnforceMFAMiddleware(TestCase):
         user = User.objects.create_user(username="testuser", password="password")
         user.save()
         return user
-
-    @override_settings(
-        MFA_FORCE_HARD_START=make_aware(datetime.now() - timedelta(days=1))
-    )
-    def test_basic_auth_without_mfa(self):
-        with patch(
-            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
-        ) as mock_has_2fa:
-            mock_has_2fa.return_value = False
-
-            request = self.factory.get("/")
-            request.user = self.user
-            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
-
-            response = JsonResponse({})
-            response = self.middleware.process_response(request, response)
-
-            self.assertEqual(response.status_code, 403)
-            self.assertJSONEqual(
-                response.content,
-                {
-                    "meta": {
-                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
-                    }
-                },
-            )
-
-    @override_settings(
-        MFA_FORCE_HARD_START=make_aware(datetime.now() - timedelta(days=1))
-    )
-    def test_basic_auth_with_mfa(self):
-        with patch(
-            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
-        ) as mock_has_2fa:
-            mock_has_2fa.return_value = True  # Simulate a user with MFA
-
-            request = self.factory.get("/")
-            request.user = self.user
-            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
-
-            response = JsonResponse({})
-            response = self.middleware.process_response(request, response)
-
-            self.assertEqual(response.status_code, 403)
-            self.assertJSONEqual(
-                response.content,
-                {
-                    "meta": {
-                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
-                    }
-                },
-            )
 
     @override_settings(
         MFA_FORCE_SOFT_START=make_aware(
@@ -653,31 +710,23 @@ class TestEnforceMFAMiddleware(TestCase):
             self.assertNotEqual(response.status_code, 403)
 
     @override_settings(
-        MFA_FORCE_SOFT_START=None,
-        MFA_FORCE_HARD_START=None,
+        MFA_FORCE_SOFT_START=make_aware(datetime.now() - timedelta(days=2)),
+        MFA_FORCE_HARD_START=make_aware(datetime.now() - timedelta(days=1)),
     )
-    def test_basic_auth_none_value(self):
-        with patch(
-            "peeringdb_server.models.User.has_2fa", new_callable=PropertyMock
-        ) as mock_has_2fa:
-            mock_has_2fa.return_value = False
+    def test_basic_auth_response_not_replaced(self):
+        """
+        Basic authentication under enforcement is refused before the view by
+        `PDBPermissionMiddleware`, the response hook only adds the warning.
+        """
 
-            request = self.factory.get("/")
-            request.user = self.user
-            request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
+        request = self.factory.get("/")
+        request.user = self.user
+        request.META["HTTP_AUTHORIZATION"] = "Basic dGVzdHVzZXI6cGFzc3dvcmQ="
 
-            response = JsonResponse({})
-            response = self.middleware.process_response(request, response)
+        response = self.middleware.process_response(request, JsonResponse({}))
 
-            self.assertEqual(response.status_code, 403)
-            self.assertJSONEqual(
-                response.content,
-                {
-                    "meta": {
-                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
-                    }
-                },
-            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("X-Auth-Warning", response)
 
     def test_non_basic_auth_request(self):
         with patch(
@@ -973,15 +1022,15 @@ class TestCacheControlMiddlewareCredentials(APITestCase):
 
     def test_api_oauth_bearer_not_shared_cacheable(self):
         """
-        A bearer token is resolved by OAuth2TokenMiddleware rather than by any
-        REST authentication class, so it reaches the middleware as an
-        authenticated request.user.
+        The api refuses a bearer token, and the refusal is marked as not
+        storable by a shared cache.
         """
 
         self.client.credentials(HTTP_AUTHORIZATION=self.bearer_token())
         response = self.client.get("/api/fac")
-        assert response.status_code == 200
+        assert response.status_code == 401
         self.assert_not_shared_cacheable(response)
+        self.assert_varies_on_authorization(response)
 
     def test_api_unrecognized_authorization_not_shared_cacheable(self):
         """
@@ -1144,3 +1193,84 @@ def test_pdb_negative_cache_throttle_counted_before_exemption_check():
         response = client.post(url, {"password": "wrong"})
         assert response.status_code == 429
         assert response.headers.get("X-Throttled-Response") == "True"
+
+
+@pytest.fixture
+def basic_auth_enabled(settings):
+    # Basic auth only reaches the credential check before MFA enforcement
+    settings.MFA_FORCE_SOFT_START = make_aware(datetime(2099, 1, 1))
+    settings.MFA_FORCE_HARD_START = make_aware(datetime(2099, 1, 1))
+    caches["negative"].clear()
+    yield
+    caches["negative"].clear()
+
+
+def basic_auth_header(username, password):
+    encoded = base64.b64encode(f"{username}:{password}".encode()).decode("utf-8")
+    return {"HTTP_AUTHORIZATION": f"Basic {encoded}"}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("password", ["wrong-password", "right-password"])
+def test_basic_auth_inactive_account_answers_like_unknown(basic_auth_enabled, password):
+    user = User.objects.create_user("inactive-basic", password="right-password")
+    user.is_active = False
+    user.save()
+
+    client = Client()
+    inactive = client.get(
+        "/api/fac?probe=inactive", **basic_auth_header(user.username, password)
+    )
+    missing = client.get(
+        "/api/fac?probe=missing", **basic_auth_header("no-such-user", password)
+    )
+    assert inactive.status_code == missing.status_code == 401
+    assert inactive.json() == missing.json()
+    assert inactive.json()["meta"]["error"] == "Invalid username or password"
+
+
+@pytest.mark.django_db
+def test_basic_auth_inactive_marker_needs_right_password(basic_auth_enabled):
+    user = User.objects.create_user("inactive-marker", password="right-password")
+    user.is_active = False
+    user.save()
+    marker = get_inactive_cache_key(f"user__{user.username}")
+
+    client = Client()
+    client.get("/api/fac?probe=1", **basic_auth_header(user.username, "wrong"))
+    assert caches["negative"].get(marker) is None
+
+    client.get("/api/fac?probe=2", **basic_auth_header(user.username, "right-password"))
+    assert caches["negative"].get(marker) is True
+
+    replay = client.get("/api/fac?probe=3", **basic_auth_header(user.username, "x"))
+    assert replay.status_code == 401
+    assert replay["X-Cached-Response"] == "True"
+    assert replay.json() == {"meta": {"error": "Invalid username or password"}}
+
+
+@pytest.mark.django_db
+def test_basic_auth_marker_not_replayed_under_mfa_enforcement(settings):
+    """
+    A marker left by older code, which set it for any password, must not
+    answer differently from the refusal every other username gets.
+    """
+
+    settings.MFA_FORCE_SOFT_START = None
+    settings.MFA_FORCE_HARD_START = None
+    marker = get_inactive_cache_key("user__stale-marker")
+    caches["negative"].set(marker, True, timeout=60)
+    try:
+        stale = Client().get(
+            "/api/fac?probe=stale", **basic_auth_header("stale-marker", "x")
+        )
+        other = Client().get(
+            "/api/fac?probe=other", **basic_auth_header("no-marker", "x")
+        )
+    finally:
+        caches["negative"].delete(marker)
+    assert stale.status_code == other.status_code == 403
+    assert (
+        stale.json() == other.json() == {"meta": {"error": ERR_BASIC_AUTH_DEPRECATED}}
+    )
+    assert "X-Cached-Response" not in stale

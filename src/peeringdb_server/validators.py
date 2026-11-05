@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import phonenumbers
+from bleach import html5lib_shim, parse_shim
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
@@ -22,6 +23,7 @@ from schema import Schema
 
 import peeringdb_server.geo as geo
 import peeringdb_server.models
+from peeringdb_server import ixf_fetch
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.settings_util import get_setting_time
@@ -686,6 +688,21 @@ def _verify_irr_existence(existence_checks: list[tuple[str, str]]) -> None:
     )
 
 
+def validate_ixf_member_list_url(value: str | None) -> str | None:
+    """
+    Validate an IX-F member list URL: http or https, no credentials, and a
+    host whose addresses are all public. The fetch checks it again, since
+    DNS can change after the URL is saved.
+    """
+    if not value:
+        return value
+    try:
+        ixf_fetch.check_url(value)
+    except ixf_fetch.FetchError as exc:
+        raise ValidationError(f"{exc}")
+    return value
+
+
 def validate_irr_as_set_on_change(value: str, old: str) -> str:
     """
     Change-gated `irr_as_set` validation (#1973).
@@ -802,6 +819,113 @@ def validate_django_ratelimit_rate(value: str) -> str:
         )
 
 
+# markup accepted in the site-wide notification banner, which renders on
+# every page; enforced on save and again when rendered
+NOTIFICATION_BANNER_TAGS = frozenset({"a", "b", "strong", "i", "em", "br"})
+NOTIFICATION_BANNER_PROTOCOLS = frozenset({"http", "https"})
+
+
+def notification_banner_href_allowed(value: str) -> bool:
+    """
+    Whether a banner link target is an http(s) or relative URL.
+
+    `value` is the raw attribute text, character references intact, as
+    bleach hands it over at render and as validate_notification_banner reads
+    it. It is normalized the way bleach's own URI check does it, and a value
+    that cannot be read is refused rather than raised.
+    """
+    try:
+        # a decimal character reference beyond the int digit limit raises
+        uri = html5lib_shim.convert_entities(value)
+        uri = re.sub(r"[`\000-\040\177-\240\s]+", "", uri)
+        uri = re.sub(r"[^\x00-\x7f]", "", uri).lower()
+        # bleach's parser finds no scheme in "javascript:1", the stdlib one
+        # finds none in "1:abc", so both have to agree
+        schemes = (parse_shim.urlparse(uri).scheme, urlparse(uri).scheme)
+    except ValueError:
+        return False
+    return all(
+        not scheme or scheme in NOTIFICATION_BANNER_PROTOCOLS for scheme in schemes
+    )
+
+
+def notification_banner_attribute_allowed(tag: str, name: str, value: str) -> bool:
+    """
+    Attribute allowlist for the notification banner, in the callable form
+    bleach accepts.
+
+    Links need an http(s) or a relative `href` and may open in a new tab.
+    `rel` is accepted but always replaced when the banner is rendered.
+    """
+    if tag != "a":
+        return False
+    if name == "href":
+        return notification_banner_href_allowed(value)
+    if name == "target":
+        return value == "_blank"
+    return name == "rel"
+
+
+def validate_notification_banner(value: str) -> str:
+    """
+    Validates notification banner markup against the banner allowlist:
+    `<a>` with an http(s) or relative `href` and optionally `target="_blank"`,
+    `<b>`, `<strong>`, `<i>`, `<em>` and `<br>`.
+
+    The value is checked token by token as bleach's tokenizer reads it,
+    before tree construction, so disallowed markup the tree builder would
+    drop at render (a doctype, `<body>`, `<frame>`, a stray `</div>`) is
+    refused rather than stripped. At render the tree builder may still
+    rebalance the allowed tags, adding or dropping end tags, and it ignores
+    attributes on end tags, as this check does.
+
+    Will raise a ValidationError naming everything else that was found
+    rather than dropping it silently.
+
+    Arguments:
+
+    - value(`str`)
+
+    Returns:
+
+    - validated value (`str`)
+    """
+
+    value = str(value)
+    # tags=None tokenizes every tag so the disallowed ones can be named
+    parser = html5lib_shim.BleachHTMLParser(
+        tags=None, strip=False, consume_entities=False, namespaceHTMLElements=False
+    )
+    tokenizer = html5lib_shim.BleachHTMLTokenizer(
+        stream=value, consume_entities=False, parser=parser
+    )
+    errors = []
+    for token in tokenizer:
+        if token["type"] in html5lib_shim.TAG_TOKEN_TYPES:
+            tag = token["name"]
+            if tag not in NOTIFICATION_BANNER_TAGS:
+                errors.append(f"<{tag}>")
+                continue
+            # end tags carry no attributes
+            attributes = token["data"] if isinstance(token["data"], dict) else {}
+            for name, attr_value in attributes.items():
+                if not notification_banner_attribute_allowed(tag, name, attr_value):
+                    errors.append(f'<{tag} {name}="{attr_value}">')
+        elif token["type"] == html5lib_shim.constants.tokenTypes["Comment"]:
+            errors.append("<!-- -->")
+        elif token["type"] == html5lib_shim.constants.tokenTypes["Doctype"]:
+            errors.append("<!DOCTYPE>")
+
+    if errors:
+        raise ValidationError(
+            _(
+                'Only <a href> (http/https, optional target="_blank"), <b>, '
+                "<strong>, <i>, <em> and <br> are allowed. Not allowed: {}"
+            ).format(", ".join(dict.fromkeys(errors)))
+        )
+    return value
+
+
 def validate_identifier(service: str, identifier: str) -> None:
     """
     Validates a identifier based on the specific rules of different social media platforms.
@@ -897,6 +1021,11 @@ def validate_identifier(service: str, identifier: str) -> None:
     elif service in ["douyin", "kuaishou", "weibo"]:
         is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._-]{4,30}$", identifier))
 
+    elif service == "wechat":
+        # WeChat ID: 6-20 characters, starts with a letter, then letters,
+        # digits, underscores and hyphens.
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z][a-zA-Z0-9_-]{5,19}$", identifier))
+
     else:
         # If the service is not recognized, consider it an error in the input service name.
         raise ValueError(
@@ -957,6 +1086,9 @@ def validate_social_media(
                 # validate URL
                 try:
                     validate_url(identifier)
+                    # URLValidator lets quotes and angle brackets through in the path
+                    if re.search(r"[\"'<>\s]", identifier):
+                        raise ValidationError("Invalid URL.")
                 except Exception:
                     raise ValidationError(
                         _("Invalid {service} URL!").format(service=service)
@@ -982,6 +1114,7 @@ def validate_social_media(
                 "telegram",
                 "threads",
                 "tiktok",
+                "wechat",
                 "weibo",
                 "x",
                 "youtube",
@@ -1056,8 +1189,9 @@ def validate_verified_update_data(
     # the `.objects` manager and `.DoesNotExist`. Kept as Any.
     model: Any = peeringdb_server.models.REFTAG_MAP[ref_tag]
     try:
-        obj = model.objects.get(id=obj_id)
-    except model.DoesNotExist:
+        # the API can't update deleted objects either
+        obj = model.objects.exclude(status="deleted").get(id=obj_id)
+    except (model.DoesNotExist, ValueError):
         return False, _(f"object {ref_tag}.{obj_id} not found")
     result = {}
     for field, value in data.items():

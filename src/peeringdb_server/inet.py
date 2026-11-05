@@ -9,6 +9,10 @@ Prefix renumbering.
 from __future__ import annotations
 
 import ipaddress
+import json
+import os
+import tempfile
+import time
 from typing import TYPE_CHECKING
 
 import rdap
@@ -138,9 +142,63 @@ class RdapLookup(rdap.RdapClient):
             bootstrap_dir=settings.RDAP_BOOTSTRAP_DIR,
             ignore_recurse_errors=settings.RDAP_IGNORE_RECURSE_ERRORS,
             lacnic_apikey=settings.RDAP_LACNIC_APIKEY,
+            bootstrap_cache_ttl=django_settings.RDAP_BOOTSTRAP_CACHE_TTL,
             timeout=10,
         )
         super().__init__(config)
+
+    def get_bootstrap_data(self, typ: str) -> dict[str, object]:
+        """
+        Return IANA bootstrap data, from the local cache file while it is
+        younger than RDAP_BOOTSTRAP_CACHE_TTL hours.
+
+        Overrides the client's version, which rewrites the cache file in
+        place (a concurrent lookup can read it half written) and fails on
+        an unreadable file.
+        """
+        if self.bootstrap_dir:
+            data_file = os.path.join(self.bootstrap_dir, f"{typ}.json")
+            max_age = django_settings.RDAP_BOOTSTRAP_CACHE_TTL * 3600
+            try:
+                if time.time() - os.path.getmtime(data_file) < max_age:
+                    with open(data_file) as fh:
+                        return json.load(fh)
+            except (OSError, ValueError):
+                pass
+
+        data = self.fetch_bootstrap_data(typ)
+
+        if self.bootstrap_dir:
+            try:
+                self._write_bootstrap_file(typ, data)
+            except OSError:
+                pass
+
+        return data
+
+    def write_bootstrap_data(self, typ: str) -> None:
+        """
+        Fetch bootstrap data from IANA and write it to the cache file.
+        """
+        if not self.bootstrap_dir:
+            raise ValueError("bootstrap dir is not set")
+        self._write_bootstrap_file(typ, self.fetch_bootstrap_data(typ))
+
+    def _write_bootstrap_file(self, typ: str, data: dict[str, object]) -> None:
+        os.makedirs(self.bootstrap_dir, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=self.bootstrap_dir, prefix=f".{typ}.", suffix=".tmp"
+        )
+        try:
+            # mkstemp creates the file 0600; web workers may run as another
+            # user than pdb_rdap_cache
+            os.fchmod(fd, 0o644)
+            with os.fdopen(fd, "w") as fh:
+                json.dump(data, fh, separators=(",", ":"))
+            os.replace(tmp_path, os.path.join(self.bootstrap_dir, f"{typ}.json"))
+        except BaseException:
+            os.unlink(tmp_path)
+            raise
 
     def get_asn(self, asn: int) -> rdap.RdapAsn:
         """

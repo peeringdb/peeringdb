@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+# objects one verified update request may propose changes to
+MAX_UPDATES = 20
+
 SUPPORTED_FIELDS: dict[str, list[str]] = {
     "net": [
         "irr_as_set",

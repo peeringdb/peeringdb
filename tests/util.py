@@ -1,6 +1,7 @@
 import gzip
 import json
 import os
+import time
 from importlib import import_module
 
 from django.conf import settings
@@ -8,6 +9,7 @@ from django.contrib.auth.models import Group
 from django.middleware.csrf import CSRF_SESSION_KEY, _get_new_csrf_string
 from django.test import TestCase, override_settings
 from django_grainy.models import GroupPermission
+from oauth2_provider.models import Application
 
 import peeringdb_server.models as models
 from peeringdb_server import irr_bulk
@@ -110,6 +112,36 @@ def override_group_id():
         USER_GROUP_ID=Group.objects.get(name="user").id,
         GUEST_GROUP_ID=Group.objects.get(name="guest").id,
     )
+
+
+def oauth_login_marker(user, at=None):
+    """
+    Session value the login wizard sets after a login for an OAuth
+    authorization, see `oauth_views.has_recent_oauth_login`
+    """
+    return {"user_id": user.pk, "at": time.time() if at is None else at}
+
+
+def create_oauth_application(user, client_id, client_secret):
+    """
+    Creates a confidential authorization code application owned by `user`
+
+    The application has to exist in both the django-oauth-toolkit and the
+    peeringdb_server table, see test_oauth2_views.test_oauth_authorization_process
+    """
+
+    fields = dict(
+        user=user,
+        name=client_id,
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uris="https://example.com",
+        authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+        client_type=Application.CLIENT_CONFIDENTIAL,
+    )
+    app = Application.objects.create(**fields)
+    models.OAuthApplication.objects.create(id=app.id, **fields)
+    return app
 
 
 # For IXF member tests

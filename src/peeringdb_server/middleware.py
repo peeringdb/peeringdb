@@ -4,18 +4,18 @@ Custom django middleware.
 
 import base64
 import binascii
+import functools
+import hashlib
 import json
+import re
 from contextlib import nullcontext
+from urllib.parse import quote, unquote_plus, urlsplit
 
 import django_read_only
 import structlog
 from django.conf import settings
-from django.contrib.auth import (
-    BACKEND_SESSION_KEY,
-    authenticate,
-    get_user_model,
-    logout,
-)
+from django.contrib.auth import BACKEND_SESSION_KEY, logout
+from django.contrib.auth.backends import AllowAllUsersModelBackend
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import caches
@@ -23,7 +23,14 @@ from django.core.exceptions import MiddlewareNotUsed
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
-from django.urls import NoReverseMatch, resolve, reverse
+from django.urls import (
+    NoReverseMatch,
+    Resolver404,
+    URLResolver,
+    get_resolver,
+    resolve,
+    reverse,
+)
 from django.utils import timezone, translation
 from django.utils.cache import patch_cache_control, patch_vary_headers
 from django.utils.deprecation import MiddlewareMixin
@@ -31,11 +38,26 @@ from django.utils.translation import gettext as _
 from django_ratelimit.core import get_usage
 from oauth2_provider.utils import parse_bearer_token
 
+from peeringdb_server import meta_registry
 from peeringdb_server.context import current_request
-from peeringdb_server.models import EnvironmentSetting, OrganizationAPIKey, UserAPIKey
+from peeringdb_server.models import (
+    REFTAG_MAP,
+    EnvironmentSetting,
+    OrganizationAPIKey,
+    UserAPIKey,
+)
 from peeringdb_server.permissions import get_key_from_request
+from peeringdb_server.serializers import (
+    is_filter_excluded,
+    is_model_filter_excluded,
+    queryable_field_xl,
+)
 from peeringdb_server.settings_util import get_setting_time
-from peeringdb_server.util import NO_STORE_PRIVATE_DIRECTIVES
+from peeringdb_server.util import (
+    NO_STORE_PRIVATE_DIRECTIVES,
+    cache_key_digest,
+    get_client_ident,
+)
 
 try:
     import uwsgi
@@ -49,10 +71,110 @@ ERR_MULTI_AUTH = "Cannot authenticate through Authorization header while logged 
 ERR_BASE64_DECODE = "Corrupt base64 input."
 ERR_UNKNOWN = "Unknown error."
 ERR_VALUE_ERROR = "Invalid Input."
+ERR_BEARER_API = "OAuth access tokens are not accepted by the API, use an API key."
+ERR_INVALID_LOGIN = "Invalid username or password"
+ERR_BASIC_AUTH_DEPRECATED = "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
 
 AUTH_ID_ANON = "anon"
 AUTH_ID_UNVERIFIED = "unverified"
 AUTH_ID_INVALID_KEY = "apikey_invalid"
+
+LOG_REDACTED = "[redacted]"
+LOG_TRUNCATED = "[truncated]"
+
+# uWSGI keeps a log variable's length in one byte (#487)
+LOG_URI_MAX_LENGTH = 255
+
+# characters logged as they are; anything else, spaces and control
+# characters included, is percent-escaped so it can't break the log line
+LOG_URI_SAFE = "/:@!$&'()*+,;=-._~"
+LOG_QUERY_SAFE = "%/:@!$'()*+,;=-._~"
+
+# models whose API view filters on the registered `meta__<path>` keys
+# (NetworkIXLanSerializer.finalize_query_params)
+LOG_API_META_FILTER_TAGS = frozenset(("netixlan",))
+
+# the filter lookups the API applies (rest.py ModelViewSet.get_queryset)
+LOG_API_QUERY_LOOKUPS = frozenset(
+    ("lt", "lte", "gt", "gte", "contains", "startswith", "in")
+)
+
+# API query parameters that are not model fields: controls, and the
+# filters the serializers' prepare_query and the views handle themselves
+LOG_API_QUERY_PARAMS = frozenset(
+    (
+        "_ctf",
+        "all_net",
+        "asn",
+        "asn_overlap",
+        "capacity",
+        "carrierfac_set",
+        "city",
+        "confirm",
+        "country",
+        "depth",
+        "distance",
+        "fac",
+        "facility",
+        "facility_count",
+        "fields",
+        "format",
+        "hide_ix_no_fac",
+        "info_type",
+        "ipblock",
+        "ix",
+        "ixfac",
+        "ixlan",
+        "latitude",
+        "limit",
+        "longitude",
+        "name",
+        "name_search",
+        "net",
+        "netfac",
+        "netixlan",
+        "network_count",
+        "not_fac",
+        "not_ix",
+        "not_net",
+        "org_name",
+        "org_not_present",
+        "org_present",
+        "page",
+        "per_page",
+        "pretty",
+        "q",
+        "since",
+        "skip",
+        "whereis",
+    )
+)
+
+# API query parameters applied only as named, without a lookup suffix
+# (CarrierSerializer.prepare_query through get_relation_filters)
+LOG_API_EXACT_QUERY_PARAMS = frozenset(("carrierfac_set__facility_id",))
+
+# words in a URL path parameter name that mark its value as secret
+LOG_SENSITIVE_PARAM_WORDS = frozenset(
+    (
+        "apikey",
+        "auth",
+        "code",
+        "credential",
+        "credentials",
+        "key",
+        "nonce",
+        "otp",
+        "passwd",
+        "password",
+        "secret",
+        "session",
+        "sig",
+        "signature",
+        "state",
+        "token",
+    )
+)
 
 
 class PermissionsPolicyMiddleware(MiddlewareMixin):
@@ -68,14 +190,42 @@ class PermissionsPolicyMiddleware(MiddlewareMixin):
         return response
 
 
-def get_client_ident(request):
+class HealthcheckHostMiddleware:
     """
-    Get the IP address of the client, taking both
-    X-Forwarded-For and REMOTE_ADDR into account.
+    Gives `/healthcheck` the BASE_URL host, so load balancer and k8s probes
+    pass ALLOWED_HOSTS. ALB health checks send the target address as Host
+    and cannot be configured to send another one.
+
+    Must run before anything that calls `request.get_host()`.
     """
-    xff = request.META.get("HTTP_X_FORWARDED_FOR")
-    remote_addr = request.META.get("REMOTE_ADDR")
-    return "".join(xff.split()) if xff else remote_addr
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.host = urlsplit(settings.BASE_URL).netloc
+
+    def __call__(self, request):
+        if request.path_info == "/healthcheck":
+            request.META["HTTP_HOST"] = self.host
+        return self.get_response(request)
+
+
+def is_basic_auth(http_auth):
+    """
+    Returns True if the Authorization header uses the Basic scheme, in any
+    case, as DRF's `BasicAuthentication` accepts it in any case too.
+    """
+    parts = http_auth.split()
+    return bool(parts) and parts[0].lower() == "basic"
+
+
+def basic_auth_disabled():
+    """
+    Returns True once MFA enforcement (MFA_FORCE_HARD_START) has started, from
+    which point Basic authentication is refused. An unset date counts as
+    started.
+    """
+    force_start = get_setting_time("MFA_FORCE_HARD_START")
+    return not force_start or timezone.now() >= force_start
 
 
 def get_auth_identity(request):
@@ -92,25 +242,26 @@ def get_auth_identity(request):
     if session_id:
         return f"session__{session_id}"
 
-    auth_type = None
-
     if auth_value:
         try:
-            method, auth_value = auth_value.split(" ", 1)
+            method, credentials = auth_value.split(" ", 1)
             if method.lower() == "basic":
                 # base 64 auth value is decoded and split to get the username
-                auth_value = (
-                    base64.b64decode(auth_value).decode("utf-8").split(":", 1)[0]
+                username = (
+                    base64.b64decode(credentials).decode("utf-8").split(":", 1)[0]
                 )
-                auth_type = "user"
+                return f"user__{username}"
             elif method.lower() == "api-key":
                 # api key auth value is truncated to prefix
-                auth_value = auth_value.split(".", 1)[0]
-                auth_type = "key"
-            return f"{auth_type}__{auth_value}"
+                return f"key__{credentials.split('.', 1)[0]}"
         except Exception:
             # avoid 500 error in decode and split
             pass
+
+        # only the schemes above have a public part, any other value (bearer
+        # tokens, well-formed or not) may be secret throughout
+        digest = hashlib.sha256(auth_value.encode("utf-8")).hexdigest()
+        return f"hashed__{digest}"
 
     return "anonymous__guest"
 
@@ -121,6 +272,8 @@ def get_auth_status(request):
     """
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated:
+        return "authenticated"
+    if getattr(request, "oauth_user", None) is not None:
         return "authenticated"
     return "unauthenticated"
 
@@ -148,9 +301,9 @@ def get_log_auth_id(request):
     Returns the caller identity to log for the request (#487).
 
     PDBPermissionMiddleware records it as `request.log_auth_id` where it
-    authenticates. Otherwise OAuth bearer requests log `u<user_id>_oauth`,
-    and a request without an identity logs `anon`, or `unverified` if it
-    sent credentials that were never accepted.
+    authenticates. An OAuth access token accepted by an endpoint that takes
+    one logs `u<user_id>_oauth`, and a request without an identity logs
+    `anon`, or `unverified` if it sent credentials that were never accepted.
     """
     log_auth_id = getattr(request, "log_auth_id", None)
     if log_auth_id:
@@ -158,10 +311,12 @@ def get_log_auth_id(request):
 
     user = getattr(request, "user", None)
     if user is not None and user.is_authenticated:
-        # the same parser OAuth2TokenMiddleware authenticates with
-        if parse_bearer_token(request.META.get("HTTP_AUTHORIZATION", "")):
-            return f"u{user.id}_oauth"
         return f"u{user.id}"
+
+    # set by the OAuth validator, which never sets request.user
+    oauth_user = getattr(request, "oauth_user", None)
+    if oauth_user is not None:
+        return f"u{oauth_user.id}_oauth"
 
     if request.META.get("HTTP_AUTHORIZATION") or get_key_from_request(request):
         return AUTH_ID_UNVERIFIED
@@ -172,6 +327,354 @@ def get_log_auth_id(request):
         return AUTH_ID_UNVERIFIED
 
     return AUTH_ID_ANON
+
+
+def is_log_sensitive_param(name):
+    """
+    Returns whether a URL path parameter name marks its value as secret.
+
+    Matches whole words, so `access_token`, `client_secret`, `user_code` and
+    `apiKey` match while `zipcode` does not.
+    """
+    words = re.split(r"[^a-z]+", re.sub(r"([a-z])([A-Z])", r"\1_\2", name).lower())
+    return any(word in LOG_SENSITIVE_PARAM_WORDS for word in words)
+
+
+def get_log_path_candidates(request):
+    """
+    Returns the paths the request may resolve as, in the order to try them.
+    """
+    candidates = [request.path_info]
+    # CommonMiddleware redirects a slashless URL before it can resolve
+    if settings.APPEND_SLASH and not request.path_info.endswith("/"):
+        candidates.append(f"{request.path_info}/")
+    return candidates
+
+
+def resolve_for_log(request):
+    """
+    Returns the URL match for the request, resolving it here when the
+    response was returned before URL resolution.
+    """
+    if request.resolver_match is not None:
+        return request.resolver_match
+
+    for candidate in get_log_path_candidates(request):
+        try:
+            return resolve(candidate)
+        except Resolver404:
+            continue
+    return None
+
+
+def find_kwarg_spans(resolver, path, offset=0):
+    """
+    Resolves `path` the way `resolver` does and returns where each named
+    group of the matching patterns was captured, as {name: [(start, end)]}
+    offsets into the full path, outermost first, or None if nothing matches.
+    """
+    match = resolver.pattern.match(path)
+    if not match:
+        return None
+    spans = get_pattern_spans(resolver.pattern, path, offset)
+    rest = match[0]
+    offset += len(path) - len(rest)
+
+    for pattern in resolver.url_patterns:
+        if isinstance(pattern, URLResolver):
+            found = find_kwarg_spans(pattern, rest, offset)
+        elif pattern.pattern.match(rest):
+            found = get_pattern_spans(pattern.pattern, rest, offset)
+        else:
+            continue
+        if found is not None:
+            for name, name_spans in found.items():
+                spans.setdefault(name, []).extend(name_spans)
+            return spans
+    return None
+
+
+def get_pattern_spans(pattern, path, offset):
+    """
+    Returns the spans of the named groups `pattern` captures from `path`,
+    matching the way the pattern does.
+    """
+    regex = getattr(pattern, "regex", None)
+    if regex is None:
+        return {}
+    if getattr(pattern, "_is_endpoint", False) and regex.pattern.endswith("$"):
+        found = regex.fullmatch(path)
+    else:
+        found = regex.search(path)
+    if found is None:
+        return {}
+    return {
+        name: [(offset + found.start(name), offset + found.end(name))]
+        for name, value in found.groupdict().items()
+        if value is not None
+    }
+
+
+def get_log_redacted_spans(request, redact):
+    """
+    Returns the merged spans in `request.path_info` of the path parameters
+    in `redact`, a {name: value} mapping from the URL match, or None unless
+    the walk captured exactly those values.
+    """
+    resolver = get_resolver(getattr(request, "urlconf", None))
+    limit = len(request.path_info)
+    for candidate in get_log_path_candidates(request):
+        spans = find_kwarg_spans(resolver, candidate)
+        if spans is None:
+            continue
+        found = []
+        for name, value in redact.items():
+            if name not in spans:
+                return None
+            # the innermost capture is the one the URL match reports
+            start, end = spans[name][-1]
+            if candidate[start:end] != value:
+                return None
+            found.extend(spans[name])
+
+        merged = []
+        for start, end in sorted(found):
+            # the appended slash isn't part of the logged path
+            end = min(end, limit)
+            if merged and start <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start, end])
+        return merged
+    return None
+
+
+def redact_log_path(request, redact):
+    """
+    Returns the quoted request path with the path parameters in `redact`
+    replaced, or the whole path replaced if they can't be located.
+    """
+    spans = get_log_redacted_spans(request, redact)
+    if spans is None:
+        return LOG_REDACTED
+
+    prefix = request.path[: len(request.path) - len(request.path_info)]
+    path_info = request.path_info
+    parts = [quote(prefix, safe=LOG_URI_SAFE)]
+    last = 0
+    for start, end in spans:
+        parts.append(quote(path_info[last:start], safe=LOG_URI_SAFE))
+        parts.append(LOG_REDACTED)
+        last = end
+    parts.append(quote(path_info[last:], safe=LOG_URI_SAFE))
+    return "".join(parts)
+
+
+def get_log_uri(request):
+    """
+    Returns the URI to log for the request in place of the one it was sent
+    with (#495).
+
+    Never raises: request logging must not be able to change a response.
+    """
+    try:
+        return truncate_log_uri(build_log_uri(request))
+    except Exception:
+        # the django logger runs at ERROR outside DEBUG
+        log.error("get_log_uri failed", exc_info=True)
+        return LOG_REDACTED
+
+
+def build_log_uri(request):
+    """
+    Builds the URI to log for the request.
+
+    Values of sensitive path parameters are redacted. The query string is
+    kept only on API paths, where filters help abuse triage, and there only
+    the parameters the API filters on are kept. Elsewhere a query string is
+    replaced as a whole.
+    """
+    path = request.path
+    redact = {}
+    # static and media URLs carry no secret path parameter, and WhiteNoise
+    # answers them before URL resolution
+    if any(
+        prefix.startswith("/") and path.startswith(prefix)
+        for prefix in (settings.STATIC_URL, settings.MEDIA_URL)
+    ):
+        match = None
+    else:
+        match = resolve_for_log(request)
+
+    if match is not None:
+        redact = {
+            name: str(value)
+            for name, value in match.kwargs.items()
+            if value and is_log_sensitive_param(name)
+        }
+
+    if redact:
+        path = redact_log_path(request, redact)
+    else:
+        path = quote(path, safe=LOG_URI_SAFE)
+
+    if not request.META.get("QUERY_STRING"):
+        return path
+
+    if not (request.path == "/api" or request.path.startswith("/api/")):
+        return f"{path}?{LOG_REDACTED}"
+
+    return f"{path}?{get_log_api_query(request, match)}"
+
+
+def truncate_log_uri(uri):
+    """
+    Cuts the URI to what a uWSGI log variable holds.
+
+    uWSGI stores a log variable's length in one byte and wraps longer values
+    around silently.
+    """
+    if len(uri) <= LOG_URI_MAX_LENGTH:
+        return uri
+    cut = uri[: LOG_URI_MAX_LENGTH - len(LOG_TRUNCATED)]
+    # don't leave half a percent escape behind
+    cut = re.sub(r"%[0-9A-Fa-f]?$", "", cut)
+    return f"{cut}{LOG_TRUNCATED}"
+
+
+@functools.cache
+def get_log_model_field_names(model):
+    """
+    Returns the names of the model's concrete fields.
+
+    Reverse relations are left out, they include credential models such as
+    an organization's API keys.
+    """
+    return frozenset(field.name for field in model._meta.get_fields() if field.concrete)
+
+
+@functools.cache
+def get_log_api_query_names(view_class):
+    """
+    Returns the field names the API view filters on: its model's concrete
+    fields and its serializer's queryable relations, without the ones the
+    API excludes as private.
+    """
+    model = getattr(view_class, "model", None)
+    serializer_class = getattr(view_class, "serializer_class", None)
+    if model is None:
+        return frozenset()
+    concrete = get_log_model_field_names(model)
+    names = {name for name in concrete if not is_model_filter_excluded(model, name)}
+    if hasattr(serializer_class, "queryable_relations"):
+        # queryable_relations() also walks reverse relations
+        names.update(
+            name
+            for name, _ in serializer_class.queryable_relations()
+            if name.split("__", 1)[0] in concrete
+        )
+    return frozenset(name for name in names if not is_filter_excluded(name))
+
+
+@functools.cache
+def get_log_api_meta_filters(view_class):
+    """
+    Returns the `meta__<path>` filters the API view applies.
+    """
+    model = getattr(view_class, "model", None)
+    tag = getattr(getattr(model, "handleref", None), "tag", None)
+    if tag not in LOG_API_META_FILTER_TAGS:
+        return frozenset()
+    return frozenset(meta_registry.filter_column_map(tag))
+
+
+def is_log_alias_filter(field):
+    """
+    Returns whether `field` is an `<alias>__<field>` relation filter of the
+    serializers' prepare_query, such as `net__asn` on /api/ix, naming a
+    concrete field of the aliased object.
+    """
+    alias, has_sub, sub = field.partition("__")
+    if not has_sub or alias not in LOG_API_QUERY_PARAMS or alias not in REFTAG_MAP:
+        return False
+    sub = queryable_field_xl(sub)
+    return sub in get_log_model_field_names(REFTAG_MAP[alias]) and not (
+        is_filter_excluded(f"{queryable_field_xl(alias)}__{sub}")
+    )
+
+
+def is_log_api_query_param(name, view_class):
+    """
+    Returns whether the API view filters on the query parameter `name`,
+    matching it the way the API does: an optional lookup suffix, then the
+    serializer's field name translation.
+    """
+    name = unquote_plus(name)
+    if name in LOG_API_EXACT_QUERY_PARAMS:
+        return True
+    field, has_lookup, lookup = name.rpartition("__")
+    if not has_lookup or lookup not in LOG_API_QUERY_LOOKUPS:
+        field = name
+
+    # contact details on /api/poc (#492, #493)
+    model = getattr(view_class, "model", None)
+    if model is not None and is_model_filter_excluded(model, field):
+        return False
+
+    if field in LOG_API_QUERY_PARAMS:
+        return True
+    # `<alias>_id` forms of the extra filters, such as `net_id`
+    if re.fullmatch(r".+[^_]_id", field):
+        alias = field[: -len("_id")]
+        if alias in LOG_API_QUERY_PARAMS and alias in REFTAG_MAP:
+            return True
+
+    names = get_log_api_query_names(view_class)
+    if field in names or queryable_field_xl(field) in names:
+        return True
+    return is_log_alias_filter(field) or field in get_log_api_meta_filters(view_class)
+
+
+def get_log_api_query(request, match):
+    """
+    Returns the API query string to log, as the client sent it, with every
+    parameter the API doesn't filter on replaced.
+
+    Nothing under /api/ reads a credential from the query string, so a
+    parameter the API ignores is the only kind that can hold one; its name
+    is dropped too, a secret can be sent as the name.
+    """
+    view_class = getattr(match.func, "cls", None) if match else None
+    pairs = []
+    length = 0
+    # `;` too: a client may use it as the separator, and a credential after
+    # it would otherwise be logged inside the value before it
+    for pair in re.split("[&;]", request.META.get("QUERY_STRING", "")):
+        if not pair:
+            continue
+        # anything past what a log variable holds is cut anyway
+        if length > LOG_URI_MAX_LENGTH:
+            break
+        name = pair.partition("=")[0]
+        if is_log_api_query_param(name, view_class):
+            # WSGI hands the query string over latin-1 decoded
+            pair = quote(pair.encode("latin-1", "replace"), safe=LOG_QUERY_SAFE)
+        else:
+            pair = LOG_REDACTED
+        pairs.append(pair)
+        length += len(pair) + 1
+    return "&".join(pairs)
+
+
+def get_inactive_cache_key(identifier):
+    """
+    Returns the negative cache key that marks the credentials `identifier`
+    stands for as inactive.
+
+    The identifier can carry a Basic auth username, often a mistyped
+    password, or a whole API key, so it goes into the key as a digest (#495).
+    """
+    return f"inactive__{cache_key_digest(identifier)}"
 
 
 class PDBSessionMiddleware(SessionMiddleware):
@@ -252,6 +755,31 @@ class CurrentRequestContext:
             return self.get_response(request)
 
 
+class UwsgiLogUriMiddleware:
+    """
+    Adds the request URI with secrets redacted to the uWSGI request log as
+    the `log_uri` log variable (#495), for the log format to use in place of
+    the URI the request was sent with.
+
+    Runs first, so responses that middleware such as WhiteNoise return early
+    get it too. Not used outside uWSGI.
+    """
+
+    def __init__(self, get_response):
+        if uwsgi is None:
+            raise MiddlewareNotUsed()
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        # request logging must not be able to change a response
+        try:
+            uwsgi.set_logvar("log_uri", get_log_uri(request))
+        except Exception:
+            log.error("setting uwsgi log_uri failed", exc_info=True)
+        return response
+
+
 class UwsgiLogVarsMiddleware:
     """
     Adds the caller identity to the uWSGI request log as the `auth_id` and
@@ -326,17 +854,21 @@ class PDBPermissionMiddleware(MiddlewareMixin):
         Get the username and password from the HTTP auth header.
         """
         # Check if the HTTP auth header is valid.
-        if http_auth.startswith("Basic "):
-            # Get the HTTP auth header without the "Basic " prefix.
-            http_auth = http_auth[6:]
-        else:
+        if not is_basic_auth(http_auth):
             # Return an empty tuple.
             return tuple()
-        # Decode the HTTP auth header.
-        http_auth = base64.b64decode(http_auth).decode("utf-8")
+        # Decode the HTTP auth header without the scheme.
+        parts = http_auth.split()
+        credentials = parts[1] if len(parts) == 2 else ""
+        http_auth = base64.b64decode(credentials).decode("utf-8")
         # If username or password is empty return an empty tuple.
         # Split the username and password from the HTTP auth header.
         userpw = http_auth.split(":", 1)
+
+        # no username contains control characters, and a refused one is
+        # echoed in the X-Auth-ID header, where a line break is a 500
+        if not userpw[0].isprintable():
+            raise ValueError("Username contains unprintable characters")
 
         return userpw
 
@@ -369,9 +901,32 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
             return
 
+        # /profile/v1 and the /oauth2/ endpoints validate OAuth access tokens
+        # themselves, the API does not take them
+        if request.path_info.startswith("/api/") and parse_bearer_token(
+            http_auth or ""
+        ):
+            response = self.response_unauthorized(
+                request, message=ERR_BEARER_API, status=401
+            )
+            # answered before url resolution, so CacheControlMiddleware
+            # leaves it alone
+            patch_cache_control(response, **NO_STORE_PRIVATE_DIRECTIVES)
+            return response
+
         # Check if HTTP auth is valid and if the request is made with basic auth.
 
-        if http_auth and http_auth.startswith("Basic "):
+        if http_auth and is_basic_auth(http_auth):
+            # Refused before the view runs, so nothing executes on a password
+            # alone, and before the password is checked, so the API cannot be
+            # used to guess passwords.
+            if basic_auth_disabled():
+                response = self.response_unauthorized(
+                    request, message=ERR_BASIC_AUTH_DEPRECATED, status=403
+                )
+                patch_cache_control(response, **NO_STORE_PRIVATE_DIRECTIVES)
+                return response
+
             error = None
             try:
                 # Get the username and password from the HTTP auth header.
@@ -389,29 +944,22 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 # avoid 500 error when decode and split in the get_username_and_password
                 return self.response_unauthorized(request, message=error, status=400)
 
-            user = None
-            try:
-                user_object = get_user_model().objects.get(username=username)
-
-                if not user_object.is_active:
-                    # If user is inactive, cache the inactive auth
-                    # and return unauthorized
-
-                    identifier = get_auth_identity(request)
-                    caches["negative"].set(
-                        f"inactive__{identifier}",
-                        True,
-                        timeout=settings.NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH,
-                    )
-
-                    return self.response_unauthorized(
-                        request, message="Inactive account", status=401
-                    )
-                else:
-                    # Check if the username and password are valid.
-                    user = authenticate(username=username, password=password)
-            except get_user_model().DoesNotExist:
-                user_object = None
+            # Unknown, inactive and wrong-password logins must be
+            # indistinguishable: one password hash on every path (the backend
+            # hashes a dummy for unknown usernames) and one answer. The
+            # inactive check comes after the password, so only someone who
+            # knows it learns the account is inactive.
+            user = AllowAllUsersModelBackend().authenticate(
+                request, username=username, password=password
+            )
+            if user and not user.is_active:
+                identifier = get_auth_identity(request)
+                caches["negative"].set(
+                    get_inactive_cache_key(identifier),
+                    True,
+                    timeout=settings.NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH,
+                )
+                user = None
 
             # return username input in x-auth-id header
             if user:
@@ -428,7 +976,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                 request.log_auth_id = AUTH_ID_UNVERIFIED
 
                 return self.response_unauthorized(
-                    request, message="Invalid username or password", status=401
+                    request, message=ERR_INVALID_LOGIN, status=401
                 )
 
         # Check API keys
@@ -461,7 +1009,7 @@ class PDBPermissionMiddleware(MiddlewareMixin):
 
                 identifier = get_auth_identity(request)
                 caches["negative"].set(
-                    f"inactive__{identifier}",
+                    get_inactive_cache_key(identifier),
                     True,
                     timeout=settings.NEGATIVE_CACHE_EXPIRY_INACTIVE_AUTH,
                 )
@@ -491,13 +1039,15 @@ class PDBPermissionMiddleware(MiddlewareMixin):
                         )
 
     def process_response(self, request, response):
-        response["X-Auth-Status"] = (
-            "authenticated" if request.user.is_authenticated else "unauthenticated"
-        )
+        response["X-Auth-Status"] = get_auth_status(request)
         response["X-App-Version"] = settings.PEERINGDB_VERSION
+        # responses can depend on any credential scheme in the header
+        patch_vary_headers(response, ("Authorization",))
         if hasattr(request, "auth_id"):
             # Sanitizes the auth_id
-            request.auth_id = request.auth_id.replace(" ", "_")
+            request.auth_id = "".join(
+                c if c.isprintable() and c != " " else "_" for c in request.auth_id
+            )
             # If auth_id ends with a 401 make sure is it limited to 16 bytes
             if response.status_code == 401 and len(request.auth_id) > 16:
                 if not request.auth_id.startswith("apikey_"):
@@ -512,12 +1062,18 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
     Middleware that uses Django's cache framework with Redis backend to cache error responses.
     """
 
-    # Error responses on these paths are never replayed. Passkey registration
-    # and adding an email address answer a mistyped password with a 401, and
+    # Error responses on these paths are never replayed. Passkey registration,
+    # changing a key's passkey login, adding a user API key and adding an
+    # email address answer a mistyped password with a 401, and
     # the corrected retry differs only in its POST body, so a cached 401 would
     # reject the right password until it expires. The 401s still count towards
     # the repeated-error throttle.
-    exempt_url_names = ("security-keys-request-registration", "profile-add-email")
+    exempt_url_names = (
+        "security-keys-request-registration",
+        "security-keys-update",
+        "user-keys-add",
+        "profile-add-email",
+    )
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -635,16 +1191,22 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
             response["X-Throttled-Response"] = "True"
             return response
 
-        if identifier:
-            inactive_cache = caches["negative"].get(f"inactive__{identifier}")
+        # Once Basic authentication is refused outright, a login marker could
+        # only be one written before, and replaying it would answer that
+        # username differently from any other.
+        if identifier and not (
+            identifier.startswith("user__") and basic_auth_disabled()
+        ):
+            inactive_cache = caches["negative"].get(get_inactive_cache_key(identifier))
             if inactive_cache:
                 if identifier.startswith("key__"):
                     response = JsonResponse(
                         {"meta": {"error": "Inactive API key"}}, status=401
                     )
                 else:
+                    # same answer as a wrong password, see PDBPermissionMiddleware
                     response = JsonResponse(
-                        {"meta": {"error": "Inactive account"}}, status=401
+                        {"meta": {"error": ERR_INVALID_LOGIN}}, status=401
                     )
                 response["X-Cached-Response"] = "True"
                 return response
@@ -694,8 +1256,10 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
         identifier = get_auth_identity(request)
         method = request.method
 
+        request_digest = cache_key_digest(f"{request_path}__{url_parameters}")
+
         # Generate the key and sanitize it by replacing spaces and colons with underscores
-        cache_key = f"negcache_{ip_address}__{identifier}__{method}__{request_path}__{url_parameters}"
+        cache_key = f"negcache_{ip_address}__{cache_key_digest(identifier)}__{method}__{request_digest}"
         sanitized_cache_key = cache_key.replace(" ", "_").replace(":", "_")
 
         return sanitized_cache_key
@@ -1000,8 +1564,23 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         settings.MEDIA_URL,
     ]
 
+    # where an account confirms its email address
+    EMAIL_VERIFICATION_PATHS = [
+        reverse("user-profile"),
+        "/resend_email_confirmation",
+    ]
+    EMAIL_VERIFICATION_PREFIXES = [
+        "/profile/email/",
+        "/accounts/confirm-email/",
+    ]
+
     def is_path_excluded(self, path):
         return any(path.startswith(prefix) for prefix in self.EXCLUDED_PREFIXES)
+
+    def is_email_verification_path(self, path):
+        return path in self.EMAIL_VERIFICATION_PATHS or any(
+            path.startswith(prefix) for prefix in self.EMAIL_VERIFICATION_PREFIXES
+        )
 
     def get_setting_time(self, setting_name):
         return get_setting_time(setting_name)
@@ -1013,6 +1592,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         This middleware will redirect users to the MFA setup page if they have not set it up yet.
         If the user has not confirmed their email, they are not in a position to set up MFA so will
         be excluded from MFA enforcement. This is OK because unverified users are by nature read-only users.
+        Staff and superuser accounts are not, so they are redirected to confirm their email first.
 
         The enforcement is controlled through the MFA_FORCE_SOFT_START and MFA_FORCE_HARD_START settings.
 
@@ -1057,11 +1637,22 @@ class EnforceMFAMiddleware(MiddlewareMixin):
             else:
                 return
 
-        if not user.email_confirmed or user.has_2fa:
+        # staff accounts are not read-only, so an unconfirmed address does not
+        # exempt them: they confirm it first, then enroll like everyone else
+        verify_email = not user.email_confirmed
+        if verify_email and not (user.is_staff or user.is_superuser):
+            return
+
+        if user.has_2fa:
             return
 
         if self.is_path_excluded(request.path):
             return
+
+        if verify_email and self.is_email_verification_path(request.path):
+            return
+
+        setup_url = reverse("user-profile" if verify_email else "two_factor:profile")
 
         now = timezone.localtime()
         soft_start = self.get_setting_time("MFA_FORCE_SOFT_START")
@@ -1070,26 +1661,24 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         # If MFA_FORCE_HARD_START is not configured or the enforcement date has passed,
         # require MFA immediately for all users.
         if not force_start or now >= force_start:
-            return redirect(reverse("two_factor:profile"))
+            return redirect(setup_url)
 
         # If MFA_FORCE_SOFT_START is not configured or the user's registration date is after `MFA_FORCE_SOFT_START`
         # redirect them to the MFA setup page if they haven't set it up.
         if not soft_start or user.date_joined >= soft_start:
-            return redirect(reverse("two_factor:profile"))
+            return redirect(setup_url)
 
     def process_response(self, request, response):
         """
         Once MFA is being enforced, basic-authentication is no longer supported and API key authentication is required
         for any requests to the API or endpoints that previously allowed basic-authentication.
 
-        This processes any basic-authentication responses and will either
-        return a 403 error or a warning header, depending on the current stage of the MFA enforcement.
-
         Stage 1: Controlled through MFA_FORCE_SOFT_START indicates the start of a grace period where
-        basic-authentication is still supported.
+        basic-authentication is still supported. This adds a warning header to basic-authentication responses.
 
         Stage 2: Controlled through MFA_FORCE_HARD_START indicates the start of the enforcement period where
-        basic-authentication is no longer supported.
+        basic-authentication is no longer supported. `PDBPermissionMiddleware` refuses those requests before
+        the view runs.
         """
 
         user = request.user
@@ -1099,25 +1688,11 @@ class EnforceMFAMiddleware(MiddlewareMixin):
             return response
 
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
-        is_basic_auth = auth_header.startswith("Basic ")
-
-        if not is_basic_auth:
+        if not is_basic_auth(auth_header):
             return response
 
         now = timezone.now()
         soft_start = self.get_setting_time("MFA_FORCE_SOFT_START")
-        force_start = self.get_setting_time("MFA_FORCE_HARD_START")
-
-        # MFA is being enforced and basic-authentication is no longer supported. replace the response with a 403 error.
-        if not force_start or now >= force_start:
-            return JsonResponse(
-                {
-                    "meta": {
-                        "error": "Basic authentication support has been deprecated and is no longer supported, please switch to API key authentication."
-                    }
-                },
-                status=403,
-            )
 
         # MFA enforcement grace period has started and is ongoing, add a warning header to the response.
         if not soft_start or now >= soft_start:
