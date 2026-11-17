@@ -76,6 +76,8 @@ from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     clean_ixp_update_exclude,
     normalize_name,
+    split_irr_as_set_token,
+    tokenize_irr_as_set,
     validate_account_name,
     validate_address_space,
     validate_api_rate,
@@ -184,6 +186,18 @@ IXP_UPDATE_EXCLUDE_FIELDS = (
     ("speed", _("Speed")),
     ("is_rs_peer", _("Route Server Peer")),
     ("operational", _("Operational")),
+)
+
+# #2036: warning when another active network lists the same AS-SET. Shared by the
+# editor (via /data/irr_lookup) and the API save response, so the wording lives here.
+IRR_AS_SET_SHARED_WARNING = _(
+    "This AS-SET is also listed by another network in PeeringDB. "
+    "Verify that this is intentional."
+)
+# #1456: an unprefixed name could refer to any registry's object
+IRR_AS_SET_UNQUALIFIED_SHARED_WARNING = _(
+    "An AS-SET with this name already exists, avoid ambiguity by specifying "
+    'the name of the IRR you use e.g. "IRR::AS-MYNAME"'
 )
 
 # #1973: outcome of the last pdb_irr_as_set_status re-verification run. Single
@@ -5957,6 +5971,44 @@ class Network(
         if qset is None:
             qset = cls.objects.filter(status="ok").order_by("asn")
         return {net.asn: net.irr_as_set for net in qset}
+
+    @classmethod
+    def irr_as_set_networks(cls, value, exclude_id=None):
+        """
+        Return active networks that list ``value`` as a complete token (#2036).
+
+        ``value`` must be a single set name. The match is on the whole token, so
+        ``RIPE::AS-FOO`` matches neither ``ARIN::AS-FOO``, bare ``AS-FOO`` nor
+        ``RIPE::AS-FOOBAR``.
+        """
+        tokens = tokenize_irr_as_set(value)
+        if len(tokens) != 1:
+            return []
+
+        token = tokens[0]
+        candidates = (
+            cls.objects.filter(status="ok", irr_as_set__icontains=token)
+            .only("id", "asn", "name", "irr_as_set")
+            .order_by("id")
+        )
+        if exclude_id:
+            candidates = candidates.exclude(id=exclude_id)
+        return [
+            network
+            for network in candidates
+            if token in tokenize_irr_as_set(network.irr_as_set)
+        ]
+
+    @staticmethod
+    def irr_as_set_shared_message(value):
+        """
+        The #2036 shared-AS-SET warning for one set name; the #1456 wording when
+        the name has no SOURCE:: prefix.
+        """
+        source, _name = split_irr_as_set_token(value.strip().upper())
+        if source is None:
+            return IRR_AS_SET_UNQUALIFIED_SHARED_WARNING
+        return IRR_AS_SET_SHARED_WARNING
 
     @property
     def search_result_name(self):

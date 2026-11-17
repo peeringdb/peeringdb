@@ -78,6 +78,7 @@ from peeringdb_server.inet import (
 )
 from peeringdb_server.models import (
     ASSET_REFTAG_MAP,
+    IRR_AS_SET_SHARED_WARNING,
     IXP_UPDATE_EXCLUDE_FIELDS,
     QUEUE_ENABLED,
     Campus,
@@ -113,6 +114,7 @@ from peeringdb_server.rest_throttles import LocationLookupThrottle
 from peeringdb_server.search_v2 import elasticsearch_proximity_entity
 from peeringdb_server.validators import (
     clean_ixp_update_exclude,
+    tokenize_irr_as_set,
     validate_address_space,
     validate_asn_prefix,
     validate_distance_geocode,
@@ -223,7 +225,28 @@ log = structlog.get_logger("django")
 #    return x
 
 
-class GeocodeSerializerMixin:
+class MetaResponseMixin:
+    """
+    Lets a serializer add non-blocking information (warnings, suggestions) to
+    the "meta" block of the API response.
+    """
+
+    def _add_meta_information(self, metadata):
+        """
+        Adds a dictionary of metadata to the "meta" field of the API
+        request, so that it ends up in the API response.
+        """
+        if "request" in self.context:
+            request = self.context["request"]
+            if not hasattr(request, "meta_response"):
+                request.meta_response = {}
+            request.meta_response.update(metadata)
+            return True
+
+        return False
+
+
+class GeocodeSerializerMixin(MetaResponseMixin):
     """
     Override create() and update() method of serializer
     to normalize the location against the Google Maps Geocode API
@@ -308,20 +331,6 @@ class GeocodeSerializerMixin:
 
             if getattr(instance, field) != validated_data.get(field):
                 return True
-
-        return False
-
-    def _add_meta_information(self, metadata):
-        """
-        Adds a dictionary of metadata to the "meta" field of the API
-        request, so that it ends up in the API response.
-        """
-        if "request" in self.context:
-            request = self.context["request"]
-            if not hasattr(request, "meta_response"):
-                request.meta_response = {}
-            request.meta_response.update(metadata)
-            return True
 
         return False
 
@@ -3731,7 +3740,7 @@ class LegacyInfoTypeField(serializers.Field):
             )
 
 
-class NetworkSerializer(ModelSerializer):
+class NetworkSerializer(MetaResponseMixin, ModelSerializer):
     # TODO override these so they dn't repeat network ID, or add a kwarg to
     # disable fields
     """
@@ -4286,6 +4295,40 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
             return updated
 
         return super().update(instance, validated_data)
+
+    def save(self, **kwargs):
+        old_irr_as_set = self.instance.irr_as_set if self.instance else ""
+        super().save(**kwargs)
+        self._warn_shared_irr_as_set(old_irr_as_set)
+
+    def _warn_shared_irr_as_set(self, old_irr_as_set):
+        """
+        #2036: when a write changes irr_as_set, warn (but do not reject) if
+        another active network already lists one of its set names. The warning
+        goes in the response's "meta" block, so the API schema is unchanged.
+        """
+        instance = self.instance
+        if not instance or not instance.irr_as_set:
+            return
+
+        tokens = tokenize_irr_as_set(instance.irr_as_set)
+        if tokens == tokenize_irr_as_set(old_irr_as_set or ""):
+            return
+
+        shared = [
+            {"irr_as_set": token, "id": net.id, "asn": net.asn, "name": net.name}
+            for token in tokens
+            for net in Network.irr_as_set_networks(token, exclude_id=instance.id)
+        ]
+        if shared:
+            self._add_meta_information(
+                {
+                    "irr_as_set_warning": {
+                        "message": IRR_AS_SET_SHARED_WARNING,
+                        "networks": shared,
+                    }
+                }
+            )
 
     def finalize_create(self, request):
         rdap_error = getattr(request, "rdap_error", None)
@@ -5646,7 +5689,7 @@ class UserSerializer(ModelSerializer):
             return result
 
 
-REFTAG_MAP = {
+REFTAG_MAP: dict[str, type[ModelSerializer]] = {
     cls.Meta.model.handleref.tag: cls
     for cls in [
         OrganizationSerializer,

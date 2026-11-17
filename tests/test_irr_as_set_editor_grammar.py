@@ -163,6 +163,18 @@ def test_bundles_carry_the_same_grammar():
 
 
 @pytest.mark.parametrize("path", BUNDLES, ids=lambda p: p.name)
+def test_editor_checks_qualified_sets_for_other_networks(path):
+    source = path.read_text()
+    # #2036: the duplicate check goes through /data/irr_lookup (which receives the
+    # token's source), not the old exact-match /api/net query
+    assert "/api/net?irr_as_set=" not in source
+    assert "source: token.source" in source
+    assert "shared_message" in source
+    # the warning wording is server-side only
+    assert "This AS-SET is also listed by another network" not in source
+
+
+@pytest.mark.parametrize("path", BUNDLES, ids=lambda p: p.name)
 def test_grammar_has_no_second_copy(path):
     source = path.read_text()
     assert SUPERSEDED_LITERAL not in source

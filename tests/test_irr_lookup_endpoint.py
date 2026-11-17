@@ -19,7 +19,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.test import APIClient
 
 from peeringdb_server.irr import LookupResult
-from peeringdb_server.models import User
+from peeringdb_server.models import Network, Organization, User
 from peeringdb_server.rest import IRRLookupView
 from peeringdb_server.rest_throttles import IRRLookupThrottle
 
@@ -44,7 +44,14 @@ class IRRLookupEndpointTests(TestCase):
         data = response.json()
         # flat JSON, not the API's {"data": [...], "meta": {}} envelope
         self.assertEqual(
-            data, {"name": "AS-FOO", "sources": ["RADB", "RIPE"], "ok": True}
+            data,
+            {
+                "name": "AS-FOO",
+                "sources": ["RADB", "RIPE"],
+                "ok": True,
+                "networks": [],
+                "shared_message": "",
+            },
         )
         self.assertNotIn("data", data)
         self.assertNotIn("meta", data)
@@ -64,7 +71,16 @@ class IRRLookupEndpointTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"name": "", "sources": [], "ok": False})
+        self.assertEqual(
+            response.json(),
+            {
+                "name": "",
+                "sources": [],
+                "ok": False,
+                "networks": [],
+                "shared_message": "",
+            },
+        )
         # no name -> the pool is never queried
         sources_for.assert_not_called()
 
@@ -79,8 +95,88 @@ class IRRLookupEndpointTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            response.json(), {"name": "AS-BAR", "sources": [], "ok": False}
+            response.json(),
+            {
+                "name": "AS-BAR",
+                "sources": [],
+                "ok": False,
+                "networks": [],
+                "shared_message": "",
+            },
         )
+
+    @mock.patch("peeringdb_server.irr.sources_for")
+    def test_lookup_returns_networks_using_complete_qualified_token(self, sources_for):
+        sources_for.return_value = LookupResult(["RIPE"], True)
+        org = Organization.objects.create(name="IRR users", status="ok")
+        exact = Network.objects.create(
+            name="Exact",
+            asn=64500,
+            irr_as_set="RIPE::AS-FOO",
+            status="ok",
+            org=org,
+        )
+        legacy_multi = Network.objects.create(
+            name="Legacy multi",
+            asn=64501,
+            irr_as_set="RADB::AS-BAR, ripe::as-foo",
+            status="ok",
+            org=org,
+        )
+        Network.objects.create(
+            name="Substring",
+            asn=64502,
+            irr_as_set="RIPE::AS-FOOBAR",
+            status="ok",
+            org=org,
+        )
+        Network.objects.create(
+            name="Deleted",
+            asn=64503,
+            irr_as_set="RIPE::AS-FOO",
+            status="deleted",
+            org=org,
+        )
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(self.url, {"name": "AS-FOO", "source": "ripe"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [net["id"] for net in response.json()["networks"]],
+            [exact.id, legacy_multi.id],
+        )
+        self.assertIn("another network", response.json()["shared_message"])
+
+    @mock.patch("peeringdb_server.irr.sources_for")
+    def test_lookup_keeps_unqualified_and_qualified_tokens_distinct(self, sources_for):
+        sources_for.return_value = LookupResult(["RIPE"], True)
+        org = Organization.objects.create(name="IRR users", status="ok")
+        bare = Network.objects.create(
+            name="Bare",
+            asn=64510,
+            irr_as_set="AS-FOO",
+            status="ok",
+            org=org,
+        )
+        Network.objects.create(
+            name="Qualified",
+            asn=64511,
+            irr_as_set="RIPE::AS-FOO",
+            status="ok",
+            org=org,
+        )
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(self.url, {"name": "AS-FOO"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["networks"],
+            [{"id": bare.id, "asn": bare.asn, "name": bare.name}],
+        )
+        # unprefixed name: the #1456 "specify the IRR" wording
+        self.assertIn("IRR::AS-MYNAME", response.json()["shared_message"])
 
     @mock.patch("peeringdb_server.irr.sources_for")
     def test_lookup_strips_whitespace(self, sources_for):
@@ -99,6 +195,9 @@ class IRRLookupEndpointTests(TestCase):
         self.assertTrue(self.url.startswith("/data/"))
         with self.assertRaises(NoReverseMatch):
             reverse("api:irr-lookup")
+
+    def test_endpoint_is_excluded_from_the_public_schema(self):
+        self.assertIsNone(IRRLookupView.schema)
 
     def test_throttle_attached(self):
         # the endpoint must be rate-limited (not a free IRR query proxy)

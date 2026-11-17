@@ -183,6 +183,11 @@ def test_schema_components_are_not_empty(generated_schema):
 
 
 @pytest.mark.django_db
+def test_website_only_irr_lookup_is_not_in_public_schema(generated_schema):
+    assert "/data/irr_lookup" not in generated_schema["paths"]
+
+
+@pytest.mark.django_db
 def test_non_filtering_views_advertise_no_query_params(generated_schema):
     """
     A list endpoint that builds its own queryset and ignores `request.query_params`
