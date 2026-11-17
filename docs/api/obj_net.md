@@ -6,6 +6,10 @@ A network is identified by its `asn`, which is unique across PeeringDB and canno
 changed after creation. `name` is likewise unique, including against soft-deleted
 networks.
 
+`name`, `aka` and `name_long` cannot contain emoji or other pictographic symbols
+(such as ★). A write that includes them is rejected with a validation error on
+that field.
+
 Because records are reused rather than recreated, an ASN that is released and later
 re-registered by a different operator keeps its existing `net` record: `org` changes
 and `updated` moves, but `id` and `created` do not. Do not read `created` as the start

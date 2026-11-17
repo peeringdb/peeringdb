@@ -129,6 +129,36 @@ def mail_users_entity_merge(
             )
 
 
+def mail_org_admins_emoji_removed(org: Organization, changes: list[dict]) -> None:
+    """
+    Tell an organization's admins that emoji were removed from the name fields
+    of its objects by the pdb_strip_name_emoji backfill (#2018).
+
+    Arguments:
+        - org <Organization>: the organization whose objects were changed
+        - changes <list>: one dict per changed field, with `entity_type`,
+          `ref_tag`, `id`, `field`, `current` and `proposed`
+    """
+    changes = [
+        {**change, "url": f"{settings.BASE_URL}/{change['ref_tag']}/{change['id']}"}
+        for change in changes
+    ]
+
+    template = loader.get_template("email/notify-org-admin-emoji-removed.txt")
+    for user in org.admin_usergroup.user_set.all():
+        with override(user.locale):
+            user.email_user(
+                _("Emoji removed from names in {}").format(org.name),
+                template.render(
+                    {
+                        "org": org,
+                        "changes": changes,
+                        "support_email": settings.DEFAULT_FROM_EMAIL,
+                    }
+                ),
+            )
+
+
 def _mail_network_contacts(
     net: Network,
     recipients: list[str],

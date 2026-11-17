@@ -83,6 +83,7 @@ from reversion.admin import VersionAdmin
 from reversion.models import Version as ReversionVersion
 
 import peeringdb_server.admin_commandline_tools as acltools
+from peeringdb_server.emoji import emoji_free_fields
 from peeringdb_server.inet import RdapException, RdapLookup, rdap_pretty_error_message
 from peeringdb_server.mail import (
     mail_sponsorship_admin_merge,
@@ -143,6 +144,7 @@ from peeringdb_server.validators import (
     validate_account_name,
     validate_irr_as_set_on_change,
     validate_name,
+    validate_no_emoji,
 )
 
 from . import forms
@@ -458,6 +460,14 @@ class StatusForm(baseForms.ModelForm):
         Also validates parent status when trying to undelete or activate
         an object whose parent is deleted.
         """
+
+        # reject emoji in the entity name fields (#2018)
+        for field_name in emoji_free_fields(self._meta.model):
+            if field_name in self.cleaned_data:
+                try:
+                    validate_no_emoji(self.cleaned_data[field_name])
+                except ValidationError as exc:
+                    self.add_error(field_name, exc)
 
         if self.cleaned_data.get("DELETE"):
             if self.instance and hasattr(self.instance, "deletable"):

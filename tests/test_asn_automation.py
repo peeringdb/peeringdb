@@ -183,6 +183,43 @@ class AsnAutomationTestCase(TestCase):
         self.assertTrue(undeleted)
         self.assertEqual(net.name, "Foo Bar")
 
+    def test_org_create_from_rdap_strips_emoji(self):
+        # #2018 - RDAP names can't be rejected, so emoji are removed
+        org, created = models.Organization.create_from_rdap(
+            self._rdap_with(org_name="🚀 Foo  Bar 🚀"), 63340
+        )
+        self.assertEqual(org.name, "Foo Bar")
+
+        # nothing left but emoji: fall back to the ASN
+        org, created = models.Organization.create_from_rdap(
+            self._rdap_with(org_name="🚀"), 63341
+        )
+        self.assertEqual(org.name, "AS63341")
+
+    def test_net_create_from_rdap_strips_emoji(self):
+        net, created = models.Network.create_from_rdap(
+            self._rdap_with(name="Foo 🚀 Bar"), 63342, self.base_org
+        )
+        self.assertEqual(net.name, "Foo Bar")
+
+        net, created = models.Network.create_from_rdap(
+            self._rdap_with(name="🚀"), 63343, self.base_org
+        )
+        self.assertEqual(net.name, "AS63343")
+
+    def test_undelete_for_new_owner_strips_emoji(self):
+        deleted = models.Network.objects.create(
+            name="Old Emoji Name", asn=63344, org=self.base_org, status="ok"
+        )
+        deleted.delete()  # soft-delete
+
+        new_org = models.Organization.objects.create(name="New Emoji Owner Org")
+        net, undeleted = models.Network.undelete_for_new_owner(
+            63344, new_org, self._rdap_with(name="🚀")
+        )
+        self.assertTrue(undeleted)
+        self.assertEqual(net.name, "AS63344")
+
     def test_validate_rdap_relationship(self):
         b = self.user_a.validate_rdap_relationship(self.rdap_63311)
         self.assertEqual(b, True)

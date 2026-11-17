@@ -26,6 +26,7 @@ from schema import Schema
 import peeringdb_server.geo as geo
 import peeringdb_server.models
 from peeringdb_server import ixf_fetch
+from peeringdb_server.emoji import emoji_regex
 from peeringdb_server.inet import IRR_SOURCE, network_is_pdb_valid
 from peeringdb_server.request import bypass_validation
 from peeringdb_server.settings_util import get_setting_time
@@ -190,6 +191,48 @@ def normalize_name(value: str | None) -> str | None:
     if not value:
         return value
     return CONSECUTIVE_WHITESPACE.sub(" ", value).strip()
+
+
+def validate_no_emoji(value: str | None) -> str | None:
+    """
+    Reject values containing emoji (#2018).
+    """
+    if value and emoji_regex().search(value):
+        raise ValidationError(_("Emoji are not allowed in this field."))
+
+    return value
+
+
+def strip_emoji(value: str | None) -> str | None:
+    """
+    Remove emoji - the strip counterpart to validate_no_emoji (which rejects).
+    Used by the pdb_strip_name_emoji backfill and for RDAP names, which can't
+    be rejected.
+
+    Only the spaces and tabs around each removed emoji are touched, so other
+    whitespace (e.g. line breaks in a text field) is kept. Text on both sides
+    of an emoji is joined with one space ("Acme<emoji>Net" -> "Acme Net"),
+    except inside a bracket ("(IX <emoji>)" -> "(IX)"), before punctuation
+    ("Acme<emoji>, Inc." -> "Acme, Inc.") or next to a line break.
+    """
+    if not value:
+        return value
+
+    pieces = emoji_regex().split(value)
+    result = pieces[0]
+    for piece in pieces[1:]:
+        left = result.rstrip(" \t")
+        right = piece.lstrip(" \t")
+        gap = (
+            left
+            and right
+            and not left[-1].isspace()
+            and not right[0].isspace()
+            and left[-1] not in "([{"
+            and right[0] not in ")]},.;:!?"
+        )
+        result = left + (" " if gap else "") + right
+    return result.strip()
 
 
 def clean_ixp_update_exclude(value: object) -> tuple[list[str], str | None]:

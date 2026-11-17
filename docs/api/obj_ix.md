@@ -5,6 +5,10 @@ Identified by the `ix` tag.
 An exchange is the administrative record for an IXP. `name` is unique across
 PeeringDB, including against soft-deleted exchanges.
 
+`name`, `aka` and `name_long` cannot contain emoji or other pictographic symbols
+(such as ★). A write that includes them is rejected with a validation error on
+that field.
+
 The participant-facing configuration — prefixes, MTU, route server ASN and the IX-F
 member list URL — lives on the exchange's `ixlan`, not here. Each exchange has
 exactly one `ixlan`, whose `id` matches the exchange's own.

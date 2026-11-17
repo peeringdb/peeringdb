@@ -572,6 +572,11 @@ set_option("IRR_AS_SET_MAX_SETS", 0)
 # unavailable — without weakening the format enforcement.
 set_bool("IRR_AS_SET_VERIFY_EXISTENCE", True)
 
+# #2018: whether (c) (r) (tm) count as emoji in entity name fields, i.e. are
+# rejected by the validator and removed by pdb_strip_name_emoji. Off by default:
+# they are part of real trademarked names.
+set_bool("EMOJI_INCLUDE_TRADEMARK_SIGNS", False)
+
 # #1973: the IRR lookup service — a pool of full-mirror IRRd servers tried in
 # order to answer "which registries hold object X?" / "does X exist in S?".
 # Each entry is a dict {host, port, timeout} and must be an IRRd server: the

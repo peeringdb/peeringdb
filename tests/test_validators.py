@@ -18,6 +18,8 @@ import peeringdb_server.geo as geo
 from peeringdb_server import irr as irr_module
 from peeringdb_server.admin import NetworkAdminForm
 from peeringdb_server.context import current_request
+from peeringdb_server.emoji import emoji_free_fields
+from peeringdb_server.forms import AffiliateToOrgForm
 from peeringdb_server.inet import IRR_SOURCE
 from peeringdb_server.irr_bulk import DUMP_SOURCES
 from peeringdb_server.models import (
@@ -39,6 +41,7 @@ from peeringdb_server.validators import (
     irr_as_set_pinned_source,
     normalize_social_media_identifier,
     split_irr_as_set_token,
+    strip_emoji,
     tokenize_irr_as_set,
     validate_account_name,
     validate_address_space,
@@ -51,6 +54,7 @@ from peeringdb_server.validators import (
     validate_latitude,
     validate_longitude,
     validate_name,
+    validate_no_emoji,
     validate_phonenumber,
     validate_prefix_overlap,
     validate_social_media,
@@ -216,6 +220,144 @@ def test_network_serializer_inherits_name_validation():
     assert NetworkSerializer().validate_name("Acme Corp") == "Acme Corp"
     with pytest.raises(ValidationError):
         NetworkSerializer().validate_name("Acme  Corp")
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Acme Corp",
+        "Café Zürich GmbH",
+        "日本インターネットエクスチェンジ",
+        "Москва-IX",
+        # (c) (r) (tm) are left to a separate decision (#2018)
+        "Acme™",
+        "Acme® ©",
+        # the zero-width joiner on its own is ordinary Indic text
+        "\u0915\u094d\u200d\u0937",
+        "AS-123 #1 *",
+        "",
+        None,
+    ],
+)
+def test_validate_no_emoji_allows(value):
+    assert validate_no_emoji(value) == value
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Acme 🚀",
+        "🍆",
+        "Acme ★ Net",
+        "Acme ❤",
+        "Acme \u2764\ufe0f",  # red heart with variation selector
+        "Acme 👍🏽",  # skin tone modifier
+        "Acme 🇮🇩",  # regional indicator flag
+        "Acme \U0001f468\u200d\U0001f469\u200d\U0001f467",  # ZWJ family
+        "Acme 1\ufe0f\u20e3",  # keycap
+    ],
+)
+def test_validate_no_emoji_rejects(value):
+    with pytest.raises(ValidationError):
+        validate_no_emoji(value)
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("Acme 🚀", "Acme"),
+        ("🚀 Acme 🚀", "Acme"),
+        ("Acme🚀Net", "Acme Net"),
+        ("Acme 🚀 🚀 Net", "Acme Net"),
+        ("★ Acme ★", "Acme"),
+        ("Acme \u2764\ufe0f", "Acme"),
+        ("Acme 👍🏽", "Acme"),
+        ("Acme 🇮🇩", "Acme"),
+        # no stray joiners or variation selectors left behind
+        ("Acme \U0001f468\u200d\U0001f469\u200d\U0001f467 Net", "Acme Net"),
+        ("Acme 1\ufe0f\u20e3", "Acme 1"),
+        # no gap left inside brackets
+        ("American IX (Vermont IX 🍁)", "American IX (Vermont IX)"),
+        ("Acme (🍁 Vermont)", "Acme (Vermont)"),
+        ("Acme [★]", "Acme []"),
+        # no gap before punctuation
+        ("NuVasive🚀, Inc.", "NuVasive, Inc."),
+        ("Acme 🚀.", "Acme."),
+        ("Acme™ 🚀", "Acme™"),
+        # only the spaces around an emoji are touched: line breaks and other
+        # whitespace runs are kept
+        ("line1\n\nline2 🚀", "line1\n\nline2"),
+        ("Hi 🚀\nNext", "Hi\nNext"),
+        ("Foo  Bar 🚀", "Foo  Bar"),
+        ("🚀", ""),
+        ("Acme Corp", "Acme Corp"),
+        ("", ""),
+        (None, None),
+    ],
+)
+def test_strip_emoji(value, expected):
+    assert strip_emoji(value) == expected
+
+
+@pytest.mark.parametrize("value", ["Acme™", "NETMOUNTAINS® Group", "Acme ©"])
+def test_trademark_signs_follow_setting(value):
+    # #2018: (c) (r) (tm) are allowed unless EMOJI_INCLUDE_TRADEMARK_SIGNS is on
+    assert validate_no_emoji(value) == value
+    assert strip_emoji(value) == value
+
+    with override_settings(EMOJI_INCLUDE_TRADEMARK_SIGNS=True):
+        with pytest.raises(ValidationError):
+            validate_no_emoji(value)
+        assert (
+            strip_emoji(value)
+            == value.replace("™", "").replace("®", "").replace("©", "").strip()
+        )
+
+
+def test_emoji_regex_is_linear():
+    # #2018: a long run of joiners / variation selectors with no emoji must
+    # not make the search quadratic (this input took minutes before the fix)
+    assert validate_no_emoji("A" + "\ufe0f" * 100_000)
+    assert strip_emoji("A" + " " * 100_000 + "🚀" + " " * 100_000 + "B") == "A B"
+
+
+def test_emoji_free_fields():
+    assert emoji_free_fields(Organization) == ["name", "aka", "name_long"]
+    assert emoji_free_fields(Network) == ["name", "aka", "name_long"]
+    # contacts are not entities: their name is not covered
+    assert emoji_free_fields(NetworkContact) == []
+    assert emoji_free_fields(None) == []
+
+
+@pytest.mark.parametrize("field", ["name", "aka", "name_long"])
+def test_network_serializer_rejects_emoji(field):
+    # name's UniqueValidator queries the DB, and the utf8mb3 test database
+    # can't compare 4-byte emoji, so use a BMP pictograph
+    serializer_field = NetworkSerializer().fields[field]
+    assert serializer_field.run_validation("Acme Corp") == "Acme Corp"
+    with pytest.raises(RestValidationError):
+        serializer_field.run_validation("Acme ★")
+
+
+def test_network_admin_form_rejects_emoji():
+    form_class = modelform_factory(
+        Network, form=NetworkAdminForm, fields=["name", "aka"]
+    )
+    form = form_class()
+    form.cleaned_data = {"name": "Acme 🚀", "aka": "Acme Corp"}
+    form.clean()
+    assert "name" in form.errors
+    assert "aka" not in form.errors
+
+
+def test_affiliate_to_org_form_rejects_emoji_org_name():
+    # a new org name typed into the affiliation form (BMP pictograph: the
+    # form looks the name up in the utf8mb3 test database first)
+    form = AffiliateToOrgForm(data={"org": "Acme ★"})
+    assert not form.is_valid()
+    assert "org" in form.errors
+
+    assert AffiliateToOrgForm(data={"org": "Acme Corp"}).is_valid()
 
 
 @pytest.mark.parametrize(
