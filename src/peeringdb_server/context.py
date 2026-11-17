@@ -12,6 +12,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from django.http import HttpRequest
 
+    from peeringdb_server.models import NetworkIXLan
+
 # stores current request in a thread safe context aware
 # manner.
 _current_request: contextvars.ContextVar[HttpRequest | None] = contextvars.ContextVar(
@@ -31,6 +33,11 @@ _forced_ixlan_deletion = contextvars.ContextVar("forced_ixlan_deletion", default
 # and hybrid flows)
 _issuing_at_authorization_endpoint = contextvars.ContextVar(
     "issuing_at_authorization_endpoint", default=False
+)
+
+# collects the netixlans saved while an IX-F import writes them (#2071)
+_saved_netixlans: contextvars.ContextVar[list[NetworkIXLan] | None] = (
+    contextvars.ContextVar("saved_netixlans", default=None)
 )
 
 
@@ -103,6 +110,33 @@ def issuing_at_authorization_endpoint() -> Iterator[None]:
 def is_issuing_at_authorization_endpoint() -> bool:
     """Returns True if currently inside an issuing_at_authorization_endpoint context."""
     return _issuing_at_authorization_endpoint.get()
+
+
+@contextmanager
+def collect_saved_netixlans() -> Iterator[list[NetworkIXLan]]:
+    """
+    Yields a list that receives every netixlan instance saved inside this
+    context, soft deletes included, so the caller can re-stamp them once
+    its writes are done (#2071)
+
+    An enclosing context receives the saves of a nested one as well.
+    """
+    saved: list[NetworkIXLan] = []
+    token = _saved_netixlans.set(saved)
+    try:
+        yield saved
+    finally:
+        _saved_netixlans.reset(token)
+        outer = _saved_netixlans.get()
+        if outer is not None:
+            outer.extend(saved)
+
+
+def note_saved_netixlan(netixlan: NetworkIXLan) -> None:
+    """Adds a saved netixlan to the open collect_saved_netixlans context, if any."""
+    saved = _saved_netixlans.get()
+    if saved is not None:
+        saved.append(netixlan)
 
 
 @contextmanager

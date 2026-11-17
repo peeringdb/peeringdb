@@ -1,3 +1,4 @@
+import datetime
 import io
 import json
 
@@ -7,6 +8,7 @@ import reversion
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
+from django.db.models.signals import post_save
 from django.test import override_settings
 from django.utils import timezone
 
@@ -16,9 +18,11 @@ from peeringdb_server.models import (
     InternetExchange,
     IXFImportEmail,
     IXFMemberData,
+    IXLanIXFMemberImportLog,
     IXLanPrefix,
     Network,
     NetworkContact,
+    NetworkIXLan,
     Organization,
     User,
 )
@@ -758,3 +762,665 @@ def test_import_failure_not_recorded_without_commit(entities, mocker):
 
     ixlan.refresh_from_db()
     assert not ixlan.ixf_ixp_import_error
+
+
+def ixf_feed(*members):
+    """
+    IX-F member export with one connection per (asn, ipv4, ipv6) member.
+    """
+    data = setup_test_data("ixf.member.0")
+    template = data["member_list"][0]
+    data["member_list"] = []
+    for asn, ipaddr4, ipaddr6 in members:
+        member = json.loads(json.dumps(template))
+        member["asnum"] = asn
+        vlan = member["connection_list"][0]["vlan_list"][0]
+        vlan["ipv4"]["address"] = ipaddr4
+        vlan["ipv6"]["address"] = ipaddr6
+        data["member_list"].append(member)
+    return data
+
+
+def run_import(ixlan):
+    out = io.StringIO()
+    call_command(
+        "pdb_ixf_ixp_member_import",
+        commit=True,
+        cache=True,
+        ixlan=[ixlan.id],
+        stdout=out,
+    )
+    return out.getvalue()
+
+
+@pytest.fixture
+def import_ixlan(entities_base):
+    ixlan = entities_base["ixlan"][0]
+    ixlan.ixf_ixp_member_list_url = "https://ixf.example/feed.json"
+    ixlan.ixf_ixp_import_enabled = True
+    ixlan.save()
+    return ixlan
+
+
+@pytest.mark.django_db
+def test_import_error_after_saves_keeps_changes(entities_base, import_ixlan, mocker):
+    """
+    The netixlan changes commit on their own (#2071). An error in the work
+    after them leaves them in place, marks the ixlan and fails the command,
+    and the next run completes.
+    """
+    ixlan = import_ixlan
+    net = entities_base["net"]["UPDATE_ENABLED"]
+    cache_ixf_data(
+        ixlan,
+        ixlan.ixf_ixp_member_list_url,
+        ixf_feed((net.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")),
+    )
+
+    cleanup = mocker.patch.object(
+        ixf.Importer,
+        "cleanup_ixf_member_data",
+        side_effect=RuntimeError("cleanup failed"),
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        run_import(ixlan)
+    assert exc.value.code == 1
+
+    netixlan = NetworkIXLan.objects.get(ixlan=ixlan, asn=net.asn)
+    assert netixlan.status == "ok"
+    assert str(netixlan.ipaddr4) == "195.69.147.250"
+
+    ixlan.refresh_from_db()
+    assert ixlan.ixf_ixp_import_error == ixf.INTERNAL_ERROR
+
+    mocker.stop(cleanup)
+    out = run_import(ixlan)
+    assert "Errors:" not in out
+
+    ixlan.refresh_from_db()
+    assert not ixlan.ixf_ixp_import_error
+    assert NetworkIXLan.objects.filter(ixlan=ixlan, asn=net.asn).count() == 1
+
+
+@pytest.mark.django_db
+def test_import_error_after_saves_still_notifies(entities_base, import_ixlan, mocker):
+    """
+    A proposal saved before the error is not proposed again by the next run,
+    so the failed run still sends its notification, and only once (#2071).
+    """
+    ixlan = import_ixlan
+    net = entities_base["net"]["UPDATE_DISABLED"]
+    cache_ixf_data(
+        ixlan,
+        ixlan.ixf_ixp_member_list_url,
+        ixf_feed((net.asn, "195.69.147.251", "2001:7f8:1::a500:1001:1")),
+    )
+
+    cleanup = mocker.patch.object(
+        ixf.Importer,
+        "cleanup_ixf_member_data",
+        side_effect=RuntimeError("cleanup failed"),
+    )
+
+    with pytest.raises(SystemExit):
+        run_import(ixlan)
+
+    assert IXFMemberData.objects.filter(ixlan=ixlan, asn=net.asn).count() == 1
+    assert not NetworkIXLan.objects.filter(ixlan=ixlan, asn=net.asn).exists()
+    assert IXFImportEmail.objects.filter(net=net).count() == 1
+
+    mocker.stop(cleanup)
+    run_import(ixlan)
+
+    assert IXFMemberData.objects.filter(ixlan=ixlan, asn=net.asn).count() == 1
+    assert IXFImportEmail.objects.filter(net=net).count() == 1
+
+
+@pytest.mark.django_db
+def test_import_error_during_saves_rolls_back(entities_base, import_ixlan, mocker):
+    """
+    An error while the netixlan changes are written rolls all of them back
+    and drops their notifications. The next run proposes and notifies again.
+    Notifications queued before the write block, like a protocol conflict
+    found while parsing, are still sent, and only once.
+    """
+    ixlan = import_ixlan
+    org = entities_base["org"][0]
+    enabled = entities_base["net"]["UPDATE_ENABLED"]
+    disabled = entities_base["net"]["UPDATE_DISABLED"]
+    other_enabled = Network.objects.create(
+        name="Second network w allow ixp update enabled",
+        org=org,
+        asn=1301,
+        allow_ixp_update=True,
+        status="ok",
+        info_unicast=True,
+        info_ipv6=True,
+    )
+    ipv6_only = Network.objects.create(
+        name="Network w IPv6 only",
+        org=org,
+        asn=1401,
+        allow_ixp_update=False,
+        status="ok",
+        info_unicast=False,
+        info_ipv6=True,
+    )
+    cache_ixf_data(
+        ixlan,
+        ixlan.ixf_ixp_member_list_url,
+        ixf_feed(
+            (disabled.asn, "195.69.147.251", "2001:7f8:1::a500:1001:1"),
+            (other_enabled.asn, "195.69.147.252", "2001:7f8:1::a500:1301:1"),
+            (ipv6_only.asn, "195.69.147.253", "2001:7f8:1::a500:1401:1"),
+            (enabled.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
+        ),
+    )
+
+    def protocol_conflict_emails():
+        return IXFImportEmail.objects.filter(
+            ix=ixlan.ix, message__contains="IPv4 support disabled"
+        ).count()
+
+    apply_add = ixf.Importer.apply_add
+    at_failure = {}
+
+    def fail_on_enabled(importer, ixf_member_data):
+        if ixf_member_data.asn == enabled.asn:
+            # the command catches anything raised here, so this is
+            # checked after the run
+            at_failure["queued"] = [
+                n["ixf_member_data"].asn for n in importer.notifications
+            ]
+            at_failure["written"] = NetworkIXLan.objects.filter(
+                ixlan=ixlan, asn=other_enabled.asn
+            ).exists()
+            raise RuntimeError("save failed")
+        return apply_add(importer, ixf_member_data)
+
+    failing = mocker.patch.object(
+        ixf.Importer, "apply_add", autospec=True, side_effect=fail_on_enabled
+    )
+
+    with pytest.raises(SystemExit):
+        run_import(ixlan)
+
+    # the write block had queued a notification and written a netixlan
+    # before it failed, both went with the rollback
+    assert disabled.asn in at_failure["queued"]
+    assert at_failure["written"]
+
+    assert not IXFMemberData.objects.filter(ixlan=ixlan, asn=disabled.asn).exists()
+    assert not NetworkIXLan.objects.filter(ixlan=ixlan).exists()
+    assert not IXFImportEmail.objects.filter(net=disabled).exists()
+    assert protocol_conflict_emails() == 1
+
+    mocker.stop(failing)
+    run_import(ixlan)
+
+    assert IXFMemberData.objects.filter(ixlan=ixlan, asn=disabled.asn).count() == 1
+    assert NetworkIXLan.objects.filter(ixlan=ixlan, asn=enabled.asn).count() == 1
+    assert NetworkIXLan.objects.filter(ixlan=ixlan, asn=other_enabled.asn).count() == 1
+    assert IXFImportEmail.objects.filter(net=disabled).count() == 1
+    assert protocol_conflict_emails() == 1
+
+
+@pytest.mark.django_db
+def test_stale_cleanup_leaves_other_ixlans_alone(entities_base, import_ixlan):
+    """
+    Stale netixlan notices and removals only act on the delete proposals
+    the import refreshed. Another ixlan's aged delete proposal, refreshed by
+    an import of that ixlan running at the same time, is left to that
+    import (#2071).
+    """
+    other_ixlan = entities_base["ixlan"][1]
+    other_ixlan.ixf_ixp_member_list_url = "https://ixf.example/other.json"
+    other_ixlan.ixf_ixp_import_enabled = True
+    other_ixlan.save()
+    net = entities_base["net"]["UPDATE_DISABLED"]
+    enabled = entities_base["net"]["UPDATE_ENABLED"]
+
+    aged = datetime.timedelta(
+        days=max(
+            settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD,
+            settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD,
+        )
+        + 1
+    )
+    # fetched after this import starts, as a concurrent import would
+    refreshed = timezone.now() + datetime.timedelta(hours=1)
+
+    proposals = {}
+    for name, ipaddr4, ipaddr6, notified in (
+        (
+            "removal",
+            "195.66.224.10",
+            "2001:7f8:4::a500:1001:1",
+            settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT,
+        ),
+        ("notice", "195.66.224.11", "2001:7f8:4::a500:1001:2", 0),
+    ):
+        netixlan = NetworkIXLan.objects.create(
+            network=net,
+            ixlan=other_ixlan,
+            asn=net.asn,
+            speed=10000,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            status="ok",
+        )
+        ixm = IXFMemberData.objects.create(
+            asn=net.asn,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            ixlan=other_ixlan,
+            speed=10000,
+            operational=True,
+            is_rs_peer=False,
+            status="ok",
+            data="{}",
+            fetched=refreshed,
+            extra_notifications_net_num=notified,
+        )
+        IXFMemberData.objects.filter(id=ixm.id).update(created=timezone.now() - aged)
+        ixm.refresh_from_db()
+        assert ixm.action == "delete"
+        proposals[name] = (ixm, netixlan)
+
+    cache_ixf_data(
+        import_ixlan,
+        import_ixlan.ixf_ixp_member_list_url,
+        ixf_feed((enabled.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")),
+    )
+    run_import(import_ixlan)
+
+    removal, netixlan = proposals["removal"]
+    netixlan.refresh_from_db()
+    assert netixlan.status == "ok"
+    assert IXFMemberData.objects.filter(id=removal.id).exists()
+
+    notice, _ = proposals["notice"]
+    notice.refresh_from_db()
+    assert notice.extra_notifications_net_num == 0
+    assert not IXFImportEmail.objects.filter(net=net).exists()
+
+
+@pytest.mark.django_db
+def test_stale_cleanup_follows_moved_netixlan(entities_base, import_ixlan):
+    """
+    A delete proposal keeps the ixlan it was filed under when its netixlan
+    moves to another exchange. The import of the exchange the netixlan is on
+    now still sends its stale notices and removes it (#2071).
+    """
+    old_ixlan = entities_base["ixlan"][1]
+    net = entities_base["net"]["UPDATE_DISABLED"]
+    enabled = entities_base["net"]["UPDATE_ENABLED"]
+
+    aged = datetime.timedelta(
+        days=max(
+            settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD,
+            settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD,
+        )
+        + 1
+    )
+
+    proposals = {}
+    for name, ipaddr4, ipaddr6, notified in (
+        (
+            "removal",
+            "195.69.146.10",
+            "2001:7f8:1::a500:1001:10",
+            settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT,
+        ),
+        ("notice", "195.69.146.11", "2001:7f8:1::a500:1001:11", 0),
+    ):
+        # the netixlan is on the importing exchange now, its proposal was
+        # filed while it was on the other one
+        netixlan = NetworkIXLan.objects.create(
+            network=net,
+            ixlan=import_ixlan,
+            asn=net.asn,
+            speed=10000,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            status="ok",
+        )
+        ixm = IXFMemberData.objects.create(
+            asn=net.asn,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            ixlan=old_ixlan,
+            speed=10000,
+            operational=True,
+            is_rs_peer=False,
+            status="ok",
+            data="{}",
+            fetched=timezone.now() - aged,
+            extra_notifications_net_num=notified,
+        )
+        IXFMemberData.objects.filter(id=ixm.id).update(created=timezone.now() - aged)
+        proposals[name] = (ixm, netixlan)
+
+    cache_ixf_data(
+        import_ixlan,
+        import_ixlan.ixf_ixp_member_list_url,
+        ixf_feed((enabled.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")),
+    )
+    run_import(import_ixlan)
+
+    removal, netixlan = proposals["removal"]
+    netixlan.refresh_from_db()
+    assert netixlan.status == "deleted"
+    assert not IXFMemberData.objects.filter(id=removal.id).exists()
+
+    notice, _ = proposals["notice"]
+    notice.refresh_from_db()
+    assert notice.extra_notifications_net_num == 1
+    assert IXFImportEmail.objects.filter(net=net).count() == 1
+
+
+@pytest.fixture
+def netixlan_saves():
+    """
+    The `updated` value of each netixlan save made while the test runs,
+    by netixlan id.
+    """
+    saves = {}
+
+    def record(sender, instance, **kwargs):
+        saves.setdefault(instance.id, []).append(instance.updated)
+
+    post_save.connect(
+        record, sender=NetworkIXLan, weak=False, dispatch_uid="test_netixlan_saves"
+    )
+    yield saves
+    post_save.disconnect(sender=NetworkIXLan, dispatch_uid="test_netixlan_saves")
+
+
+def restamp_fixture(entities_base, ixlan):
+    """
+    An update-enabled network with a netixlan the feed modifies and one it
+    no longer lists, and a second one the feed adds.
+    """
+    enabled = entities_base["net"]["UPDATE_ENABLED"]
+    added_net = Network.objects.create(
+        name="Second network w allow ixp update enabled",
+        org=entities_base["org"][0],
+        asn=1301,
+        allow_ixp_update=True,
+        status="ok",
+        info_unicast=True,
+        info_ipv6=True,
+    )
+    with reversion.create_revision():
+        modified = NetworkIXLan.objects.create(
+            network=enabled,
+            ixlan=ixlan,
+            asn=enabled.asn,
+            speed=1000,
+            ipaddr4="195.69.147.250",
+            ipaddr6="2001:7f8:1::a500:2906:1",
+            is_rs_peer=True,
+            status="ok",
+        )
+        deleted = NetworkIXLan.objects.create(
+            network=enabled,
+            ixlan=ixlan,
+            asn=enabled.asn,
+            speed=10000,
+            ipaddr4="195.69.146.20",
+            ipaddr6="2001:7f8:1::a500:2906:20",
+            is_rs_peer=True,
+            status="ok",
+        )
+    cache_ixf_data(
+        ixlan,
+        ixlan.ixf_ixp_member_list_url,
+        ixf_feed(
+            (enabled.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
+            (added_net.asn, "195.69.147.252", "2001:7f8:1::a500:1301:1"),
+        ),
+    )
+    return modified, deleted, added_net
+
+
+@pytest.mark.django_db
+def test_import_restamps_netixlans_at_end_of_writes(
+    entities_base, import_ixlan, netixlan_saves, mocker
+):
+    """
+    Every netixlan the import adds, modifies or deletes carries one updated
+    stamp, taken after the last of them was saved, so a `?since=` poll made
+    while the writes are still open cannot miss them (#2071). The revisions
+    keep the stamps of the saves, and the import log still rolls back.
+    """
+    ixlan = import_ixlan
+    modified, deleted, added_net = restamp_fixture(entities_base, ixlan)
+    netixlan_saves.clear()
+
+    archive = ixf.Importer.archive
+    in_memory = {}
+
+    def record_archive(importer):
+        # what archive() and the steps after it see on the instances
+        for action in ("add", "modify", "delete"):
+            for info in importer.actions_taken[action]:
+                in_memory[info["netixlan"].id] = info["netixlan"].updated
+        return archive(importer)
+
+    mocker.patch.object(
+        ixf.Importer, "archive", autospec=True, side_effect=record_archive
+    )
+
+    run_import(ixlan)
+
+    added = NetworkIXLan.objects.get(ixlan=ixlan, asn=added_net.asn)
+    touched = {modified.id, deleted.id, added.id}
+    assert touched <= set(netixlan_saves)
+
+    rows = NetworkIXLan.objects.filter(id__in=netixlan_saves)
+    stamps = set(rows.values_list("updated", flat=True))
+    assert len(stamps) == 1
+    stamp = stamps.pop()
+    assert stamp >= max(max(saved) for saved in netixlan_saves.values())
+    assert in_memory == {pk: stamp for pk in touched}
+
+    modified.refresh_from_db()
+    deleted.refresh_from_db()
+    assert modified.speed == 10000
+    assert deleted.status == "deleted"
+
+    version = reversion.models.Version.objects.get_for_object(modified).first()
+    assert version.field_dict["speed"] == 10000
+    assert version.field_dict["updated"] < stamp
+
+    import_log = IXLanIXFMemberImportLog.objects.filter(ixlan=ixlan).latest("id")
+    assert set(import_log.entries.values_list("netixlan_id", flat=True)) == touched
+    import_log.rollback()
+
+    modified.refresh_from_db()
+    deleted.refresh_from_db()
+    added.refresh_from_db()
+    assert modified.speed == 1000
+    assert deleted.status == "ok"
+    assert added.status == "deleted"
+
+
+@pytest.mark.django_db
+def test_import_rollback_leaves_no_restamp(
+    entities_base, import_ixlan, netixlan_saves, mocker
+):
+    """
+    An error in the write block rolls back the saves made before it, and
+    nothing re-stamps them: the netixlans keep the stamps they had (#2071).
+
+    A guard: it passes on code without a re-stamp, and fails if the re-stamp
+    also runs when the write block fails, e.g. from a finally.
+    """
+    ixlan = import_ixlan
+    modified, deleted, added_net = restamp_fixture(entities_base, ixlan)
+    before = {
+        row.id: row.updated
+        for row in NetworkIXLan.objects.filter(id__in=[modified.id, deleted.id])
+    }
+    netixlan_saves.clear()
+
+    apply_add = ixf.Importer.apply_add
+
+    def fail_on_add(importer, ixf_member_data):
+        if ixf_member_data.asn == added_net.asn:
+            raise RuntimeError("save failed")
+        return apply_add(importer, ixf_member_data)
+
+    mocker.patch.object(
+        ixf.Importer, "apply_add", autospec=True, side_effect=fail_on_add
+    )
+    with pytest.raises(SystemExit):
+        run_import(ixlan)
+
+    # both were saved in the block before the error
+    assert {modified.id, deleted.id} <= set(netixlan_saves)
+
+    after = {
+        row.id: row.updated
+        for row in NetworkIXLan.objects.filter(id__in=[modified.id, deleted.id])
+    }
+    assert after == before
+    modified.refresh_from_db()
+    assert modified.speed == 1000
+    assert not NetworkIXLan.objects.filter(asn=added_net.asn).exists()
+
+
+@pytest.mark.django_db
+def test_import_preview_restamps_nothing(entities_base, import_ixlan, netixlan_saves):
+    """
+    A run without commit saves no netixlan and changes no stamp (#2071).
+
+    A guard: it passes on code without a re-stamp as well.
+    """
+    ixlan = import_ixlan
+    modified, deleted, added_net = restamp_fixture(entities_base, ixlan)
+    before = dict(NetworkIXLan.objects.filter(ixlan=ixlan).values_list("id", "updated"))
+    netixlan_saves.clear()
+
+    call_command(
+        "pdb_ixf_ixp_member_import", cache=True, ixlan=[ixlan.id], stdout=io.StringIO()
+    )
+
+    assert not netixlan_saves
+    after = dict(NetworkIXLan.objects.filter(ixlan=ixlan).values_list("id", "updated"))
+    assert after == before
+
+
+def stale_fixture(entities_base, ixlan):
+    """
+    Two netixlans of the update-disabled network that the import removes as
+    stale, and a feed that adds a netixlan for the update-enabled network.
+    """
+    net = entities_base["net"]["UPDATE_DISABLED"]
+    enabled = entities_base["net"]["UPDATE_ENABLED"]
+
+    aged = datetime.timedelta(
+        days=max(
+            settings.IXF_REMOVE_STALE_NETIXLAN_PERIOD,
+            settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_PERIOD,
+        )
+        + 1
+    )
+
+    stale = []
+    for ipaddr4, ipaddr6 in (
+        ("195.69.146.30", "2001:7f8:1::a500:1001:30"),
+        ("195.69.146.31", "2001:7f8:1::a500:1001:31"),
+    ):
+        netixlan = NetworkIXLan.objects.create(
+            network=net,
+            ixlan=ixlan,
+            asn=net.asn,
+            speed=10000,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            status="ok",
+        )
+        ixm = IXFMemberData.objects.create(
+            asn=net.asn,
+            ipaddr4=ipaddr4,
+            ipaddr6=ipaddr6,
+            ixlan=ixlan,
+            speed=10000,
+            operational=True,
+            is_rs_peer=False,
+            status="ok",
+            data="{}",
+            fetched=timezone.now() - aged,
+            extra_notifications_net_num=settings.IXF_REMOVE_STALE_NETIXLAN_NOTIFY_COUNT,
+        )
+        IXFMemberData.objects.filter(id=ixm.id).update(created=timezone.now() - aged)
+        stale.append(netixlan.id)
+
+    cache_ixf_data(
+        ixlan,
+        ixlan.ixf_ixp_member_list_url,
+        ixf_feed((enabled.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1")),
+    )
+    return net, enabled, stale
+
+
+@pytest.mark.django_db
+def test_stale_removal_restamps_removed_netixlans(
+    entities_base, import_ixlan, netixlan_saves
+):
+    """
+    The netixlans removed as stale in one import share one updated stamp,
+    taken after the last of them was deleted, like the netixlans of the
+    write block (#2071).
+    """
+    net, enabled, stale = stale_fixture(entities_base, import_ixlan)
+    netixlan_saves.clear()
+
+    run_import(import_ixlan)
+
+    rows = NetworkIXLan.objects.filter(id__in=stale)
+    assert set(rows.values_list("status", flat=True)) == {"deleted"}
+    stamps = set(rows.values_list("updated", flat=True))
+    assert len(stamps) == 1
+    assert stamps.pop() >= max(max(netixlan_saves[pk]) for pk in stale)
+
+
+@pytest.mark.django_db
+def test_restamp_sets_network_netixlan_updated(entities_base, import_ixlan):
+    """
+    A network's netixlan_updated gets the same stamp as the netixlans the
+    import wrote or removed as stale. Its updated, poc_updated and
+    netfac_updated stay as they were (#2071).
+    """
+    net, enabled, stale = stale_fixture(entities_base, import_ixlan)
+    fields = ("updated", "poc_updated", "netfac_updated")
+    before = {
+        row["id"]: row
+        for row in Network.objects.filter(id__in=[net.id, enabled.id]).values(
+            "id", *fields
+        )
+    }
+
+    run_import(import_ixlan)
+
+    added = NetworkIXLan.objects.get(ixlan=import_ixlan, asn=enabled.asn)
+    removed = set(
+        NetworkIXLan.objects.filter(id__in=stale).values_list("updated", flat=True)
+    )
+    assert len(removed) == 1
+
+    enabled.refresh_from_db()
+    net.refresh_from_db()
+    assert enabled.netixlan_updated == added.updated
+    assert net.netixlan_updated == removed.pop()
+
+    after = {
+        row["id"]: row
+        for row in Network.objects.filter(id__in=[net.id, enabled.id]).values(
+            "id", *fields
+        )
+    }
+    assert after == before

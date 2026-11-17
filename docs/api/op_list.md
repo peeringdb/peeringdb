@@ -41,6 +41,10 @@ You can use the since argument with a unix timestamp (seconds) to retrieve all
 objects updated since then. Note that this result will contain objects that were
 deleted in that timeframe as well - you can spot them by checking for status "deleted"
 
+`updated` is set when a change is saved, which can be a moment before the change becomes
+visible. When polling with `since`, start a few seconds before your previous fetch and
+skip rows whose `updated` you already have.
+
 **example**
 
     ?since=1443414678
