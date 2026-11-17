@@ -71,6 +71,13 @@ dependencies = [
     "django-grappelli>=2.10.1,<5",
     "django-import-export>=3",
     "django-oauth-toolkit>=3.4",
+    # imported directly by mainsite/oauth2. Capped below 4.0.1: 4.0.1 fixes
+    # CVE-2026-49272 in the device flow, which PeeringDB is not exposed to
+    # because django-oauth-toolkit rejects unknown device codes before oauthlib
+    # sees them, and 4.0.1 breaks the device flow with django-oauth-toolkit
+    # 3.4.1 (django-oauth/django-oauth-toolkit#1950). Lift the cap once a
+    # django-oauth-toolkit release with the fix (PR 1951) is out.
+    "oauthlib>=3.3,<4.0.1",
     "django-phonenumber-field>=0.6",
     "django-ratelimit>=4.0.0",
     "django-read-only>=1.15.0",
@@ -121,7 +128,11 @@ repository = "https://github.com/peeringdb/peeringdb"
 [dependency-groups]
 dev = [
     # testing
-    "pytest>=6",
+    # capped: pytest 9.2 builds nodeid from Node._id, so pytest-xdist 3.8's
+    # item._nodeid rewrite for --dist loadgroup is ignored and xdist_group
+    # tests (elasticsearch_tests) run in parallel. Lift the cap once a
+    # pytest-xdist release supports pytest 9.2.
+    "pytest>=6,<9.2",
     "pytest-cov>=1",
     "pytest-django>=2.9.1",
     "pytest-filedata>=0.1.0",
