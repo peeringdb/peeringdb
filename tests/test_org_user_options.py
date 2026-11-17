@@ -7,6 +7,8 @@ import pytest
 from django.conf import settings as dj_settings
 from django.contrib.auth.models import Group
 from django.core import mail
+from django.core.management import call_command
+from django.db import OperationalError
 from django.test import Client, RequestFactory
 from django.urls import reverse
 from django.utils import timezone
@@ -1322,3 +1324,45 @@ def test_reauth_error_names_only_the_denying_org(reauth_objects):
     assert response.json()["meta"]["error"] == (
         f"Re-authentication required for {org_b.name}: confirm your email"
     )
+
+
+@pytest.mark.django_db
+def test_api_cache_generation_does_not_trigger_reauth(
+    reauth_objects, settings, tmp_path
+):
+    """
+    Generating the api cache runs as a superuser against a read-only replica,
+    so the re-auth check must not unverify that user or mail them (#529)
+    """
+
+    org = reauth_objects["org"]
+    admin = reauth_objects["user_c"]
+    admin.is_superuser = True
+    admin.save()
+    assert User.objects.filter(is_superuser=True).first() == admin
+
+    _expire_reauth(org, admin)
+
+    settings.API_CACHE_ROOT = str(tmp_path)
+    settings.API_CACHE_LOG = str(tmp_path / "log.log")
+    mail.outbox = []
+
+    # what the replica answers to any write
+    read_only = OperationalError(
+        1290,
+        "The MySQL server is running with the --read-only option so it cannot "
+        "execute this statement",
+    )
+    with patch.object(EmailAddress, "save", side_effect=read_only):
+        call_command("pdb_api_cache", only="org", depths="0", output_dir=str(tmp_path))
+
+    assert (tmp_path / "org-0.json").exists()
+    assert EmailAddress.objects.get(user=admin, email=admin.email).verified
+    assert mail.outbox == []
+
+    # outside cache generation the same user still has to re-confirm
+
+    perms = init_permissions_helper(User.objects.get(id=admin.id))
+    assert org.grainy_namespace not in perms.pset.namespaces
+    assert not EmailAddress.objects.get(user=admin, email=admin.email).verified
+    assert [message.to for message in mail.outbox] == [[admin.email]]

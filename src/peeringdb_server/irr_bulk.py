@@ -217,6 +217,19 @@ def _all_fresh(paths, max_age_hours):
     return _all_valid(paths) and all(os.path.getmtime(path) >= cutoff for path in paths)
 
 
+def _serial_verified_recently(source, dump_dir, max_age_hours):
+    """
+    Whether a fetch confirmed `source` current within `max_age_hours`: its serial
+    marker is written on download and touched when the published serial is
+    unchanged, so its mtime is the last time the dump was known to be current.
+    """
+    cutoff = time.time() - (max_age_hours * 3600)
+    try:
+        return os.path.getmtime(_serial_path(source, dump_dir)) >= cutoff
+    except OSError:
+        return False
+
+
 def _read_serial(url):
     try:
         with _open_url(url) as response:
@@ -342,6 +355,14 @@ def _fetch_source(spec, dump_dir, max_age_hours, force):
             and remote_serial == _read_local_serial(serial_path)
             and _all_valid(paths)
         ):
+            # the dump files keep the mtime of their last download, so the marker
+            # carries when the source was last confirmed current (#530)
+            try:
+                os.utime(serial_path)
+            except OSError as exc:
+                logger.warning(
+                    "IRR bulk %s: could not touch serial marker: %s", source, exc
+                )
             return FetchOutcome(source, "fresh", paths, "serial unchanged")
 
     # Age is the fallback whenever no serial comparison could be made: no
@@ -642,6 +663,10 @@ def dump_health(dump_dir=None, max_age_hours=None):
     (default IRR_BULK_DUMP_MAX_AGE_HOURS). Both empty means every source in
     DUMP_SOURCES is covered by a readable, current dump.
 
+    A source that publishes a serial is also current when a fetch found its serial
+    unchanged within `max_age_hours`, however old the files are: a quiet registry
+    is not re-downloaded, so file age alone would call it stale (#530).
+
     IDNIC is intentionally absent from DUMP_SOURCES (no self-serve dump) and so
     is never reported here; batch misses for it are confirmed live instead.
     """
@@ -655,7 +680,13 @@ def dump_health(dump_dir=None, max_age_hours=None):
         paths = [os.path.join(dump_dir, filename) for filename, _url in spec["files"]]
         if not _all_valid(paths):
             missing.append(spec["name"])
-        elif not _all_fresh(paths, max_age_hours):
+        elif _all_fresh(paths, max_age_hours):
+            continue
+        elif spec.get("serial_url") and _serial_verified_recently(
+            spec["name"], dump_dir, max_age_hours
+        ):
+            continue
+        else:
             stale.append(spec["name"])
     return missing, stale
 

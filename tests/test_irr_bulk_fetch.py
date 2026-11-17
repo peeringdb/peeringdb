@@ -1,6 +1,8 @@
 """Tests for the #1973 IRR bulk dump fetch/cache lifecycle."""
 
 import gzip
+import os
+import time
 from io import BytesIO, StringIO
 from unittest import mock
 
@@ -108,6 +110,63 @@ def test_fetch_without_serial_reuses_fresh_cache(tmp_path, monkeypatch):
     assert outcomes[0].status == "fresh"
     assert outcomes[0].reason == "cache age within limit"
     open_url.assert_not_called()
+
+
+def age(*paths, hours=48):
+    """Backdate the mtime of `paths` by `hours`."""
+    then = time.time() - hours * 3600
+    for path in paths:
+        os.utime(path, (then, then))
+
+
+def test_unchanged_serial_keeps_an_old_dump_current(tmp_path, monkeypatch, dump_source):
+    # #530: a registry whose serial has not moved keeps old files, and dump_health
+    # must not call it stale for that
+    write_dump(tmp_path / "ripe.db.gz")
+    (tmp_path / ".ripe.serial").write_text("42\n")
+    age(tmp_path / "ripe.db.gz", tmp_path / ".ripe.serial")
+    assert irr_bulk.dump_health(str(tmp_path), max_age_hours=24) == ([], ["RIPE"])
+
+    calls = install_responses(monkeypatch, {dump_source["serial_url"]: b"42\n"})
+    outcomes = irr_bulk.fetch_dumps(str(tmp_path), max_age_hours=24)
+
+    assert outcomes[0].reason == "serial unchanged"
+    assert calls == [dump_source["serial_url"]]
+    assert irr_bulk.dump_health(str(tmp_path), max_age_hours=24) == ([], [])
+    assert irr_bulk.describe_dump_problems(str(tmp_path), max_age_hours=24) is None
+
+
+def test_failed_refresh_leaves_an_old_dump_stale(tmp_path, monkeypatch, dump_source):
+    # the serial moved and the download failed: the retained files are not current
+    write_dump(tmp_path / "ripe.db.gz")
+    (tmp_path / ".ripe.serial").write_text("41\n")
+    age(tmp_path / "ripe.db.gz", tmp_path / ".ripe.serial")
+    install_responses(
+        monkeypatch,
+        {
+            dump_source["serial_url"]: b"42\n",
+            dump_source["files"][0][1]: OSError("registry unavailable"),
+        },
+    )
+
+    outcomes = irr_bulk.fetch_dumps(str(tmp_path), max_age_hours=24)
+
+    assert outcomes[0].status == "stale"
+    assert irr_bulk.dump_health(str(tmp_path), max_age_hours=24) == ([], ["RIPE"])
+
+
+def test_dump_health_ignores_marker_of_a_source_without_serial(tmp_path, monkeypatch):
+    # without a published serial nothing confirms the files, so age decides
+    spec = {
+        "name": "PANIX",
+        "files": (("panix.db.gz", "https://registry.example/panix.db.gz"),),
+    }
+    monkeypatch.setattr(irr_bulk, "DUMP_SOURCES", (spec,))
+    write_dump(tmp_path / "panix.db.gz")
+    age(tmp_path / "panix.db.gz")
+    (tmp_path / ".panix.serial").write_text("42\n")
+
+    assert irr_bulk.dump_health(str(tmp_path), max_age_hours=24) == ([], ["PANIX"])
 
 
 def test_fetch_failure_retains_valid_stale_cache(tmp_path, monkeypatch, dump_source):
