@@ -66,6 +66,7 @@ from peeringdb_server.deskpro import (
     ticket_queue_prefixauto_approve,
     ticket_queue_rdap_error,
 )
+from peeringdb_server.emoji import emoji_free_fields
 from peeringdb_server.geo import GoogleMaps, Melissa
 from peeringdb_server.inet import (
     BogonAsn,
@@ -125,6 +126,7 @@ from peeringdb_server.validators import (
     validate_latitude,
     validate_longitude,
     validate_name,
+    validate_no_emoji,
     validate_phonenumber,
     validate_poc_visible,
     validate_prefix_overlap,
@@ -1029,6 +1031,11 @@ class ModelSerializer(serializers.ModelSerializer):
                     field.help_text = _("Id of the related `%(tag)s` object") % {
                         "tag": model.handleref.tag
                     }
+
+        # reject emoji in the entity name fields (#2018)
+        for field_name in emoji_free_fields(getattr(self.Meta, "model", None)):
+            if field_name in self.fields:
+                self.fields[field_name].validators.append(validate_no_emoji)
 
         try:
             data = args[0]

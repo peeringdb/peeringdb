@@ -29,7 +29,11 @@ from schema import Schema, SchemaError
 
 from peeringdb_server.inet import get_client_ip
 from peeringdb_server.models import Organization, User
-from peeringdb_server.validators import validate_account_name, validate_name
+from peeringdb_server.validators import (
+    validate_account_name,
+    validate_name,
+    validate_no_emoji,
+)
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
@@ -77,8 +81,10 @@ class AffiliateToOrgForm(forms.Form):
                 org = Organization.objects.get(name=org_id)
                 return org.id
             except Organization.DoesNotExist:
-                # reject consecutive whitespace in human-typed org name (#1984)
+                # reject consecutive whitespace (#1984) and emoji (#2018) in
+                # the human-typed org name
                 validate_name(org_id)
+                validate_no_emoji(org_id)
                 self.cleaned_data["org_name"] = org_id
                 return 0
 

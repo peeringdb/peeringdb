@@ -1,0 +1,9 @@
+{% load i18n %}{% autoescape off %}{% blocktrans with org_name=org.name %}You have been sent this message because you are an administrator for {{ org_name }}.
+
+PeeringDB no longer accepts emoji in names. They have been removed from the following fields of your organization's records:{% endblocktrans %}
+{% for change in changes %}
+- {{ change.entity_type }} {{ change.id }}, {{ change.field }}: "{{ change.current }}" -> "{{ change.proposed }}"
+  {{ change.url }}
+{% endfor %}
+{% blocktrans %}No action is needed. If you think a change is wrong, please contact PeeringDB support at {{ support_email }}.{% endblocktrans %}
+{% endautoescape %}

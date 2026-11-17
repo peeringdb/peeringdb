@@ -5,6 +5,10 @@ Identified by the `fac` tag.
 A facility is a physical location where networks and exchanges interconnect. `name`
 is unique across PeeringDB, including against soft-deleted facilities.
 
+`name`, `aka` and `name_long` cannot contain emoji or other pictographic symbols
+(such as ★). A write that includes them is rejected with a validation error on
+that field.
+
 `region_continent` is derived server-side from `country` and is read-only, and values
 submitted for `rencode` are ignored.
 

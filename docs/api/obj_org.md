@@ -9,6 +9,10 @@ ownership of a record is expressed by its `org_id`.
 `name` is unique across all organizations, including soft-deleted ones, so the name
 of a deleted organization cannot be reused.
 
+`name`, `aka` and `name_long` cannot contain emoji or other pictographic symbols
+(such as ★). A write that includes them is rejected with a validation error on
+that field.
+
 Objects can move between organizations without being recreated — through an
 organization merge, or when a released ASN is re-registered by a new operator. When
 that happens the child object keeps its `id` and its `created`.
