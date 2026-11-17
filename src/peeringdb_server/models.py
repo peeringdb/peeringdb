@@ -63,6 +63,8 @@ from django_grainy.util import check_permissions
 from django_handleref.models import CreatedDateTimeField, UpdatedDateTimeField
 from django_inet.models import ASNField
 from grainy.const import PERM_CREATE, PERM_DELETE, PERM_UPDATE
+from oauth2_provider.settings import oauth2_settings
+from oauth2_provider.validators import AllowedURIValidator
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
@@ -8029,6 +8031,39 @@ class OAuthApplication(oauth2.AbstractApplication, StripFieldMixin):
         # user should not be set on org owned apps
         if self.org_id and self.user_id:
             self.user = None
+
+        # django-oauth-toolkit does not validate post_logout_redirect_uris on
+        # save, so apply its redirect uri rules here (#2022)
+        validator = AllowedURIValidator(
+            self.get_allowed_schemes(),
+            name="post logout redirect uri",
+            allow_path=True,
+            allow_query=True,
+            allow_hostname_wildcard=oauth2_settings.ALLOW_URI_WILDCARDS,
+        )
+        errors = []
+        for uri in self.post_logout_redirect_uris.split():
+            try:
+                validator(uri)
+            except ValidationError as exc:
+                errors.extend(exc.error_list)
+                continue
+
+            # a uri that cannot match itself (e.g. port out of range, userinfo)
+            # would also make django-oauth-toolkit fail on the uris after it
+            try:
+                matchable, _reasons = oauth2.check_redirect_to_uri_allowed(uri, [uri])
+            except ValueError:
+                matchable = False
+            if not matchable:
+                errors.append(
+                    ValidationError(
+                        _("post logout redirect uri can not be matched: %(uri)s"),
+                        params={"uri": uri},
+                    )
+                )
+        if errors:
+            raise ValidationError({"post_logout_redirect_uris": errors})
 
 
 class OAuthGrantInfo(StripFieldMixin):

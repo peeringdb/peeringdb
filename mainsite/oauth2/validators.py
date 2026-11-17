@@ -1,4 +1,9 @@
+import json
+import re
+
 from django.core.exceptions import ImproperlyConfigured
+from jwcrypto.common import base64url_decode
+from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_validators import Grant, OAuth2Validator
 from oauthlib.oauth2.rfc6749.errors import (
     InvalidScopeError,
@@ -15,6 +20,9 @@ from peeringdb_server.context import (
 from peeringdb_server.models import OAuthAccessTokenInfo, OAuthGrantInfo
 
 # import SessionStore
+
+# compact JWS serialization: three base64url segments (RFC 7515 7.1)
+COMPACT_JWS = re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
 
 
 HS256_UNSUPPORTED = (
@@ -251,16 +259,67 @@ class OIDCValidator(OAuth2Validator):
             raise IDTokenSigningUnsupported(request=request)
         return super().finalize_id_token(id_token, token, token_handler, request)
 
+    def _get_key_for_token(self, token):
+        """
+        Find the signing key for an ID token before its signature is checked.
+
+        The token is untrusted input (an `id_token_hint` at logout, a bearer
+        token), so this is the only place it is read before verification;
+        django-oauth-toolkit's own peek is not used, as it reads unguarded.
+
+        Only an OIDC ID token can name its key: a compact JWS whose payload is
+        UTF-8 JSON object text with an `aud` that is a client id or a list of
+        them. Anything else is not one of ours, which callers treat as an
+        invalid token. The header and signature are checked when the token is
+        verified with the returned key (#2022).
+        """
+        if not isinstance(token, str) or not COMPACT_JWS.fullmatch(token):
+            return None
+
+        try:
+            # pure parse, no I/O: any failure means it is not an ID token
+            payload = json.loads(base64url_decode(token.split(".")[1]).decode("utf-8"))
+        except Exception:
+            return None
+
+        aud = payload.get("aud") if isinstance(payload, dict) else None
+        audience = [aud] if isinstance(aud, str) else aud
+        if not isinstance(audience, list) or not audience:
+            return None
+        Application = get_application_model()
+        max_length = Application._meta.get_field("client_id").max_length
+        if not all(is_client_id(value, max_length) for value in audience):
+            return None
+
+        application = self._get_client_by_audience(audience)
+        return application.jwk_key if application else None
+
     def _get_client_by_audience(self, audience):
         """
-        Treats ID tokens of an application that cannot sign them as invalid
-        instead of failing to load its key (#2055)
-
-        #2022 filters this lookup to signing applications as well; the two
-        checks belong in one definition, each pinned by its own test.
+        Only applications that sign ID tokens have a key (#2022). ID tokens of
+        an HS256 application whose secret is hashed are treated as invalid
+        instead of failing to load its key (#2055).
         """
-
-        application = super()._get_client_by_audience(audience)
+        Application = get_application_model()
+        application = (
+            Application.objects.filter(client_id__in=audience)
+            .exclude(algorithm=Application.NO_ALGORITHM)
+            .first()
+        )
         if application and hs256_signing_unavailable(application):
             return None
         return application
+
+
+def is_client_id(value, max_length):
+    """
+    Whether `value` can be a client id: text that fits the field and can be
+    sent to the database (UTF-8 encodable, so no lone surrogates)
+    """
+    if not isinstance(value, str) or not 0 < len(value) <= max_length:
+        return False
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True

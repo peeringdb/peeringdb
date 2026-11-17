@@ -1355,6 +1355,9 @@ set_bool("OIDC_ENABLED", True)
 # enables JWT signing algorithm RS256
 set_from_file("OIDC_RSA_PRIVATE_KEY", OIDC_RSA_PRIVATE_KEY_ACTIVE_PATH, "", str)
 
+# enables OIDC RP-initiated logout (end_session_endpoint at /oauth2/logout/)
+set_bool("OIDC_RP_INITIATED_LOGOUT_ENABLED", True)
+
 
 # OAuth access tokens are deliberately neither an authentication backend nor
 # middleware here: /profile/v1 and the /oauth2/ endpoints validate them
@@ -1407,6 +1410,11 @@ OAUTH2_PROVIDER = {
     },
     "ALLOWED_REDIRECT_URI_SCHEMES": ["https"],
     "REQUEST_APPROVAL_PROMPT": "auto",
+    "OIDC_RP_INITIATED_LOGOUT_ENABLED": OIDC_RP_INITIATED_LOGOUT_ENABLED,
+    # logout ends the PeeringDB session only. The default would revoke the
+    # user's tokens at every application from an unauthenticated request;
+    # relying parties revoke their own tokens via /oauth2/revoke_token/ (#2022)
+    "OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS": False,
     # refuses the password grant and drops it from django-oauth-toolkit's own
     # server metadata view (#519)
     "COMPLIANT_BCP_RFC9700_PASSWORD_GRANT": True,

@@ -328,6 +328,38 @@ def test_enrollment_can_sign_out(client, enrollment_user):
     assert not client.session.get("passkey_setup_required")
 
 
+def test_enrollment_can_use_rp_initiated_logout(client, enrollment_user):
+    password_login(client, enrollment_user)
+    url = reverse("oauth2_provider:rp-initiated-logout")
+
+    response = client.get(url, secure=True)
+    assert response.status_code == 200
+    assert client.session["passkey_setup_required"] is True
+
+    response = client.post(url, {"allow": "Logout"}, secure=True)
+    assert response.status_code == 302
+    assert response["Location"] == "https://testserver/"
+    assert SESSION_KEY not in client.session
+    assert not client.session.get("passkey_setup_required")
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/oauth2/authorize/",
+        "/oauth2/applications/",
+        "/oauth2/device/",
+    ],
+)
+def test_enrollment_blocks_other_oauth_paths(client, enrollment_user, method, path):
+    password_login(client, enrollment_user)
+    response = getattr(client, method)(path, secure=True)
+    assert response.status_code == 302
+    assert response["Location"] == reverse("profile_passkey")
+    assert client.session["passkey_setup_required"] is True
+
+
 @pytest.mark.parametrize("passkey_required", [False, True])
 def test_registration_retry_after_wrong_password_is_not_cached(
     client, settings, passkey_required
