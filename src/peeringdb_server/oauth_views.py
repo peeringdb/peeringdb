@@ -6,6 +6,7 @@ import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qsl, urlencode, urlparse
 
+import django_read_only
 from django.conf import settings
 from django.contrib.auth.mixins import AccessMixin
 from django.contrib.auth.views import redirect_to_login
@@ -15,12 +16,17 @@ from django.shortcuts import resolve_url
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import FormView, View
-from oauth2_provider.exceptions import OAuthToolkitError
+from oauth2_provider.exceptions import (
+    InvalidOIDCClientError,
+    InvalidOIDCRedirectURIError,
+    OAuthToolkitError,
+)
 from oauth2_provider.forms import AllowForm
 from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_application_model
 from oauth2_provider.scopes import get_scopes_backend
 from oauth2_provider.settings import oauth2_settings
+from oauth2_provider.views import RPInitiatedLogoutView as BaseRPInitiatedLogoutView
 from oauth2_provider.views.device import DeviceConfirmView as BaseDeviceConfirmView
 from oauth2_provider.views.device import (
     DeviceUserCodeView as BaseDeviceUserCodeView,
@@ -33,7 +39,7 @@ from oauth2_provider.views.oidc import (
 from peeringdb_server.context import issuing_at_authorization_endpoint
 
 if TYPE_CHECKING:
-    from oauth2_provider.models import AbstractApplication
+    from oauth2_provider.models import AbstractApplication, IDToken
 
 log: logging.Logger = logging.getLogger("oauth2_provider")
 
@@ -427,6 +433,46 @@ class OAuthMetadataView(View):
 
         response = JsonResponse(data)
         return response
+
+
+class RPInitiatedLogoutView(BaseRPInitiatedLogoutView):
+    """
+    OIDC RP-initiated logout (#2022).
+
+    The endpoint takes unauthenticated input that django-oauth-toolkit does not
+    fully guard, so an unknown `client_id` or an unparseable
+    `post_logout_redirect_uri` would surface as a 500. Report them as the
+    matching OIDC error (400) instead. A malformed `id_token_hint` is handled
+    in `OIDCValidator._get_key_for_token`.
+    """
+
+    def get_request_application(
+        self, id_token: IDToken | None, client_id: str | None
+    ) -> AbstractApplication | None:
+        try:
+            return super().get_request_application(id_token, client_id)
+        except get_application_model().DoesNotExist:
+            raise InvalidOIDCClientError()
+
+    def validate_post_logout_redirect_uri(
+        self,
+        application: AbstractApplication | None,
+        post_logout_redirect_uri: str | None,
+    ) -> None:
+        # urllib raises ValueError for e.g. a bad IPv6 host or an out of range port
+        try:
+            super().validate_post_logout_redirect_uri(
+                application, post_logout_redirect_uri
+            )
+        except ValueError:
+            raise InvalidOIDCRedirectURIError()
+
+    def do_logout(self, *args: Any, **kwargs: Any) -> HttpResponse:
+        # logging out flushes the session, a write, as in request_logout
+        if settings.DJANGO_READ_ONLY:
+            with django_read_only.temp_writes():
+                return super().do_logout(*args, **kwargs)
+        return super().do_logout(*args, **kwargs)
 
 
 class ConnectDiscoveryInfoView(BaseConnectDiscoveryInfoView):

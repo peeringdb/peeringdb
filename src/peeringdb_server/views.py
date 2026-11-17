@@ -897,6 +897,13 @@ class ApplicationOwnerMixin:
         )
 
 
+def split_origin_list(value):
+    """
+    Split a list of origins entered as comma and/or whitespace separated text
+    """
+    return [uri for uri in re.split(r"[\s,]+", value) if uri]
+
+
 class ApplicationFormMixin:
     """
     Used for oauth application update and registration process
@@ -919,6 +926,7 @@ class ApplicationFormMixin:
                 "client_type",
                 "authorization_grant_type",
                 "redirect_uris",
+                "post_logout_redirect_uris",
                 "allowed_origins",
                 "algorithm",
             ),
@@ -941,12 +949,9 @@ class ApplicationFormMixin:
             value = original_clean(value)
 
             if value and value != "*":
-                origins = [origin.strip() for origin in value.split(",")]
+                origins = split_origin_list(value)
 
                 for origin in origins:
-                    if not origin:
-                        continue
-
                     if not origin.startswith("https://"):
                         raise ValidationError("Origins must start with https://")
 
@@ -957,10 +962,21 @@ class ApplicationFormMixin:
                     except Exception:
                         raise ValidationError(f"Invalid origin URL: {origin}")
 
-                value = ",".join(origins)
+                # django-oauth-toolkit matches allowed origins space separated
+                value = " ".join(origins)
             return value
 
         form.fields["allowed_origins"].clean = validate_allowed_origins
+
+        original_post_logout_clean = form.fields["post_logout_redirect_uris"].clean
+
+        # whitespace separated like redirect_uris, commas are legal inside a uri
+        def normalize_post_logout_redirect_uris(value):
+            return " ".join(original_post_logout_clean(value).split())
+
+        form.fields[
+            "post_logout_redirect_uris"
+        ].clean = normalize_post_logout_redirect_uris
 
         # HS256 ID tokens cannot be signed with hashed client secrets (#2055).
         # An app still on HS256 keeps the choice so an unrelated edit cannot

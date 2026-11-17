@@ -1559,6 +1559,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         reverse("javascript-catalog"),
         "/account/",
         "/logout",
+        "/oauth2/logout/",
         "/security_keys/",
         settings.STATIC_URL,
         settings.MEDIA_URL,
@@ -1618,6 +1619,7 @@ class EnforceMFAMiddleware(MiddlewareMixin):
                 reverse("javascript-catalog"),
                 "/security_keys/add",
                 "/logout",
+                reverse("rp-initiated-logout"),
             }
             if request.path in allowed_paths or (
                 request.method in {"GET", "HEAD"}

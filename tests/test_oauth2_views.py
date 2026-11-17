@@ -1,20 +1,175 @@
+import base64
+import codecs
+import importlib
 import json
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import jwt
+
+# imported before any override_app_model() call: django-oauth-toolkit binds
+# its module level Application model on first import, which otherwise happens
+# lazily with the url conf and can capture the overridden model
+import oauth2_provider.oauth2_validators  # noqa: F401
 import pytest
+from django.apps import apps as django_apps
+from django.conf import settings
 from django.contrib.admin.models import LogEntry
 from django.contrib.contenttypes.models import ContentType
-from django.test import Client
+from django.core.exceptions import ValidationError
+from django.test import Client, override_settings
 from django.urls import reverse
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from oauth2_provider.exceptions import (
+    InvalidIDTokenError,
+    InvalidOIDCClientError,
+    InvalidOIDCRedirectURIError,
+    LogoutDenied,
+)
 from oauth2_provider.models import AccessToken, Application, RefreshToken
 from oauth2_provider.settings import oauth2_settings
 from oauthlib.oauth2.rfc6749.endpoints.authorization import AuthorizationEndpoint
 
-from mainsite.oauth2.validators import OIDCValidator
+from mainsite.oauth2.validators import OIDCValidator, hs256_signing_unavailable
 from peeringdb_server.models import OAuthApplication, Organization, User
 from tests.util import oauth_login_marker, reset_group_ids
+
+
+def b64url(value):
+    if isinstance(value, str):
+        value = value.encode()
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
+
+def unsigned_jws(payload):
+    """
+    Compact JWS with an RS256 header, the given raw payload and a junk signature
+    """
+    return ".".join(b64url(part) for part in ['{"alg": "RS256"}', payload, "x"])
+
+
+RS256_HEADER = b64url('{"alg": "RS256"}')
+
+
+# id_token_hint values that are not an OIDC ID token, i.e. not a compact JWS
+# whose payload is a JSON object with a string or list of strings `aud`
+MALFORMED_ID_TOKEN_HINTS = [
+    pytest.param(unsigned_jws("notjson"), id="payload-not-json"),
+    pytest.param(unsigned_jws("1"), id="payload-number"),
+    pytest.param(unsigned_jws('"aud"'), id="payload-string"),
+    pytest.param(
+        f"{RS256_HEADER}.{b64url(bytes([255, 254]))}.{b64url('x')}",
+        id="payload-binary",
+    ),
+    pytest.param(unsigned_jws('{"aud": 5}'), id="aud-number"),
+    pytest.param(unsigned_jws('{"aud": null}'), id="aud-null"),
+    pytest.param(unsigned_jws('{"aud": [1]}'), id="aud-list-number"),
+    pytest.param("%%%.%%%.%%%", id="not-base64url"),
+    pytest.param('{"signatures": []}', id="json-general"),
+    pytest.param(
+        json.dumps({"protected": RS256_HEADER, "signature": b64url("x")}),
+        id="json-flattened-no-payload",
+    ),
+    pytest.param(
+        json.dumps(
+            {
+                "protected": b64url('{"alg": "RS256", "b64": false, "crit": ["b64"]}'),
+                "payload": "{}",
+                "signature": b64url("x"),
+            }
+        ),
+        id="json-flattened-unencoded-payload",
+    ),
+]
+
+LOGOUT_CLIENT_ID = "client_id_logout"
+NOSIGN_CLIENT_ID = "client_id_nosign"
+
+# id_token_hint values that pass the compact JWS shape check and only fail
+# when the payload is parsed, the aud is checked or the token is verified
+UNVERIFIABLE_ID_TOKEN_HINTS = [
+    pytest.param(
+        unsigned_jws(codecs.BOM_UTF8 + json.dumps({"aud": LOGOUT_CLIENT_ID}).encode()),
+        id="payload-utf8-bom",
+    ),
+    pytest.param(
+        unsigned_jws(json.dumps({"aud": LOGOUT_CLIENT_ID}).encode("utf-16-le")),
+        id="payload-utf16-le",
+    ),
+    pytest.param(
+        unsigned_jws(json.dumps({"aud": LOGOUT_CLIENT_ID}).encode("utf-16")),
+        id="payload-utf16-bom",
+    ),
+    pytest.param(unsigned_jws('{"aud": "\\ud800"}'), id="aud-lone-surrogate"),
+    pytest.param(
+        unsigned_jws(json.dumps({"aud": NOSIGN_CLIENT_ID})), id="aud-cannot-sign"
+    ),
+]
+
+# deeply nested JSON fails to parse or, where the JSON parser handles the
+# depth, names a signing application and fails verification
+DEEP_NESTING_ID_TOKEN_HINT = [
+    pytest.param(
+        unsigned_jws(
+            '{"aud": "'
+            + LOGOUT_CLIENT_ID
+            + '", "x": '
+            + "[" * 10000
+            + "]" * 10000
+            + "}"
+        ),
+        id="payload-deep-nesting",
+    ),
+]
+
+# well formed payload naming a signing application, so the key is found and
+# the token fails verification
+BAD_SIGNATURE_ID_TOKEN_HINTS = [
+    pytest.param(
+        ".".join(
+            b64url(part)
+            for part in [header, json.dumps({"aud": LOGOUT_CLIENT_ID}), "x"]
+        ),
+        id=f"header-{name}",
+    )
+    for name, header in [
+        ("rs256", '{"alg": "RS256"}'),
+        ("number", "1"),
+        ("list", "[]"),
+        ("none-alg", '{"alg": "none"}'),
+        ("unencoded-payload", '{"alg": "RS256", "b64": false, "crit": ["b64"]}'),
+    ]
+]
+
+
+POST_LOGOUT_URI = "https://example.com/logged-out"
+
+# registered and requested post logout uris may carry port, path and query
+# components; django-oauth-toolkit matches them component by component
+POST_LOGOUT_URI_COMPONENTS = "https://rp.example:8443/logout/done?a=1&b=2"
+
+# requests that differ from POST_LOGOUT_URI_COMPONENTS in one component
+POST_LOGOUT_URI_MISMATCHES = [
+    pytest.param("https://rp.example/logout/done?a=1&b=2", id="port-omitted"),
+    pytest.param("https://rp.example:443/logout/done?a=1&b=2", id="port-default"),
+    pytest.param("https://rp.example:9443/logout/done?a=1&b=2", id="port-other"),
+    pytest.param("https://rp.example:8443/logout/done/?a=1&b=2", id="path-slash"),
+    pytest.param("https://rp.example:8443/logout?a=1&b=2", id="path-parent"),
+    pytest.param("https://rp.example:8443/logout/done/x?a=1&b=2", id="path-child"),
+    pytest.param("https://rp.example:8443/Logout/done?a=1&b=2", id="path-case"),
+    pytest.param("https://rp.example:8443/logout/%64one?a=1&b=2", id="path-encoded"),
+    pytest.param("https://rp.example:8443/logout/done?b=2&a=1", id="query-order"),
+    pytest.param("https://rp.example:8443/logout/done?a=1", id="query-missing"),
+    pytest.param("https://rp.example:8443/logout/done?a=1&b=2&c=3", id="query-extra"),
+    pytest.param("https://rp.example:8443/logout/done?a=1&b=3", id="query-value"),
+    pytest.param("https://rp.example:8443/logout/done", id="query-none"),
+    pytest.param("https://rp.example:8443/logout/done?a=1&b=2#x", id="fragment"),
+    pytest.param("http://rp.example:8443/logout/done?a=1&b=2", id="scheme"),
+    pytest.param("https://other.example:8443/logout/done?a=1&b=2", id="host"),
+    pytest.param(
+        "https://rp.example.evil.example:8443/logout/done?a=1&b=2", id="host-suffix"
+    ),
+    pytest.param("https://user@rp.example:8443/logout/done?a=1&b=2", id="userinfo"),
+]
 
 
 def override_app_model():
@@ -1349,3 +1504,705 @@ class TestOAuthAuthorizationAMR:
             )
         finally:
             self.cleanup(oauth_app)
+
+
+# OIDC RP-initiated logout (#2022)
+
+
+@pytest.fixture
+def oidc_logout_app(oauth2_org_admin_user):
+    user, _, _ = oauth2_org_admin_user
+    return user, create_logout_app(user, LOGOUT_CLIENT_ID)
+
+
+def create_logout_app(user, client_id, algorithm="RS256"):
+    fields = {
+        "user": user,
+        "name": "Logout app",
+        "client_id": client_id,
+        "client_secret": "client_secret_logout",
+        "redirect_uris": "https://example.com",
+        "post_logout_redirect_uris": f"{POST_LOGOUT_URI} {POST_LOGOUT_URI_COMPONENTS}",
+        "skip_authorization": False,
+        "authorization_grant_type": Application.GRANT_AUTHORIZATION_CODE,
+        "client_type": Application.CLIENT_CONFIDENTIAL,
+        "algorithm": algorithm,
+    }
+
+    # see test_oauth_authorization_process_oidc_amr for why both tables
+    app = Application.objects.create(**fields)
+    OAuthApplication.objects.create(id=app.id, **fields)
+    return app
+
+
+@pytest.fixture
+def oidc_nosign_app(oauth2_org_admin_user):
+    user, _, _ = oauth2_org_admin_user
+
+    fields = {
+        "user": user,
+        "name": "No OIDC app",
+        "client_id": NOSIGN_CLIENT_ID,
+        "redirect_uris": "https://example.com",
+        "authorization_grant_type": Application.GRANT_AUTHORIZATION_CODE,
+        "client_type": Application.CLIENT_CONFIDENTIAL,
+        "algorithm": Application.NO_ALGORITHM,
+    }
+    app = Application.objects.create(**fields)
+    OAuthApplication.objects.create(id=app.id, **fields)
+    return app
+
+
+def oidc_login(client, user, app):
+    """
+    Log the user in and run the authorization code flow, returning the
+    token endpoint response
+    """
+
+    client.force_login(user)
+    session = client.session
+    session["amr"] = ["pwd"]
+    session["oauth_login"] = oauth_login_marker(user)
+    session.save()
+
+    resp = client.post(
+        reverse("oauth2_provider:authorize"),
+        {
+            "client_id": app.client_id,
+            "response_type": "code",
+            "redirect_uri": "https://example.com",
+            "scope": "openid email profile",
+            "allow": "Authorize",
+        },
+        secure=True,
+    )
+    assert resp.status_code == 302
+    auth_code = resp.url.split("code=")[1]
+
+    resp = client.post(
+        reverse("oauth2_provider:token"),
+        {
+            "grant_type": "authorization_code",
+            "code": auth_code,
+            "redirect_uri": "https://example.com",
+            "client_id": app.client_id,
+            "client_secret": "client_secret_logout",
+        },
+        secure=True,
+    )
+    assert resp.status_code == 200
+    return resp.json()
+
+
+def is_logged_in(client):
+    return "_auth_user_id" in client.session
+
+
+@pytest.mark.django_db
+def test_oidc_discovery_end_session_endpoint():
+    client = Client()
+    url = reverse("oidc-connect-discovery-info")
+
+    data = client.get(url, secure=True).json()
+    assert data["end_session_endpoint"] == "https://testserver/oauth2/logout/"
+
+    with override_settings(
+        OAUTH2_PROVIDER={
+            **settings.OAUTH2_PROVIDER,
+            "OIDC_RP_INITIATED_LOGOUT_ENABLED": False,
+        }
+    ):
+        data = client.get(url, secure=True).json()
+        assert "end_session_endpoint" not in data
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_ends_session_keeps_tokens(oidc_logout_app):
+    user, app = oidc_logout_app
+    client = Client()
+    tokens = oidc_login(client, user, app)
+    assert is_logged_in(client)
+
+    params = {
+        "id_token_hint": tokens["id_token"],
+        "client_id": app.client_id,
+        "post_logout_redirect_uri": POST_LOGOUT_URI,
+        "state": "rp_state",
+    }
+    url = reverse("oauth2_provider:rp-initiated-logout")
+
+    # the user is asked to confirm
+    resp = client.get(url, params, secure=True)
+    assert resp.status_code == 200
+    assert "Confirm Logout requested by Logout app" in resp.content.decode()
+    assert is_logged_in(client)
+
+    resp = client.post(url, {**params, "allow": "Logout"}, secure=True)
+    assert resp.status_code == 302
+    assert resp.url == f"{POST_LOGOUT_URI}?state=rp_state"
+    assert not is_logged_in(client)
+
+    # session only logout, the application's tokens stay valid
+    assert AccessToken.objects.filter(token=tokens["access_token"]).exists()
+    assert RefreshToken.objects.filter(
+        token=tokens["refresh_token"], revoked__isnull=True
+    ).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.xdist_group(name="read_only_tests")
+def test_rp_initiated_logout_read_only_mode(oidc_logout_app):
+    user, app = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    with override_settings(
+        DJANGO_READ_ONLY=True,
+        INSTALLED_APPS=settings.INSTALLED_APPS + ["django_read_only"],
+    ):
+        resp = client.post(
+            reverse("oauth2_provider:rp-initiated-logout"),
+            {
+                "client_id": app.client_id,
+                "post_logout_redirect_uri": POST_LOGOUT_URI,
+                "allow": "Logout",
+            },
+            secure=True,
+        )
+    assert resp.status_code == 302
+    assert resp.url == POST_LOGOUT_URI
+    assert not is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "post_logout_redirect_uri",
+    ["https://evil.example/logged-out", "http://example.com/logged-out"],
+)
+def test_rp_initiated_logout_rejects_redirect(
+    oidc_logout_app, post_logout_redirect_uri
+):
+    user, app = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    resp = client.get(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {
+            "client_id": app.client_id,
+            "post_logout_redirect_uri": post_logout_redirect_uri,
+        },
+        secure=True,
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidOIDCRedirectURIError)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_redirect_uri_components(oidc_logout_app):
+    user, app = oidc_logout_app
+    client = Client()
+    tokens = oidc_login(client, user, app)
+
+    params = {
+        "id_token_hint": tokens["id_token"],
+        "post_logout_redirect_uri": POST_LOGOUT_URI_COMPONENTS,
+        "state": "rp_state",
+    }
+    url = reverse("oauth2_provider:rp-initiated-logout")
+
+    resp = client.get(url, params, secure=True)
+    assert resp.status_code == 200
+    assert is_logged_in(client)
+
+    # port, path and query are kept, state is appended to the query
+    resp = client.post(url, {**params, "allow": "Logout"}, secure=True)
+    assert resp.status_code == 302
+    assert resp.url == f"{POST_LOGOUT_URI_COMPONENTS}&state=rp_state"
+    assert not is_logged_in(client)
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_redirect_uri_scheme_host_case(oidc_logout_app):
+    _, app = oidc_logout_app
+    client = Client()
+    requested = "HTTPS://RP.EXAMPLE:8443/logout/done?a=1&b=2"
+
+    # scheme and host compare case-insensitively, the rest exactly
+    resp = client.get(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {"client_id": app.client_id, "post_logout_redirect_uri": requested},
+        secure=True,
+    )
+    assert resp.status_code == 302
+    assert resp.url == requested
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize("requested", POST_LOGOUT_URI_MISMATCHES)
+def test_rp_initiated_logout_redirect_uri_mismatch(oidc_logout_app, method, requested):
+    user, app = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+    session_key = client.session.session_key
+
+    params = {"client_id": app.client_id, "post_logout_redirect_uri": requested}
+    if method == "post":
+        params["allow"] = "Logout"
+
+    resp = getattr(client, method)(
+        reverse("oauth2_provider:rp-initiated-logout"), params, secure=True
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidOIDCRedirectURIError)
+    assert is_logged_in(client)
+    assert client.session.session_key == session_key
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_unknown_client(oauth2_org_admin_user):
+    user, _, _ = oauth2_org_admin_user
+    client = Client()
+    client.force_login(user)
+
+    resp = client.get(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {"client_id": "does-not-exist"},
+        secure=True,
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidOIDCClientError)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
+    "params,error",
+    [
+        (
+            {"post_logout_redirect_uri": "https://["},
+            InvalidOIDCRedirectURIError,
+        ),
+        (
+            {"post_logout_redirect_uri": "https://example.com:99999/logged-out"},
+            InvalidOIDCRedirectURIError,
+        ),
+    ],
+)
+def test_rp_initiated_logout_malformed_input(oidc_logout_app, method, params, error):
+    user, app = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    if "post_logout_redirect_uri" in params:
+        params = {**params, "client_id": app.client_id}
+    if method == "post":
+        params = {**params, "allow": "Logout"}
+
+    resp = getattr(client, method)(
+        reverse("oauth2_provider:rp-initiated-logout"), params, secure=True
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], error)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize("hint", MALFORMED_ID_TOKEN_HINTS)
+def test_rp_initiated_logout_malformed_id_token_hint(oidc_logout_app, method, hint):
+    user, _ = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    params = {"id_token_hint": hint}
+    if method == "post":
+        params["allow"] = "Logout"
+
+    resp = getattr(client, method)(
+        reverse("oauth2_provider:rp-initiated-logout"), params, secure=True
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidIDTokenError)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("method", ["get", "post"])
+@pytest.mark.parametrize(
+    "hint",
+    UNVERIFIABLE_ID_TOKEN_HINTS
+    + DEEP_NESTING_ID_TOKEN_HINT
+    + BAD_SIGNATURE_ID_TOKEN_HINTS,
+)
+def test_rp_initiated_logout_unverifiable_id_token_hint(
+    oidc_logout_app, oidc_nosign_app, method, hint
+):
+    user, _ = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    params = {"id_token_hint": hint}
+    if method == "post":
+        params["allow"] = "Logout"
+
+    resp = getattr(client, method)(
+        reverse("oauth2_provider:rp-initiated-logout"), params, secure=True
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidIDTokenError)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_rp_initiated_logout_hs256_app_id_token_hint(oauth2_org_admin_user, method):
+    # the HS256 app's secret is stored hashed, so no hint it issued can be
+    # verified (#2055)
+    user, _, _ = oauth2_org_admin_user
+    app = create_logout_app(
+        user, LOGOUT_CLIENT_ID, algorithm=Application.HS256_ALGORITHM
+    )
+    assert hs256_signing_unavailable(app)
+    client = Client()
+    client.force_login(user)
+
+    hint = ".".join(
+        b64url(part)
+        for part in ['{"alg": "HS256"}', json.dumps({"aud": app.client_id}), "x"]
+    )
+    params = {"id_token_hint": hint, "post_logout_redirect_uri": POST_LOGOUT_URI}
+    if method == "post":
+        params["allow"] = "Logout"
+
+    resp = getattr(client, method)(
+        reverse("oauth2_provider:rp-initiated-logout"), params, secure=True
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], InvalidIDTokenError)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("hint", MALFORMED_ID_TOKEN_HINTS + UNVERIFIABLE_ID_TOKEN_HINTS)
+def test_oidc_validator_key_for_malformed_token(oidc_logout_app, oidc_nosign_app, hint):
+    assert OIDCValidator()._get_key_for_token(hint) is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "aud", [LOGOUT_CLIENT_ID, [LOGOUT_CLIENT_ID], [NOSIGN_CLIENT_ID, LOGOUT_CLIENT_ID]]
+)
+def test_oidc_validator_key_for_signing_app(oidc_nosign_app, oidc_logout_app, aud):
+    _, app = oidc_logout_app
+
+    # the non-signing app comes first in pk order, so the mixed audience only
+    # finds the signing app through the signing filter
+    assert oidc_nosign_app.pk < app.pk
+
+    key = OIDCValidator()._get_key_for_token(unsigned_jws(json.dumps({"aud": aud})))
+    assert key.thumbprint() == app.jwk_key.thumbprint()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "client_id",
+    [
+        pytest.param("client\u00a0id", id="no-break-space"),
+        pytest.param("client\u200bid", id="zero-width-space"),
+        pytest.param("client\tid", id="tab"),
+    ],
+)
+def test_rp_initiated_logout_id_token_hint_unprintable_client_id(
+    oauth2_org_admin_user, client_id
+):
+    user, _, _ = oauth2_org_admin_user
+    app = create_logout_app(user, client_id)
+    client = Client()
+    tokens = oidc_login(client, user, app)
+
+    resp = client.get(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {
+            "id_token_hint": tokens["id_token"],
+            "post_logout_redirect_uri": POST_LOGOUT_URI,
+        },
+        secure=True,
+    )
+    assert resp.status_code == 200
+    assert "Confirm Logout requested by Logout app" in resp.content.decode()
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_prompts_without_hint(oidc_logout_app):
+    user, app = oidc_logout_app
+    client = Client()
+    client.force_login(user)
+
+    resp = client.get(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {"client_id": app.client_id, "post_logout_redirect_uri": POST_LOGOUT_URI},
+        secure=True,
+    )
+    assert resp.status_code == 200
+    assert "Confirm Logout requested by Logout app" in resp.content.decode()
+    assert is_logged_in(client)
+
+    # declining keeps the session
+    resp = client.post(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {"client_id": app.client_id, "post_logout_redirect_uri": POST_LOGOUT_URI},
+        secure=True,
+    )
+    assert resp.status_code == 400
+    assert isinstance(resp.context["error"], LogoutDenied)
+    assert is_logged_in(client)
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_without_session(oauth2_org_admin_user):
+    client = Client()
+
+    resp = client.get(reverse("oauth2_provider:rp-initiated-logout"), secure=True)
+    assert resp.status_code == 302
+    assert resp.url == "https://testserver/"
+
+
+@pytest.mark.django_db
+def test_rp_initiated_logout_mfa_setup_pending(oauth2_org_admin_user):
+    user, _, _ = oauth2_org_admin_user
+    client = Client()
+    client.force_login(user)
+    session = client.session
+    session["mfa_setup_required"] = True
+    session.save()
+
+    # other pages send the user to mfa setup
+    resp = client.get("/", secure=True)
+    assert resp.status_code == 302
+    assert resp.url == reverse("two_factor:profile")
+
+    resp = client.get(reverse("oauth2_provider:rp-initiated-logout"), secure=True)
+    assert resp.status_code == 200
+    assert "Confirm Logout" in resp.content.decode()
+
+    resp = client.post(
+        reverse("oauth2_provider:rp-initiated-logout"),
+        {"allow": "Logout"},
+        secure=True,
+    )
+    assert resp.status_code == 302
+    assert not is_logged_in(client)
+
+
+def app_form_data(**kwargs):
+    return {
+        "name": "Form app",
+        "client_id": "client_id_form",
+        "client_secret": "client_secret_form",
+        "client_type": OAuthApplication.CLIENT_CONFIDENTIAL,
+        "redirect_uris": "https://example.com",
+        "authorization_grant_type": OAuthApplication.GRANT_AUTHORIZATION_CODE,
+        "algorithm": "",
+        **kwargs,
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://a.example/out https://b.example/out?x=1,2",
+        "  https://a.example/out\nhttps://b.example/out?x=1,2\n",
+    ],
+)
+def test_app_form_post_logout_redirect_uris(oauth2_org_admin_user, value):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"),
+            app_form_data(post_logout_redirect_uris=value),
+        )
+        assert resp.status_code == 302
+
+        app = OAuthApplication.objects.get(client_id="client_id_form")
+        assert (
+            app.post_logout_redirect_uris
+            == "https://a.example/out https://b.example/out?x=1,2"
+        )
+        assert app.post_logout_redirect_uri_allowed("https://b.example/out?x=1,2")
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_form_post_logout_redirect_uri_components(oauth2_org_admin_user):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"),
+            app_form_data(post_logout_redirect_uris=POST_LOGOUT_URI_COMPONENTS),
+        )
+        assert resp.status_code == 302
+
+        app = OAuthApplication.objects.get(client_id="client_id_form")
+        assert app.post_logout_redirect_uris == POST_LOGOUT_URI_COMPONENTS
+        assert app.post_logout_redirect_uri_allowed(POST_LOGOUT_URI_COMPONENTS)
+        for param in POST_LOGOUT_URI_MISMATCHES:
+            assert not app.post_logout_redirect_uri_allowed(param.values[0]), param.id
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "value",
+    ["http://a.example/out", "javascript:alert(1)", "https://a.example/out#frag"],
+)
+def test_app_form_post_logout_redirect_uris_invalid(oauth2_org_admin_user, value):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"),
+            app_form_data(post_logout_redirect_uris=f"https://ok.example/ {value}"),
+        )
+        assert resp.status_code == 200
+        assert "post_logout_redirect_uris" in resp.context["form"].errors
+        assert not OAuthApplication.objects.filter(client_id="client_id_form").exists()
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "value",
+    [
+        "https://a.example, https://b.example",
+        "https://a.example https://b.example",
+        "https://a.example,https://b.example",
+    ],
+)
+def test_app_form_allowed_origins_space_separated(oauth2_org_admin_user, value):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"), app_form_data(allowed_origins=value)
+        )
+        assert resp.status_code == 302
+
+        app = OAuthApplication.objects.get(client_id="client_id_form")
+        assert app.allowed_origins == "https://a.example https://b.example"
+        assert app.origin_allowed("https://a.example")
+        assert app.origin_allowed("https://b.example")
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+def test_app_form_allowed_origins_https_only(oauth2_org_admin_user):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"),
+            app_form_data(allowed_origins="https://a.example, http://b.example"),
+        )
+        assert resp.status_code == 200
+        assert "Origins must start with https://" in resp.content.decode()
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param("https://rp.example:99999/out", id="port-out-of-range"),
+        pytest.param("https://rp.example:bad/out", id="port-not-a-number"),
+        pytest.param("https://user@rp.example/out", id="userinfo"),
+    ],
+)
+def test_app_form_post_logout_redirect_uris_unmatchable(oauth2_org_admin_user, value):
+    override_app_model()
+    try:
+        user, _, _ = oauth2_org_admin_user
+        client = Client()
+        client.force_login(user)
+
+        resp = client.post(
+            reverse("oauth2_provider:register"),
+            app_form_data(post_logout_redirect_uris=f"{value} https://rp.example/out"),
+        )
+        assert resp.status_code == 200
+        assert "post_logout_redirect_uris" in resp.context["form"].errors
+        assert not OAuthApplication.objects.filter(client_id="client_id_form").exists()
+    finally:
+        restore_app_model()
+
+
+@pytest.mark.django_db
+def test_oauth_application_clean_post_logout_redirect_uris():
+    app = OAuthApplication(post_logout_redirect_uris="https://example.com/out")
+    app.clean()
+
+    app.post_logout_redirect_uris = "https://example.com/out ftp://example.com/out"
+    with pytest.raises(ValidationError) as exc:
+        app.clean()
+    assert list(exc.value.message_dict) == ["post_logout_redirect_uris"]
+
+
+@pytest.mark.django_db
+def test_migration_allowed_origins_space_separated():
+    migration = importlib.import_module(
+        "peeringdb_server.migrations."
+        "0165_oauthapplication_allowed_origins_space_separated"
+    )
+
+    comma = OAuthApplication.objects.create(
+        name="Comma app",
+        client_id="client_id_comma",
+        allowed_origins="https://a.example,https://b.example, https://c.example",
+    )
+    single = OAuthApplication.objects.create(
+        name="Single app",
+        client_id="client_id_single",
+        allowed_origins="https://a.example",
+    )
+    default_model = Application.objects.create(
+        name="Default model app",
+        client_id="client_id_default",
+        allowed_origins="https://a.example,https://b.example",
+    )
+
+    migration.forwards_func(django_apps, None)
+
+    comma.refresh_from_db()
+    single.refresh_from_db()
+    default_model.refresh_from_db()
+    assert (
+        comma.allowed_origins == "https://a.example https://b.example https://c.example"
+    )
+    assert single.allowed_origins == "https://a.example"
+    assert default_model.allowed_origins == "https://a.example https://b.example"

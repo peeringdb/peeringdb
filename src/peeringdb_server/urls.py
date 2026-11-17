@@ -56,6 +56,7 @@ from peeringdb_server.oauth_views import (
     DeviceConfirmView,
     DeviceUserCodeView,
     OAuthMetadataView,
+    RPInitiatedLogoutView,
 )
 from peeringdb_server.verified_update.views import (
     view_verified_update,
@@ -537,6 +538,11 @@ urlpatterns += [
 # Oauth2
 urlpatterns += [
     re_path(r"^oauth2/authorize/", AuthorizationView.as_view(), name="authorize"),
+    re_path(
+        r"^oauth2/logout/$",
+        RPInitiatedLogoutView.as_view(),
+        name="rp-initiated-logout",
+    ),
     # shadow the oauth2_provider device flow consent routes of the same path
     re_path(r"^oauth2/device/$", DeviceUserCodeView.as_view(), name="device"),
     re_path(

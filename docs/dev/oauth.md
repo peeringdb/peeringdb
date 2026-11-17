@@ -80,6 +80,41 @@ PeeringDB currently is not collecting device attestation, thus has no way to ide
 "amr": ["swk"] # password less without mfa
 ```
 
+## RP-initiated logout
+
+PeeringDB supports [OpenID Connect RP-Initiated Logout 1.0](https://openid.net/specs/openid-connect-rpinitiated-1_0.html). The OIDC discovery document (`/.well-known/openid-configuration`) advertises the endpoint as `end_session_endpoint`:
+
+```
+https://www.peeringdb.com/oauth2/logout/
+```
+
+To log a user out of PeeringDB as well as your application, send the user's browser there:
+
+```
+https://www.peeringdb.com/oauth2/logout/?id_token_hint=<id token>&post_logout_redirect_uri=https://example.com/logged-out&state=<state>
+```
+
+- `id_token_hint`: an ID token PeeringDB issued to your application for this user. Expired tokens are accepted.
+- `client_id`: your client id. It is only needed when you do not send `id_token_hint`.
+- `post_logout_redirect_uri`: where PeeringDB sends the user afterwards. It must be https and match one of the **post logout redirect URIs** registered on your application exactly (see below). Edit the application under your profile or organization OAuth settings to add them, separated by spaces.
+- `state`: optional, appended to the query of `post_logout_redirect_uri` when PeeringDB redirects back.
+
+A user who is logged in to PeeringDB is asked to confirm the logout. A user who has no PeeringDB session is redirected straight away.
+
+Logout ends the PeeringDB session only. Access and refresh tokens issued to your application stay valid until they expire. If your application should no longer use them, revoke them with the token revocation endpoint (`/oauth2/revoke_token/`, RFC 7009).
+
+### Matching post logout redirect URIs
+
+Registered and requested URIs may contain a port, a path and a query (RP-Initiated Logout 1.0, sections 2 and 3). The requested `post_logout_redirect_uri` must match a registered one exactly, component by component:
+
+- scheme and host are compared case-insensitively, and the scheme must be `https`
+- the port must be the same number; `https://example.com:443/out` does not match a registered `https://example.com/out`
+- the path must be identical, including case, trailing slash and percent-encoding
+- the query must be identical, including parameter order; a missing, extra or reordered parameter, or a query on only one side (even a bare `?`), does not match
+- a fragment (`#...`) or credentials (`user@`) in the requested URI never match
+
+For example, with `https://rp.example:8443/logout/done?a=1&b=2` registered, only that URI (with any letter case in scheme and host) is accepted; `https://rp.example/logout/done?a=1&b=2`, `https://rp.example:8443/logout/done/?a=1&b=2` and `https://rp.example:8443/logout/done?b=2&a=1` are rejected. A rejected URI shows an error page and leaves the PeeringDB session as it was.
+
 ## ID token signing
 
 OpenID Connect ID tokens are signed with RS256. Verify them with the public keys published at `/oauth2/.well-known/jwks.json`.
