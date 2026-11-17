@@ -516,7 +516,7 @@ def admin_user():
     admin_user.set_password("admin")
     admin_user.save()
     # without a second factor the MFA middleware redirects staff
-    TOTPDevice.objects.create(user=admin_user, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=admin_user, name="default", confirmed=True)
     return admin_user
 
 

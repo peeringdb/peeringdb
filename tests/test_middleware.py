@@ -30,6 +30,7 @@ from peeringdb_server.middleware import (
     EnforceMFAMiddleware,
     PDBCommonMiddleware,
     RedisNegativeCacheMiddleware,
+    get_auth_identity,
     get_inactive_cache_key,
 )
 from peeringdb_server.models import Organization, OrganizationAPIKey, User, UserAPIKey
@@ -479,7 +480,7 @@ def test_pdb_negative_cache_ratelimit_staff_exempt(mock_resolve):
     staff_user.set_password("staff_password")
     staff_user.save()
     # without a second factor the MFA middleware redirects staff first
-    TOTPDevice.objects.create(user=staff_user, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=staff_user, name="default", confirmed=True)
 
     def mock_view_repsonse(request):
         return HttpResponse("Response 403", status=403)
@@ -1274,3 +1275,22 @@ def test_basic_auth_marker_not_replayed_under_mfa_enforcement(settings):
         stale.json() == other.json() == {"meta": {"error": ERR_BASIC_AUTH_DEPRECATED}}
     )
     assert "X-Cached-Response" not in stale
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("cookie_name", ["sessionid", "sessionid_dev"])
+def test_auth_identity_reads_configured_session_cookie(settings, cookie_name):
+    """
+    The negative cache tells session users apart by the session cookie
+    configured in SESSION_COOKIE_NAME (#531)
+    """
+    settings.SESSION_COOKIE_NAME = cookie_name
+    factory = RequestFactory()
+
+    identities = set()
+    for session_key in ("aaaaaaaaaa-one", "bbbbbbbbbb-two"):
+        request = factory.get("/")
+        request.COOKIES[cookie_name] = session_key
+        identities.add(get_auth_identity(request))
+
+    assert identities == {"session__aaaaaaaaaa", "session__bbbbbbbbbb"}

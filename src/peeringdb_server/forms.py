@@ -32,6 +32,7 @@ from peeringdb_server.models import Organization, User
 from peeringdb_server.validators import (
     validate_account_name,
     validate_name,
+    validate_no_control_chars,
     validate_no_emoji,
 )
 
@@ -81,10 +82,11 @@ class AffiliateToOrgForm(forms.Form):
                 org = Organization.objects.get(name=org_id)
                 return org.id
             except Organization.DoesNotExist:
-                # reject consecutive whitespace (#1984) and emoji (#2018) in
-                # the human-typed org name
+                # reject consecutive whitespace (#1984), emoji (#2018) and
+                # control characters (#533) in the human-typed org name
                 validate_name(org_id)
                 validate_no_emoji(org_id)
+                validate_no_control_chars(org_id)
                 self.cleaned_data["org_name"] = org_id
                 return 0
 

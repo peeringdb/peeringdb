@@ -57,9 +57,13 @@ def enable_api_key_auth(fn: Callable[..., HttpResponse]) -> Callable[..., HttpRe
                 credentials = auth[1]
                 try:
                     api_key = UserAPIKey.objects.get_from_key(credentials)
-                    if api_key.status != "active":
+                    # the REST API refuses these keys too (InactiveKeyBlock)
+                    if api_key.status != "active" or not api_key.user.is_active:
                         raise UserAPIKey.DoesNotExist
                     request.user = api_key.user
+                    # permission checks then apply the key's own limits,
+                    # e.g. readonly (#535)
+                    request._permission_holder = api_key
                 except UserAPIKey.DoesNotExist:
                     try:
                         org_api_key = OrganizationAPIKey.objects.get_from_key(
@@ -68,6 +72,7 @@ def enable_api_key_auth(fn: Callable[..., HttpResponse]) -> Callable[..., HttpRe
                         if org_api_key.status != "active":
                             raise OrganizationAPIKey.DoesNotExist
                         request.org = org_api_key.org
+                        request._permission_holder = org_api_key
                         authenticated_users = list(
                             request.org.admin_usergroup.user_set.filter(is_active=True)
                         ) + list(request.org.usergroup.user_set.filter(is_active=True))

@@ -1395,6 +1395,9 @@ class Importer:
 
                 if ipv6_addr:
                     ipv6_addr = ipaddress.IPv6Address(f"{ipv6_addr}")
+                    # a zone identifier is not part of a peering address (#534)
+                    if ipv6_addr.scope_id is not None:
+                        raise ValueError("zone identifier")
                     ixf_id.append(ipv6_addr)
                 else:
                     ixf_id.append(None)

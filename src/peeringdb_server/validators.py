@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import ipaddress
 import re
+import time
+import unicodedata
 from functools import cache
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -204,6 +206,38 @@ def validate_no_emoji(value: str | None) -> str | None:
     return value
 
 
+# Cc: control characters; Zl, Zp: line and paragraph separators (U+2028, U+2029)
+_CONTROL_CHAR_CATEGORIES = frozenset({"Cc", "Zl", "Zp"})
+
+
+def _is_control_char(char: str) -> bool:
+    return unicodedata.category(char) in _CONTROL_CHAR_CATEGORIES
+
+
+def validate_no_control_chars(value: str | None) -> str | None:
+    """
+    Reject line breaks, tabs and other control characters (Unicode categories
+    Cc, Zl and Zp) in single-line entity name fields (#533).
+    """
+    if value and any(_is_control_char(char) for char in value):
+        raise ValidationError(
+            _("Line breaks and control characters are not allowed in this field.")
+        )
+
+    return value
+
+
+def replace_control_chars(value: str | None) -> str | None:
+    """
+    Replace each control character with a space - the cleanup counterpart to
+    validate_no_control_chars, for RDAP names, which can't be rejected (#533).
+    Run normalize_name afterwards to collapse the resulting spaces.
+    """
+    if not value:
+        return value
+    return "".join(" " if _is_control_char(char) else char for char in value)
+
+
 def strip_emoji(value: str | None) -> str | None:
     """
     Remove emoji - the strip counterpart to validate_no_emoji (which rejects).
@@ -285,6 +319,33 @@ def validate_prefix(
         except ValueError:
             raise ValidationError(_("Invalid prefix: {}").format(prefix))
     return prefix
+
+
+def validate_ip_no_zone(
+    value: str
+    | ipaddress.IPv4Address
+    | ipaddress.IPv6Address
+    | ipaddress.IPv4Network
+    | ipaddress.IPv6Network
+    | None,
+) -> None:
+    """
+    Reject an IP address or prefix that carries a zone identifier
+    (`<address>%<zone>`, #534). Python's ipaddress module accepts zones on
+    IPv6, but they have no meaning outside the host that defined them.
+
+    Raises:
+        - ValidationError on failed validation
+    """
+
+    if not value:
+        return
+
+    if isinstance(value, ipaddress.IPv6Network):
+        value = value.network_address
+
+    if "%" in str(value) or getattr(value, "scope_id", None) is not None:
+        raise ValidationError(_("IP address must not contain a zone identifier"))
 
 
 def validate_address_space(
@@ -704,21 +765,25 @@ def _verify_irr_existence(existence_checks: list[tuple[str, str]]) -> None:
     The local import avoids import-time coupling and keeps format-only callers of
     `validate_irr_as_set` free of the network dependency.
 
+    All lookups of one value share IRR_LOOKUP_SAVE_BUDGET seconds; a token not
+    answered by then is unknown and accepted.
+
     Raises ValidationError when at least one token is provably absent.
     """
     from peeringdb_server import irr
 
+    deadline = time.monotonic() + settings.IRR_LOOKUP_SAVE_BUDGET
     missing = [
         (source, name)
         for source, name in existence_checks
-        if irr.exists_in(source, name) is False
+        if irr.exists_in(source, name, deadline=deadline) is False
     ]
     if not missing:
         return
 
     hints = []
     for source, name in missing:
-        found = irr.sources_for(name)
+        found = irr.sources_for(name, deadline=deadline)
         if found.ok and found.sources:
             hints.append(
                 _("{}::{} (found in: {})").format(

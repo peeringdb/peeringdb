@@ -311,7 +311,7 @@ def test_app_superuser_access(oauth2_apps):
         "superuser", "superuser@localhost", "superuser"
     )
     # without a second factor the MFA middleware redirects staff
-    TOTPDevice.objects.create(user=superuser, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=superuser, name="default", confirmed=True)
 
     client = Client()
     client.force_login(superuser)
@@ -711,7 +711,7 @@ def test_app_update_superuser_keeps_org(oauth2_apps):
     superuser = User.objects.create_superuser(
         "superuser", "superuser@localhost", "superuser"
     )
-    TOTPDevice.objects.create(user=superuser, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=superuser, name="default", confirmed=True)
 
     client = Client()
     client.force_login(superuser)

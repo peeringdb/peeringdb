@@ -220,6 +220,33 @@ class AsnAutomationTestCase(TestCase):
         self.assertTrue(undeleted)
         self.assertEqual(net.name, "AS63344")
 
+    def test_org_create_from_rdap_replaces_control_chars(self):
+        # #533 - RDAP names can't be rejected, so control characters become
+        # spaces
+        org, created = models.Organization.create_from_rdap(
+            self._rdap_with(org_name="Foo\r\nBar\tBaz\x98"), 63345
+        )
+        self.assertEqual(org.name, "Foo Bar Baz")
+
+    def test_net_create_from_rdap_replaces_control_chars(self):
+        net, created = models.Network.create_from_rdap(
+            self._rdap_with(name="Foo\nBar"), 63346, self.base_org
+        )
+        self.assertEqual(net.name, "Foo Bar")
+
+    def test_undelete_for_new_owner_replaces_control_chars(self):
+        deleted = models.Network.objects.create(
+            name="Old Control Name", asn=63347, org=self.base_org, status="ok"
+        )
+        deleted.delete()  # soft-delete
+
+        new_org = models.Organization.objects.create(name="New Control Owner Org")
+        net, undeleted = models.Network.undelete_for_new_owner(
+            63347, new_org, self._rdap_with(name="Foo\nBar")
+        )
+        self.assertTrue(undeleted)
+        self.assertEqual(net.name, "Foo Bar")
+
     def test_validate_rdap_relationship(self):
         b = self.user_a.validate_rdap_relationship(self.rdap_63311)
         self.assertEqual(b, True)

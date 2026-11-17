@@ -1,13 +1,16 @@
 import datetime
+import inspect
 import json
 
+import pytest
 from django.core.cache import caches
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from freezegun import freeze_time
+from rest_framework import throttling
 from rest_framework.response import Response
 from rest_framework.test import APIClient, APIRequestFactory
 
-from peeringdb_server import models
+from peeringdb_server import models, rest_throttles
 from peeringdb_server import settings as pdb_settings
 from peeringdb_server.rest import ModelViewSet
 from peeringdb_server.rest_throttles import (
@@ -15,6 +18,7 @@ from peeringdb_server.rest_throttles import (
     APIUserThrottle,
     MelissaThrottle,
     ResponseSizeThrottle,
+    WriteRateThrottle,
 )
 
 from .util import mock_csrf_session
@@ -55,6 +59,17 @@ class ResponseSizeMockView(ModelViewSet):
         r = Response("x" * self.size)
         ResponseSizeThrottle.cache_response_size(request, self.size)
         return r
+
+
+class WriteMockView(ModelViewSet):
+    """
+    Dummy view for testing write throttling
+    """
+
+    throttle_classes = (WriteRateThrottle,)
+
+    def post(self, request):
+        return Response("example")
 
 
 class APIThrottleTests(TestCase):
@@ -369,14 +384,64 @@ class APIThrottleTests(TestCase):
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200
 
+    @override_settings(NUM_PROXIES=1)
+    def test_anon_throttle_keys_on_client_address(self):
+        """
+        Anonymous requests are throttled per client address, the entry the
+        trusted proxy appended to X-Forwarded-For (#531)
+        """
+
+        def anon_get(xff):
+            request = self.factory.get("/", HTTP_X_FORWARDED_FOR=xff)
+            mock_csrf_session(request)
+            return MockView.as_view({"get": "get"})(request)
+
+        for idx in range(10):
+            assert anon_get(f"192.0.2.{idx}, 203.0.113.9").status_code == 200
+
+        assert anon_get("192.0.2.99, 203.0.113.9").status_code == 429
+        assert anon_get("192.0.2.1, 192.0.2.2, 203.0.113.9").status_code == 429
+        assert anon_get("203.0.113.9").status_code == 429
+
+        # another client address has its own slot
+        assert anon_get("192.0.2.1, 203.0.113.10").status_code == 200
+
+    @override_settings(NUM_PROXIES=1)
+    def test_write_throttle_keys_on_client_address(self):
+        """
+        Anonymous writes are throttled per client address, the entry the
+        trusted proxy appended to X-Forwarded-For (#531)
+        """
+
+        def anon_post(xff):
+            request = self.factory.post("/", {}, HTTP_X_FORWARDED_FOR=xff)
+            mock_csrf_session(request)
+            return WriteMockView.as_view({"post": "post"})(request)
+
+        # API_THROTTLE_RATE_WRITE is 2/minute
+        assert anon_post("192.0.2.1, 203.0.113.9").status_code == 200
+        assert anon_post("192.0.2.2, 203.0.113.9").status_code == 200
+        assert anon_post("192.0.2.3, 203.0.113.9").status_code == 429
+        assert anon_post("203.0.113.9").status_code == 429
+
+        # another client address has its own slot
+        assert anon_post("192.0.2.3, 203.0.113.10").status_code == 200
+
     def test_response_size_ip_block_x_forwarded(self):
         """
         Ensure request rate is limited based on response size
         for ip-block with HTTP_X_FORWARDED_FOR set
+
+        The block is taken from the address the trusted proxy appended
+        (NUM_PROXIES from the right), entries left of it are ignored (#531)
         """
 
-        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
-        mock_csrf_session(request)
+        def xff_request(xff):
+            request = self.factory.get("/", HTTP_X_FORWARDED_FOR=xff)
+            mock_csrf_session(request)
+            return request
+
+        request = xff_request("77.77.77.77, 10.10.10.10")
 
         # by default ip-block response size rate limiting is disabled
         # ip 10.10.10.10 requesting 10 times (all should be ok)
@@ -398,24 +463,30 @@ class APIThrottleTests(TestCase):
             setting="API_THROTTLE_REPEATED_REQUEST_ENABLED_CIDR", value_bool=True
         )
 
-        # ip 10.10.10.10 requesting 3 times (all should be ok)
-        for dummy in range(3):
+        # ip 10.10.10.10 requesting 3 times, each with a different client
+        # supplied entry in front (all should be ok)
+        for idx in range(3):
+            request = xff_request(f"77.77.77.{idx}, 10.10.10.10")
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200
 
-        # ip 10.10.10.10 requesting 4th time (rate limited)
-        response = ResponseSizeMockView.as_view({"get": "get"})(request)
-        assert response.status_code == 429
+        # ip 10.10.10.10 requesting 4th time (rate limited), whatever
+        # comes in front of it
+        for xff in (
+            "10.10.10.10",
+            "20.10.10.10, 10.10.10.10",
+            "not-an-address, 10.10.10.10",
+        ):
+            response = ResponseSizeMockView.as_view({"get": "get"})(xff_request(xff))
+            assert response.status_code == 429
 
-        # ip 10.10.10.11 requesting 1st time (rate limited)
-        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.11,77.77.77.77")
-        mock_csrf_session(request)
+        # ip 10.10.10.11 requesting 1st time (rate limited, same block)
+        request = xff_request("77.77.77.77, 10.10.10.11")
         response = ResponseSizeMockView.as_view({"get": "get"})(request)
         assert response.status_code == 429
 
         # ip 20.10.10.10 requesting 1st time (ok)
-        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="20.10.10.10,77.77.77.77")
-        mock_csrf_session(request)
+        request = xff_request("10.10.10.10, 20.10.10.10")
         response = ResponseSizeMockView.as_view({"get": "get"})(request)
         assert response.status_code == 200
 
@@ -424,8 +495,7 @@ class APIThrottleTests(TestCase):
         thold.save()
 
         # 10.10.10.10 requesting 3 times (all should be ok)
-        request = self.factory.get("/", HTTP_X_FORWARDED_FOR="10.10.10.10,77.77.77.77")
-        mock_csrf_session(request)
+        request = xff_request("77.77.77.77, 10.10.10.10")
         for dummy in range(3):
             response = ResponseSizeMockView.as_view({"get": "get"})(request)
             assert response.status_code == 200
@@ -871,3 +941,39 @@ class APIThrottleTests(TestCase):
                 assert r.status_code == 201
         finally:
             pdb_settings.TUTORIAL_MODE = False
+
+
+def project_throttle_classes():
+    return [
+        cls
+        for _, cls in inspect.getmembers(rest_throttles, inspect.isclass)
+        if issubclass(cls, throttling.BaseThrottle)
+        and cls.__module__ == rest_throttles.__name__
+    ]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "throttle_class", project_throttle_classes(), ids=lambda cls: cls.__name__
+)
+def test_throttle_ident_is_client_address(throttle_class, settings):
+    """
+    Every project throttle identifies a caller by the client address of
+    util.get_client_ident, so no throttle falls back to the raw
+    X-Forwarded-For header (#531)
+    """
+    settings.NUM_PROXIES = 1
+    factory = APIRequestFactory()
+    # get_ident needs no state, and some __init__ read rates from the db
+    throttle = throttle_class.__new__(throttle_class)
+
+    for xff in (
+        "203.0.113.9",
+        "192.0.2.1, 203.0.113.9",
+        "192.0.2.1,192.0.2.2,203.0.113.9",
+        "not-an-address, 203.0.113.9",
+    ):
+        request = factory.get("/", HTTP_X_FORWARDED_FOR=xff)
+        assert throttle.get_ident(request) == "203.0.113.9"
+
+    assert throttle.get_ident(factory.get("/")) == "127.0.0.1"

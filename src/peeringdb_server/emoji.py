@@ -11,7 +11,8 @@ from django.conf import settings
 
 # emoji are not allowed in entity name fields (#2018). To extend the rule to
 # another field (e.g. "notes"), add it here: the API serializers, the admin
-# forms and the pdb_strip_name_emoji backfill all read it.
+# forms and the pdb_strip_name_emoji backfill all read it. The control
+# character check (#533) applies to the same fields.
 EMOJI_FREE_TAGS = ("org", "fac", "ix", "net", "carrier", "campus")
 EMOJI_FREE_FIELDS = ("name", "aka", "name_long")
 

@@ -161,7 +161,7 @@ def test_admin_deactivation_revokes_tokens(user, app):
     admin.is_superuser = admin.is_staff = True
     admin.save()
     # without a second factor the MFA middleware redirects staff
-    TOTPDevice.objects.create(user=admin, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=admin, name="default", confirmed=True)
     client = Client()
     client.force_login(admin)
 

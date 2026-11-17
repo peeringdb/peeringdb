@@ -16,10 +16,21 @@ from peeringdb_server.permissions import (
     get_permission_holder_from_request,
     get_user_from_request,
 )
-from peeringdb_server.util import cache_key_digest
+from peeringdb_server.util import cache_key_digest, get_client_ident
 
 
-class IXFImportThrottle(throttling.UserRateThrottle):
+class ClientIdentMixin:
+    """
+    Keys callers without a user or key identity on the client address from
+    util.get_client_ident, the same one the login throttle, the page rate
+    limit and the negative cache use (#531).
+    """
+
+    def get_ident(self, request):
+        return get_client_ident(request)
+
+
+class IXFImportThrottle(ClientIdentMixin, throttling.UserRateThrottle):
     scope = "ixf_import_request"
 
     def get_cache_key(self, request, view):
@@ -28,13 +39,13 @@ class IXFImportThrottle(throttling.UserRateThrottle):
         return f"{key}.{ix.id}"
 
 
-class IRRLookupThrottle(throttling.UserRateThrottle):
+class IRRLookupThrottle(ClientIdentMixin, throttling.UserRateThrottle):
     # #1973: the editor's IRR lookup endpoint is authenticated and rate-limited
     # so PeeringDB can't be used as a free IRR query proxy.
     scope = "irr_lookup"
 
 
-class TargetedRateThrottle(throttling.SimpleRateThrottle):
+class TargetedRateThrottle(ClientIdentMixin, throttling.SimpleRateThrottle):
     """
     Base class for targeted rate throttling depending
     on authentication status
@@ -141,14 +152,8 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
 
     def _allow_request_anon(self, request, view, ident_prefix=""):
         # first, check ip-address throttling
-        # this is the default throttling mechanism for SimpleRateThrottle
-        # so calling `get_ident` will give us the request ip-address
 
         ip_address = self.get_ident(request)
-
-        # handle XFF
-
-        ip_address = ip_address.split(",")[0].strip()
 
         if self.check_ip(request):
             self.ident = ip_address
@@ -261,7 +266,7 @@ class TargetedRateThrottle(throttling.SimpleRateThrottle):
         return cache_key
 
 
-class FilterThrottle(throttling.SimpleRateThrottle):
+class FilterThrottle(ClientIdentMixin, throttling.SimpleRateThrottle):
     """
     Base class for API throttling targeted at specific query filters.
 
@@ -572,7 +577,7 @@ class MelissaThrottle(TargetedRateThrottle):
         return False
 
 
-class WriteRateThrottle(throttling.UserRateThrottle):
+class WriteRateThrottle(ClientIdentMixin, throttling.UserRateThrottle):
     scope = "write_api"
     default_rate = "2/minute"
 
@@ -596,7 +601,7 @@ class WriteRateThrottle(throttling.UserRateThrottle):
             return self.get_ident(request)
 
 
-class OrganizationUsersThrottle(throttling.UserRateThrottle):
+class OrganizationUsersThrottle(ClientIdentMixin, throttling.UserRateThrottle):
     scope = "organization_users_ops"
     default_rate = "1/second"
 
@@ -612,7 +617,7 @@ class OrganizationUsersThrottle(throttling.UserRateThrottle):
             return self.default_rate
 
 
-class LocationLookupThrottle(throttling.SimpleRateThrottle):
+class LocationLookupThrottle(ClientIdentMixin, throttling.SimpleRateThrottle):
     scope = "location_lookup"
 
     def get_rate(self):

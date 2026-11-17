@@ -632,7 +632,7 @@ def test_unverified_staff_is_sent_to_email_verification(client, mfa_enforced, fl
 
 def test_unverified_staff_with_second_factor_passes(client, mfa_enforced):
     user = unverified(make_user("unverified-2fa"))
-    TOTPDevice.objects.create(user=user, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=user, name="default", confirmed=True)
     client.force_login(user)
     response = client.get("/cp/")
     assert response.status_code == 200

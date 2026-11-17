@@ -1,12 +1,15 @@
 import base64
 import json
+from unittest.mock import patch
 
 import jsonschema
 import pytest
 import pytest_filedata
 from django.core.cache import cache
 from django.test import RequestFactory
+from grainy.const import PERM_READ
 
+from peeringdb_server import ixf
 from peeringdb_server.import_views import (
     view_import_ixlan_ixf_preview,
     view_import_net_ixf_preview,
@@ -220,10 +223,14 @@ class TestImportPreview(ClientCase):
         assert json.loads(response.content)["non_field_errors"] == ["Invalid API key"]
 
     def test_import_preview_valid_org_api_key(self):
-        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
-        request.META["HTTP_AUTHORIZATION"] = f"Api-Key {self.org_api_key}"
+        for perm in self.org.admin_usergroup.grainy_permissions.all():
+            self.org_api_key.grainy_permissions.add_permission(
+                perm.namespace, perm.permission
+            )
 
-        request.org = self.org
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.META["HTTP_AUTHORIZATION"] = f"Api-Key {self.org_key}"
+
         response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
 
         print(response.content)
@@ -232,3 +239,88 @@ class TestImportPreview(ClientCase):
         assert json.loads(response.content)["errors"] == [
             "IX-F import url not specified"
         ]
+
+    def assert_preview_refused(self, key):
+        """
+        The preview answers 403 for `key` and never runs the importer
+        """
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.META["HTTP_AUTHORIZATION"] = f"Api-Key {key}"
+
+        with patch.object(ixf.Importer, "update") as update:
+            response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+
+        assert response.status_code == 403, response.content
+        update.assert_not_called()
+        return json.loads(response.content)
+
+    def test_import_preview_inactive_user_api_key(self):
+        """
+        The key of a deactivated user is refused like an unknown key (#535)
+        """
+        self.admin_user.is_active = False
+        self.admin_user.save()
+
+        content = self.assert_preview_refused(self.key)
+        assert content["non_field_errors"] == ["Invalid API key"]
+
+    def test_import_preview_readonly_user_api_key(self):
+        """
+        A readonly key does not pass the update check of its user (#535)
+        """
+        _, readonly_key = UserAPIKey.objects.create_key(
+            name="readonly key", user=self.admin_user, readonly=True
+        )
+
+        content = self.assert_preview_refused(readonly_key)
+        assert content["non_field_errors"] == ["Permission denied"]
+
+    def test_import_preview_readonly_org_api_key(self):
+        """
+        An org key without update grants is refused, even for an exchange
+        of its own organization (#535)
+        """
+        org_api_key, readonly_key = OrganizationAPIKey.objects.create_key(
+            name="readonly org key", org=self.org, email="test@example.com"
+        )
+        org_api_key.grainy_permissions.add_permission(
+            self.org.grainy_namespace, PERM_READ
+        )
+
+        content = self.assert_preview_refused(readonly_key)
+        assert content["non_field_errors"] == ["Permission denied"]
+
+    def test_import_preview_org_api_key_other_org(self):
+        """
+        An org key with full grants on its own organization is refused for
+        an exchange of another organization
+        """
+        other_org = Organization.objects.create(name="Other Test Org", status="ok")
+        org_api_key, other_key = OrganizationAPIKey.objects.create_key(
+            name="other org key", org=other_org, email="test@example.com"
+        )
+        for perm in other_org.admin_usergroup.grainy_permissions.all():
+            org_api_key.grainy_permissions.add_permission(
+                perm.namespace, perm.permission
+            )
+
+        self.assert_preview_refused(other_key)
+
+    def test_import_preview_admin_due_for_reauth(self):
+        """
+        An exchange admin whose organization requires periodic
+        re-authentication, and who has not re-confirmed an email address, is
+        refused through a session, as on the REST API (#535)
+        """
+        self.org.periodic_reauth = True
+        self.org.periodic_reauth_period = "1y"
+        self.org.save()
+
+        request = RequestFactory().get(f"/import/ixlan/{self.ixlan.id}/ixf/preview/")
+        request.user = self.admin_user
+
+        with patch.object(ixf.Importer, "update") as update:
+            response = view_import_ixlan_ixf_preview(request, self.ixlan.id)
+
+        assert response.status_code == 403, response.content
+        update.assert_not_called()

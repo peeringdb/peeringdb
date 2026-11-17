@@ -68,6 +68,7 @@ from oauth2_provider.validators import AllowedURIValidator
 from passlib.hash import sha256_crypt
 from rest_framework_api_key.models import AbstractAPIKey
 from reversion.models import Version
+from two_factor.utils import default_device
 
 import peeringdb_server.geo as geo
 from peeringdb_server import location, meta_registry
@@ -78,6 +79,7 @@ from peeringdb_server.request import bypass_validation
 from peeringdb_server.validators import (
     clean_ixp_update_exclude,
     normalize_name,
+    replace_control_chars,
     split_irr_as_set_token,
     strip_emoji,
     tokenize_irr_as_set,
@@ -89,6 +91,7 @@ from peeringdb_server.validators import (
     validate_email_domains,
     validate_info_prefixes4,
     validate_info_prefixes6,
+    validate_ip_no_zone,
     validate_irr_as_set,
     validate_ixf_member_list_url,
     validate_notification_banner,
@@ -1619,9 +1622,10 @@ class Organization(
         name = rdap.org_name
         if not name:
             name = org_name or (f"AS{asn}")
-        # normalize whitespace (#1984) and drop emoji (#2018) from the RDAP
-        # name; can't reject without breaking affiliation
-        name = normalize_name(strip_emoji(name)) or f"AS{asn}"
+        # normalize whitespace (#1984), drop emoji (#2018) and control
+        # characters (#533) from the RDAP name; can't reject without breaking
+        # affiliation
+        name = normalize_name(replace_control_chars(strip_emoji(name))) or f"AS{asn}"
         if cls.objects.filter(name=name).exists():
             return cls.objects.get(name=name), False
         else:
@@ -5370,6 +5374,7 @@ class IXLanPrefix(ProtectedMixin, pdb_models.IXLanPrefixBase, StripFieldMixin):
             raise ValidationError(status_error)
 
         # validate the specified prefix address
+        validate_ip_no_zone(self.prefix)
         validate_address_space(self.prefix)
         validate_prefix_overlap(self.prefix)
         return super().clean()
@@ -5801,9 +5806,10 @@ class Network(
         name = rdap.name
         if not rdap.name:
             name = f"AS{asn}"
-        # normalize whitespace (#1984) and drop emoji (#2018) from the RDAP
-        # name; can't reject without breaking affiliation
-        name = normalize_name(strip_emoji(name)) or f"AS{asn}"
+        # normalize whitespace (#1984), drop emoji (#2018) and control
+        # characters (#533) from the RDAP name; can't reject without breaking
+        # affiliation
+        name = normalize_name(replace_control_chars(strip_emoji(name))) or f"AS{asn}"
         if cls.objects.filter(name=name).exists():
             net = cls.objects.create(org=org, asn=asn, name=f"{name} !", status="ok")
         else:
@@ -5840,9 +5846,12 @@ class Network(
         network.org = org
         network.status = "ok"
 
-        # normalize whitespace (#1984) and drop emoji (#2018) from the RDAP
-        # name; can't reject without breaking affiliation
-        name = normalize_name(strip_emoji(rdap.name)) or f"AS{asn}"
+        # normalize whitespace (#1984), drop emoji (#2018) and control
+        # characters (#533) from the RDAP name; can't reject without breaking
+        # affiliation
+        name = (
+            normalize_name(replace_control_chars(strip_emoji(rdap.name))) or f"AS{asn}"
+        )
         if cls.objects.filter(name=name).exclude(id=network.id).exists():
             network.name = f"{name} !"
         else:
@@ -6538,10 +6547,12 @@ class NetworkIXLan(
         return (conflict_v4, conflict_v6)
 
     def validate_ipaddr4(self):
+        validate_ip_no_zone(self.ipaddr4)
         if self.ipaddr4 and not self.ixlan.test_ipv4_address(self.ipaddr4):
             raise ValidationError(_("IPv4 address outside of prefix"))
 
     def validate_ipaddr6(self):
+        validate_ip_no_zone(self.ipaddr6)
         if self.ipaddr6 and not self.ixlan.test_ipv6_address(self.ipaddr6):
             raise ValidationError(_("IPv6 address outside of prefix"))
 
@@ -7187,15 +7198,42 @@ class User(AbstractBaseUser, PermissionsMixin, StripFieldMixin):
     @property
     def has_2fa(self):
         """
-        Returns true if the user has set up any TOTP or webauth security keys.
+        Returns true if the user has a second factor that login asks for:
+        a WebAuthn security key or passkey, or the default django-otp
+        device that the two-factor setup wizard creates.
+
+        Backup tokens and any other django-otp device do not count on their
+        own, because the login wizard only challenges the default device
+        (#548). Backup tokens remain usable next to a default device.
         """
 
-        return (
-            self.totpdevice_set.exists()
-            or self.webauthn_security_keys.exists()
-            or self.emaildevice_set.exists()
-            or self.staticdevice_set.exists()
-        )
+        return self.webauthn_security_keys.exists() or default_device(self) is not None
+
+    def has_org_accepted_2fa(self, after_passkey_login: bool) -> bool:
+        """
+        Returns true if the user has a second factor that the login step
+        asks for under the user's organization policies. Only such a factor
+        clears an organization's hold on MFA setup (#550).
+
+        Stricter than `has_2fa`, which is what MFA enforcement counts:
+
+        - when an organization disables TOTP, the login wizard skips every
+          django-otp step, so the default device does not count;
+        - after a passkey login the wizard asks only for 2FA keys, so no
+          passkey counts there, the one just used included. After a password
+          login every key counts.
+        """
+
+        if (
+            not any(org.disable_totp for org in self.organizations)
+            and default_device(self) is not None
+        ):
+            return True
+
+        keys = self.webauthn_security_keys.all()
+        if after_passkey_login:
+            keys = keys.filter(passkey_login=False)
+        return keys.exists()
 
     @property
     def get_2fa_security_keys(self):

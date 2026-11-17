@@ -11,11 +11,21 @@ import socket
 from unittest.mock import patch
 
 import pytest
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.test import override_settings
 
 from peeringdb_server import irr
 from peeringdb_server.validators import validate_irr_as_set
+
+from .irr_fakes import (
+    MIRROR,
+    TWO_SERVERS,
+    FakeCache,
+    irrd_list,
+    irrd_object,
+    make_send,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -27,99 +37,6 @@ def _irr_reachable(host="rr.ntt.net", port=43, timeout=3):
         return True
     except OSError:
         return False
-
-
-# Two-server pool used across the tests.
-TWO_SERVERS = [
-    {"host": "ntt", "port": 43, "timeout": 5},
-    {"host": "radb", "port": 43, "timeout": 5},
-]
-
-# Which sources each fake server mirrors (a trimmed, realistic split — NTT lacks
-# REACH / BBOI / CANARIE; RADB carries them).
-MIRROR = {
-    "ntt": ["NTTCOM", "RADB", "RIPE", "ARIN", "APNIC", "AFRINIC", "LACNIC"],
-    "radb": ["RADB", "RIPE", "ARIN", "REACH", "BBOI", "CANARIE"],
-}
-
-
-class FakeCache:
-    """Minimal in-memory stand-in for caches['negative']."""
-
-    def __init__(self):
-        self.store = {}
-
-    def get(self, key, default=None):
-        return self.store.get(key, default)
-
-    def set(self, key, value, timeout=None):
-        self.store[key] = value
-
-
-def irrd_list(sources):
-    """An !s-lc reply in IRRd framing."""
-    body = ",".join(sources)
-    return f"A{len(body.encode()) + 1}\n{body}\nC\n"
-
-
-def irrd_object(object_class, name, source, members=0, descr="mocked"):
-    """An object reply in IRRd `!` framing: A<len>, the object text, C."""
-    body = f"{object_class}:         {name}\ndescr: {descr}\n"
-    if members:
-        body += "members: " + ",".join(["AS1"] * members) + "\n"
-    body += f"source: {source}"
-    return f"A{len(body.encode()) + 1}\n{body}\nC\n"
-
-
-def make_send(present, mirror=MIRROR, fail_hosts=(), serving=None, large=()):
-    """
-    Build a _send side_effect that answers like IRRd.
-
-    - present: set of (SOURCE, NAME) tuples that "exist".
-    - mirror: host -> list of mirrored sources (for !s-lc).
-    - fail_hosts: hosts whose every query raises a timeout (OSError).
-    - serving: host -> the sources `!s` accepts, when that differs from the
-      advertised (and cached) mirror list.
-    - large: (SOURCE, NAME) tuples whose object is too large for one read.
-
-    `!m` returns the first match in the selected sources only, as IRRd's
-    key_lookup does, and a failed `!s` keeps the previous selection.
-    """
-
-    def _send(server, payload):
-        host = server["host"]
-        if host in fail_hosts:
-            raise TimeoutError("mocked timeout")
-        if payload == "!s-lc":
-            return irrd_list(mirror.get(host, []))
-        accepted = (serving or mirror).get(host, [])
-        selected = list(accepted)
-        reply = ""
-        for command in payload.split("\n"):
-            if command == "!q":
-                break
-            if command.startswith("!s"):
-                requested = command[2:].split(",")
-                if all(source in accepted for source in requested):
-                    selected = requested
-                    reply += "C\n"
-                else:
-                    reply += "F One or more selected sources are unavailable.\n"
-            elif command.startswith("!m"):
-                object_class, name = command[2:].split(",")
-                match = next(
-                    (source for source in selected if (source, name) in present),
-                    None,
-                )
-                if match is None:
-                    reply += "D\n"
-                else:
-                    members = 3000 if (match, name) in large else 0
-                    reply += irrd_object(object_class, name, match, members)
-        # _send stops reading at the cap
-        return reply.encode()[: irr._MAX_RESPONSE_BYTES].decode("utf-8", "replace")
-
-    return _send
 
 
 class TestIrrLookup:
@@ -191,7 +108,7 @@ class TestIrrLookup:
     @staticmethod
     def _reply_send(reply):
         # every server mirrors every source and answers the pinned query with `reply`
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return irrd_list(MIRROR[server["host"]])
             return reply
@@ -258,7 +175,7 @@ class TestIrrLookup:
     def test_exists_in_trusts_pinned_answer_when_mirror_list_unavailable(self):
         # !s-lc returns nothing parseable (mirror list unknown), but the pinned
         # query still answers definitively -> the server is tried, not skipped
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return "C\n"  # no source list
             return "C\nA30\nas-set: AS-FOO\nsource: ARIN\n\nC\n"
@@ -274,7 +191,7 @@ class TestIrrLookup:
         # "no entries". We cannot confirm the server carries the source, so that
         # False may be a false absent -- stay unknown (None), which the save path
         # tolerates where False would reject.
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return "C\n"  # no source list -> mirror list unknown
             return "C\nD\n"
@@ -404,7 +321,7 @@ class TestIrrLookup:
     )
     def test_sources_for_error_reply_is_unknown(self, reply):
         # #502: an error is not "found nowhere", and must not be cached as one
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return irrd_list(MIRROR[server["host"]])
             return reply
@@ -442,7 +359,7 @@ class TestIrrLookup:
     def test_sources_for_ignores_match_after_rejected_select(self):
         # a rejected !s leaves the previous selection, so the !m after it would
         # report RIPE's object as ARIN's
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return irrd_list(["RIPE", "ARIN"])
             if payload.count("\n!s") > 1:
@@ -467,7 +384,7 @@ class TestIrrLookup:
     def test_sources_for_counts_object_length_in_bytes(self):
         # A<len> counts UTF-8 bytes; read as characters, the APNIC object's
         # length would end inside it and lose ARIN behind it
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return irrd_list(["RIPE", "APNIC", "ARIN"])
             return (
@@ -577,7 +494,7 @@ class TestIrrLookup:
 
     def test_sources_for_falls_back_on_oversized_length(self):
         # the batch reply is unknown, so every source gets its pinned check
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if payload == "!s-lc":
                 return irrd_list(MIRROR[server["host"]])
             if payload.count("\n!s") > 1:
@@ -658,7 +575,7 @@ class TestIrrLookup:
             irr._server_sources(TWO_SERVERS[0])
             irr._server_sources(TWO_SERVERS[1])
 
-        def only_slc_from_cache(server, payload):
+        def only_slc_from_cache(server, payload, deadline=None):
             # every object query now fails; !s-lc would too, but it is cached
             raise TimeoutError("mocked timeout")
 
@@ -681,7 +598,7 @@ class TestIrrLookup:
         """
         base_send = make_send({("RIPE", "AS-FOO")})
 
-        def send(server, payload):
+        def send(server, payload, deadline=None):
             if server["host"] == "radb" and payload != "!s-lc":
                 raise TimeoutError("mocked timeout")
             return base_send(server, payload)

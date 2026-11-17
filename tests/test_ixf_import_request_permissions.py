@@ -190,3 +190,34 @@ def test_request_ixf_import_update_permission_is_per_exchange(import_data):
 
     other_ix.refresh_from_db()
     assert other_ix.ixf_import_request is None
+
+
+def test_request_ixf_import_throttle_keys_on_client_address(import_data, settings):
+    """
+    A caller without a DRF user, like a user api key, is throttled per
+    client address, the entry the trusted proxy appended to
+    X-Forwarded-For (#531)
+    """
+    settings.NUM_PROXIES = 1
+    ix = import_data["ix"]
+    client = client_for(import_data, "user_key_updater")
+
+    def request_from(xff):
+        return client.post(
+            f"/api/ix/{ix.id}/request_ixf_import",
+            {},
+            format="json",
+            HTTP_X_FORWARDED_FOR=xff,
+        )
+
+    assert request_from("203.0.113.9").status_code == 200
+
+    for xff in (
+        "192.0.2.1, 203.0.113.9",
+        "192.0.2.2, 203.0.113.9",
+        "192.0.2.1, 192.0.2.77, 203.0.113.9",
+    ):
+        assert request_from(xff).status_code == 429, xff
+
+    # another client address has its own slot
+    assert request_from("203.0.113.10").status_code == 200

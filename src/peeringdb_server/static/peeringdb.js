@@ -3893,7 +3893,7 @@ function getExcMessage(response) {
     const message = response.responseJSON.message;
 
     if (meta && meta.error) {
-      return `${meta.error}<br />${message || ''}`;
+      return `${PeeringDB.escape_html(meta.error)}<br />${PeeringDB.escape_html(message || '')}`;
     }
   }
   // no structured error - on a 403 append what the server actually said
@@ -4037,7 +4037,7 @@ twentyc.editable.target.register(
               if(err.indexOf(gettext("not yet been approved")) > 0) { //////
                 info.push(gettext("Parent entity pending review - please wait for it to be approved before adding entities to it")) ///
               } else if(err != "Unknown")
-                info.push(r.responseJSON.meta.error)
+                info.push(PeeringDB.escape_html(r.responseJSON.meta.error))
               info.push(...PeeringDB.format_field_errors(r.responseJSON.meta.field_errors));
               continue;
             }
@@ -4050,7 +4050,7 @@ twentyc.editable.target.register(
             if(k == "non_field_errors") {
               var i;
               for(i in r.responseJSON[k])
-                info.push(r.responseJSON[k][i].replaceAll("\n","<br />"));
+                info.push(PeeringDB.escape_html(r.responseJSON[k][i]).replaceAll("\n","<br />"));
             }
           }
 
