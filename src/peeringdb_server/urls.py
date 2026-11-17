@@ -84,7 +84,6 @@ from peeringdb_server.views import (
     update_ui_versions,
     update_user_options,
     validator_result_cache,
-    view_about,
     view_advanced_search,
     view_affiliate_to_org,
     view_aup,
@@ -177,7 +176,13 @@ urlpatterns = [
     re_path(r"^sponsors$", view_sponsorships, name="sponsors"),
     # re_path(r'^partners$', view_partnerships),
     re_path(r"^aup$", view_aup, name="aup"),
-    re_path(r"^about$", view_about, name="about"),
+    re_path(
+        r"^about$",
+        RedirectView.as_view(
+            url="https://docs.peeringdb.com/#about-peeringdb", permanent=True
+        ),
+        name="about",
+    ),
     re_path(r"^affiliate-to-org$", view_affiliate_to_org),
     path(
         "<str:object_type>/<int:id>/upload-logo",
