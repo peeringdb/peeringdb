@@ -3992,17 +3992,25 @@ def _stale_proposals(importer, notified):
     add = _proposal(
         ixlan, net, 5, after, data=LARGE_SNAPSHOT, live_netixlan=False, **kwargs
     )
-    return {
+    rows = {
         "seen": _proposal(ixlan, net, 1, after, **kwargs),
         "at_start": _proposal(ixlan, net, 2, now, **kwargs),
         "unseen": _proposal(ixlan, net, 3, before, **kwargs),
         "other_ix": _proposal(other_ixlan, net, 4, before, **kwargs),
-        # another exchange's proposal refreshed during this import, which
-        # the walk acted on before #522 as well
+        # another exchange's proposal refreshed during this import, left
+        # to that exchange's import (#2071)
         "other_seen": _proposal(other_ixlan, net, 7, after, **kwargs),
         "add": add,
         "requirement": _proposal(ixlan, net, 6, after, requirement_of=add, **kwargs),
     }
+    # process_deletions records the proposals of this exchange's netixlans
+    # that are gone from its feed
+    importer.deletions = {
+        row.ixf_id: row
+        for name, row in rows.items()
+        if name not in ("add", "other_ix", "other_seen")
+    }
+    return rows
 
 
 @pytest.mark.django_db
@@ -4032,8 +4040,9 @@ def test_without_snapshot_remote_data_missing():
 @pytest.mark.django_db
 def test_cleanup_aged_proposals_bounded(monkeypatch):
     """
-    The aged proposal pass removes the same stale netixlans as before (#522)
-    and leaves proposals the current import did not see unloaded.
+    The aged proposal pass only removes stale netixlans of the delete
+    proposals the current import refreshed (#522, #2071), and leaves the
+    others unloaded.
     """
 
     importer = ixf.Importer()
@@ -4042,13 +4051,10 @@ def test_cleanup_aged_proposals_bounded(monkeypatch):
 
     importer.cleanup_aged_proposals()
 
-    removed = {
-        ipaddress.ip_address("195.69.147.1"),
-        ipaddress.ip_address("195.66.225.7"),
-    }
+    removed = {ipaddress.ip_address("195.69.147.1")}
 
     assert set(IXFMemberData.objects.values_list("id", flat=True)) == {
-        row.id for name, row in rows.items() if name not in ("seen", "other_seen")
+        row.id for name, row in rows.items() if name != "seen"
     }
     assert {
         info["netixlan"].ipaddr4 for info in importer.actions_taken["delete"]
@@ -4063,7 +4069,6 @@ def test_cleanup_aged_proposals_bounded(monkeypatch):
     )
     assert {row_id for row_id, _ in loads} <= {
         rows["seen"].id,
-        rows["other_seen"].id,
         rows["add"].id,
         rows["requirement"].id,
     }
@@ -4074,8 +4079,8 @@ def test_cleanup_aged_proposals_bounded(monkeypatch):
 @pytest.mark.django_db
 def test_notify_stale_netixlans_bounded(monkeypatch):
     """
-    Stale netixlan re-notification counts the same proposals as before (#522)
-    and leaves proposals the current import did not see unloaded.
+    Stale netixlan re-notification only counts the delete proposals the
+    current import refreshed (#522, #2071), and leaves the others unloaded.
     """
 
     importer = ixf.Importer()
@@ -4088,15 +4093,13 @@ def test_notify_stale_netixlans_bounded(monkeypatch):
         IXFMemberData.objects.values_list("id", "extra_notifications_net_num")
     )
     assert notified == {
-        row.id: 1 if name in ("seen", "other_seen") else 0 for name, row in rows.items()
+        row.id: 1 if name == "seen" else 0 for name, row in rows.items()
     }
     assert {n["ixf_member_data"].id for n in importer.notifications} == {
         rows["seen"].id,
-        rows["other_seen"].id,
     }
     assert {row_id for row_id, _ in loads} <= {
         rows["seen"].id,
-        rows["other_seen"].id,
         rows["add"].id,
         rows["requirement"].id,
     }
@@ -4104,7 +4107,6 @@ def test_notify_stale_netixlans_bounded(monkeypatch):
     # requirements are read through requirement_set
     assert {row_id for row_id, data in loads if data} <= {
         rows["seen"].id,
-        rows["other_seen"].id,
         rows["requirement"].id,
     }
 

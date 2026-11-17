@@ -8,7 +8,6 @@ import traceback
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import transaction
 
 from peeringdb_server import ixf
 from peeringdb_server.models import (
@@ -279,6 +278,7 @@ class Command(BaseCommand):
             self.log(
                 f"Fetching data for -ixlan{ixlan.id} from {ixlan.ixf_ixp_member_list_url}"
             )
+            importer = None
             try:
                 importer = ixf.Importer()
                 # a requested import on a LAN with import disabled only
@@ -289,13 +289,15 @@ class Command(BaseCommand):
                 importer.cache_only = self.cache
                 self.log(f"Processing {ixlan.ix.name} ({ixlan.id})")
                 success = None
-                with transaction.atomic():
-                    success = importer.update(
-                        ixlan,
-                        save=self.commit,
-                        asn=asn,
-                        timeout=settings.IXF_FETCH_TIMEOUT,
-                    )
+                # no transaction around the whole import, the netixlan
+                # changes commit before the notifications go out, so a
+                # ?since= query can't miss them for that long (#2071)
+                success = importer.update(
+                    ixlan,
+                    save=self.commit,
+                    asn=asn,
+                    timeout=settings.IXF_FETCH_TIMEOUT,
+                )
                 self.log(json.dumps(importer.log), debug=True)
                 self.log(
                     "Success: {}, added: {}, updated: {}, deleted: {}".format(
@@ -318,6 +320,10 @@ class Command(BaseCommand):
                 self.store_runtime_error(inst, ixlan=ixlan)
                 if self.commit:
                     self.record_import_failure(ixlan)
+                if importer is not None:
+                    # proposals saved before the error stay, and the next
+                    # run doesn't notify about them again (#2071)
+                    total_notifications += importer.notifications
             finally:
                 if process_requested is not None:
                     if success:

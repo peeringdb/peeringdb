@@ -33,6 +33,7 @@ from django.utils.translation import gettext_lazy as _
 
 import peeringdb_server.deskpro as deskpro
 from peeringdb_server import ixf_fetch
+from peeringdb_server.context import collect_saved_netixlans
 from peeringdb_server.models import (
     DataChangeNotificationQueue,
     DeskProTicket,
@@ -859,15 +860,24 @@ class Importer:
         if save:
             self.clear_import_error()
 
-        with transaction.atomic():
-            # process any netixlans that need to be deleted
-            self.process_deletions()
+        queued = len(self.notifications)
+        try:
+            with transaction.atomic():
+                with collect_saved_netixlans() as saved:
+                    # process any netixlans that need to be deleted
+                    self.process_deletions()
 
-            # process creation of new netixlans and updates
-            # of existing netixlans. This needs to happen
-            # after process_deletions in order to avoid potential
-            # ip conflicts
-            self.process_saves()
+                    # process creation of new netixlans and updates
+                    # of existing netixlans. This needs to happen
+                    # after process_deletions in order to avoid potential
+                    # ip conflicts
+                    self.process_saves()
+
+                self.restamp_netixlans(saved)
+        except Exception:
+            # rolled back, the next run proposes these again (#2071)
+            del self.notifications[queued:]
+            raise
 
         self.cleanup_ixf_member_data()
 
@@ -901,6 +911,40 @@ class Importer:
             self.save_log()
 
         return True
+
+    def restamp_netixlans(self, netixlans: list[NetworkIXLan]) -> None:
+        """
+        Set `updated` on the saved netixlans to one timestamp taken now, at
+        the end of the transaction that wrote them.
+
+        Each row is stamped as it is saved, but only becomes visible when
+        the transaction commits, so a `?since=` poll in between would skip
+        it for good (#2071). A single UPDATE, so no signals and no new
+        revision: stored versions keep the earlier value. The networks'
+        `netixlan_updated` gets the same stamp, their `updated` is left
+        alone as before.
+
+        Call it after the revisions that wrote them have closed, since
+        django-handleref saves each versioned object again at that point.
+        Under an enclosing revision that only happens when the outermost one
+        closes, after the re-stamp, so it would be undone.
+        """
+
+        if not self.save or not netixlans:
+            return
+
+        if reversion.is_active():
+            log.warning("ixf_restamp_inside_revision", ixlan=self.ixlan.id)
+
+        stamp = django.utils.timezone.now()
+        NetworkIXLan.objects.filter(id__in={n.id for n in netixlans}).update(
+            updated=stamp
+        )
+        Network.objects.filter(id__in={n.network_id for n in netixlans}).update(
+            netixlan_updated=stamp
+        )
+        for netixlan in netixlans:
+            netixlan.updated = stamp
 
     def record_internal_error(self):
         """
@@ -2378,6 +2422,19 @@ class Importer:
         """
         return
 
+    def scope_to_deletions(self, qset):
+        """
+        Limit IXFMemberData to the delete proposals this import refreshed
+        in process_deletions.
+
+        They are matched by id, as a proposal keeps the ixlan it was filed
+        under when its netixlan moves to another exchange. Proposals another
+        import refreshes at the same time are left to that import (#2071).
+        """
+
+        ids = [proposal.id for proposal in self.deletions.values() if proposal.id]
+        return qset.filter(id__in=ids)
+
     def notify_stale_netixlans(self):
         """
         Will send a repeat notification to the network about stale netixlans
@@ -2425,6 +2482,7 @@ class Importer:
             fetched__gt=self.now,
         )
         qset = qset.exclude(extra_notifications_net_num__gte=notify_max)
+        qset = self.scope_to_deletions(qset)
 
         for ixf_member_data in IXFMemberData.without_snapshot(qset).iterator():
             # stale networks are only indicated by `delete` proposals
@@ -2448,7 +2506,6 @@ class Importer:
                 ixf_member_data, "remove", ac=False, ix=False, net=True
             )
 
-    @reversion.create_revision()
     def cleanup_aged_proposals(self):
         """
         Remove IXFMemberData objects that are older
@@ -2493,11 +2550,25 @@ class Importer:
         qset = IXFMemberData.objects.filter(
             extra_notifications_net_num__gte=notify_max, fetched__gt=self.now
         )
+        qset = self.scope_to_deletions(qset)
 
         if cleanup_days > 0:
             now = django.utils.timezone.now()
             max_age = now - datetime.timedelta(days=cleanup_days)
             qset = qset.filter(created__lte=max_age)
+
+        # the revision re-saves the removed netixlans when it closes, so the
+        # re-stamp comes after it, in the same transaction
+        with transaction.atomic():
+            with collect_saved_netixlans() as saved:
+                self.remove_aged_proposals(qset)
+            self.restamp_netixlans(saved)
+
+    @reversion.create_revision()
+    def remove_aged_proposals(self, qset):
+        """
+        Remove the aged delete proposals in qset and their netixlans.
+        """
 
         for ixf_member_data in IXFMemberData.without_snapshot(qset).iterator():
             action = ixf_member_data.action

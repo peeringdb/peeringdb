@@ -43,6 +43,7 @@ from django_peeringdb.models.abstract import AddressModel
 from grainy.const import PERM_CRUD, PERM_READ
 
 import peeringdb_server.settings as pdb_settings
+from peeringdb_server.context import note_saved_netixlan
 from peeringdb_server.deskpro import (
     close_deskpro_ticket_for_vq_item,
     ticket_queue,
@@ -271,6 +272,13 @@ def netixlan_sync_asn_on_save(sender, instance, **kwargs):
 
 
 post_save.connect(netixlan_sync_asn_on_save, sender=NetworkIXLan)
+
+
+def netixlan_note_saved(sender, instance, **kwargs):
+    note_saved_netixlan(instance)
+
+
+post_save.connect(netixlan_note_saved, sender=NetworkIXLan)
 
 
 def netfac_sync_local_asn_on_save(sender, instance, **kwargs):
