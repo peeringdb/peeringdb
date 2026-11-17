@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import ipaddress
 import re
+from functools import cache
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import phonenumbers
 from bleach import html5lib_shim, parse_shim
@@ -17,6 +18,7 @@ from django.core.validators import URLValidator, validate_email
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_countries.fields import Country
+from django_peeringdb.const import SOCIAL_MEDIA_URL_FORMATS
 from geopy.distance import geodesic
 from rest_framework.exceptions import ValidationError as RestValidationError
 from schema import Schema
@@ -945,8 +947,9 @@ def validate_identifier(service: str, identifier: str) -> None:
 
     # Define regex patterns and specific rules for each service
     if service == "x":
-        # X: 4-15 characters, alphanumeric and underscores only.
-        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{4,15}$", identifier))
+        # X: 1-15 characters, alphanumeric and underscores only.
+        # One-character handles exist, e.g. X's own @x (#2066).
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{1,15}$", identifier))
 
     elif service == "instagram":
         # Instagram: 1-30 characters, alphanumeric, periods, and underscores.
@@ -969,32 +972,38 @@ def validate_identifier(service: str, identifier: str) -> None:
         is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{2,24}$", identifier))
 
     elif service == "youtube":
-        # YouTube (Handles): 3-30 characters, alphanumeric and periods only.
+        # YouTube (Handles): 3-30 characters, alphanumeric, periods, underscores,
+        # hyphens and Latin middle dots (#2066).
         # Cannot start or end with a period, and cannot have consecutive periods.
         if identifier.startswith(".") or identifier.endswith(".") or ".." in identifier:
             is_valid = False
         else:
-            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._]{3,30}$", identifier))
+            is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._\-·]{3,30}$", identifier))
 
     elif service == "linkedin":
-        # LinkedIn: 5-100 characters, alphanumeric and hyphens only.
-        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9-]{5,100}$", identifier))
+        # LinkedIn company pages: 1-100 characters, alphanumeric and hyphens only.
+        # The 3-100 rule LinkedIn documents is for personal profiles; company
+        # slugs as short as one character exist, e.g. /company/x (#2066).
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9-]{1,100}$", identifier))
 
     elif service == "pinterest":
         # Pinterest: 3-30 characters, alphanumeric, hyphens, and underscores.
         is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_-]{3,30}$", identifier))
 
     elif service == "reddit":
-        # Reddit: 3-20 characters, alphanumeric and underscores only.
-        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{3,20}$", identifier))
+        # Reddit: 3-20 characters, alphanumeric, underscores and hyphens (#2066).
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_-]{3,20}$", identifier))
 
     elif service == "snapchat":
-        # Snapchat: 3-15 characters, alphanumeric and hyphens only.
-        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9-]{3,15}$", identifier))
+        # Snapchat: 3-15 characters, alphanumeric, hyphens, underscores and
+        # periods (#2066).
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9._-]{3,15}$", identifier))
 
     elif service == "telegram":
-        # Telegram: 5-32 characters, alphanumeric and underscores only.
-        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{5,32}$", identifier))
+        # Telegram: 4-32 characters, alphanumeric and underscores only.
+        # Regular usernames need 5, but 4-character collectible usernames
+        # exist (#2066).
+        is_valid = bool(re.fullmatch(r"^[a-zA-Z0-9_]{4,32}$", identifier))
 
     elif service == "bluesky":
         # Bluesky: https://atproto.com/specs/handle#handle-identifier-syntax
@@ -1036,8 +1045,74 @@ def validate_identifier(service: str, identifier: str) -> None:
     if not is_valid:
         if custom_error_message:
             raise ValueError(custom_error_message)
-        else:
-            raise ValueError(f"Invalid identifier {identifier} for service {service}!")
+        error_message = f"Invalid identifier {identifier} for service {service}!"
+        # A bare slug can't tell e.g. a LinkedIn personal profile from a company
+        # page, so name the URL shape the identifier is rendered into (#2066).
+        # No angle brackets in the placeholder: the entity edit form renders
+        # this message as HTML, which would swallow a `<name>` tag.
+        url_format = SOCIAL_MEDIA_URL_FORMATS.get(service)
+        if url_format:
+            example = url_format.replace("{identifier}", "NAME")
+            error_message += f" Expected a name or a link like {example}."
+        raise ValueError(error_message)
+
+
+# Other URLs that serve the same profile as the canonical format in
+# `SOCIAL_MEDIA_URL_FORMATS`, so a link pasted from either is accepted.
+SOCIAL_MEDIA_URL_ALIASES = {
+    "x": ["https://twitter.com/{identifier}"],
+    "threads": ["https://www.threads.com/@{identifier}"],
+    "reddit": ["https://www.reddit.com/u/{identifier}"],
+}
+
+
+@cache
+def _social_media_url_pattern(url_format: str) -> re.Pattern[str]:
+    parsed = urlparse(url_format)
+    host = parsed.netloc.removeprefix("www.")
+    path_prefix = parsed.path.split("{identifier}")[0]
+    return re.compile(
+        rf"(?:https?://)?(?:www\.|m\.)?{re.escape(host)}{re.escape(path_prefix)}"
+        r"(?P<identifier>[^/?#]+)/?(?:[?#].*)?",
+        # ASCII only, so Unicode case folding can't turn e.g. `lınkedın.com`
+        # into the service host.
+        re.IGNORECASE | re.ASCII,
+    )
+
+
+# Every character a service identifier may contain once decoded: the union of
+# the rules in `validate_identifier`, plus `+` for WhatsApp numbers.
+_DECODED_IDENTIFIER_RE = re.compile(r"[A-Za-z0-9._+·-]+")
+
+
+def normalize_social_media_identifier(service: str, identifier: str) -> str:
+    """
+    Reduces a pasted profile URL to the identifier the service's URL format
+    expects, e.g. `https://www.linkedin.com/company/tbax/` becomes `tbax` (#2066).
+
+    Anything that is not a URL of the service's own format is returned
+    unchanged, so the service's identifier validation still rejects it.
+    """
+    url_format = SOCIAL_MEDIA_URL_FORMATS.get(service)
+    if not url_format:
+        return identifier
+
+    for candidate in [url_format, *SOCIAL_MEDIA_URL_ALIASES.get(service, [])]:
+        match = _social_media_url_pattern(candidate).fullmatch(identifier.strip())
+        if match:
+            extracted = unquote(match.group("identifier"))
+            # facebook.com/profile.php?id=<n> keeps the account in the query,
+            # so the path segment is not a username.
+            if extracted.lower() == "profile.php":
+                return identifier
+            # The rejection message repeats the identifier and the entity edit
+            # form renders it as HTML, so a decoded slug that no service rule
+            # could accept is never returned: the link is rejected as submitted.
+            if not _DECODED_IDENTIFIER_RE.fullmatch(extracted):
+                return identifier
+            return extracted
+
+    return identifier
 
 
 def validate_url(url: str) -> None:
@@ -1058,13 +1133,16 @@ def validate_social_media(
 
     Will raise a ValidationError on failure
 
+    A pasted profile URL is reduced to its identifier first, see
+    `normalize_social_media_identifier`.
+
     Arguments:
 
-    - value(`dict`)
+    - value(`list`)
 
     Returns:
 
-    - validated value (`dict`)
+    - validated value (`list`), with identifiers normalized
     """
     if value:
         schema = Schema([{"service": str, "identifier": str}])
@@ -1072,6 +1150,15 @@ def validate_social_media(
             schema.validate(value)
         except Exception:
             raise ValidationError(_("Malformed social media data."))
+        value = [
+            {
+                **data,
+                "identifier": normalize_social_media_identifier(
+                    data["service"], data["identifier"]
+                ),
+            }
+            for data in value
+        ]
         service = [sc.get("service") for sc in value]
         if not len(set(service)) == len(service):
             raise ValidationError(_("Duplicate social media services set."))
