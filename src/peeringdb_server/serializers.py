@@ -2685,7 +2685,8 @@ class FacilitySerializer(SpatialSearchMixin, GeocodeSerializerMixin, ModelSerial
             if data.get("org") and not is_suggested(data.get("org"))
             else None
         )
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         validate_website_override(website, org_website)
         try:
             data["tech_phone"] = validate_phonenumber(
@@ -2948,7 +2949,8 @@ class CarrierSerializer(ModelSerializer):
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = data.get("org").website
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         validate_website_override(website, org_website)
         return data
 
@@ -4408,7 +4410,8 @@ If you need further assistance, please contact {settings.DEFAULT_FROM_EMAIL}""",
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = data.get("org").website
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         validate_website_override(website, org_website)
         self.validate_legacy_info_type(self.instance, data)
         return data
@@ -5076,7 +5079,8 @@ class InternetExchangeSerializer(ModelSerializer):
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = data.get("org").website
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         validate_website_override(website, org_website)
         try:
             data["tech_phone"] = validate_phonenumber(
@@ -5208,7 +5212,8 @@ class CampusSerializer(SpatialSearchMixin, ModelSerializer):
         social_media = data.get("social_media")
         website = data.get("website")
         org_website = data.get("org").website
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         validate_website_override(website, org_website)
         return data
 
@@ -5319,7 +5324,8 @@ class OrganizationSerializer(
 
     def validate(self, data):
         social_media = data.get("social_media")
-        validate_social_media(social_media)
+        if social_media:
+            data["social_media"] = validate_social_media(social_media)
         return data
 
 

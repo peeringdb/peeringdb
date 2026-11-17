@@ -37,6 +37,7 @@ from peeringdb_server.serializers import (
 )
 from peeringdb_server.validators import (
     irr_as_set_pinned_source,
+    normalize_social_media_identifier,
     split_irr_as_set_token,
     tokenize_irr_as_set,
     validate_account_name,
@@ -1577,7 +1578,6 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
             ],
         ),
         # --- Service Rule Failures ---
-        ([{"service": "x", "identifier": "aaa"}], False),  # too short
         ([{"service": "x", "identifier": "a" * 16}], False),  # too long
         ([{"service": "x", "identifier": "$bla/"}], False),  # invalid characters
         ([{"service": "instagram", "identifier": "john__doe_*"}], False),
@@ -1590,8 +1590,8 @@ def test_ghost_peer_vs_real_peer_invalid_ixf_data():
         ([{"service": "bluesky", "identifier": "-bad-handle"}], False),
         ([{"service": "bluesky", "identifier": "bad--handle"}], False),
         ([{"service": "bluesky", "identifier": "bskyapp"}], False),
-        ([{"service": "reddit", "identifier": "user-name"}], False),
-        ([{"service": "snapchat", "identifier": "user_name"}], False),
+        ([{"service": "reddit", "identifier": "user.name"}], False),
+        ([{"service": "snapchat", "identifier": "user$name"}], False),
         ([{"service": "telegram", "identifier": "user-name"}], False),
         ([{"service": "x", "identifier": None}], False),
         ([{"service": "x", "identifier": ""}], False),
@@ -1657,7 +1657,7 @@ def test_validate_social_media(value, validated):
         (("a" * 63 + ".") * 3 + "a" * 61, True),
         ("example", False),
         ("@example.com", False),
-        ("https://bsky.app/profile/example.com", False),
+        ("https://example.com/profile/example.com", False),
         ("example..com", False),
         ("-example.com", False),
         ("example-.com", False),
@@ -1678,6 +1678,201 @@ def test_validate_bluesky_handle(identifier, is_valid):
     else:
         with pytest.raises(ValidationError):
             validate_social_media(value)
+
+
+@pytest.mark.parametrize(
+    "identifier,is_valid",
+    [
+        ("tbax", True),
+        ("hp", True),
+        ("x", True),
+        ("jane-doe-pro", True),
+        ("a" * 100, True),
+        ("a" * 101, False),
+        ("jane_doe", False),
+        ("linkedin.com/in/jane", False),
+    ],
+)
+def test_validate_linkedin_identifier(identifier, is_valid):
+    """Company page slugs can be as short as one character (#2066)."""
+    value = [{"service": "linkedin", "identifier": identifier}]
+    if is_valid:
+        assert validate_social_media(value) == value
+    else:
+        with pytest.raises(ValidationError):
+            validate_social_media(value)
+
+
+@pytest.mark.parametrize(
+    "service,identifier,is_valid",
+    [
+        ("x", "x", True),
+        ("x", "abc", True),
+        ("x", "a-b", False),
+        ("youtube", "my-channel", True),
+        ("youtube", "café·bar", False),
+        ("youtube", "abc·def", True),
+        ("youtube", "my-channel.", False),
+        ("youtube", "ab", False),
+        ("snapchat", "user_name", True),
+        ("snapchat", "user.name", True),
+        ("snapchat", "user name", False),
+        ("snapchat", "a" * 16, False),
+        ("reddit", "user-name", True),
+        ("reddit", "user.name", False),
+        ("reddit", "ab", False),
+        ("telegram", "abcd", True),
+        ("telegram", "abc", False),
+        ("telegram", "a" * 33, False),
+    ],
+)
+def test_validate_identifier_service_rules(service, identifier, is_valid):
+    """Each service accepts the characters and lengths it allows itself (#2066)."""
+    value = [{"service": service, "identifier": identifier}]
+    if is_valid:
+        assert validate_social_media(value) == value
+    else:
+        with pytest.raises(ValidationError):
+            validate_social_media(value)
+
+
+@pytest.mark.parametrize(
+    "service,identifier,expected",
+    [
+        ("linkedin", "https://www.linkedin.com/company/tbax/", "tbax"),
+        ("linkedin", "https://linkedin.com/company/tbax", "tbax"),
+        ("linkedin", "www.linkedin.com/company/tbax", "tbax"),
+        ("linkedin", "HTTPS://WWW.LINKEDIN.COM/company/TBAX", "TBAX"),
+        ("linkedin", "https://www.linkedin.com/company/tbax/?trk=public", "tbax"),
+        ("linkedin", " https://www.linkedin.com/company/tbax ", "tbax"),
+        ("x", "https://x.com/peeringdb", "peeringdb"),
+        ("x", "https://twitter.com/peeringdb", "peeringdb"),
+        ("youtube", "https://www.youtube.com/@peeringdb", "peeringdb"),
+        ("youtube", "https://m.youtube.com/@peeringdb", "peeringdb"),
+        ("tiktok", "https://www.tiktok.com/@peeringdb", "peeringdb"),
+        ("threads", "https://www.threads.com/@peeringdb", "peeringdb"),
+        ("reddit", "https://www.reddit.com/u/peeringdb", "peeringdb"),
+        ("bluesky", "https://bsky.app/profile/example.com", "example.com"),
+        ("telegram", "https://t.me/peeringdb", "peeringdb"),
+        ("facebook", "https://www.facebook.com/peeringdb#about", "peeringdb"),
+        ("youtube", "https://www.youtube.com/@pdb%C2%B7tv", "pdb·tv"),
+        ("whatsapp", "https://wa.me/%2B628123456789", "+628123456789"),
+        # left unchanged, so the service's own rule still decides
+        ("linkedin", "tbax", "tbax"),
+        ("linkedin", "https://www.linkedin.com/in/jane", None),
+        ("linkedin", "https://www.linkedin.com/company/tbax/about/", None),
+        ("linkedin", "https://www.facebook.com/tbax", None),
+        ("linkedin", "https://evil.example/linkedin.com/company/tbax", None),
+        ("facebook", "https://www.facebook.com/profile.php?id=123", None),
+        ("website", "https://www.example.com", None),
+        # decoded slugs no service rule accepts are not returned
+        ("linkedin", "https://www.linkedin.com/company/%3Cb%3Etbax%3C%2Fb%3E", None),
+        ("linkedin", "https://www.linkedin.com/company/tb%20ax", None),
+        # no Unicode case folding into the service host
+        ("linkedin", "https://www.l\u0131nked\u0131n.com/company/tbax", None),
+        ("snapchat", "https://www.\u017fnapchat.com/add/tbax", None),
+    ],
+)
+def test_normalize_social_media_identifier(service, identifier, expected):
+    """A pasted profile URL is reduced to its identifier (#2066)."""
+    if expected is None:
+        expected = identifier
+    assert normalize_social_media_identifier(service, identifier) == expected
+
+
+@pytest.mark.parametrize(
+    "value,validated",
+    [
+        (
+            [
+                {
+                    "service": "linkedin",
+                    "identifier": "https://www.linkedin.com/company/tbax/",
+                }
+            ],
+            [{"service": "linkedin", "identifier": "tbax"}],
+        ),
+        (
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "x", "identifier": "https://twitter.com/user_123"},
+            ],
+            [
+                {"service": "website", "identifier": "https://www.example.com"},
+                {"service": "x", "identifier": "user_123"},
+            ],
+        ),
+        (
+            [{"service": "linkedin", "identifier": "https://www.linkedin.com/in/jane"}],
+            False,
+        ),
+        (
+            [
+                {
+                    "service": "facebook",
+                    "identifier": "https://www.facebook.com/profile.php?id=123",
+                }
+            ],
+            False,
+        ),
+    ],
+)
+def test_validate_social_media_normalizes_urls(value, validated):
+    if not validated:
+        with pytest.raises(ValidationError):
+            validate_social_media(value)
+    else:
+        assert validate_social_media(value) == validated
+
+
+@pytest.mark.parametrize(
+    "service,identifier,expected",
+    [
+        (
+            "linkedin",
+            "https://www.linkedin.com/in/jane",
+            "https://www.linkedin.com/company/NAME",
+        ),
+        (
+            "youtube",
+            "https://www.youtube.com/channel/UC123",
+            "https://www.youtube.com/@NAME",
+        ),
+        ("telegram", "abc", "https://t.me/NAME"),
+    ],
+)
+def test_validate_social_media_error_states_format(service, identifier, expected):
+    """The error names the URL shape the identifier is rendered into (#2066)."""
+    with pytest.raises(ValidationError) as exc:
+        validate_social_media([{"service": service, "identifier": identifier}])
+    message = exc.value.messages[0]
+    assert f"Invalid identifier {identifier} for service {service}!" in message
+    assert f"Expected a name or a link like {expected}." in message
+    # The edit form renders this message as HTML.
+    assert "<" not in message
+
+
+def test_validate_social_media_error_has_no_decoded_markup():
+    """
+    A rejected link is repeated as submitted, never percent-decoded, since the
+    edit form renders the message as HTML.
+    """
+    link = (
+        "https://www.linkedin.com/company/"
+        "%3Cimg%20src%3Dx%20onerror%3D%22window.__pdbtest%3D1%22%3E"
+    )
+    with pytest.raises(ValidationError) as exc:
+        validate_social_media([{"service": "linkedin", "identifier": link}])
+    message = exc.value.messages[0]
+    assert f"Invalid identifier {link} for service linkedin!" in message
+    assert "<" not in message
+
+
+def test_validate_social_media_bluesky_error_unchanged():
+    with pytest.raises(ValidationError) as exc:
+        validate_social_media([{"service": "bluesky", "identifier": "nodots"}])
+    assert "bluesky handles must be domain-like" in exc.value.messages[0]
+    assert "Expected a" not in exc.value.messages[0]
 
 
 @pytest.mark.parametrize(
