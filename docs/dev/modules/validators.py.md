@@ -1,4 +1,4 @@
-Generated from validators.py on 2026-11-05 20:07:16.953937
+Generated from validators.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.validators
 
@@ -47,6 +47,9 @@ pointing the user at the correct prefix.
 The local import avoids import-time coupling and keeps format-only callers of
 `validate_irr_as_set` free of the network dependency.
 
+All lookups of one value share IRR_LOOKUP_SAVE_BUDGET seconds; a token not
+answered by then is unknown and accepted.
+
 Raises ValidationError when at least one token is provably absent.
 
 ---
@@ -83,6 +86,16 @@ pdb_normalize_name_whitespace backfill to fix rows that predate the
 validator.
 
 ---
+## normalize_social_media_identifier
+`def normalize_social_media_identifier(service, identifier)`
+
+Reduces a pasted profile URL to the identifier the service's URL format
+expects, e.g. `https://www.linkedin.com/company/tbax/` becomes `tbax` (#2066).
+
+Anything that is not a URL of the service's own format is returned
+unchanged, so the service's identifier validation still rejects it.
+
+---
 ## notification_banner_attribute_allowed
 `def notification_banner_attribute_allowed(tag, name, value)`
 
@@ -104,6 +117,14 @@ it. It is normalized the way bleach's own URI check does it, and a value
 that cannot be read is refused rather than raised.
 
 ---
+## replace_control_chars
+`def replace_control_chars(value)`
+
+Replace each control character with a space - the cleanup counterpart to
+validate_no_control_chars, for RDAP names, which can't be rejected (#533).
+Run normalize_name afterwards to collapse the resulting spaces.
+
+---
 ## split_irr_as_set_token
 `def split_irr_as_set_token(token)`
 
@@ -115,6 +136,20 @@ returned as a source, because validate_irr_as_set has to reject it by name
 ("Unknown IRR source: X") and cannot do that if the split hides it. Callers
 that mean "prefixed with a registry I recognize" want
 irr_as_set_pinned_source() instead.
+
+---
+## strip_emoji
+`def strip_emoji(value)`
+
+Remove emoji - the strip counterpart to validate_no_emoji (which rejects).
+Used by the pdb_strip_name_emoji backfill and for RDAP names, which can't
+be rejected.
+
+Only the spaces and tabs around each removed emoji are touched, so other
+whitespace (e.g. line breaks in a text field) is kept. Text on both sides
+of an emoji is joined with one space ("Acme<emoji>Net" -> "Acme Net"),
+except inside a bracket ("(IX <emoji>)" -> "(IX)"), before punctuation
+("Acme<emoji>, Inc." -> "Acme, Inc.") or next to a line break.
 
 ---
 ## tokenize_irr_as_set
@@ -239,6 +274,17 @@ Raises:
     ValueError: If the identifier does not meet the specified platform's criteria.
 
 ---
+## validate_ip_no_zone
+`def validate_ip_no_zone(value)`
+
+Reject an IP address or prefix that carries a zone identifier
+(`<address>%<zone>`, #534). Python's ipaddress module accepts zones on
+IPv6, but they have no meaning outside the host that defined them.
+
+Raises:
+    - ValidationError on failed validation
+
+---
 ## validate_irr_as_set
 `def validate_irr_as_set(value, strict=False)`
 
@@ -298,6 +344,19 @@ DNS can change after the URL is saved.
 
 Reject `name` values with 2+ consecutive whitespace (#1984). Leading/trailing
 whitespace is left to StripFieldMixin, so we check the stripped value.
+
+---
+## validate_no_control_chars
+`def validate_no_control_chars(value)`
+
+Reject line breaks, tabs and other control characters (Unicode categories
+Cc, Zl and Zp) in single-line entity name fields (#533).
+
+---
+## validate_no_emoji
+`def validate_no_emoji(value)`
+
+Reject values containing emoji (#2018).
 
 ---
 ## validate_notification_banner
@@ -391,13 +450,16 @@ Validates a social media value
 
 Will raise a ValidationError on failure
 
+A pasted profile URL is reduced to its identifier first, see
+`normalize_social_media_identifier`.
+
 Arguments:
 
-- value(`dict`)
+- value(`list`)
 
 Returns:
 
-- validated value (`dict`)
+- validated value (`list`), with identifiers normalized
 
 ---
 ## validate_status

@@ -1,4 +1,4 @@
-Generated from rest_throttles.py on 2026-11-05 20:07:16.953937
+Generated from rest_throttles.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.rest_throttles
 
@@ -25,6 +25,17 @@ APIUserThrottle(peeringdb_server.rest_throttles.TargetedRateThrottle)
 General rate limiting for authenticated requests (users or orgs)
 
 
+## ClientIdentMixin
+
+```
+ClientIdentMixin(builtins.object)
+```
+
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
+
+
 ## FilterDistanceThrottle
 
 ```
@@ -37,7 +48,7 @@ Rate limiting for ?distance= queries.
 ## FilterThrottle
 
 ```
-FilterThrottle(rest_framework.throttling.SimpleRateThrottle)
+FilterThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.SimpleRateThrottle)
 ```
 
 Base class for API throttling targeted at specific query filters.
@@ -75,27 +86,23 @@ May return `None` if the request should not be throttled.
 ## IRRLookupThrottle
 
 ```
-IRRLookupThrottle(rest_framework.throttling.UserRateThrottle)
+IRRLookupThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.UserRateThrottle)
 ```
 
-Limits the rate of API calls that may be made by a given user.
-
-The user id will be used as a unique cache key if the user is
-authenticated.  For anonymous requests, the IP address of the request will
-be used.
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
 
 
 ## IXFImportThrottle
 
 ```
-IXFImportThrottle(rest_framework.throttling.UserRateThrottle)
+IXFImportThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.UserRateThrottle)
 ```
 
-Limits the rate of API calls that may be made by a given user.
-
-The user id will be used as a unique cache key if the user is
-authenticated.  For anonymous requests, the IP address of the request will
-be used.
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
 
 
 ### Methods
@@ -113,18 +120,12 @@ May return `None` if the request should not be throttled.
 ## LocationLookupThrottle
 
 ```
-LocationLookupThrottle(rest_framework.throttling.SimpleRateThrottle)
+LocationLookupThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.SimpleRateThrottle)
 ```
 
-A simple cache implementation, that only requires `.get_cache_key()`
-to be overridden.
-
-The rate (requests / seconds) is set by a `rate` attribute on the Throttle
-class.  The attribute is a string of the form 'number_of_requests/period'.
-
-Period should be one of: ('s', 'sec', 'm', 'min', 'h', 'hour', 'd', 'day')
-
-Previous request information used for throttling is stored in the cache.
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
 
 
 ### Methods
@@ -157,14 +158,12 @@ Rate limits requests that do a melissa lookup (#1124)
 ## OrganizationUsersThrottle
 
 ```
-OrganizationUsersThrottle(rest_framework.throttling.UserRateThrottle)
+OrganizationUsersThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.UserRateThrottle)
 ```
 
-Limits the rate of API calls that may be made by a given user.
-
-The user id will be used as a unique cache key if the user is
-authenticated.  For anonymous requests, the IP address of the request will
-be used.
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
 
 
 ### Methods
@@ -222,7 +221,7 @@ Returns the cache key to use for storing response size cache
 ## TargetedRateThrottle
 
 ```
-TargetedRateThrottle(rest_framework.throttling.SimpleRateThrottle)
+TargetedRateThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.SimpleRateThrottle)
 ```
 
 Base class for targeted rate throttling depending
@@ -280,14 +279,12 @@ changing EnvironmentSetting variables for example)
 ## WriteRateThrottle
 
 ```
-WriteRateThrottle(rest_framework.throttling.UserRateThrottle)
+WriteRateThrottle(peeringdb_server.rest_throttles.ClientIdentMixin, rest_framework.throttling.UserRateThrottle)
 ```
 
-Limits the rate of API calls that may be made by a given user.
-
-The user id will be used as a unique cache key if the user is
-authenticated.  For anonymous requests, the IP address of the request will
-be used.
+Keys callers without a user or key identity on the client address from
+util.get_client_ident, the same one the login throttle, the page rate
+limit and the negative cache use (#531).
 
 
 ### Methods

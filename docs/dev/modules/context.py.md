@@ -1,4 +1,4 @@
-Generated from context.py on 2026-11-05 20:07:16.953937
+Generated from context.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.context
 
@@ -7,6 +7,16 @@ Define custom context managers.
 # Functions
 ---
 
+## collect_saved_netixlans
+`def collect_saved_netixlans()`
+
+Yields a list that receives every netixlan instance saved inside this
+context, soft deletes included, so the caller can re-stamp them once
+its writes are done (#2071)
+
+An enclosing context receives the saves of a nested one as well.
+
+---
 ## current_request
 `def current_request(request=None)`
 
@@ -53,5 +63,11 @@ amr from (#490)
 Opened by the authorization view itself rather than inferred from the
 oauthlib request, whose attributes the client can set through query
 parameters.
+
+---
+## note_saved_netixlan
+`def note_saved_netixlan(netixlan)`
+
+Adds a saved netixlan to the open collect_saved_netixlans context, if any.
 
 ---

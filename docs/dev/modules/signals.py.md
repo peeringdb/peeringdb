@@ -1,4 +1,4 @@
-Generated from signals.py on 2026-11-05 20:07:16.953937
+Generated from signals.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.signals
 
@@ -69,16 +69,6 @@ When a networkfacility is saved, sync the local_asn field with the network's asn
 `def netixlan_sync_asn_on_save(sender, instance, **kwargs)`
 
 When a networkixlan is saved, sync the asn field with the network's asn.
-
----
-## new_user_to_guests
-`def new_user_to_guests(request, user, sociallogin=None, **kwargs)`
-
-When a user is created via oauth login put them in the guest
-group temporarily.
-
-If pdb_settings.AUTO_VERIFY_USERS is toggled on in the settings, users get automatically verified (Note: this does
-not include email verification, they will still need to do that).
 
 ---
 ## org_delete

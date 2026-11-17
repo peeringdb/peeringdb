@@ -1,4 +1,4 @@
-Generated from util.py on 2026-11-05 20:07:16.953937
+Generated from util.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.util
 
@@ -80,6 +80,12 @@ Strips a port (`203.0.113.1:1234`, `[2001:db8::1]:443`) and unwraps an
 IPv4-mapped IPv6 address, so a client is keyed the same way however a
 proxy or socket reports it. Anything that isn't an address is returned
 unchanged.
+
+---
+## passkey_session
+`def passkey_session(session)`
+
+Returns true if the session's user logged in with a passkey.
 
 ---
 ## render

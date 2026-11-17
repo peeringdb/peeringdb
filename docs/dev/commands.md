@@ -1,4 +1,4 @@
-Generated on 2026-11-05 20:07:16.953937
+Generated on 2026-11-17 18:01:18.661144
 
 ## _db_command.py
 
@@ -577,6 +577,37 @@ Post stat breakdown for any given date.
 ## pdb_status.py
 
 Checks entity status integrity (looks for orphaned entities).
+
+## pdb_strip_name_emoji.py
+
+Backfill: remove emoji from entity name fields (#2018).
+
+Removes emoji from the name fields of existing rows, along with the spaces
+around them. A change that can't be applied - the new value would collide with
+another row's (unique=True), a required field held nothing but emoji, or the
+row's parent organization has a status that blocks saving it - is skipped and
+reported; the rest of the run still applies. --report writes every
+change and skip to a CSV.
+
+Nothing is mailed by default. --notify with --commit emails each affected
+organization's admins the changes made to its objects once the run has
+committed; --notify without --commit only lists who would be mailed. Skipped
+rows are not mailed.
+
+™ © ® count as emoji only when the EMOJI_INCLUDE_TRADEMARK_SIGNS setting is
+on (default off), both here and in the API, admin and web validators.
+
+--limit N only changes the objects of the first N organizations that have
+something to change, so each run mails at most N organizations. Changed rows
+no longer match, so running again continues with the next ones.
+
+Usage:
+
+    ./Ctl/dev/run.sh pdb_strip_name_emoji                            # preview
+    ./Ctl/dev/run.sh pdb_strip_name_emoji --report /tmp/emoji.csv    # preview + CSV
+    ./Ctl/dev/run.sh pdb_strip_name_emoji --commit --report <path>   # apply
+    ./Ctl/dev/run.sh pdb_strip_name_emoji --commit --notify          # apply + email
+    ./Ctl/dev/run.sh pdb_strip_name_emoji --commit --notify --limit 10   # batch
 
 ## pdb_sync_orphaned_emails.py
 
