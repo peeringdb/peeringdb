@@ -479,6 +479,16 @@ class InactiveKeyBlock(permissions.BasePermission):
         return True
 
 
+class IXFImportRequestPermissions(ModelViewSetPermissions):
+    """
+    Requesting an IX-F import needs update permission on the exchange,
+    not the create permission a POST maps to (#2072).
+    """
+
+    def has_object_permission(self, request, view, obj):
+        return check_permissions_from_request(request, obj, PERM_UPDATE)
+
+
 ###############################################################################
 # VIEW SETS
 
@@ -1132,17 +1142,24 @@ class InternetExchangeMixin:
     """
 
     @transaction.atomic
-    @action(detail=True, methods=["POST"], throttle_classes=[IXFImportThrottle])
+    @action(
+        detail=True,
+        methods=["POST"],
+        throttle_classes=[IXFImportThrottle],
+        permission_classes=[
+            IXFImportRequestPermissions,
+            *ModelViewSet.permission_classes[1:],
+        ],
+    )
     def request_ixf_import(self, request, *args, **kwargs):
         """
         Allows managers of an ix to request an IX-F import.
         (#779)
+
+        Requires update permission on the exchange (#2072).
         """
 
         ix = self.get_object()
-
-        if not check_permissions_from_request(request, ix, "u"):
-            return Response(status=status.HTTP_403_FORBIDDEN)
 
         if request.user.is_authenticated:
             # user or user api key
