@@ -32,6 +32,7 @@ never as absent (#502).
 
 import re
 import socket
+import time
 from collections import namedtuple
 
 from django.conf import settings
@@ -44,14 +45,12 @@ from peeringdb_server.inet import IRR_SOURCE
 # reached at all (so an empty `sources` means "unknown", not "found nowhere").
 LookupResult = namedtuple("LookupResult", ["sources", "ok"])
 
-_MAX_RESPONSE_BYTES = 8192
-
 # A safe object key: the tokens we look up are already format-validated upstream,
 # but irr.py is a library — reject anything that could break out of the whois
 # command line (whitespace / control chars) before it hits a socket. The length is
 # capped at what Network.irr_as_set can hold, since a lookup now sends the name
 # once per mirrored source.
-_SAFE_KEY = re.compile(r"^[A-Z0-9_:.-]{1,255}$")
+_SAFE_KEY = re.compile(r"[A-Z0-9_:.-]{1,255}")
 
 
 def _object_class(name):
@@ -73,23 +72,92 @@ def _timeout(server):
     return server.get("timeout", settings.IRR_LOOKUP_DEFAULT_TIMEOUT)
 
 
-def _send(server, payload):
+def _deadline(deadline=None):
+    """The end of a lookup's budget, and no later than a caller's deadline."""
+    end = time.monotonic() + settings.IRR_LOOKUP_BUDGET
+    return end if deadline is None else min(end, deadline)
+
+
+def _down_key(server):
+    return f"irr:down:{server['host']}:{server.get('port', 43)}"
+
+
+def _send(server, payload, deadline=None):
     """
     Send one query (whois or `!` protocol) to an IRRd server on port 43 and
-    return the decoded response text. Raises OSError (incl. socket.timeout) on any network failure —
-    callers translate that into a fail-open "unknown".
+    return the decoded response text. Raises OSError (incl. TimeoutError) on
+    any network failure — callers translate that into a fail-open "unknown".
+
+    The whole exchange, name resolution excepted, has to finish within the
+    server's timeout, and before `deadline` (a time.monotonic() value) when
+    given. A mirror whose exchange ran out of its own time is skipped for
+    IRR_LOOKUP_MIRROR_DOWN_TTL seconds.
     """
-    timeout = _timeout(server)
+    if _cache().get(_down_key(server)):
+        raise TimeoutError("mirror recently timed out")
+    end = time.monotonic() + _timeout(server)
+    own_time = deadline is None or end <= deadline
+    if not own_time:
+        end = deadline
+
+    def time_left():
+        left = end - time.monotonic()
+        if left <= 0:
+            raise TimeoutError("lookup ran out of time")
+        return left
+
+    try:
+        return _exchange(server, payload, time_left)
+    except TimeoutError:
+        if own_time:
+            _cache().set(
+                _down_key(server), True, timeout=settings.IRR_LOOKUP_MIRROR_DOWN_TTL
+            )
+        raise
+
+
+def _connect(host, port, time_left):
+    """
+    Connect to the first address of `host` that answers, every attempt within
+    the time left: create_connection would give each address the whole
+    timeout. Name resolution itself is not bounded.
+    """
+    # no name lookup once the time is up
+    time_left()
+    error = None
+    for family, kind, proto, _, address in socket.getaddrinfo(
+        host, port, type=socket.SOCK_STREAM
+    ):
+        timeout = time_left()
+        sock = None
+        try:
+            # an address family the host can't use moves on to the next address
+            sock = socket.socket(family, kind, proto)
+            sock.settimeout(timeout)
+            sock.connect(address)
+            return sock
+        except OSError as exc:
+            if sock is not None:
+                sock.close()
+            error = exc
+    if error is None:
+        raise OSError(f"no address for {host}")
+    raise error
+
+
+def _exchange(server, payload, time_left):
     host = server["host"]
     port = server.get("port", 43)
-    sock = socket.create_connection((host, port), timeout=timeout)
+    sock = _connect(host, port, time_left)
     try:
-        sock.settimeout(timeout)
+        sock.settimeout(time_left())
         sock.sendall((payload + "\r\n").encode("ascii", "ignore"))
         chunks = []
         total = 0
+        cap = settings.IRR_LOOKUP_MAX_RESPONSE_BYTES
         while True:
-            data = sock.recv(4096)
+            sock.settimeout(time_left())
+            data = sock.recv(min(4096, cap - total))
             if not data:
                 break
             chunks.append(data)
@@ -97,7 +165,7 @@ def _send(server, payload):
             # We only ever need the leading bytes (status lines, the first RPSL
             # lines, or the short `!s-lc` listing). Cap the read so a huge as-set object with tens of
             # thousands of `members:` lines can't blow up memory or wall-time.
-            if total >= _MAX_RESPONSE_BYTES:
+            if total >= cap:
                 break
         # surrogateescape keeps undecodable bytes recoverable, so A<len> byte
         # counts still line up when _read_statuses re-encodes the reply
@@ -109,7 +177,7 @@ def _send(server, payload):
             pass
 
 
-def _server_sources(server):
+def _server_sources(server, deadline=None):
     """
     The set of IRR sources a server mirrors, via IRRd's !s-lc command (response
     shape "A<len>\\n<comma,list>\\nC"). Cached; None on failure.
@@ -119,7 +187,7 @@ def _server_sources(server):
     if cached is not None:
         return frozenset(cached)
     try:
-        text = _send(server, "!s-lc")
+        text = _send(server, "!s-lc", deadline)
     except OSError:
         return None
     # read by its framing: the list is data, and a source name such as ARIN or
@@ -202,7 +270,7 @@ def _read_statuses(text):
             return statuses
 
 
-def _pinned_exists(server, source, object_class, name):
+def _pinned_exists(server, source, object_class, name, deadline=None):
     """
     Does `name` exist in `source` per this server? True/False when the server
     answers definitively, None on error or an unrecognized response.
@@ -215,7 +283,7 @@ def _pinned_exists(server, source, object_class, name):
     name = _exact_key(object_class, name)
     query = "\n".join(["!!", f"!s{source}", f"!m{object_class},{name}", "!q"])
     try:
-        text = _send(server, query)
+        text = _send(server, query, deadline)
     except OSError:
         return None
     statuses = [line.strip() for line in text.splitlines() if line.strip()][:2]
@@ -230,7 +298,7 @@ def _pinned_exists(server, source, object_class, name):
     return None
 
 
-def _sources_on_server(server, mirrored_sources, object_class, name):
+def _sources_on_server(server, mirrored_sources, object_class, name, deadline=None):
     """
     Ask one mirror about `name` in each of `mirrored_sources`, over one connection.
 
@@ -252,7 +320,7 @@ def _sources_on_server(server, mirrored_sources, object_class, name):
         query += [f"!s{source}", f"!m{object_class},{key}"]
     query.append("!q")
     try:
-        text = _send(server, "\n".join(query))
+        text = _send(server, "\n".join(query), deadline)
     except OSError:
         return {}
 
@@ -265,17 +333,21 @@ def _sources_on_server(server, mirrored_sources, object_class, name):
     return answers
 
 
-def exists_in(source, name, object_class=None):
+def exists_in(source, name, object_class=None, deadline=None):
     """
     Whether object `name` exists in registry `source`.
 
     Returns True (present), False (provably absent), or None (unknown — lookup
     infrastructure could not answer; callers fail open). `source` must be one of
     IRR_SOURCE.
+
+    Spends at most IRR_LOOKUP_BUDGET seconds, and stops at `deadline` (a
+    time.monotonic() value) when that comes first, so several calls can share
+    one budget.
     """
     source = source.upper()
     name = name.upper()
-    if source not in IRR_SOURCE or not _SAFE_KEY.match(name):
+    if source not in IRR_SOURCE or not _SAFE_KEY.fullmatch(name):
         return None
     object_class = object_class or _object_class(name)
 
@@ -284,13 +356,14 @@ def exists_in(source, name, object_class=None):
     if cached is not None:
         return cached
 
+    deadline = _deadline(deadline)
     for server in settings.IRR_LOOKUP_SERVERS:
-        mirrored = _server_sources(server)
+        mirrored = _server_sources(server, deadline)
         if mirrored is not None and source not in mirrored:
             # This server does not carry `source`; its "no entries" would be a
             # false absent, so skip it entirely.
             continue
-        result = _pinned_exists(server, source, object_class, name)
+        result = _pinned_exists(server, source, object_class, name, deadline)
         if result is None:
             continue
         if result is False and mirrored is None:
@@ -309,7 +382,7 @@ def exists_in(source, name, object_class=None):
     return None
 
 
-def sources_for(name, object_class=None):
+def sources_for(name, object_class=None, deadline=None):
     """
     Which IRR_SOURCE registries hold object `name`.
 
@@ -319,11 +392,15 @@ def sources_for(name, object_class=None):
     callers act on "found nowhere" by telling operators their AS-SET does not
     exist, so a fail-open artifact must not be replayed for the whole TTL.
 
+    A configured mirror whose source list can't be had, and a lookup that ran
+    out of its budget (IRR_LOOKUP_BUDGET seconds, or `deadline` when that comes
+    first), also yield ok=False.
+
     Intended for the interactive editor and the cleanup command — one name at a
     time, cached.
     """
     name = name.upper()
-    if not _SAFE_KEY.match(name):
+    if not _SAFE_KEY.fullmatch(name):
         return LookupResult(frozenset(), False)
     object_class = object_class or _object_class(name)
 
@@ -335,20 +412,24 @@ def sources_for(name, object_class=None):
     # Usually this is one connection per configured mirror. Track which
     # registries received a definitive answer on it; only unresolved coverage
     # falls back to separate source-pinned queries.
+    deadline = _deadline(deadline)
     reachable = set()
     checked = set()
     unresolved = set()
     found = set()
     known = set(IRR_SOURCE)
+    # a mirror that could not be asked may carry a source no other one does
+    incomplete = False
     for server in settings.IRR_LOOKUP_SERVERS:
-        mirrored = _server_sources(server)
+        mirrored = _server_sources(server, deadline)
         if not mirrored:
+            incomplete = True
             continue
         mirrored = set(mirrored) & known
         if not mirrored:
             continue
         reachable |= mirrored
-        answers = _sources_on_server(server, mirrored, object_class, name)
+        answers = _sources_on_server(server, mirrored, object_class, name, deadline)
         checked |= set(answers)
         unresolved |= mirrored - set(answers)
         found |= {source for source, present in answers.items() if present}
@@ -357,7 +438,7 @@ def sources_for(name, object_class=None):
         return LookupResult(frozenset(), False)
 
     for source in sorted(unresolved - checked):
-        result = exists_in(source, name, object_class)
+        result = exists_in(source, name, object_class, deadline)
         if result is None:
             # neither the mirror's batch nor the pinned fallback answered, so
             # `found` may be incomplete -- left out of `checked` on purpose
@@ -365,6 +446,9 @@ def sources_for(name, object_class=None):
         checked.add(source)
         if result:
             found.add(source)
+
+    if incomplete or time.monotonic() >= deadline:
+        return LookupResult(frozenset(found), False)
 
     if checked != reachable:
         # at least one covered registry never answered (checked is a subset by

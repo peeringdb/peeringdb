@@ -76,7 +76,7 @@ def test_generic(name, user, count, status):
         _user.is_staff = True
         _user.save()
         # without a second factor the MFA middleware redirects staff
-        TOTPDevice.objects.create(user=_user, name="phone", confirmed=True)
+        TOTPDevice.objects.create(user=_user, name="default", confirmed=True)
 
     org.usergroup.user_set.add(_user)
 

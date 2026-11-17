@@ -1131,6 +1131,37 @@ class SearchV2TestCase(TestCase):
         content = json.loads(response.content)
         self.assertEqual(content["non_field_errors"][0], "Invalid API key")
 
+    def test_search_api_view_inactive_user_key(self):
+        """
+        The key of a deactivated user is refused like an unknown key (#535)
+        """
+        self.user.is_active = False
+        self.user.save()
+
+        request = self.factory.get("/api/search?q=sila")
+        request.META["HTTP_AUTHORIZATION"] = f"api-key {self.user_key}"
+
+        response = search_api_view(request)
+
+        self.assertEqual(response.status_code, 403)
+        content = json.loads(response.content)
+        self.assertEqual(content["non_field_errors"][0], "Invalid API key")
+
+    def test_search_api_view_readonly_key(self):
+        """
+        A readonly key of an active user can still search (#535)
+        """
+        _, readonly_key = models.UserAPIKey.objects.create_key(
+            user=self.user, name="readonly search key", readonly=True
+        )
+
+        request = self.factory.get("/api/search?q=sila")
+        request.META["HTTP_AUTHORIZATION"] = f"api-key {readonly_key}"
+
+        response = search_api_view(request)
+
+        self.assertEqual(response.status_code, 200)
+
     def test_search_api_view_no_auth(self):
         request = self.factory.get("/api/search?q=sila")
 

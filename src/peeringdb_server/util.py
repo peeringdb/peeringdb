@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import django_peeringdb.const as const
 from django.conf import settings
+from django.contrib.auth import BACKEND_SESSION_KEY
 from django.contrib.staticfiles.finders import find
 from django.shortcuts import render as django_render
 from django.template import loader
@@ -23,6 +24,7 @@ from simplekml import OverlayXY, ScreenXY, Units
 from peeringdb_server.permissions import APIPermissionsApplicator  # noqa
 
 if TYPE_CHECKING:
+    from django.contrib.sessions.backends.base import SessionBase
     from django.db.models import Model
     from django.http import HttpRequest, HttpResponse
     from simplekml import Kml
@@ -37,6 +39,16 @@ NO_STORE_PRIVATE_DIRECTIVES: dict[str, bool] = {"private": True, "no_store": Tru
 no_store_private: Callable[
     [Callable[..., HttpResponse]], Callable[..., HttpResponse]
 ] = cache_control(**NO_STORE_PRIVATE_DIRECTIVES)
+
+
+PASSKEY_BACKEND = "django_security_keys.backends.PasskeyAuthenticationBackend"
+
+
+def passkey_session(session: SessionBase) -> bool:
+    """
+    Returns true if the session's user logged in with a passkey.
+    """
+    return session.get(BACKEND_SESSION_KEY) == PASSKEY_BACKEND
 
 
 def cache_key_digest(value: str) -> str:

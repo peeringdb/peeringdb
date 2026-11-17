@@ -121,11 +121,13 @@ from peeringdb_server.validators import (
     validate_distance_geocode,
     validate_info_prefixes4,
     validate_info_prefixes6,
+    validate_ip_no_zone,
     validate_irr_as_set_on_change,
     validate_ixf_member_list_url,
     validate_latitude,
     validate_longitude,
     validate_name,
+    validate_no_control_chars,
     validate_no_emoji,
     validate_phonenumber,
     validate_poc_visible,
@@ -1032,10 +1034,13 @@ class ModelSerializer(serializers.ModelSerializer):
                         "tag": model.handleref.tag
                     }
 
-        # reject emoji in the entity name fields (#2018)
+        # reject emoji (#2018) and control characters (#533) in the entity
+        # name fields
         for field_name in emoji_free_fields(getattr(self.Meta, "model", None)):
             if field_name in self.fields:
-                self.fields[field_name].validators.append(validate_no_emoji)
+                self.fields[field_name].validators.extend(
+                    [validate_no_emoji, validate_no_control_chars]
+                )
 
         try:
             data = args[0]
@@ -4452,6 +4457,7 @@ class IXLanPrefixSerializer(ModelSerializer):
 
     prefix = IPNetworkField(
         validators=[
+            validate_ip_no_zone,
             validators.UniqueValidator(queryset=IXLanPrefix.objects.all()),
             validate_address_space,
         ]
@@ -4720,6 +4726,7 @@ class InternetExchangeSerializer(ModelSerializer):
     # required=True here
     prefix = IPNetworkField(
         validators=[
+            validate_ip_no_zone,
             validators.UniqueValidator(
                 queryset=IXLanPrefix.objects.filter(status__in=["ok", "pending"])
             ),

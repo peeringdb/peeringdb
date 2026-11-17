@@ -597,8 +597,25 @@ if os.environ.get("IRR_LOOKUP_SERVERS"):
 # how long (seconds) an IRR lookup result is cached in the "negative" Redis cache
 set_option("IRR_LOOKUP_CACHE_TTL", 300)
 
-# per-query timeout (seconds) used when a server dict omits its own "timeout"
+# time limit (seconds) for one whole exchange with a server (connect, query and
+# reply), used when a server dict omits its own "timeout"
 set_option("IRR_LOOKUP_DEFAULT_TIMEOUT", 5)
+
+# bytes read from one server reply at most; status lines and source lists are
+# short, a large object's text is cut off here
+set_option("IRR_LOOKUP_MAX_RESPONSE_BYTES", 8192)
+
+# seconds one live lookup (which registries hold a name, or whether one holds
+# it) may spend in total; what is not answered by then reads as unknown
+set_option("IRR_LOOKUP_BUDGET", 10.0)
+
+# seconds all live lookups for one saved irr_as_set value may spend together;
+# tokens not answered by then are unknown and the save is accepted
+set_option("IRR_LOOKUP_SAVE_BUDGET", 15.0)
+
+# seconds a server is skipped after an exchange with it ran out of its time
+# limit, shared by all workers through the "negative" cache
+set_option("IRR_LOOKUP_MIRROR_DOWN_TTL", 60)
 
 # #1973: downloaded IRR dumps used by batch cleanup/checker jobs. The fetch
 # command refreshes this cache; interactive editor/save checks use irr.py.
@@ -1024,6 +1041,23 @@ LOGGING = {
         # requests for hosts outside ALLOWED_HOSTS are scanner noise; keep
         # them out of the throttled error emails so real errors still go out
         "django.security.DisallowedHost": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        # requests over the upload limits are answered 400 and need no mail
+        # either, for the same reason
+        "django.security.RequestDataTooBig": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security.TooManyFieldsSent": {
+            "handlers": ["logfile", "console_json"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security.TooManyFilesSent": {
             "handlers": ["logfile", "console_json"],
             "level": "ERROR",
             "propagate": False,

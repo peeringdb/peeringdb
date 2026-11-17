@@ -732,7 +732,7 @@ def test_profile_offers_readonly_keys_to_superusers(
     if not ui_next:
         admin_user.opt_flags |= settings.USER_OPT_FLAG_UI_NEXT_REJECTED
     admin_user.save()
-    TOTPDevice.objects.create(user=admin_user, name="phone", confirmed=True)
+    TOTPDevice.objects.create(user=admin_user, name="default", confirmed=True)
     client = Client()
     client.force_login(admin_user)
 

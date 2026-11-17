@@ -11,10 +11,12 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.translation import gettext_lazy as _
 from django_ratelimit.decorators import ratelimit
+from grainy.const import PERM_UPDATE
 
 from peeringdb_server import ixf
 from peeringdb_server.auth import enable_api_key_auth, enable_basic_auth
 from peeringdb_server.models import IXLan, Network
+from peeringdb_server.permissions import check_permissions_from_request
 from peeringdb_server.util import check_permissions
 
 if TYPE_CHECKING:
@@ -55,10 +57,12 @@ def view_import_ixlan_ixf_preview(request: HttpRequest, ixlan_id: str) -> HttpRe
     except IXLan.DoesNotExist:
         return error_response(_("Ixlan not found"), status=404)
 
-    if hasattr(request, "org"):
-        if request.org != ixlan.ix.org:
-            return error_response(_("Permission denied"), status=403)
-    elif not check_permissions(request.user, ixlan, "u"):
+    if hasattr(request, "org") and request.org != ixlan.ix.org:
+        return error_response(_("Permission denied"), status=403)
+
+    # checks the key's permission set (readonly user keys, org key grants),
+    # not the request user's (#535)
+    if not check_permissions_from_request(request, ixlan, PERM_UPDATE):
         return error_response(_("Permission denied"), status=403)
 
     # the preview never fetches the URL itself: it shows the data the last

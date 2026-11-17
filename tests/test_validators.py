@@ -922,7 +922,7 @@ def test_validate_irr_as_set_strict_multi_token_one_absent():
     # cap raised to 2 so both tokens pass syntactically; the live check then
     # rejects because one token's object is absent. sources_for returns ok=False,
     # so the error carries the plain token (the "found in: ..." hint is omitted).
-    def exists(source, name, object_class=None):
+    def exists(source, name, object_class=None, deadline=None):
         return name != "AS-BAR"  # AS-FOO exists, AS-BAR absent
 
     with (
@@ -953,7 +953,7 @@ def test_validate_irr_as_set_strict_multi_token_one_absent():
 )
 def test_validate_irr_as_set_strict_irr_error_is_not_absent(reply, rejected):
     # #499: only a proven absence rejects a save; an IRRd error reply is unknown
-    def send(server, payload):
+    def send(server, payload, deadline=None):
         if payload == "!s-lc":
             return "A10\nRIPE,RADB\nC\n"
         return reply

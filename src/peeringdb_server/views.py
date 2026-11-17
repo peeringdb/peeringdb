@@ -110,6 +110,7 @@ from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import get_application_model
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 from oauth2_provider.settings import oauth2_settings
+from two_factor.utils import default_device
 from webauthn.helpers.exceptions import WebAuthnException
 
 import peeringdb_server.geo
@@ -197,6 +198,7 @@ from peeringdb_server.util import (
     no_store_private,
     objfac_tupple,
     objfac_tupple_ui_next,
+    passkey_session,
     render,
     v2_social_media_services,
 )
@@ -4394,6 +4396,64 @@ class LoginView(TwoFactorLoginView):
         self.__dict__.pop("_resolved_form_list", None)
         return super().get_form_list()
 
+    def has_security_key_step(self) -> bool:
+        """
+        On the password path every WebAuthn key of the account is asked for,
+        passkeys included. The library asks only for 2FA keys there, which
+        left accounts with passkeys only on a password-only login while
+        `User.has_2fa` counts them (#549).
+
+        The passkey path is unchanged, and so is the password path where an
+        organization disables password login: `done()` rejects it anyway.
+        """
+        user = self.get_user()
+        if (
+            not user
+            or self.storage.data.get("passkey_authenticated")
+            or self.disable_password_auth
+        ):
+            return super().has_security_key_step()
+        if self.storage.get_step_data("token") or self.storage.get_step_data("backup"):
+            return False
+        return user.webauthn_security_keys.exists()
+
+    def asks_otp_despite_disabled_totp(self) -> bool:
+        """
+        On the password path, an organization that disables TOTP makes the
+        library skip the token and backup steps. An account with no WebAuthn
+        key would then get its MFA setup hold or passkey enrollment session
+        on the password alone. Its default django-otp device is asked for
+        first; it still does not satisfy the policy, `done()` holds the
+        session (#550, #552).
+        """
+        user = self.get_user()
+        return bool(
+            user
+            and not self.storage.data.get("passkey_authenticated")
+            and self.disable_totp
+            and default_device(user)
+            and not user.webauthn_security_keys.exists()
+        )
+
+    def has_token_step(self) -> bool:
+        if self.asks_otp_despite_disabled_totp():
+            # django-two-factor-auth's own condition, which the
+            # django-security-keys view in between turns off
+            return super(TwoFactorLoginView, self).has_token_step()
+        return super().has_token_step()
+
+    def has_backup_step(self) -> bool:
+        if self.asks_otp_despite_disabled_totp():
+            return super(TwoFactorLoginView, self).has_backup_step()
+        return super().has_backup_step()
+
+    condition_dict = {
+        **TwoFactorLoginView.condition_dict,
+        "token": has_token_step,
+        "backup": has_backup_step,
+        "security-key": has_security_key_step,
+    }
+
     def get(self, *args, **kwargs):
         """
         If a user is already authenticated, don't show the
@@ -4717,41 +4777,46 @@ class LoginView(TwoFactorLoginView):
         )
 
     def get_mfa_incomplete_redirect(self):
+        """
+        Called by the library when an organization policy left the login
+        without an accepted second factor: on the password path when an
+        organization disables TOTP and no security key was asked for, on the
+        passkey path when an organization requires MFA after a passkey.
+
+        The user is logged in and held on the 2FA profile until they have a
+        factor `User.has_org_accepted_2fa` accepts. The hold is written in
+        `done()`, after the login: logging in over another account's session
+        flushes the session.
+        """
         user = self.get_user()
         passkey_path = self.storage.data.get("passkey_authenticated")
 
-        if self.disable_totp and user.totpdevice_set.exists():
-            # User has a TOTP device but one or more orgs have disabled TOTP.
-            # Applies to both the passkey and password paths — the user must
-            # enroll a different MFA method regardless of how they logged in.
+        if self.disable_totp and (not passkey_path or default_device(user)):
+            # On the password path no factor the user may have is accepted
+            # here: every key would have been asked for (#550).
             orgs_disabling_totp = [
                 org.name for org in user.organizations if org.disable_totp
             ]
             org_list = ", ".join(orgs_disabling_totp)
-            self.request.session["passkey_mfa_error"] = str(
+            self._mfa_hold_error = str(
                 _(
                     "%(org_list)s has disabled TOTP authentication. "
                     "Please set up a different MFA method to proceed."
                 )
             ) % {"org_list": org_list}
-        elif passkey_path:
-            # Passkey path with no MFA device at all — org requires post-passkey MFA.
+        else:
+            # Passkey path with no other MFA factor — org requires post-passkey MFA.
             orgs_requiring_mfa = [
                 org.name for org in user.organizations if org.passkey_require_mfa
             ]
             org_list = ", ".join(orgs_requiring_mfa)
-            self.request.session["passkey_mfa_error"] = str(
+            self._mfa_hold_error = str(
                 _(
                     "Your organization %(org_list)s requires MFA after passkey authentication. "
                     "Please set up an MFA method to proceed."
                 )
             ) % {"org_list": org_list}
-        else:
-            # Password path + disable_totp but the user has no TOTP device,
-            # so there is nothing being bypassed — let login proceed normally.
-            return None
 
-        self.request.session["mfa_setup_required"] = True
         return reverse("two_factor:profile")
 
     def done(self, form_list, **kwargs):
@@ -4778,7 +4843,15 @@ class LoginView(TwoFactorLoginView):
         # Library LoginView.done() handles the disable_password_auth block and the
         # MFA-incomplete redirect. In both cases we should return the library's
         # response directly without overriding it.
+        self._mfa_hold_error = None
         result = super().done(form_list, **kwargs)
+        if self._mfa_hold_error:
+            # Written after the library's login(), which flushes the session
+            # when another account was signed in. The wizard storage may be
+            # gone with it, so return before reading it.
+            self.request.session["passkey_mfa_error"] = self._mfa_hold_error
+            self.request.session["mfa_setup_required"] = True
+            return result
         # Rejected login and incomplete MFA reset the wizard's verified user.
         # request.user may still be authenticated from an enrollment session,
         # and a caller-selected next URL can equal the rejection redirect.
@@ -5152,6 +5225,19 @@ def request_security_key_registration(request):
     return JsonResponse(options)
 
 
+def login_wizard_data(request):
+    # the storage key formtools derives from the view class name
+    return request.session.get(f"wizard_{normalize_name(LoginView.__name__)}", {})
+
+
+def login_wizard_passkey_authenticated(request):
+    """
+    Returns true if the login wizard in this session verified a passkey as
+    the first factor.
+    """
+    return bool(login_wizard_data(request).get("passkey_authenticated"))
+
+
 def login_wizard_user(request):
     """
     Returns the user the login wizard in this session has verified a first
@@ -5159,8 +5245,7 @@ def login_wizard_user(request):
     `TWO_FACTOR_LOGIN_TIMEOUT` has passed.
     """
 
-    # the storage key formtools derives from the view class name
-    data = request.session.get(f"wizard_{normalize_name(LoginView.__name__)}", {})
+    data = login_wizard_data(request)
     if not data.get("user_pk") or not data.get("user_backend"):
         return None
     timeout = getattr(dj_settings, "TWO_FACTOR_LOGIN_TIMEOUT", 600)
@@ -5194,6 +5279,9 @@ def request_security_key_authentication(request):
         # The wizard user comes first: a signed-in user can log in as another
         # account through the wizard (OAuth authorize, passkey enrollment).
         user = login_wizard_user(request)
+        if user and not login_wizard_passkey_authenticated(request):
+            # the password path's security-key step asks for every key (#549)
+            ignore_credential_filter = True
         if not user and request.user.is_authenticated:
             user = request.user
         if not user:
@@ -5268,7 +5356,20 @@ class TwoFactorSetupView(BaseSetupView):
         return super().post(request, *args, **kwargs)
 
     def done(self, form_list, **kwargs):
-        # Clear the pending MFA setup flag so the user is no longer restricted
-        # to the setup page after completing setup.
-        self.request.session.pop("mfa_setup_required", None)
-        return super().done(form_list, **kwargs)
+        had_default_device = default_device(self.request.user) is not None
+        response = super().done(form_list, **kwargs)
+        if not had_default_device and self.get_method().code == "email":
+            # The email method reuses an existing email device, such as the
+            # unnamed one the login view used to provision. Only the device
+            # named `default` is asked for at login and counts as enrolled.
+            device = self.get_device()
+            if device.name != "default":
+                device.name = "default"
+                device.save(update_fields=["name"])
+        # Lift an organization's hold only for a factor its policy accepts:
+        # a new TOTP device does not, where an organization disabled TOTP.
+        if self.request.user.has_org_accepted_2fa(
+            passkey_session(self.request.session)
+        ):
+            self.request.session.pop("mfa_setup_required", None)
+        return response

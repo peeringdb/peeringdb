@@ -770,17 +770,17 @@ def test_done_password_path_redirects_when_totp_disabled_and_user_has_totp(
 
 
 @pytest.mark.django_db
-def test_done_password_path_allows_through_when_totp_disabled_and_no_totp_device(
+def test_done_password_path_holds_when_totp_disabled_and_no_factor(
     reauth_objects,
 ):
     """
-    When an org disables TOTP but the user has no TOTP device at all,
-    there is nothing being bypassed — the login should proceed normally.
+    When an org disables TOTP and the password path asked for no security
+    key, the user has no factor the org accepts and is held at MFA setup,
+    even with no MFA at all (#550).
     """
     user = reauth_objects["user"]
     org = reauth_objects["org"]
 
-    # No TOTP device — user has no MFA at all
     org.set_org_flag(dj_settings.ORG_FLAGS_DISABLE_TOTP, True)
     org.save()
 
@@ -791,14 +791,14 @@ def test_done_password_path_allows_through_when_totp_disabled_and_no_totp_device
     view.request = http_request
     view.storage.reset = MagicMock()
 
-    # super().done() will fail without full wizard state — that's fine,
-    # we only care that the block path (storage.reset) was NOT taken.
-    try:
-        view.done([], **{})
-    except Exception:
-        pass
+    with patch("django_security_keys.ext.two_factor.views.auth_login"):
+        response = view.done([], **{})
 
-    view.storage.reset.assert_not_called()
+    assert response.status_code == 302
+    assert response["Location"] == reverse("two_factor:profile")
+    view.storage.reset.assert_called_once()
+    assert http_request.session["mfa_setup_required"] is True
+    assert "passkey_mfa_error" in http_request.session
 
 
 @pytest.mark.django_db

@@ -19,7 +19,12 @@ from django.contrib.auth.backends import AllowAllUsersModelBackend
 from django.contrib.auth.views import redirect_to_login
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core.cache import caches
-from django.core.exceptions import MiddlewareNotUsed
+from django.core.exceptions import (
+    MiddlewareNotUsed,
+    RequestDataTooBig,
+    TooManyFieldsSent,
+    TooManyFilesSent,
+)
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.middleware.common import CommonMiddleware
 from django.shortcuts import redirect
@@ -57,6 +62,7 @@ from peeringdb_server.util import (
     NO_STORE_PRIVATE_DIRECTIVES,
     cache_key_digest,
     get_client_ident,
+    passkey_session,
 )
 
 try:
@@ -237,7 +243,7 @@ def get_auth_identity(request):
     """
 
     auth_value = request.META.get("HTTP_AUTHORIZATION", "")
-    session_id = request.COOKIES.get("sessionid", "")[:10]
+    session_id = request.COOKIES.get(settings.SESSION_COOKIE_NAME, "")[:10]
 
     if session_id:
         return f"session__{session_id}"
@@ -1111,6 +1117,12 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
         try:
             self._process_response_cached(request, response)
+        except (RequestDataTooBig, TooManyFieldsSent, TooManyFilesSent) as exc:
+            # as in process_request: over an upload limit, not a server error
+            log.warning(
+                "RedisNegativeCacheMiddleware.process_response refused request data",
+                error=type(exc).__name__,
+            )
         except Exception:
             log.error(
                 "RedisNegativeCacheMiddleware.process_response failed", exc_info=True
@@ -1164,6 +1176,15 @@ class RedisNegativeCacheMiddleware(MiddlewareMixin):
 
         try:
             return self._process_request_cached(request)
+        except (RequestDataTooBig, TooManyFieldsSent, TooManyFilesSent) as exc:
+            # the caller went over an upload limit, which Django answers 400
+            # once the view reads that data; an ERROR here would spend the
+            # admin error-mail budget
+            log.warning(
+                "RedisNegativeCacheMiddleware.process_request refused request data",
+                error=type(exc).__name__,
+            )
+            return
         except Exception:
             log.error(
                 "RedisNegativeCacheMiddleware.process_request failed", exc_info=True
@@ -1632,12 +1653,16 @@ class EnforceMFAMiddleware(MiddlewareMixin):
         # has no MFA device/disable_totp is set by other org, we log them in and
         # redirect to setup. (#1810)
         if request.session.get("mfa_setup_required"):
-            if user.has_2fa:
+            if user.has_org_accepted_2fa(passkey_session(request.session)):
                 request.session.pop("mfa_setup_required", None)
-            elif not self.is_path_excluded(request.path):
-                return redirect(reverse("two_factor:profile"))
-            else:
+            elif self.is_path_excluded(request.path) or (
+                # enrolling a factor needs a confirmed address
+                not user.email_confirmed
+                and self.is_email_verification_path(request.path)
+            ):
                 return
+            else:
+                return redirect(reverse("two_factor:profile"))
 
         # staff accounts are not read-only, so an unconfirmed address does not
         # exempt them: they confirm it first, then enroll like everyone else

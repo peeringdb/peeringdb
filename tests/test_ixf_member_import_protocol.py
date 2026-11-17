@@ -1443,6 +1443,68 @@ def test_ixf_v6_address_in_ipaddr4_field_is_rejected(net_key):
     assert not NetworkIXLan.objects.filter(ixlan=ixlan, asn=network.asn).exists()
 
 
+def _ixf_member(data, asn, ipv4, ipv6):
+    member = json.loads(json.dumps(data["member_list"][0]))
+    member["asnum"] = asn
+    vlan = member["connection_list"][0]["vlan_list"][0]
+    vlan["ipv4"]["address"] = ipv4
+    vlan["ipv6"]["address"] = ipv6
+    return member
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("net_key", ["UPDATE_DISABLED", "UPDATE_ENABLED"])
+def test_ixf_ipv6_zone_identifier_is_rejected(net_key):
+    """
+    An IPv6 address with a zone identifier is reported as an invalid
+    address and nothing is written for it (#534).
+    """
+    _entities = entities_ipv4_ipv6(entities_base())
+    network = _entities["net"][net_key]
+    ixlan = _entities["ixlan"][0]
+
+    data = setup_test_data("ixf.member.invalid.ipaddr4")
+    data["member_list"] = [
+        _ixf_member(data, network.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1%eth0")
+    ]
+
+    importer = ixf.Importer()
+    assert importer.update(ixlan, data=data) is True
+
+    assert any("Invalid IP address" in err for err in importer.invalid_ip_errors)
+    assert not IXFMemberData.objects.filter(ixlan=ixlan, asn=network.asn).exists()
+    assert not NetworkIXLan.objects.filter(ixlan=ixlan, asn=network.asn).exists()
+    assert not NetworkIXLan.objects.filter(ipaddr6__contains="%").exists()
+
+
+@pytest.mark.django_db
+def test_ixf_ipv6_zone_identifier_does_not_duplicate_address():
+    """
+    A feed listing the same IPv6 address for two members, once with a zone
+    identifier, writes the address for one member only (#534).
+    """
+    _entities = entities_ipv4_ipv6(entities_base())
+    net_a = _entities["net"]["UPDATE_ENABLED"]
+    net_b = _entities["net"]["UPDATE_DISABLED"]
+    ixlan = _entities["ixlan"][0]
+
+    data = setup_test_data("ixf.member.invalid.ipaddr4")
+    data["member_list"] = [
+        _ixf_member(data, net_a.asn, "195.69.147.250", "2001:7f8:1::a500:2906:1"),
+        _ixf_member(data, net_b.asn, "195.69.147.251", "2001:7f8:1::a500:2906:1%2"),
+    ]
+
+    importer = ixf.Importer()
+    assert importer.update(ixlan, data=data) is True
+
+    assert any("Invalid IP address" in err for err in importer.invalid_ip_errors)
+    netixlan = NetworkIXLan.objects.get(ixlan=ixlan, asn=net_a.asn)
+    assert str(netixlan.ipaddr6) == "2001:7f8:1::a500:2906:1"
+    assert not NetworkIXLan.objects.filter(ixlan=ixlan, asn=net_b.asn).exists()
+    assert not IXFMemberData.objects.filter(ixlan=ixlan, asn=net_b.asn).exists()
+    assert not NetworkIXLan.objects.filter(ipaddr6__contains="%").exists()
+
+
 @pytest.mark.django_db
 def test_suggest_add_local_ixf(entities, use_ip, save):
     """

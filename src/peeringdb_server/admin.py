@@ -144,6 +144,7 @@ from peeringdb_server.validators import (
     validate_account_name,
     validate_irr_as_set_on_change,
     validate_name,
+    validate_no_control_chars,
     validate_no_emoji,
 )
 
@@ -461,13 +462,16 @@ class StatusForm(baseForms.ModelForm):
         an object whose parent is deleted.
         """
 
-        # reject emoji in the entity name fields (#2018)
+        # reject emoji (#2018) and control characters (#533) in the entity
+        # name fields
         for field_name in emoji_free_fields(self._meta.model):
             if field_name in self.cleaned_data:
-                try:
-                    validate_no_emoji(self.cleaned_data[field_name])
-                except ValidationError as exc:
-                    self.add_error(field_name, exc)
+                for validator in (validate_no_emoji, validate_no_control_chars):
+                    try:
+                        validator(self.cleaned_data[field_name])
+                    except ValidationError as exc:
+                        self.add_error(field_name, exc)
+                        break
 
         if self.cleaned_data.get("DELETE"):
             if self.instance and hasattr(self.instance, "deletable"):

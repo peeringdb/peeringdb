@@ -3,18 +3,23 @@ from __future__ import annotations
 import copy
 import logging
 import re
-from types import FrameType
+from types import FrameType, SimpleNamespace, TracebackType
 from urllib.parse import parse_qsl, urlencode
 
 from django.conf import settings
 from django.core.cache import caches
 from django.core.cache.backends.base import BaseCache
+from django.forms import BaseForm, PasswordInput
 from django.http import HttpRequest, QueryDict
 from django.template.context import BaseContext
+from django.urls import Resolver404, resolve
 from django.utils.datastructures import MultiValueDict
 from django.utils.log import AdminEmailHandler
 from django.views.debug import ExceptionReporter as DjangoExceptionReporter
-from django.views.debug import SafeExceptionReporterFilter
+from django.views.debug import (
+    SafeExceptionReporterFilter,
+    get_exception_reporter_filter,
+)
 
 
 class ThrottledAdminEmailHandler(AdminEmailHandler):
@@ -49,15 +54,59 @@ class ThrottledAdminEmailHandler(AdminEmailHandler):
         # cache outage would otherwise mean one email per error. Fail closed.
         if counter is None or counter > settings.ERROR_EMAILS_LIMIT:
             return
-        super().emit(record)
+        super().emit(self.masked_record(record))
+
+    def masked_record(self, record: logging.LogRecord) -> logging.LogRecord:
+        """
+        Returns a copy of the record with the request path masked in its
+        message (the mail subject) when the report for the request is masked
+        wholesale. Other handlers keep the record as it is.
+        """
+        request = getattr(record, "request", None)
+        if request is None:
+            return record
+        try:
+            reporter_filter = get_exception_reporter_filter(request)
+            if not isinstance(reporter_filter, ExceptionReporterFilter):
+                return record
+            if not reporter_filter.for_report(request).mask_all:
+                return record
+            paths = (request.path, request.path_info)
+            masked = copy.copy(record)
+            if not isinstance(record.args, tuple):
+                raise TypeError("record arguments are not a tuple")
+            masked.args = tuple(
+                (
+                    reporter_filter.cleansed_substitute
+                    if isinstance(arg, str) and arg in paths
+                    else arg
+                )
+                for arg in record.args
+            )
+            return masked
+        except Exception:
+            masked = copy.copy(record)
+            masked.msg = "message withheld"
+            masked.args = ()
+            return masked
 
 
 class ExceptionReporterFilter(SafeExceptionReporterFilter):
     """
-    Masks credentials in error reports by name: POST and query string
-    parameters, local variables and the keys of dicts in local variables.
-    Applies to every view, also those that do not declare
-    `sensitive_post_parameters` or `sensitive_variables`.
+    Masks credentials in error reports.
+
+    By name: POST and query string parameters, local variables and the keys
+    of dicts in local variables. Applies to every view, also those that do
+    not declare `sensitive_post_parameters` or `sensitive_variables`.
+
+    By module: every local variable in the frames of the libraries that hold
+    credentials under other names, and of form cleaning when the form has a
+    credential field.
+
+    Wholesale: every frame variable and all request data, for routes whose
+    path carries a credential and when masking itself fails. ExceptionReporter
+    works on a copy of the filter per report (`for_report`), so the shared
+    default filter keeps no state.
     """
 
     sensitive_name_pattern = re.compile(
@@ -93,6 +142,101 @@ class ExceptionReporterFilter(SafeExceptionReporterFilter):
 
     # how far cleanse_value descends into nested containers
     cleanse_depth = 4
+
+    # libraries that hold credentials under neutral names, such as the token
+    # request body and Authorization header in the OAuth provider, an API key
+    # held as `key` and a TOTP seed during device setup (#537)
+    sensitive_modules = (
+        "django_otp",
+        "mainsite.oauth2",
+        "oauth2_provider",
+        "oauthlib",
+        "peeringdb_server.permissions",
+        "rest_framework_api_key",
+        "two_factor",
+    )
+
+    # form cleaning holds a submitted value as `value`
+    form_modules = ("django.forms", "django.core.validators")
+
+    # field and validator frames find their form this many callers up
+    form_search_depth = 6
+
+    # routes with a credential in the path
+    masked_routes = frozenset({"account_confirm_email"})
+
+    # per report, see for_report
+    mask_all = False
+    failed = False
+
+    def for_report(self, request: HttpRequest | None) -> ExceptionReporterFilter:
+        """
+        Returns a copy of the filter for one report, set to mask wholesale on
+        a route with a credential in the path, or when that can't be told.
+        """
+        report_filter = copy.copy(self)
+        report_filter.failed = False
+        report_filter.mask_all = False
+        if request is not None and self.is_active(request):
+            try:
+                report_filter.mask_all = self.is_masked_route(request)
+            except Exception:
+                report_filter.mask_all = True
+        return report_filter
+
+    def is_masked_route(self, request: HttpRequest) -> bool:
+        match = getattr(request, "resolver_match", None)
+        if match is None:
+            try:
+                match = resolve(request.path_info)
+            except Resolver404:
+                return False
+        return match.url_name in self.masked_routes
+
+    @staticmethod
+    def in_modules(module: str, prefixes: tuple[str, ...]) -> bool:
+        return any(
+            module == prefix or module.startswith(prefix + ".") for prefix in prefixes
+        )
+
+    def is_sensitive_frame(self, tb_frame: FrameType) -> bool:
+        module = tb_frame.f_globals.get("__name__")
+        if not isinstance(module, str):
+            return False
+        if self.in_modules(module, self.sensitive_modules):
+            return True
+        return self.in_modules(
+            module, self.form_modules
+        ) and self.cleans_credential_form(tb_frame)
+
+    def cleans_credential_form(self, frame: FrameType | None) -> bool:
+        """
+        Whether the form the frame belongs to has a credential field: a
+        password input, or a field name masked by name. PeeringDB's own
+        password forms use plain text fields.
+        """
+        for _ in range(self.form_search_depth):
+            if frame is None:
+                return False
+            form = frame.f_locals.get("self")
+            if isinstance(form, BaseForm):
+                return any(
+                    self.is_sensitive_name(name)
+                    or isinstance(field.widget, PasswordInput)
+                    for name, field in form.fields.items()
+                )
+            frame = frame.f_back
+        return False
+
+    def mask_wholesale(self, request: HttpRequest, attribute: str) -> dict:
+        """
+        Returns the names of a request mapping, such as META or POST, with
+        every value masked.
+        """
+        try:
+            return dict.fromkeys(getattr(request, attribute), self.cleansed_substitute)
+        except Exception:
+            return {}
 
     def is_sensitive_name(self, name: object) -> bool:
         return isinstance(name, str) and (
@@ -186,21 +330,38 @@ class ExceptionReporterFilter(SafeExceptionReporterFilter):
         return value
 
     def get_safe_request_meta(self, request: HttpRequest) -> dict:
+        if self.mask_all:
+            return self.mask_wholesale(request, "META")
         meta = super().get_safe_request_meta(request)
         if not self.is_active(request):
             return meta
-        if isinstance(meta.get("QUERY_STRING"), str):
-            meta["QUERY_STRING"] = self.cleanse_query_string(meta["QUERY_STRING"])
-        for name in self.uri_meta:
-            if isinstance(meta.get(name), str):
-                meta[name] = self.cleanse_uri(meta[name])
+        try:
+            if isinstance(meta.get("QUERY_STRING"), str):
+                meta["QUERY_STRING"] = self.cleanse_query_string(meta["QUERY_STRING"])
+            for name in self.uri_meta:
+                if isinstance(meta.get(name), str):
+                    meta[name] = self.cleanse_uri(meta[name])
+        except Exception:
+            self.failed = True
+            return {}
         return meta
 
+    def get_safe_cookies(self, request: HttpRequest) -> dict:
+        if self.mask_all:
+            return self.mask_wholesale(request, "COOKIES")
+        return super().get_safe_cookies(request)
+
     def get_post_parameters(self, request: HttpRequest | None) -> QueryDict | dict:
+        if request is not None and self.mask_all:
+            return self.mask_wholesale(request, "POST")
         post = super().get_post_parameters(request)
         if request is None or not self.is_active(request):
             return post
-        return self.cleanse_mapping(post)
+        try:
+            return self.cleanse_mapping(post)
+        except Exception:
+            self.failed = True
+            return {}
 
     def get_cleansed_multivaluedict(
         self, request: HttpRequest | None, multivaluedict: MultiValueDict
@@ -222,6 +383,14 @@ class ExceptionReporterFilter(SafeExceptionReporterFilter):
         variables = super().get_traceback_frame_variables(request, tb_frame)
         if not self.is_active(request):
             return variables
+        mask_frame = self.mask_all
+        if not mask_frame:
+            try:
+                mask_frame = self.is_sensitive_frame(tb_frame)
+            except Exception:
+                self.failed = mask_frame = True
+        if mask_frame:
+            return [(name, self.cleansed_substitute) for name, _ in variables]
         cleansed: list[tuple[str, object]] = []
         for name, value in variables:
             if self.is_sensitive_name(name):
@@ -239,7 +408,25 @@ class ExceptionReporter(DjangoExceptionReporter):
     """
     Masks credentials passed in the query string, such as the password reset
     token, in the request URL and GET parameters of error reports.
+
+    When the filter masks the report wholesale, or a masking step failed, the
+    report is built with every frame variable and all request data masked,
+    and the request path hidden. The traceback and the exception stay.
     """
+
+    def __init__(
+        self,
+        request: HttpRequest | None,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | str | None,
+        tb: TracebackType | None,
+        is_email: bool = False,
+    ) -> None:
+        super().__init__(request, exc_type, exc_value, tb, is_email)
+        # set by the base class
+        reporter_filter = getattr(self, "filter", None)
+        if isinstance(reporter_filter, ExceptionReporterFilter):
+            self.filter = reporter_filter.for_report(request)
 
     def get_traceback_data(self) -> dict:
         data = super().get_traceback_data()
@@ -249,10 +436,35 @@ class ExceptionReporter(DjangoExceptionReporter):
             or not self.filter.is_active(self.request)
         ):
             return data
-        data["request_GET_items"] = self.filter.cleanse_mapping(
-            self.request.GET
-        ).items()
-        data["request_insecure_uri"] = self.filter.cleanse_uri(
-            data["request_insecure_uri"]
+        if not self.filter.mask_all:
+            try:
+                data["request_GET_items"] = self.filter.cleanse_mapping(
+                    self.request.GET
+                ).items()
+                data["request_insecure_uri"] = self.filter.cleanse_uri(
+                    data["request_insecure_uri"]
+                )
+            except Exception:
+                self.filter.failed = True
+            if not self.filter.failed:
+                return data
+            self.filter.mask_all = True
+            data = super().get_traceback_data()
+        return self.mask_request_wholesale(data)
+
+    def mask_request_wholesale(self, data: dict) -> dict:
+        substitute = self.filter.cleansed_substitute
+        get_items = self.filter.mask_wholesale(self.request, "GET").items()
+        files_items = self.filter.mask_wholesale(self.request, "FILES").items()
+        data["request_GET_items"] = get_items
+        data["request_FILES_items"] = files_items
+        data["request_insecure_uri"] = substitute
+        # the templates read the path and method from the request itself
+        data["request"] = SimpleNamespace(
+            path_info=substitute,
+            META={"REQUEST_METHOD": getattr(self.request, "method", None)},
+            GET=bool(get_items),
+            FILES=bool(files_items),
+            COOKIES=bool(data["request_COOKIES_items"]),
         )
         return data

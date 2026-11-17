@@ -589,7 +589,7 @@ def test_cleanup_irrd_error_reply_does_not_confirm_unresolved(
     add_contact(net)
     write_irr_dump_set(tmp_path, SAMPLE_DUMP)
 
-    def _send(server, payload):
+    def _send(server, payload, deadline=None):
         if payload == "!s-lc":
             return "A10\nRIPE,RADB\nC\n"
         if object_reply is not None:
@@ -1483,7 +1483,7 @@ def test_cleanup_idnic_error_reply_is_not_absent(org, tmp_path, reply, expected)
     net = make_network(org, 3106, "AS-FOO")
     write_irr_dump_set(tmp_path, APNIC_DUMP)
 
-    def _send(server, payload):
+    def _send(server, payload, deadline=None):
         if payload == "!s-lc":
             return "A17\nRIPE,APNIC,IDNIC\nC\n"
         assert payload.startswith("!!\n!sIDNIC\n!mas-set,AS-FOO")
