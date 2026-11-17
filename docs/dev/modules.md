@@ -1,4 +1,4 @@
-Generated on 2026-11-05 20:07:16.953937
+Generated on 2026-11-17 18:01:18.661144
 
 ## [account_adapter.py](/docs/dev/modules/account_adapter.py.md)
 
@@ -125,6 +125,13 @@ every registered document. Declaring them per document would be dead config:
 the registry merges the global dict on top of `class Index.settings`, so the
 global value always wins.
 
+## [emoji.py](/docs/dev/modules/emoji.py.md)
+
+Emoji detection for entity name fields (#2018).
+
+Which characters count as emoji, and which entity fields must not contain
+them. The validator and the strip helper that use these live in validators.
+
 ## [exceptions.py](/docs/dev/modules/exceptions.py.md)
 
 # Functions
@@ -175,11 +182,12 @@ questions the unambiguous-as-set work needs:
                            live check and the periodic re-verification)
 
 Both are answered against a configurable pool of full-mirror IRRd servers
-(settings.IRR_LOOKUP_SERVERS), queried over port 43. Existence checks pin one
-source and use IRRd's `!` protocol; source completion first uses one explicit
-whois multi-source query per mirror and falls back to pinned checks if a response
-is too large or unrecognized. Results are cached in the "negative" (Redis) cache
-for settings.IRR_LOOKUP_CACHE_TTL seconds.
+(settings.IRR_LOOKUP_SERVERS), queried over port 43 with IRRd's `!` protocol.
+Existence checks pin one source; source completion sends one source-pinned check
+per mirrored source over a single connection to each mirror, and falls back to
+separate pinned checks for any source whose answer is cut off or unrecognized.
+Results are cached in the "negative" (Redis) cache for
+settings.IRR_LOOKUP_CACHE_TTL seconds.
 
 Every outbound path fails open: a query that errors, times out, or returns an
 unrecognized response yields an "unknown" result — exists_in returns None and
@@ -187,12 +195,11 @@ sources_for returns ok=False — and never raises. A third-party IRR outage must
 not block a save or the editor. Callers decide policy: the save path rejects only
 a definitive False (provably absent), accepting None.
 
-Correctness note: a whois query naming a source the server does not mirror
-fails with "%% ERROR", which the multi-source parser reads as "no entries" — a
-false absent (#502). So sources_for asks a server only for the sources it
-actually carries, per the server's !s-lc mirror list (also the basis of
-coverage_report()). A pinned `!s` for an unmirrored source fails with F and
-reads as unknown.
+Correctness note: a query naming a source the server does not mirror fails as a
+whole, with "%% ERROR" over whois and F for `!s`. So sources_for asks a server
+only for the sources it actually carries, per the server's !s-lc mirror list
+(also the basis of coverage_report()), and reads every error reply as unknown,
+never as absent (#502).
 
 ## [irr_bulk.py](/docs/dev/modules/irr_bulk.py.md)
 

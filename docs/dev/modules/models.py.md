@@ -1,4 +1,4 @@
-Generated from models.py on 2026-11-05 20:07:16.953937
+Generated from models.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.models
 
@@ -1604,6 +1604,16 @@ A queryset of Network objects that match allow_ixp_update=True and status=ok .
 Creates network from rdap result object.
 
 ---
+#### irr_as_set_networks
+`def irr_as_set_networks(cls, value, exclude_id=None)`
+
+Return active networks that list ``value`` as a complete token (#2036).
+
+``value`` must be a single set name. The match is on the whole token, so
+``RIPE::AS-FOO`` matches neither ``ARIN::AS-FOO``, bare ``AS-FOO`` nor
+``RIPE::AS-FOOBAR``.
+
+---
 #### not_related_to_fac
 `def not_related_to_fac(cls, value=None, filt=None, field=facility_id, qset=None)`
 
@@ -2529,7 +2539,13 @@ been confirmed, False if not.
 - full_name (`@property`): None
 - get_2fa_security_keys (`@property`): None
 - get_passkey_security_keys (`@property`): None
-- has_2fa (`@property`): Returns true if the user has set up any TOTP or webauth security keys.
+- has_2fa (`@property`): Returns true if the user has a second factor that login asks for:
+a WebAuthn security key or passkey, or the default django-otp
+device that the two-factor setup wizard creates.
+
+Backup tokens and any other django-otp device do not count on their
+own, because the login wizard only challenges the default device
+(#548). Backup tokens remain usable next to a default device.
 - hide_ixs_without_fac (`@property`): Returns whether user has enabled hiding IXs without facilities
 - is_verified_user (`@property`): Returns whether the user is verified (e.g., has been validated
 by PDB staff).
@@ -2593,6 +2609,22 @@ Returns user preferred language.
 `def get_short_name(self)`
 
 Returns the short name for the user.
+
+---
+#### has_org_accepted_2fa
+`def has_org_accepted_2fa(self, after_passkey_login)`
+
+Returns true if the user has a second factor that the login step
+asks for under the user's organization policies. Only such a factor
+clears an organization's hold on MFA setup (#550).
+
+Stricter than `has_2fa`, which is what MFA enforcement counts:
+
+- when an organization disables TOTP, the login wizard skips every
+  django-otp step, so the default device does not count;
+- after a passkey login the wizard asks only for 2FA keys, so no
+  passkey counts there, the one just used included. After a password
+  login every key counts.
 
 ---
 #### notify_email_added

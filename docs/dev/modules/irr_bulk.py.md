@@ -1,4 +1,4 @@
-Generated from irr_bulk.py on 2026-11-05 20:07:16.953937
+Generated from irr_bulk.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.irr_bulk
 
@@ -64,6 +64,14 @@ real run accepts.
 Where a source's last-downloaded serial marker lives.
 
 ---
+## _serial_verified_recently
+`def _serial_verified_recently(source, dump_dir, max_age_hours)`
+
+Whether a fetch confirmed `source` current within `max_age_hours`: its serial
+marker is written on download and touched when the published serial is
+unchanged, so its mtime is the last time the dump was known to be current.
+
+---
 ## _staging_dir
 `def _staging_dir(dump_dir)`
 
@@ -108,6 +116,10 @@ Returns (missing, stale): source names with an absent or unusable dump file,
 and source names whose files are all present but older than `max_age_hours`
 (default IRR_BULK_DUMP_MAX_AGE_HOURS). Both empty means every source in
 DUMP_SOURCES is covered by a readable, current dump.
+
+A source that publishes a serial is also current when a fetch found its serial
+unchanged within `max_age_hours`, however old the files are: a quiet registry
+is not re-downloaded, so file age alone would call it stale (#530).
 
 IDNIC is intentionally absent from DUMP_SOURCES (no self-serve dump) and so
 is never reported here; batch misses for it are confirmed live instead.

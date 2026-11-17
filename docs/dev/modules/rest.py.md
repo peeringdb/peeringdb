@@ -1,4 +1,4 @@
-Generated from rest.py on 2026-11-05 20:07:16.953937
+Generated from rest.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.rest
 
@@ -377,6 +377,25 @@ ok is False when the lookup pool could not answer definitively, so the editor
 can distinguish "found nowhere" (ok, empty) from "unknown".
 
 
+## IXFImportRequestPermissions
+
+```
+IXFImportRequestPermissions(peeringdb_server.permissions.ModelViewSetPermissions)
+```
+
+Requesting an IX-F import needs update permission on the exchange,
+not the create permission a POST maps to (#2072).
+
+
+### Methods
+
+#### has_object_permission
+`def has_object_permission(self, request, view, obj)`
+
+Return `True` if permission is granted, `False` otherwise.
+
+---
+
 ## IXFilterMixin
 
 ```
@@ -460,6 +479,8 @@ object, exposed to api/ix/{id}/{action}
 
 Allows managers of an ix to request an IX-F import.
 (#779)
+
+Requires update permission on the exchange (#2072).
 
 ---
 

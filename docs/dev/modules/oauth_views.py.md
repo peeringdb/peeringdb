@@ -1,4 +1,4 @@
-Generated from oauth_views.py on 2026-11-05 20:07:16.953937
+Generated from oauth_views.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.oauth_views
 
@@ -145,3 +145,28 @@ OAuthMetadataView(django.views.generic.base.View)
 
 Intentionally simple parent class for all views. Only implements
 dispatch-by-method and simple sanity checking.
+
+
+## RPInitiatedLogoutView
+
+```
+RPInitiatedLogoutView(oauth2_provider.views.oidc.RPInitiatedLogoutView)
+```
+
+OIDC RP-initiated logout (#2022).
+
+The endpoint takes unauthenticated input that django-oauth-toolkit does not
+fully guard, so an unknown `client_id` or an unparseable
+`post_logout_redirect_uri` would surface as a 500. Report them as the
+matching OIDC error (400) instead. A malformed `id_token_hint` is handled
+in `OIDCValidator._get_key_for_token`.
+
+
+### Methods
+
+#### validate_post_logout_redirect_uri
+`def validate_post_logout_redirect_uri(self, application, post_logout_redirect_uri)`
+
+Validate the OIDC RP-Initiated Logout Request post_logout_redirect_uri parameter
+
+---

@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: PeeringDB API
-  version: 2.84.1
+  version: 2.85.0
   description: "PeeringDB REST API\n\n## Reading PeeringDB data\n\nThe notes below\
     \ apply to every object type on this API. They describe how records\nbehave over\
     \ time, which is the part most consumers of bulk PeeringDB data need and\ncannot\
@@ -52,7 +52,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -134,7 +137,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -543,66 +549,71 @@ paths:
       description: "Retrieves a list of `fac` type objects\n\n## Facility (Datacenter)\n\
         \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
         \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
-        \ including against soft-deleted facilities.\n\n`region_continent` is derived\
-        \ server-side from `country` and is read-only, and values\nsubmitted for `rencode`\
-        \ are ignored.\n\n`latitude` and `longitude` are geocoded from the postal\
-        \ address on create, and values\nsubmitted there are ignored. On update they\
-        \ are writable, but only within a limit that\ndepends on `city`: if `city`\
-        \ is unchanged, the new pair must be within 1km of the\ncurrent one; if `city`\
-        \ changes in the same request, the new pair must instead be within\n50km of\
-        \ the new city's centre. Existing coordinates cannot be cleared. A change\
-        \ to the\ncoordinates alone does not trigger a new geocoding pass, so the\
-        \ submitted values are\nkept.\n\nA facility may belong to a `campus`, which\
-        \ requires it to have geocoordinates and to\nsit within the campus distance\
-        \ limit.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
-        \n- `ixfac` exchange / facility presence\n- `netfac` network / facility presence\n\
-        - `carrierfac` carrier / facility presence\n- `campus` campus membership\n\
-        \n\n## List objects\n\n### Querying\n\nYou may query the resultset by passing\
-        \ field names as url parameters\n\n### Numeric Queries\n\nOn numeric fields\
-        \ you can suffix the field names with the following filters:\n\n- \\_\\_lt\
-        \ : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
-        - \\_\\_gte : greater-than-equal\n- \\_\\_in : value inside set of values\
-        \ (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\
-        \n### String Queries\n\nOn string fields you can suffix the field names with\
-        \ the following filters:\n\n- \\_\\_contains : field value contains specified\
-        \ value\n- \\_\\_startswith : field value starts with specified value\n- \\\
-        _\\_in : value contained inside set of values (comma separated)\n\n**examples**\n\
-        \n    ?<field_name>__contains=something\n    ?<field_name>__in=this,that\n\
-        \nAll string filtering operations are case-insensitive\n\n### Since\n\n\n\
-        You can use the since argument with a unix timestamp (seconds) to retrieve\
-        \ all\nobjects updated since then. Note that this result will contain objects\
-        \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
-        \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
-        \ is a list of objects in a relationship with the parent\nobject, you can\
-        \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
-        \ naming schema of the field will always tell you which type of object the\
-        \ set is holding\nand will correspond with the object's endpoint on the API\n\
-        \n    <object_type>_set\n\nSo a set called 'net_set' will hold Network objects\
-        \ (api endpoint /net)\n\n### Depth\n\nNested sets will not be loaded (any\
-        \ field ending with the _set suffix, with the exception of 'irr_as_set') unless\
-        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
-        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
-        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
-        \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
-        \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
-        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
-        \ cache was generated, are applied to cached results as they are served, so\
-        \ callers who may no longer see them do not get them from the cache. A shared\
-        \ cache (CDN) in front of the API may keep serving a cached result for up\
-        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
-        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
-        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
-        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
-        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
-        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
-        \ specified will have a result limit of 250 entries, any entries past this\
-        \ limit will be truncated, at which point you either should be more specific\
-        \ with your query or use the skip and limit parameters to page through the\
-        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
-        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
-        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n\n\n## List objects\n\n### Querying\n\
+        \nYou may query the resultset by passing field names as url parameters\n\n\
+        ### Numeric Queries\n\nOn numeric fields you can suffix the field names with\
+        \ the following filters:\n\n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n\
+        - \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n- \\_\\_in :\
+        \ value inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n\
+        \    ?<field_name>__in=1,10\n\n### String Queries\n\nOn string fields you\
+        \ can suffix the field names with the following filters:\n\n- \\_\\_contains\
+        \ : field value contains specified value\n- \\_\\_startswith : field value\
+        \ starts with specified value\n- \\_\\_in : value contained inside set of\
+        \ values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -1643,125 +1654,40 @@ paths:
       - api
     post:
       operationId: create fac
-      description: 'Creates a new `fac` type object.
-
-
-        ## Facility (Datacenter)
-
-
-        Identified by the `fac` tag.
-
-
-        A facility is a physical location where networks and exchanges interconnect.
-        `name`
-
-        is unique across PeeringDB, including against soft-deleted facilities.
-
-
-        `region_continent` is derived server-side from `country` and is read-only,
-        and values
-
-        submitted for `rencode` are ignored.
-
-
-        `latitude` and `longitude` are geocoded from the postal address on create,
-        and values
-
-        submitted there are ignored. On update they are writable, but only within
-        a limit that
-
-        depends on `city`: if `city` is unchanged, the new pair must be within 1km
-        of the
-
-        current one; if `city` changes in the same request, the new pair must instead
-        be within
-
-        50km of the new city''s centre. Existing coordinates cannot be cleared. A
-        change to the
-
-        coordinates alone does not trigger a new geocoding pass, so the submitted
-        values are
-
-        kept.
-
-
-        A facility may belong to a `campus`, which requires it to have geocoordinates
-        and to
-
-        sit within the campus distance limit.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `ixfac` exchange / facility presence
-
-        - `netfac` network / facility presence
-
-        - `carrierfac` carrier / facility presence
-
-        - `campus` campus membership
-
-
-
-        ## Creating objects
-
-
-        ### Status `pending`
-
-
-        Some object types will be flagged as `pending` until they have been reviewed
-        and approved by peeringdb staff.
-
-
-        Currently this is the case for:
-
-
-
-        - `org` organizations (only administrative staff users are currently allowed
-        to create organizations)
-
-        - `fac` facilities
-
-        - `net` networks
-
-        - `ix` exchanges
-
-        - `ixpfx` prefixes (if part of a new exchange)
-
-        - `ixlan` exchange networks (if part of a new exchange)
-
-
-        A `pending` object can only be retrieved by callers with update permission
-        on it. Other callers,
-
-        including the creator when the object belongs to another organization (for
-        example a suggested
-
-        facility or network), get a `404` until it is approved.
-
-
-        ### Permissions
-
-
-        To be able to create an object, the requesting user requires `create` permissions
-        to one of the
-
-        object''s parents in the relationship hierarchy.
-
-
-        For example to create a `net` type object, the user needs to be permissioned
-        to create in the organization
-
-        that is to be the network''s holder entity.
-
-        '
+      description: "Creates a new `fac` type object.\n\n## Facility (Datacenter)\n\
+        \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
+        \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n\n\n## Creating objects\n\n### Status\
+        \ `pending`\n\nSome object types will be flagged as `pending` until they have\
+        \ been reviewed and approved by peeringdb staff.\n\nCurrently this is the\
+        \ case for:\n\n\n- `org` organizations (only administrative staff users are\
+        \ currently allowed to create organizations)\n- `fac` facilities\n- `net`\
+        \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -3263,26 +3189,29 @@ paths:
       description: "Retrieves a single `fac` type object by id\n\n## Facility (Datacenter)\n\
         \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
         \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
-        \ including against soft-deleted facilities.\n\n`region_continent` is derived\
-        \ server-side from `country` and is read-only, and values\nsubmitted for `rencode`\
-        \ are ignored.\n\n`latitude` and `longitude` are geocoded from the postal\
-        \ address on create, and values\nsubmitted there are ignored. On update they\
-        \ are writable, but only within a limit that\ndepends on `city`: if `city`\
-        \ is unchanged, the new pair must be within 1km of the\ncurrent one; if `city`\
-        \ changes in the same request, the new pair must instead be within\n50km of\
-        \ the new city's centre. Existing coordinates cannot be cleared. A change\
-        \ to the\ncoordinates alone does not trigger a new geocoding pass, so the\
-        \ submitted values are\nkept.\n\nA facility may belong to a `campus`, which\
-        \ requires it to have geocoordinates and to\nsit within the campus distance\
-        \ limit.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
-        \n- `ixfac` exchange / facility presence\n- `netfac` network / facility presence\n\
-        - `carrierfac` carrier / facility presence\n- `campus` campus membership\n\
-        \n\n## Retrieve a single object\n\n### Depth\n\nNested sets will not be expanded\
-        \ (any field ending with the _set suffix, with the exception of 'irr_as_set')\
-        \ unless the 'depth'\nparameter is passed in the request URL.\n\nDepth can\
-        \ be one of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 :\
-        \ expand sets into objects (slower)\n  - 0 : don't expand sets at all (default\
-        \ behaviour)\n\n**example**\n\n    ?depth=1\n"
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n\n\n## Retrieve a single object\n\
+        \n### Depth\n\nNested sets will not be expanded (any field ending with the\
+        \ _set suffix, with the exception of 'irr_as_set') unless the 'depth'\nparameter\
+        \ is passed in the request URL.\n\nDepth can be one of three values:\n\n \
+        \ - 1 : expand sets into ids (slow)\n  - 2 : expand sets into objects (slower)\n\
+        \  - 0 : don't expand sets at all (default behaviour)\n\n**example**\n\n \
+        \   ?depth=1\n"
       parameters:
       - name: id
         in: path
@@ -3310,83 +3239,29 @@ paths:
       - api
     put:
       operationId: update fac
-      description: 'Updates an existing `fac` type object.
-
-
-        ## Facility (Datacenter)
-
-
-        Identified by the `fac` tag.
-
-
-        A facility is a physical location where networks and exchanges interconnect.
-        `name`
-
-        is unique across PeeringDB, including against soft-deleted facilities.
-
-
-        `region_continent` is derived server-side from `country` and is read-only,
-        and values
-
-        submitted for `rencode` are ignored.
-
-
-        `latitude` and `longitude` are geocoded from the postal address on create,
-        and values
-
-        submitted there are ignored. On update they are writable, but only within
-        a limit that
-
-        depends on `city`: if `city` is unchanged, the new pair must be within 1km
-        of the
-
-        current one; if `city` changes in the same request, the new pair must instead
-        be within
-
-        50km of the new city''s centre. Existing coordinates cannot be cleared. A
-        change to the
-
-        coordinates alone does not trigger a new geocoding pass, so the submitted
-        values are
-
-        kept.
-
-
-        A facility may belong to a `campus`, which requires it to have geocoordinates
-        and to
-
-        sit within the campus distance limit.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `ixfac` exchange / facility presence
-
-        - `netfac` network / facility presence
-
-        - `carrierfac` carrier / facility presence
-
-        - `campus` campus membership
-
-
-
-        ## Update existing objects
-
-
-        ### Permissions
-
-
-        In order to update an object the requesting user requires `update` permissions
-        to the object itself or one of the parent relationships in the object hierarchy
-
-        '
+      description: "Updates an existing `fac` type object.\n\n## Facility (Datacenter)\n\
+        \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
+        \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n\n\n## Update existing objects\n\
+        \n### Permissions\n\nIn order to update an object the requesting user requires\
+        \ `update` permissions to the object itself or one of the parent relationships\
+        \ in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -4884,72 +4759,26 @@ paths:
       - api
     patch:
       operationId: patch fac
-      description: 'PATCH (partial update) is currently disabled.
-
-
-        ## Facility (Datacenter)
-
-
-        Identified by the `fac` tag.
-
-
-        A facility is a physical location where networks and exchanges interconnect.
-        `name`
-
-        is unique across PeeringDB, including against soft-deleted facilities.
-
-
-        `region_continent` is derived server-side from `country` and is read-only,
-        and values
-
-        submitted for `rencode` are ignored.
-
-
-        `latitude` and `longitude` are geocoded from the postal address on create,
-        and values
-
-        submitted there are ignored. On update they are writable, but only within
-        a limit that
-
-        depends on `city`: if `city` is unchanged, the new pair must be within 1km
-        of the
-
-        current one; if `city` changes in the same request, the new pair must instead
-        be within
-
-        50km of the new city''s centre. Existing coordinates cannot be cleared. A
-        change to the
-
-        coordinates alone does not trigger a new geocoding pass, so the submitted
-        values are
-
-        kept.
-
-
-        A facility may belong to a `campus`, which requires it to have geocoordinates
-        and to
-
-        sit within the campus distance limit.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `ixfac` exchange / facility presence
-
-        - `netfac` network / facility presence
-
-        - `carrierfac` carrier / facility presence
-
-        - `campus` campus membership
-
-        '
+      description: "PATCH (partial update) is currently disabled.\n\n## Facility (Datacenter)\n\
+        \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
+        \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n"
       parameters:
       - name: id
         in: path
@@ -6453,76 +6282,26 @@ paths:
       - api
     delete:
       operationId: delete fac
-      description: 'Marks an `fac` type object as `deleted`.
-
-
-        ## Facility (Datacenter)
-
-
-        Identified by the `fac` tag.
-
-
-        A facility is a physical location where networks and exchanges interconnect.
-        `name`
-
-        is unique across PeeringDB, including against soft-deleted facilities.
-
-
-        `region_continent` is derived server-side from `country` and is read-only,
-        and values
-
-        submitted for `rencode` are ignored.
-
-
-        `latitude` and `longitude` are geocoded from the postal address on create,
-        and values
-
-        submitted there are ignored. On update they are writable, but only within
-        a limit that
-
-        depends on `city`: if `city` is unchanged, the new pair must be within 1km
-        of the
-
-        current one; if `city` changes in the same request, the new pair must instead
-        be within
-
-        50km of the new city''s centre. Existing coordinates cannot be cleared. A
-        change to the
-
-        coordinates alone does not trigger a new geocoding pass, so the submitted
-        values are
-
-        kept.
-
-
-        A facility may belong to a `campus`, which requires it to have geocoordinates
-        and to
-
-        sit within the campus distance limit.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `ixfac` exchange / facility presence
-
-        - `netfac` network / facility presence
-
-        - `carrierfac` carrier / facility presence
-
-        - `campus` campus membership
-
-
-
-        ## Deleting objects
-
-        '
+      description: "Marks an `fac` type object as `deleted`.\n\n## Facility (Datacenter)\n\
+        \nIdentified by the `fac` tag.\n\nA facility is a physical location where\
+        \ networks and exchanges interconnect. `name`\nis unique across PeeringDB,\
+        \ including against soft-deleted facilities.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \n`region_continent` is derived server-side from `country` and is read-only,\
+        \ and values\nsubmitted for `rencode` are ignored.\n\n`latitude` and `longitude`\
+        \ are geocoded from the postal address on create, and values\nsubmitted there\
+        \ are ignored. On update they are writable, but only within a limit that\n\
+        depends on `city`: if `city` is unchanged, the new pair must be within 1km\
+        \ of the\ncurrent one; if `city` changes in the same request, the new pair\
+        \ must instead be within\n50km of the new city's centre. Existing coordinates\
+        \ cannot be cleared. A change to the\ncoordinates alone does not trigger a\
+        \ new geocoding pass, so the submitted values are\nkept.\n\nA facility may\
+        \ belong to a `campus`, which requires it to have geocoordinates and to\n\
+        sit within the campus distance limit.\n\n### Parent relationship:\n\n- `org`\
+        \ organization\n\n### Relationship(s):\n\n- `ixfac` exchange / facility presence\n\
+        - `netfac` network / facility presence\n- `carrierfac` carrier / facility\
+        \ presence\n- `campus` campus membership\n\n\n## Deleting objects\n"
       parameters:
       - name: id
         in: path
@@ -6541,55 +6320,60 @@ paths:
       description: "Retrieves a list of `carrier` type objects\n\n## Carrier\n\nIdentified\
         \ by the `carrier` tag.\n\nA carrier provides transport between facilities.\
         \ `name` is unique across PeeringDB,\nincluding against soft-deleted carriers.\n\
-        \nThe carrier record itself describes the company; where it can actually be\
-        \ reached is\nexpressed by its `carrierfac` presences.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `carrierfac` carrier /\
-        \ facility presence\n\n\n## List objects\n\n### Querying\n\nYou may query\
-        \ the resultset by passing field names as url parameters\n\n### Numeric Queries\n\
-        \nOn numeric fields you can suffix the field names with the following filters:\n\
-        \n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
-        - \\_\\_gte : greater-than-equal\n- \\_\\_in : value inside set of values\
-        \ (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\
-        \n### String Queries\n\nOn string fields you can suffix the field names with\
-        \ the following filters:\n\n- \\_\\_contains : field value contains specified\
-        \ value\n- \\_\\_startswith : field value starts with specified value\n- \\\
-        _\\_in : value contained inside set of values (comma separated)\n\n**examples**\n\
-        \n    ?<field_name>__contains=something\n    ?<field_name>__in=this,that\n\
-        \nAll string filtering operations are case-insensitive\n\n### Since\n\n\n\
-        You can use the since argument with a unix timestamp (seconds) to retrieve\
-        \ all\nobjects updated since then. Note that this result will contain objects\
-        \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
-        \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
-        \ is a list of objects in a relationship with the parent\nobject, you can\
-        \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
-        \ naming schema of the field will always tell you which type of object the\
-        \ set is holding\nand will correspond with the object's endpoint on the API\n\
-        \n    <object_type>_set\n\nSo a set called 'net_set' will hold Network objects\
-        \ (api endpoint /net)\n\n### Depth\n\nNested sets will not be loaded (any\
-        \ field ending with the _set suffix, with the exception of 'irr_as_set') unless\
-        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
-        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
-        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
-        \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
-        \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
-        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
-        \ cache was generated, are applied to cached results as they are served, so\
-        \ callers who may no longer see them do not get them from the cache. A shared\
-        \ cache (CDN) in front of the API may keep serving a cached result for up\
-        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
-        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
-        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
-        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
-        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
-        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
-        \ specified will have a result limit of 250 entries, any entries past this\
-        \ limit will be truncated, at which point you either should be more specific\
-        \ with your query or use the skip and limit parameters to page through the\
-        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
-        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
-        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n\n\n## List objects\n\n### Querying\n\
+        \nYou may query the resultset by passing field names as url parameters\n\n\
+        ### Numeric Queries\n\nOn numeric fields you can suffix the field names with\
+        \ the following filters:\n\n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n\
+        - \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n- \\_\\_in :\
+        \ value inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n\
+        \    ?<field_name>__in=1,10\n\n### String Queries\n\nOn string fields you\
+        \ can suffix the field names with the following filters:\n\n- \\_\\_contains\
+        \ : field value contains specified value\n- \\_\\_startswith : field value\
+        \ starts with specified value\n- \\_\\_in : value contained inside set of\
+        \ values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -7111,91 +6895,29 @@ paths:
       - api
     post:
       operationId: create carrier
-      description: 'Creates a new `carrier` type object.
-
-
-        ## Carrier
-
-
-        Identified by the `carrier` tag.
-
-
-        A carrier provides transport between facilities. `name` is unique across PeeringDB,
-
-        including against soft-deleted carriers.
-
-
-        The carrier record itself describes the company; where it can actually be
-        reached is
-
-        expressed by its `carrierfac` presences.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `carrierfac` carrier / facility presence
-
-
-
-        ## Creating objects
-
-
-        ### Status `pending`
-
-
-        Some object types will be flagged as `pending` until they have been reviewed
-        and approved by peeringdb staff.
-
-
-        Currently this is the case for:
-
-
-
-        - `org` organizations (only administrative staff users are currently allowed
-        to create organizations)
-
-        - `fac` facilities
-
-        - `net` networks
-
-        - `ix` exchanges
-
-        - `ixpfx` prefixes (if part of a new exchange)
-
-        - `ixlan` exchange networks (if part of a new exchange)
-
-
-        A `pending` object can only be retrieved by callers with update permission
-        on it. Other callers,
-
-        including the creator when the object belongs to another organization (for
-        example a suggested
-
-        facility or network), get a `404` until it is approved.
-
-
-        ### Permissions
-
-
-        To be able to create an object, the requesting user requires `create` permissions
-        to one of the
-
-        object''s parents in the relationship hierarchy.
-
-
-        For example to create a `net` type object, the user needs to be permissioned
-        to create in the organization
-
-        that is to be the network''s holder entity.
-
-        '
+      description: "Creates a new `carrier` type object.\n\n## Carrier\n\nIdentified\
+        \ by the `carrier` tag.\n\nA carrier provides transport between facilities.\
+        \ `name` is unique across PeeringDB,\nincluding against soft-deleted carriers.\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n\n\n## Creating objects\n\n\
+        ### Status `pending`\n\nSome object types will be flagged as `pending` until\
+        \ they have been reviewed and approved by peeringdb staff.\n\nCurrently this\
+        \ is the case for:\n\n\n- `org` organizations (only administrative staff users\
+        \ are currently allowed to create organizations)\n- `fac` facilities\n- `net`\
+        \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -7754,10 +7476,12 @@ paths:
       description: "Retrieves a single `carrier` type object by id\n\n## Carrier\n\
         \nIdentified by the `carrier` tag.\n\nA carrier provides transport between\
         \ facilities. `name` is unique across PeeringDB,\nincluding against soft-deleted\
-        \ carriers.\n\nThe carrier record itself describes the company; where it can\
-        \ actually be reached is\nexpressed by its `carrierfac` presences.\n\n###\
-        \ Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\n\
-        - `carrierfac` carrier / facility presence\n\n\n## Retrieve a single object\n\
+        \ carriers.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n\n\n## Retrieve a single object\n\
         \n### Depth\n\nNested sets will not be expanded (any field ending with the\
         \ _set suffix, with the exception of 'irr_as_set') unless the 'depth'\nparameter\
         \ is passed in the request URL.\n\nDepth can be one of three values:\n\n \
@@ -7791,49 +7515,18 @@ paths:
       - api
     put:
       operationId: update carrier
-      description: 'Updates an existing `carrier` type object.
-
-
-        ## Carrier
-
-
-        Identified by the `carrier` tag.
-
-
-        A carrier provides transport between facilities. `name` is unique across PeeringDB,
-
-        including against soft-deleted carriers.
-
-
-        The carrier record itself describes the company; where it can actually be
-        reached is
-
-        expressed by its `carrierfac` presences.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `carrierfac` carrier / facility presence
-
-
-
-        ## Update existing objects
-
-
-        ### Permissions
-
-
-        In order to update an object the requesting user requires `update` permissions
-        to the object itself or one of the parent relationships in the object hierarchy
-
-        '
+      description: "Updates an existing `carrier` type object.\n\n## Carrier\n\nIdentified\
+        \ by the `carrier` tag.\n\nA carrier provides transport between facilities.\
+        \ `name` is unique across PeeringDB,\nincluding against soft-deleted carriers.\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n\n\n## Update existing objects\n\
+        \n### Permissions\n\nIn order to update an object the requesting user requires\
+        \ `update` permissions to the object itself or one of the parent relationships\
+        \ in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -8394,38 +8087,15 @@ paths:
       - api
     patch:
       operationId: patch carrier
-      description: 'PATCH (partial update) is currently disabled.
-
-
-        ## Carrier
-
-
-        Identified by the `carrier` tag.
-
-
-        A carrier provides transport between facilities. `name` is unique across PeeringDB,
-
-        including against soft-deleted carriers.
-
-
-        The carrier record itself describes the company; where it can actually be
-        reached is
-
-        expressed by its `carrierfac` presences.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `carrierfac` carrier / facility presence
-
-        '
+      description: "PATCH (partial update) is currently disabled.\n\n## Carrier\n\n\
+        Identified by the `carrier` tag.\n\nA carrier provides transport between facilities.\
+        \ `name` is unique across PeeringDB,\nincluding against soft-deleted carriers.\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n"
       parameters:
       - name: id
         in: path
@@ -8986,42 +8656,15 @@ paths:
       - api
     delete:
       operationId: delete carrier
-      description: 'Marks an `carrier` type object as `deleted`.
-
-
-        ## Carrier
-
-
-        Identified by the `carrier` tag.
-
-
-        A carrier provides transport between facilities. `name` is unique across PeeringDB,
-
-        including against soft-deleted carriers.
-
-
-        The carrier record itself describes the company; where it can actually be
-        reached is
-
-        expressed by its `carrierfac` presences.
-
-
-        ### Parent relationship:
-
-
-        - `org` organization
-
-
-        ### Relationship(s):
-
-
-        - `carrierfac` carrier / facility presence
-
-
-
-        ## Deleting objects
-
-        '
+      description: "Marks an `carrier` type object as `deleted`.\n\n## Carrier\n\n\
+        Identified by the `carrier` tag.\n\nA carrier provides transport between facilities.\
+        \ `name` is unique across PeeringDB,\nincluding against soft-deleted carriers.\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe carrier record itself describes\
+        \ the company; where it can actually be reached is\nexpressed by its `carrierfac`\
+        \ presences.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `carrierfac` carrier / facility presence\n\n\n## Deleting objects\n"
       parameters:
       - name: id
         in: path
@@ -9060,7 +8703,10 @@ paths:
         You can use the since argument with a unix timestamp (seconds) to retrieve\
         \ all\nobjects updated since then. Note that this result will contain objects\
         \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ for status \"deleted\"\n\n`updated` is set when a change is saved, which\
+        \ can be a moment before the change becomes\nvisible. When polling with `since`,\
+        \ start a few seconds before your previous fetch and\nskip rows whose `updated`\
+        \ you already have.\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
         \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
         \ is a list of objects in a relationship with the parent\nobject, you can\
         \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
@@ -16479,30 +16125,35 @@ paths:
       description: "Retrieves a list of `ix` type objects\n\n## Internet Exchange\n\
         \nIdentified by the `ix` tag.\n\nAn exchange is the administrative record\
         \ for an IXP. `name` is unique across\nPeeringDB, including against soft-deleted\
-        \ exchanges.\n\nThe participant-facing configuration \u2014 prefixes, MTU,\
-        \ route server ASN and the IX-F\nmember list URL \u2014 lives on the exchange's\
-        \ `ixlan`, not here. Each exchange has\nexactly one `ixlan`, whose `id` matches\
-        \ the exchange's own.\n\nCreating an exchange requires a `prefix`, which is\
-        \ used to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may\
-        \ also be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## List objects\n\n### Querying\n\
-        \nYou may query the resultset by passing field names as url parameters\n\n\
-        ### Numeric Queries\n\nOn numeric fields you can suffix the field names with\
-        \ the following filters:\n\n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n\
-        - \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n- \\_\\_in :\
-        \ value inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n\
-        \    ?<field_name>__in=1,10\n\n### String Queries\n\nOn string fields you\
-        \ can suffix the field names with the following filters:\n\n- \\_\\_contains\
-        \ : field value contains specified value\n- \\_\\_startswith : field value\
-        \ starts with specified value\n- \\_\\_in : value contained inside set of\
-        \ values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \ exchanges.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## List\
+        \ objects\n\n### Querying\n\nYou may query the resultset by passing field\
+        \ names as url parameters\n\n### Numeric Queries\n\nOn numeric fields you\
+        \ can suffix the field names with the following filters:\n\n- \\_\\_lt : less-than\n\
+        - \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n\
+        - \\_\\_in : value inside set of values (comma separated)\n\n**examples**\n\
+        \n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\n### String Queries\n\
+        \nOn string fields you can suffix the field names with the following filters:\n\
+        \n- \\_\\_contains : field value contains specified value\n- \\_\\_startswith\
+        \ : field value starts with specified value\n- \\_\\_in : value contained\
+        \ inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
         \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -17406,20 +17057,22 @@ paths:
       description: "Creates a new `ix` type object.\n\n## Internet Exchange\n\nIdentified\
         \ by the `ix` tag.\n\nAn exchange is the administrative record for an IXP.\
         \ `name` is unique across\nPeeringDB, including against soft-deleted exchanges.\n\
-        \nThe participant-facing configuration \u2014 prefixes, MTU, route server\
-        \ ASN and the IX-F\nmember list URL \u2014 lives on the exchange's `ixlan`,\
-        \ not here. Each exchange has\nexactly one `ixlan`, whose `id` matches the\
-        \ exchange's own.\n\nCreating an exchange requires a `prefix`, which is used\
-        \ to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may also\
-        \ be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## Creating objects\n\n### Status\
-        \ `pending`\n\nSome object types will be flagged as `pending` until they have\
-        \ been reviewed and approved by peeringdb staff.\n\nCurrently this is the\
-        \ case for:\n\n\n- `org` organizations (only administrative staff users are\
-        \ currently allowed to create organizations)\n- `fac` facilities\n- `net`\
-        \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## Creating\
+        \ objects\n\n### Status `pending`\n\nSome object types will be flagged as\
+        \ `pending` until they have been reviewed and approved by peeringdb staff.\n\
+        \nCurrently this is the case for:\n\n\n- `org` organizations (only administrative\
+        \ staff users are currently allowed to create organizations)\n- `fac` facilities\n\
+        - `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
         - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
         \ can only be retrieved by callers with update permission on it. Other callers,\n\
         including the creator when the object belongs to another organization (for\
@@ -18395,21 +18048,23 @@ paths:
       description: "Retrieves a single `ix` type object by id\n\n## Internet Exchange\n\
         \nIdentified by the `ix` tag.\n\nAn exchange is the administrative record\
         \ for an IXP. `name` is unique across\nPeeringDB, including against soft-deleted\
-        \ exchanges.\n\nThe participant-facing configuration \u2014 prefixes, MTU,\
-        \ route server ASN and the IX-F\nmember list URL \u2014 lives on the exchange's\
-        \ `ixlan`, not here. Each exchange has\nexactly one `ixlan`, whose `id` matches\
-        \ the exchange's own.\n\nCreating an exchange requires a `prefix`, which is\
-        \ used to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may\
-        \ also be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## Retrieve a single object\n\n\
-        ### Depth\n\nNested sets will not be expanded (any field ending with the _set\
-        \ suffix, with the exception of 'irr_as_set') unless the 'depth'\nparameter\
-        \ is passed in the request URL.\n\nDepth can be one of three values:\n\n \
-        \ - 1 : expand sets into ids (slow)\n  - 2 : expand sets into objects (slower)\n\
-        \  - 0 : don't expand sets at all (default behaviour)\n\n**example**\n\n \
-        \   ?depth=1\n"
+        \ exchanges.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## Retrieve\
+        \ a single object\n\n### Depth\n\nNested sets will not be expanded (any field\
+        \ ending with the _set suffix, with the exception of 'irr_as_set') unless\
+        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
+        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
+        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
+        \n**example**\n\n    ?depth=1\n"
       parameters:
       - name: id
         in: path
@@ -18440,18 +18095,20 @@ paths:
       description: "Updates an existing `ix` type object.\n\n## Internet Exchange\n\
         \nIdentified by the `ix` tag.\n\nAn exchange is the administrative record\
         \ for an IXP. `name` is unique across\nPeeringDB, including against soft-deleted\
-        \ exchanges.\n\nThe participant-facing configuration \u2014 prefixes, MTU,\
-        \ route server ASN and the IX-F\nmember list URL \u2014 lives on the exchange's\
-        \ `ixlan`, not here. Each exchange has\nexactly one `ixlan`, whose `id` matches\
-        \ the exchange's own.\n\nCreating an exchange requires a `prefix`, which is\
-        \ used to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may\
-        \ also be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## Update existing objects\n\n\
-        ### Permissions\n\nIn order to update an object the requesting user requires\
-        \ `update` permissions to the object itself or one of the parent relationships\
-        \ in the object hierarchy\n"
+        \ exchanges.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## Update\
+        \ existing objects\n\n### Permissions\n\nIn order to update an object the\
+        \ requesting user requires `update` permissions to the object itself or one\
+        \ of the parent relationships in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -19417,15 +19074,17 @@ paths:
       description: "PATCH (partial update) is currently disabled.\n\n## Internet Exchange\n\
         \nIdentified by the `ix` tag.\n\nAn exchange is the administrative record\
         \ for an IXP. `name` is unique across\nPeeringDB, including against soft-deleted\
-        \ exchanges.\n\nThe participant-facing configuration \u2014 prefixes, MTU,\
-        \ route server ASN and the IX-F\nmember list URL \u2014 lives on the exchange's\
-        \ `ixlan`, not here. Each exchange has\nexactly one `ixlan`, whose `id` matches\
-        \ the exchange's own.\n\nCreating an exchange requires a `prefix`, which is\
-        \ used to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may\
-        \ also be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n"
+        \ exchanges.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n"
       parameters:
       - name: id
         in: path
@@ -20396,15 +20055,18 @@ paths:
       description: "Marks an `ix` type object as `deleted`.\n\n## Internet Exchange\n\
         \nIdentified by the `ix` tag.\n\nAn exchange is the administrative record\
         \ for an IXP. `name` is unique across\nPeeringDB, including against soft-deleted\
-        \ exchanges.\n\nThe participant-facing configuration \u2014 prefixes, MTU,\
-        \ route server ASN and the IX-F\nmember list URL \u2014 lives on the exchange's\
-        \ `ixlan`, not here. Each exchange has\nexactly one `ixlan`, whose `id` matches\
-        \ the exchange's own.\n\nCreating an exchange requires a `prefix`, which is\
-        \ used to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may\
-        \ also be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## Deleting objects\n"
+        \ exchanges.\n\n`name`, `aka` and `name_long` cannot contain emoji or other\
+        \ pictographic symbols\n(such as \u2605). A write that includes them is rejected\
+        \ with a validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## Deleting\
+        \ objects\n"
       parameters:
       - name: id
         in: path
@@ -20440,7 +20102,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -29423,7 +29088,10 @@ paths:
         You can use the since argument with a unix timestamp (seconds) to retrieve\
         \ all\nobjects updated since then. Note that this result will contain objects\
         \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ for status \"deleted\"\n\n`updated` is set when a change is saved, which\
+        \ can be a moment before the change becomes\nvisible. When polling with `since`,\
+        \ start a few seconds before your previous fetch and\nskip rows whose `updated`\
+        \ you already have.\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
         \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
         \ is a list of objects in a relationship with the parent\nobject, you can\
         \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
@@ -31363,7 +31031,10 @@ paths:
         You can use the since argument with a unix timestamp (seconds) to retrieve\
         \ all\nobjects updated since then. Note that this result will contain objects\
         \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ for status \"deleted\"\n\n`updated` is set when a change is saved, which\
+        \ can be a moment before the change becomes\nvisible. When polling with `since`,\
+        \ start a few seconds before your previous fetch and\nskip rows whose `updated`\
+        \ you already have.\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
         \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
         \ is a list of objects in a relationship with the parent\nobject, you can\
         \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
@@ -35361,19 +35032,21 @@ paths:
       description: "Retrieves a list of `net` type objects\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -35484,7 +35157,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -36464,19 +36140,21 @@ paths:
       description: "Creates a new `net` type object.\n\n## Network\n\nIdentified by\
         \ the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -37403,19 +37081,21 @@ paths:
       description: "Retrieves a single `net` type object by id\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -37548,19 +37228,21 @@ paths:
       description: "Updates an existing `net` type object.\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -38475,108 +38157,110 @@ paths:
       description: "PATCH (partial update) is currently disabled.\n\n## Network\n\n\
         Identified by the `net` tag.\n\nA network is identified by its `asn`, which\
         \ is unique across PeeringDB and cannot be\nchanged after creation. `name`\
-        \ is likewise unique, including against soft-deleted\nnetworks.\n\nBecause\
-        \ records are reused rather than recreated, an ASN that is released and later\n\
-        re-registered by a different operator keeps its existing `net` record: `org`\
-        \ changes\nand `updated` moves, but `id` and `created` do not. Do not read\
-        \ `created` as the start\nof the current operator's registration.\n\n`info_type`\
-        \ is a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
-        \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
-        - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
-        \ standardized optional attributes: a fixed set\nof registered keys, each\
-        \ with its own value rules, some of them filterable\nvia `?meta__<key>=<value>`.\
-        \ The full reference \u2014 the mechanism, the key\ncatalog and the filterability\
-        \ table \u2014 is included with this object type in\nthe API documentation,\
-        \ and lives at `docs/api/object_metadata.md` in the\nsource repository.\n\n\
-        \n## Object metadata\n\nSome object types carry a `meta` field: a single JSON\
-        \ document holding\nstandardized, optional attributes that do not warrant\
-        \ a column of their own.\n\n`meta` is available on `net` and `netixlan`.\n\
-        \n### Registered keys only\n\nThe keys a `meta` document may contain are defined\
-        \ by a server-side registry.\nA write containing an unregistered key is rejected:\n\
-        \n```json\n{\"meta\": {\"rtbh_community\": \"65000:666\"}}          // accepted\n\
-        {\"meta\": {\"something_i_invented\": true}}           // 400, \"unregistered\
-        \ metadata key\"\n```\n\nThere is deliberately no free-form namespace. Uncontrolled\
-        \ keys cannot be\nvalidated, cannot be documented, and cannot be retired once\
-        \ clients depend on\nthem.\n\nBecause the registry lives on the server, keys\
-        \ can be added, changed, or\nretired without a new release of the client model\
-        \ library. Clients that only\nread `meta` can treat it as an opaque document\
-        \ and will not break when the key\nset changes.\n\n### Writing metadata\n\n\
-        Two forms are accepted, and they can be mixed. Use `PUT`; `PATCH` is not\n\
-        supported. Include the endpoint's required update fields along with the\n\
-        metadata. In these examples, replace the network's name, ASN, organization\
-        \ ID,\nand website with its current values.\n\nWrite the document directly.\
-        \ This **replaces** the whole document, so include\nevery key you want to\
-        \ keep:\n\n```http\nPUT /api/net/1\nContent-Type: application/json\n\n{\n\
-        \  \"name\": \"Example Network\",\n  \"asn\": 63350,\n  \"org_id\": 1,\n \
-        \ \"website\": \"https://example.com\",\n  \"meta\": {\"rtbh_community\":\
-        \ \"65000:666\", \"preferred_ip_mtu\": 9000}\n}\n```\n\nOr write a single\
-        \ key through its flat field. These are write-only convenience\nfields, folded\
-        \ into the document on the server, and they leave every other key\nuntouched\
-        \ \u2014 which is what the web UI uses:\n\n```http\nPUT /api/net/1\nContent-Type:\
+        \ is likewise unique, including against soft-deleted\nnetworks.\n\n`name`,\
+        \ `aka` and `name_long` cannot contain emoji or other pictographic symbols\n\
+        (such as \u2605). A write that includes them is rejected with a validation\
+        \ error on\nthat field.\n\nBecause records are reused rather than recreated,\
+        \ an ASN that is released and later\nre-registered by a different operator\
+        \ keeps its existing `net` record: `org` changes\nand `updated` moves, but\
+        \ `id` and `created` do not. Do not read `created` as the start\nof the current\
+        \ operator's registration.\n\n`info_type` is a legacy single value superseded\
+        \ by `info_types`. It carries one of the\nnetwork's types, but not a defined\
+        \ one \u2014 the two are ordered differently, so do not\nread it as `info_types[0]`.\
+        \ Use `info_types` for the full set.\n\nOn write, `info_type` replaces `info_types`\
+        \ entirely: whatever it carries becomes the\nnetwork's only type, and any\
+        \ `info_types` sent in the same request is discarded. Send\n`info_types` and\
+        \ omit `info_type` when writing \u2014 a read-modify-write `PUT` that echoes\n\
+        both fields back drops every type but one, and the response reports no error.\n\
+        \n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `netixlan` network to exchange connections (through `ixlan`)\n- `netfac`\
+        \ network / facility presence\n- `poc` points of contact\n\n### Metadata:\n\
+        \nCarries a `meta` document of standardized optional attributes: a fixed set\n\
+        of registered keys, each with its own value rules, some of them filterable\n\
+        via `?meta__<key>=<value>`. The full reference \u2014 the mechanism, the key\n\
+        catalog and the filterability table \u2014 is included with this object type\
+        \ in\nthe API documentation, and lives at `docs/api/object_metadata.md` in\
+        \ the\nsource repository.\n\n\n## Object metadata\n\nSome object types carry\
+        \ a `meta` field: a single JSON document holding\nstandardized, optional attributes\
+        \ that do not warrant a column of their own.\n\n`meta` is available on `net`\
+        \ and `netixlan`.\n\n### Registered keys only\n\nThe keys a `meta` document\
+        \ may contain are defined by a server-side registry.\nA write containing an\
+        \ unregistered key is rejected:\n\n```json\n{\"meta\": {\"rtbh_community\"\
+        : \"65000:666\"}}          // accepted\n{\"meta\": {\"something_i_invented\"\
+        : true}}           // 400, \"unregistered metadata key\"\n```\n\nThere is\
+        \ deliberately no free-form namespace. Uncontrolled keys cannot be\nvalidated,\
+        \ cannot be documented, and cannot be retired once clients depend on\nthem.\n\
+        \nBecause the registry lives on the server, keys can be added, changed, or\n\
+        retired without a new release of the client model library. Clients that only\n\
+        read `meta` can treat it as an opaque document and will not break when the\
+        \ key\nset changes.\n\n### Writing metadata\n\nTwo forms are accepted, and\
+        \ they can be mixed. Use `PUT`; `PATCH` is not\nsupported. Include the endpoint's\
+        \ required update fields along with the\nmetadata. In these examples, replace\
+        \ the network's name, ASN, organization ID,\nand website with its current\
+        \ values.\n\nWrite the document directly. This **replaces** the whole document,\
+        \ so include\nevery key you want to keep:\n\n```http\nPUT /api/net/1\nContent-Type:\
         \ application/json\n\n{\n  \"name\": \"Example Network\",\n  \"asn\": 63350,\n\
-        \  \"org_id\": 1,\n  \"website\": \"https://example.com\",\n  \"rtbh_community\"\
-        : \"65000:666\"\n}\n```\n\nSubmit a flat field blank (or `null`) to remove\
-        \ its key. Every flat field is\nclearable this way, including the boolean\
-        \ ones \u2014 for a boolean, \"unset\" is a\nthird state distinct from `false`.\
-        \ For a multi-part key such as\n`planned_status_change`, clearing either part\
-        \ clears the whole key \u2014 but\nclearing one part while submitting a value\
-        \ for the other is rejected, with\nthe error reported against the part you\
-        \ submitted. Writing only one part of\na key that is not already set is rejected\
-        \ against the missing part.\n\nMetadata is read back only under `meta`; the\
-        \ flat fields never appear in API\noutput.\n\nInvalid metadata returns HTTP\
-        \ 400. Validation details for the `meta` field\nappear under `meta.field_errors.meta`\
-        \ in the response envelope, alongside the\nusual `meta.error` summary:\n\n\
-        ```json\n{\n  \"meta\": {\n    \"error\": \"Bad Request\",\n    \"field_errors\"\
-        : {\n      \"meta\": {\"something_i_invented\": \"unregistered metadata key\"\
-        }\n    }\n  }\n}\n```\n\n### Launch keys\n\n| Key | Object | Type | Filterable\
-        \ |\n|---|---|---|---|\n| `planned_status_change` | `netixlan` | `{status,\
-        \ date}` | yes |\n| `rfc8950` | `netixlan` | boolean | yes |\n| `preferred_ip_mtu`\
-        \ | `net` | integer | no |\n| `rtbh_community` | `net` | string | no |\n\n\
-        #### `planned_status_change` (netixlan)\n\nA declaration of intent about the\
-        \ connection's `status` field.\n\n- `status` \u2014 `deleted` (the network\
-        \ is leaving the exchange) or `ok` (the\n  connection goes live on that date).\n\
-        - `date` \u2014 `YYYY-MM-DD`, in the future at write time and within a configurable\n\
-        \  window ahead (18 months by default).\n\nFlat fields: `planned_status_change_status`,\
-        \ `planned_status_change_date`.\n\nA plan is a statement, not a schedule.\
-        \ Nothing happens automatically when the\ndate arrives: the object's own fields\
-        \ are never changed by the plan, the plan\nis never changed by the object,\
-        \ and a date that passes without the change\npersists until the network edits\
-        \ it. Read plans alongside current state and\ndraw your own conclusions.\n\
-        \nThe future-date requirement applies to *setting* a date, not to keeping\
-        \ one.\nA write that resubmits an already-stored plan unchanged is accepted\
-        \ whatever\nits date, so a plan whose date has passed never blocks other edits\
-        \ to the\nobject \u2014 which matters because a full-object `PUT` round-trips\
-        \ `meta`.\n\nA set plan is shown publicly as a \"planned removal \u2039date\u203A\
-        \" / \"planned\nactivation \u2039date\u203A\" marker on the connection's row,\
-        \ beside the existing\nnot-operational indicator.\n\nAnnouncing a departure\
-        \ is entirely the network's choice.\n\n#### `rfc8950` (netixlan)\n\nBoolean.\
-        \ The network supports RFC8950 extended next hop on this connection.\nShown\
-        \ publicly as an `RFC8950` marker on the connection's row in the network\n\
-        and exchange views.\n\nFlat field: `rfc8950`. It is tri-state \u2014 send\
-        \ `true`, `false`, or `null` to\nremove the key.\n\n`true` and `false` are\
-        \ both meaningful and are distinguishable from an unset\nkey, so `?meta__rfc8950=false`\
-        \ returns only connections explicitly marked as\nnot supporting it \u2014\
-        \ not connections that never declared.\n\n#### `preferred_ip_mtu` (net)\n\n\
-        Integer. Preferred IP MTU for private network interconnection with this network.\n\
-        The accepted range is a deployment setting.\n\n#### `rtbh_community` (net)\n\
-        \nString. The BGP community this network accepts for remote-triggered\nblackholing,\
-        \ so peers can pick it up at provisioning time instead of reading\nit out\
-        \ of a peering policy page.\n\nAccepted formats:\n\n- standard \u2014 `asn:value`,\
-        \ each part 0\u201365535\n- large \u2014 `asn:local1:local2`, each part 0\u2013\
-        4294967295\n\nExtended communities are **not** accepted. One community per\
-        \ network; comma\nseparated lists are rejected.\n\nValues are stored canonically,\
-        \ so leading zeros are dropped \u2014 `065000:0666` is\nstored, and returned,\
-        \ as `65000:666`. Compare the canonical form when matching.\n\n### Filtering\n\
-        \nA key marked filterable can be used in queries, with the usual operators:\n\
-        \n```\nGET /api/netixlan?ix=26&meta__planned_status_change__status=deleted&meta__planned_status_change__date__lt=2026-10-15\n\
+        \  \"org_id\": 1,\n  \"website\": \"https://example.com\",\n  \"meta\": {\"\
+        rtbh_community\": \"65000:666\", \"preferred_ip_mtu\": 9000}\n}\n```\n\nOr\
+        \ write a single key through its flat field. These are write-only convenience\n\
+        fields, folded into the document on the server, and they leave every other\
+        \ key\nuntouched \u2014 which is what the web UI uses:\n\n```http\nPUT /api/net/1\n\
+        Content-Type: application/json\n\n{\n  \"name\": \"Example Network\",\n  \"\
+        asn\": 63350,\n  \"org_id\": 1,\n  \"website\": \"https://example.com\",\n\
+        \  \"rtbh_community\": \"65000:666\"\n}\n```\n\nSubmit a flat field blank\
+        \ (or `null`) to remove its key. Every flat field is\nclearable this way,\
+        \ including the boolean ones \u2014 for a boolean, \"unset\" is a\nthird state\
+        \ distinct from `false`. For a multi-part key such as\n`planned_status_change`,\
+        \ clearing either part clears the whole key \u2014 but\nclearing one part\
+        \ while submitting a value for the other is rejected, with\nthe error reported\
+        \ against the part you submitted. Writing only one part of\na key that is\
+        \ not already set is rejected against the missing part.\n\nMetadata is read\
+        \ back only under `meta`; the flat fields never appear in API\noutput.\n\n\
+        Invalid metadata returns HTTP 400. Validation details for the `meta` field\n\
+        appear under `meta.field_errors.meta` in the response envelope, alongside\
+        \ the\nusual `meta.error` summary:\n\n```json\n{\n  \"meta\": {\n    \"error\"\
+        : \"Bad Request\",\n    \"field_errors\": {\n      \"meta\": {\"something_i_invented\"\
+        : \"unregistered metadata key\"}\n    }\n  }\n}\n```\n\n### Launch keys\n\n\
+        | Key | Object | Type | Filterable |\n|---|---|---|---|\n| `planned_status_change`\
+        \ | `netixlan` | `{status, date}` | yes |\n| `rfc8950` | `netixlan` | boolean\
+        \ | yes |\n| `preferred_ip_mtu` | `net` | integer | no |\n| `rtbh_community`\
+        \ | `net` | string | no |\n\n#### `planned_status_change` (netixlan)\n\nA\
+        \ declaration of intent about the connection's `status` field.\n\n- `status`\
+        \ \u2014 `deleted` (the network is leaving the exchange) or `ok` (the\n  connection\
+        \ goes live on that date).\n- `date` \u2014 `YYYY-MM-DD`, in the future at\
+        \ write time and within a configurable\n  window ahead (18 months by default).\n\
+        \nFlat fields: `planned_status_change_status`, `planned_status_change_date`.\n\
+        \nA plan is a statement, not a schedule. Nothing happens automatically when\
+        \ the\ndate arrives: the object's own fields are never changed by the plan,\
+        \ the plan\nis never changed by the object, and a date that passes without\
+        \ the change\npersists until the network edits it. Read plans alongside current\
+        \ state and\ndraw your own conclusions.\n\nThe future-date requirement applies\
+        \ to *setting* a date, not to keeping one.\nA write that resubmits an already-stored\
+        \ plan unchanged is accepted whatever\nits date, so a plan whose date has\
+        \ passed never blocks other edits to the\nobject \u2014 which matters because\
+        \ a full-object `PUT` round-trips `meta`.\n\nA set plan is shown publicly\
+        \ as a \"planned removal \u2039date\u203A\" / \"planned\nactivation \u2039\
+        date\u203A\" marker on the connection's row, beside the existing\nnot-operational\
+        \ indicator.\n\nAnnouncing a departure is entirely the network's choice.\n\
+        \n#### `rfc8950` (netixlan)\n\nBoolean. The network supports RFC8950 extended\
+        \ next hop on this connection.\nShown publicly as an `RFC8950` marker on the\
+        \ connection's row in the network\nand exchange views.\n\nFlat field: `rfc8950`.\
+        \ It is tri-state \u2014 send `true`, `false`, or `null` to\nremove the key.\n\
+        \n`true` and `false` are both meaningful and are distinguishable from an unset\n\
+        key, so `?meta__rfc8950=false` returns only connections explicitly marked\
+        \ as\nnot supporting it \u2014 not connections that never declared.\n\n####\
+        \ `preferred_ip_mtu` (net)\n\nInteger. Preferred IP MTU for private network\
+        \ interconnection with this network.\nThe accepted range is a deployment setting.\n\
+        \n#### `rtbh_community` (net)\n\nString. The BGP community this network accepts\
+        \ for remote-triggered\nblackholing, so peers can pick it up at provisioning\
+        \ time instead of reading\nit out of a peering policy page.\n\nAccepted formats:\n\
+        \n- standard \u2014 `asn:value`, each part 0\u201365535\n- large \u2014 `asn:local1:local2`,\
+        \ each part 0\u20134294967295\n\nExtended communities are **not** accepted.\
+        \ One community per network; comma\nseparated lists are rejected.\n\nValues\
+        \ are stored canonically, so leading zeros are dropped \u2014 `065000:0666`\
+        \ is\nstored, and returned, as `65000:666`. Compare the canonical form when\
+        \ matching.\n\n### Filtering\n\nA key marked filterable can be used in queries,\
+        \ with the usual operators:\n\n```\nGET /api/netixlan?ix=26&meta__planned_status_change__status=deleted&meta__planned_status_change__date__lt=2026-10-15\n\
         GET /api/netixlan?meta__rfc8950=true\n```\n\nThese are indexed database queries\
         \ against typed columns derived from the\ndocument, so date and integer comparisons\
         \ behave correctly rather than\ncomparing strings.\n\nKeys **not** marked\
@@ -39405,19 +39089,21 @@ paths:
       description: "Marks an `net` type object as `deleted`.\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -39558,7 +39244,10 @@ paths:
         You can use the since argument with a unix timestamp (seconds) to retrieve\
         \ all\nobjects updated since then. Note that this result will contain objects\
         \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ for status \"deleted\"\n\n`updated` is set when a change is saved, which\
+        \ can be a moment before the change becomes\nvisible. When polling with `since`,\
+        \ start a few seconds before your previous fetch and\nskip rows whose `updated`\
+        \ you already have.\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
         \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
         \ is a list of objects in a relationship with the parent\nobject, you can\
         \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
@@ -43126,7 +42815,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -51935,7 +51627,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -60944,57 +60639,62 @@ paths:
         \ belongs to exactly one organization, and\nownership of a record is expressed\
         \ by its `org_id`.\n\n`name` is unique across all organizations, including\
         \ soft-deleted ones, so the name\nof a deleted organization cannot be reused.\n\
-        \nObjects can move between organizations without being recreated \u2014 through\
-        \ an\norganization merge, or when a released ASN is re-registered by a new\
-        \ operator. When\nthat happens the child object keeps its `id` and its `created`.\n\
-        \n### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n\
-        - `net` networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n\
-        - `campus` campuses\n\n\n## List objects\n\n### Querying\n\nYou may query\
-        \ the resultset by passing field names as url parameters\n\n### Numeric Queries\n\
-        \nOn numeric fields you can suffix the field names with the following filters:\n\
-        \n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
-        - \\_\\_gte : greater-than-equal\n- \\_\\_in : value inside set of values\
-        \ (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\
-        \n### String Queries\n\nOn string fields you can suffix the field names with\
-        \ the following filters:\n\n- \\_\\_contains : field value contains specified\
-        \ value\n- \\_\\_startswith : field value starts with specified value\n- \\\
-        _\\_in : value contained inside set of values (comma separated)\n\n**examples**\n\
-        \n    ?<field_name>__contains=something\n    ?<field_name>__in=this,that\n\
-        \nAll string filtering operations are case-insensitive\n\n### Since\n\n\n\
-        You can use the since argument with a unix timestamp (seconds) to retrieve\
-        \ all\nobjects updated since then. Note that this result will contain objects\
-        \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
-        \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
-        \ is a list of objects in a relationship with the parent\nobject, you can\
-        \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
-        \ naming schema of the field will always tell you which type of object the\
-        \ set is holding\nand will correspond with the object's endpoint on the API\n\
-        \n    <object_type>_set\n\nSo a set called 'net_set' will hold Network objects\
-        \ (api endpoint /net)\n\n### Depth\n\nNested sets will not be loaded (any\
-        \ field ending with the _set suffix, with the exception of 'irr_as_set') unless\
-        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
-        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
-        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
-        \n**example**\n\n    ?depth=1\n\n### Cached Responses\n\nAny request that\
-        \ does not require lookups will be served a cached result. Cache is updated\
-        \ approximately every 15 minutes.\n\nContacts (`poc`) deleted or restricted\
-        \ to `Users` or `Private`, and IX-F member list URLs restricted after the\
-        \ cache was generated, are applied to cached results as they are served, so\
-        \ callers who may no longer see them do not get them from the cache. A shared\
-        \ cache (CDN) in front of the API may keep serving a cached result for up\
-        \ to 15 minutes.\n\nYou can spot cached responses by checking for the \"generated\"\
-        \ property inside the \"meta\" object.\n\n    \"meta\" : {\n        // the\
-        \ cached data was last regenerated at this time (epoch)\n        \"generated\"\
-        \ : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve a cached result:\n\
-        \n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\n### Resultset\
-        \ limit\n\nAny request that does lookup queries and has it's **depth** parameter\
-        \ specified will have a result limit of 250 entries, any entries past this\
-        \ limit will be truncated, at which point you either should be more specific\
-        \ with your query or use the skip and limit parameters to page through the\
-        \ result set\n\n**examples**\n\nwill serve a live result and a maximum of\
-        \ 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\nwill serve\
-        \ a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nObjects can move between organizations\
+        \ without being recreated \u2014 through an\norganization merge, or when a\
+        \ released ASN is re-registered by a new operator. When\nthat happens the\
+        \ child object keeps its `id` and its `created`.\n\n### Parent relationship:\n\
+        \n- None\n\n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n\n\n## List objects\n\
+        \n### Querying\n\nYou may query the resultset by passing field names as url\
+        \ parameters\n\n### Numeric Queries\n\nOn numeric fields you can suffix the\
+        \ field names with the following filters:\n\n- \\_\\_lt : less-than\n- \\\
+        _\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n- \\_\\_gte : greater-than-equal\n\
+        - \\_\\_in : value inside set of values (comma separated)\n\n**examples**\n\
+        \n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\n### String Queries\n\
+        \nOn string fields you can suffix the field names with the following filters:\n\
+        \n- \\_\\_contains : field value contains specified value\n- \\_\\_startswith\
+        \ : field value starts with specified value\n- \\_\\_in : value contained\
+        \ inside set of values (comma separated)\n\n**examples**\n\n    ?<field_name>__contains=something\n\
+        \    ?<field_name>__in=this,that\n\nAll string filtering operations are case-insensitive\n\
+        \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
+        \ to retrieve all\nobjects updated since then. Note that this result will\
+        \ contain objects that were\ndeleted in that timeframe as well - you can spot\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
+        \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
+        \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
+        object, you can expand those lists with the 'depth' parameter as explained\
+        \ below.\n\nThe naming schema of the field will always tell you which type\
+        \ of object the set is holding\nand will correspond with the object's endpoint\
+        \ on the API\n\n    <object_type>_set\n\nSo a set called 'net_set' will hold\
+        \ Network objects (api endpoint /net)\n\n### Depth\n\nNested sets will not\
+        \ be loaded (any field ending with the _set suffix, with the exception of\
+        \ 'irr_as_set') unless the 'depth'\nparameter is passed in the request URL.\n\
+        \nDepth can be one of three values:\n\n  - 1 : expand sets into ids (slow)\n\
+        \  - 2 : expand sets into objects (slower)\n  - 0 : don't expand sets at all\
+        \ (default behaviour)\n\n**example**\n\n    ?depth=1\n\n### Cached Responses\n\
+        \nAny request that does not require lookups will be served a cached result.\
+        \ Cache is updated approximately every 15 minutes.\n\nContacts (`poc`) deleted\
+        \ or restricted to `Users` or `Private`, and IX-F member list URLs restricted\
+        \ after the cache was generated, are applied to cached results as they are\
+        \ served, so callers who may no longer see them do not get them from the cache.\
+        \ A shared cache (CDN) in front of the API may keep serving a cached result\
+        \ for up to 15 minutes.\n\nYou can spot cached responses by checking for the\
+        \ \"generated\" property inside the \"meta\" object.\n\n    \"meta\" : {\n\
+        \        // the cached data was last regenerated at this time (epoch)\n  \
+        \      \"generated\" : 1456121358.6301942\n    }\n\n**examples**\n\nwill serve\
+        \ a cached result:\n\n    ?depth=2\n\nwill serve a live result:\n\n    ?id__in=1,2\n\
+        \n### Resultset limit\n\nAny request that does lookup queries and has it's\
+        \ **depth** parameter specified will have a result limit of 250 entries, any\
+        \ entries past this limit will be truncated, at which point you either should\
+        \ be more specific with your query or use the skip and limit parameters to\
+        \ page through the result set\n\n**examples**\n\nwill serve a live result\
+        \ and a maximum of 250 rows at a time:\n\n    ?updated__gt=2011-01-01&depth=1\n\
+        \nwill serve a live result and will not be truncated:\n\n    ?updated__gt=2011-01-01\n\
         \nwill serve a cached result and will not be truncated:\n\n    ?depth=1\n\n\
         ### Pagination\n\n#### Using skip and limit\n\nUse the skip and limit parameters\
         \ to page through results\n\n    ?updated__gt=2011-01-01&depth=1&limit=250\
@@ -61408,26 +61108,29 @@ paths:
         \ hierarchy. Every network,\nfacility, exchange, carrier and campus belongs\
         \ to exactly one organization, and\nownership of a record is expressed by\
         \ its `org_id`.\n\n`name` is unique across all organizations, including soft-deleted\
-        \ ones, so the name\nof a deleted organization cannot be reused.\n\nObjects\
-        \ can move between organizations without being recreated \u2014 through an\n\
-        organization merge, or when a released ASN is re-registered by a new operator.\
-        \ When\nthat happens the child object keeps its `id` and its `created`.\n\n\
-        ### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n- `net`\
-        \ networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n-\
-        \ `campus` campuses\n\n\n## Creating objects\n\n### Status `pending`\n\nSome\
-        \ object types will be flagged as `pending` until they have been reviewed\
-        \ and approved by peeringdb staff.\n\nCurrently this is the case for:\n\n\n\
-        - `org` organizations (only administrative staff users are currently allowed\
-        \ to create organizations)\n- `fac` facilities\n- `net` networks\n- `ix` exchanges\n\
-        - `ixpfx` prefixes (if part of a new exchange)\n- `ixlan` exchange networks\
-        \ (if part of a new exchange)\n\nA `pending` object can only be retrieved\
-        \ by callers with update permission on it. Other callers,\nincluding the creator\
-        \ when the object belongs to another organization (for example a suggested\n\
-        facility or network), get a `404` until it is approved.\n\n### Permissions\n\
-        \nTo be able to create an object, the requesting user requires `create` permissions\
-        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
-        \ to create a `net` type object, the user needs to be permissioned to create\
-        \ in the organization\nthat is to be the network's holder entity.\n"
+        \ ones, so the name\nof a deleted organization cannot be reused.\n\n`name`,\
+        \ `aka` and `name_long` cannot contain emoji or other pictographic symbols\n\
+        (such as \u2605). A write that includes them is rejected with a validation\
+        \ error on\nthat field.\n\nObjects can move between organizations without\
+        \ being recreated \u2014 through an\norganization merge, or when a released\
+        \ ASN is re-registered by a new operator. When\nthat happens the child object\
+        \ keeps its `id` and its `created`.\n\n### Parent relationship:\n\n- None\n\
+        \n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n\n\n## Creating\
+        \ objects\n\n### Status `pending`\n\nSome object types will be flagged as\
+        \ `pending` until they have been reviewed and approved by peeringdb staff.\n\
+        \nCurrently this is the case for:\n\n\n- `org` organizations (only administrative\
+        \ staff users are currently allowed to create organizations)\n- `fac` facilities\n\
+        - `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
+        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
+        \ can only be retrieved by callers with update permission on it. Other callers,\n\
+        including the creator when the object belongs to another organization (for\
+        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
+        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
+        \ `create` permissions to one of the\nobject's parents in the relationship\
+        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
+        \ to be permissioned to create in the organization\nthat is to be the network's\
+        \ holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -61874,17 +61577,20 @@ paths:
         \ belongs to exactly one organization, and\nownership of a record is expressed\
         \ by its `org_id`.\n\n`name` is unique across all organizations, including\
         \ soft-deleted ones, so the name\nof a deleted organization cannot be reused.\n\
-        \nObjects can move between organizations without being recreated \u2014 through\
-        \ an\norganization merge, or when a released ASN is re-registered by a new\
-        \ operator. When\nthat happens the child object keeps its `id` and its `created`.\n\
-        \n### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n\
-        - `net` networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n\
-        - `campus` campuses\n\n\n## Retrieve a single object\n\n### Depth\n\nNested\
-        \ sets will not be expanded (any field ending with the _set suffix, with the\
-        \ exception of 'irr_as_set') unless the 'depth'\nparameter is passed in the\
-        \ request URL.\n\nDepth can be one of three values:\n\n  - 1 : expand sets\
-        \ into ids (slow)\n  - 2 : expand sets into objects (slower)\n  - 0 : don't\
-        \ expand sets at all (default behaviour)\n\n**example**\n\n    ?depth=1\n"
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nObjects can move between organizations\
+        \ without being recreated \u2014 through an\norganization merge, or when a\
+        \ released ASN is re-registered by a new operator. When\nthat happens the\
+        \ child object keeps its `id` and its `created`.\n\n### Parent relationship:\n\
+        \n- None\n\n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n\n\n## Retrieve\
+        \ a single object\n\n### Depth\n\nNested sets will not be expanded (any field\
+        \ ending with the _set suffix, with the exception of 'irr_as_set') unless\
+        \ the 'depth'\nparameter is passed in the request URL.\n\nDepth can be one\
+        \ of three values:\n\n  - 1 : expand sets into ids (slow)\n  - 2 : expand\
+        \ sets into objects (slower)\n  - 0 : don't expand sets at all (default behaviour)\n\
+        \n**example**\n\n    ?depth=1\n"
       parameters:
       - name: id
         in: path
@@ -61918,14 +61624,17 @@ paths:
         \ belongs to exactly one organization, and\nownership of a record is expressed\
         \ by its `org_id`.\n\n`name` is unique across all organizations, including\
         \ soft-deleted ones, so the name\nof a deleted organization cannot be reused.\n\
-        \nObjects can move between organizations without being recreated \u2014 through\
-        \ an\norganization merge, or when a released ASN is re-registered by a new\
-        \ operator. When\nthat happens the child object keeps its `id` and its `created`.\n\
-        \n### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n\
-        - `net` networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n\
-        - `campus` campuses\n\n\n## Update existing objects\n\n### Permissions\n\n\
-        In order to update an object the requesting user requires `update` permissions\
-        \ to the object itself or one of the parent relationships in the object hierarchy\n"
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nObjects can move between organizations\
+        \ without being recreated \u2014 through an\norganization merge, or when a\
+        \ released ASN is re-registered by a new operator. When\nthat happens the\
+        \ child object keeps its `id` and its `created`.\n\n### Parent relationship:\n\
+        \n- None\n\n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n\n\n## Update\
+        \ existing objects\n\n### Permissions\n\nIn order to update an object the\
+        \ requesting user requires `update` permissions to the object itself or one\
+        \ of the parent relationships in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -62377,12 +62086,14 @@ paths:
         \ belongs to exactly one organization, and\nownership of a record is expressed\
         \ by its `org_id`.\n\n`name` is unique across all organizations, including\
         \ soft-deleted ones, so the name\nof a deleted organization cannot be reused.\n\
-        \nObjects can move between organizations without being recreated \u2014 through\
-        \ an\norganization merge, or when a released ASN is re-registered by a new\
-        \ operator. When\nthat happens the child object keeps its `id` and its `created`.\n\
-        \n### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n\
-        - `net` networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n\
-        - `campus` campuses\n"
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nObjects can move between organizations\
+        \ without being recreated \u2014 through an\norganization merge, or when a\
+        \ released ASN is re-registered by a new operator. When\nthat happens the\
+        \ child object keeps its `id` and its `created`.\n\n### Parent relationship:\n\
+        \n- None\n\n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n"
       parameters:
       - name: id
         in: path
@@ -62834,12 +62545,15 @@ paths:
         \ belongs to exactly one organization, and\nownership of a record is expressed\
         \ by its `org_id`.\n\n`name` is unique across all organizations, including\
         \ soft-deleted ones, so the name\nof a deleted organization cannot be reused.\n\
-        \nObjects can move between organizations without being recreated \u2014 through\
-        \ an\norganization merge, or when a released ASN is re-registered by a new\
-        \ operator. When\nthat happens the child object keeps its `id` and its `created`.\n\
-        \n### Parent relationship:\n\n- None\n\n### Children relationship(s):\n\n\
-        - `net` networks\n- `fac` facilities\n- `ix` exchanges\n- `carrier` carriers\n\
-        - `campus` campuses\n\n\n## Deleting objects\n"
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nObjects can move between organizations\
+        \ without being recreated \u2014 through an\norganization merge, or when a\
+        \ released ASN is re-registered by a new operator. When\nthat happens the\
+        \ child object keeps its `id` and its `created`.\n\n### Parent relationship:\n\
+        \n- None\n\n### Children relationship(s):\n\n- `net` networks\n- `fac` facilities\n\
+        - `ix` exchanges\n- `carrier` carriers\n- `campus` campuses\n\n\n## Deleting\
+        \ objects\n"
       parameters:
       - name: id
         in: path
@@ -62860,15 +62574,17 @@ paths:
         \ to be treated as one interconnection\nlocation. A facility can only join\
         \ a campus if it has geocoordinates and sits within\nthe campus distance limit\
         \ of the facilities already in it.\n\n`name` is unique across PeeringDB, including\
-        \ against soft-deleted campuses.\n\nThe address fields \u2014 `city`, `country`,\
-        \ `state`, `zipcode` \u2014 are not stored on the\ncampus. They are read from\
-        \ its first facility and are empty while the campus has\nnone, so they can\
-        \ change without the campus itself being modified.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `fac` facilities\n\n\n\
-        ## List objects\n\n### Querying\n\nYou may query the resultset by passing\
-        \ field names as url parameters\n\n### Numeric Queries\n\nOn numeric fields\
-        \ you can suffix the field names with the following filters:\n\n- \\_\\_lt\
-        \ : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
+        \ against soft-deleted campuses.\n\n`name`, `aka` and `name_long` cannot contain\
+        \ emoji or other pictographic symbols\n(such as \u2605). A write that includes\
+        \ them is rejected with a validation error on\nthat field.\n\nThe address\
+        \ fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are not stored\
+        \ on the\ncampus. They are read from its first facility and are empty while\
+        \ the campus has\nnone, so they can change without the campus itself being\
+        \ modified.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `fac` facilities\n\n\n## List objects\n\n### Querying\n\nYou may query\
+        \ the resultset by passing field names as url parameters\n\n### Numeric Queries\n\
+        \nOn numeric fields you can suffix the field names with the following filters:\n\
+        \n- \\_\\_lt : less-than\n- \\_\\_lte : less-than-equal\n- \\_\\_gt : greater-than\n\
         - \\_\\_gte : greater-than-equal\n- \\_\\_in : value inside set of values\
         \ (comma separated)\n\n**examples**\n\n    ?<field_name>__lt=10\n    ?<field_name>__in=1,10\n\
         \n### String Queries\n\nOn string fields you can suffix the field names with\
@@ -62880,7 +62596,10 @@ paths:
         You can use the since argument with a unix timestamp (seconds) to retrieve\
         \ all\nobjects updated since then. Note that this result will contain objects\
         \ that were\ndeleted in that timeframe as well - you can spot them by checking\
-        \ for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
+        \ for status \"deleted\"\n\n`updated` is set when a change is saved, which\
+        \ can be a moment before the change becomes\nvisible. When polling with `since`,\
+        \ start a few seconds before your previous fetch and\nskip rows whose `updated`\
+        \ you already have.\n\n**example**\n\n    ?since=1443414678\n\n### Nested\
         \ data\n\nAny field ending in the suffix **_set** (with the exception of 'irr_as_set')\
         \ is a list of objects in a relationship with the parent\nobject, you can\
         \ expand those lists with the 'depth' parameter as explained below.\n\nThe\
@@ -63425,25 +63144,27 @@ paths:
         \ to be treated as one interconnection\nlocation. A facility can only join\
         \ a campus if it has geocoordinates and sits within\nthe campus distance limit\
         \ of the facilities already in it.\n\n`name` is unique across PeeringDB, including\
-        \ against soft-deleted campuses.\n\nThe address fields \u2014 `city`, `country`,\
-        \ `state`, `zipcode` \u2014 are not stored on the\ncampus. They are read from\
-        \ its first facility and are empty while the campus has\nnone, so they can\
-        \ change without the campus itself being modified.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `fac` facilities\n\n\n\
-        ## Creating objects\n\n### Status `pending`\n\nSome object types will be flagged\
-        \ as `pending` until they have been reviewed and approved by peeringdb staff.\n\
-        \nCurrently this is the case for:\n\n\n- `org` organizations (only administrative\
-        \ staff users are currently allowed to create organizations)\n- `fac` facilities\n\
-        - `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
-        - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
-        \ can only be retrieved by callers with update permission on it. Other callers,\n\
-        including the creator when the object belongs to another organization (for\
-        \ example a suggested\nfacility or network), get a `404` until it is approved.\n\
-        \n### Permissions\n\nTo be able to create an object, the requesting user requires\
-        \ `create` permissions to one of the\nobject's parents in the relationship\
-        \ hierarchy.\n\nFor example to create a `net` type object, the user needs\
-        \ to be permissioned to create in the organization\nthat is to be the network's\
-        \ holder entity.\n"
+        \ against soft-deleted campuses.\n\n`name`, `aka` and `name_long` cannot contain\
+        \ emoji or other pictographic symbols\n(such as \u2605). A write that includes\
+        \ them is rejected with a validation error on\nthat field.\n\nThe address\
+        \ fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are not stored\
+        \ on the\ncampus. They are read from its first facility and are empty while\
+        \ the campus has\nnone, so they can change without the campus itself being\
+        \ modified.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `fac` facilities\n\n\n## Creating objects\n\n### Status `pending`\n\n\
+        Some object types will be flagged as `pending` until they have been reviewed\
+        \ and approved by peeringdb staff.\n\nCurrently this is the case for:\n\n\n\
+        - `org` organizations (only administrative staff users are currently allowed\
+        \ to create organizations)\n- `fac` facilities\n- `net` networks\n- `ix` exchanges\n\
+        - `ixpfx` prefixes (if part of a new exchange)\n- `ixlan` exchange networks\
+        \ (if part of a new exchange)\n\nA `pending` object can only be retrieved\
+        \ by callers with update permission on it. Other callers,\nincluding the creator\
+        \ when the object belongs to another organization (for example a suggested\n\
+        facility or network), get a `404` until it is approved.\n\n### Permissions\n\
+        \nTo be able to create an object, the requesting user requires `create` permissions\
+        \ to one of the\nobject's parents in the relationship hierarchy.\n\nFor example\
+        \ to create a `net` type object, the user needs to be permissioned to create\
+        \ in the organization\nthat is to be the network's holder entity.\n"
       parameters: []
       requestBody:
         content:
@@ -64020,17 +63741,20 @@ paths:
         \ enough to be treated as one interconnection\nlocation. A facility can only\
         \ join a campus if it has geocoordinates and sits within\nthe campus distance\
         \ limit of the facilities already in it.\n\n`name` is unique across PeeringDB,\
-        \ including against soft-deleted campuses.\n\nThe address fields \u2014 `city`,\
-        \ `country`, `state`, `zipcode` \u2014 are not stored on the\ncampus. They\
-        \ are read from its first facility and are empty while the campus has\nnone,\
-        \ so they can change without the campus itself being modified.\n\n### Parent\
-        \ relationship:\n\n- `org` organization\n\n### Relationship(s):\n\n- `fac`\
-        \ facilities\n\n\n## Retrieve a single object\n\n### Depth\n\nNested sets\
-        \ will not be expanded (any field ending with the _set suffix, with the exception\
-        \ of 'irr_as_set') unless the 'depth'\nparameter is passed in the request\
-        \ URL.\n\nDepth can be one of three values:\n\n  - 1 : expand sets into ids\
-        \ (slow)\n  - 2 : expand sets into objects (slower)\n  - 0 : don't expand\
-        \ sets at all (default behaviour)\n\n**example**\n\n    ?depth=1\n"
+        \ including against soft-deleted campuses.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nThe address fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are\
+        \ not stored on the\ncampus. They are read from its first facility and are\
+        \ empty while the campus has\nnone, so they can change without the campus\
+        \ itself being modified.\n\n### Parent relationship:\n\n- `org` organization\n\
+        \n### Relationship(s):\n\n- `fac` facilities\n\n\n## Retrieve a single object\n\
+        \n### Depth\n\nNested sets will not be expanded (any field ending with the\
+        \ _set suffix, with the exception of 'irr_as_set') unless the 'depth'\nparameter\
+        \ is passed in the request URL.\n\nDepth can be one of three values:\n\n \
+        \ - 1 : expand sets into ids (slow)\n  - 2 : expand sets into objects (slower)\n\
+        \  - 0 : don't expand sets at all (default behaviour)\n\n**example**\n\n \
+        \   ?depth=1\n"
       parameters:
       - name: id
         in: path
@@ -64063,14 +63787,16 @@ paths:
         \ to be treated as one interconnection\nlocation. A facility can only join\
         \ a campus if it has geocoordinates and sits within\nthe campus distance limit\
         \ of the facilities already in it.\n\n`name` is unique across PeeringDB, including\
-        \ against soft-deleted campuses.\n\nThe address fields \u2014 `city`, `country`,\
-        \ `state`, `zipcode` \u2014 are not stored on the\ncampus. They are read from\
-        \ its first facility and are empty while the campus has\nnone, so they can\
-        \ change without the campus itself being modified.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `fac` facilities\n\n\n\
-        ## Update existing objects\n\n### Permissions\n\nIn order to update an object\
-        \ the requesting user requires `update` permissions to the object itself or\
-        \ one of the parent relationships in the object hierarchy\n"
+        \ against soft-deleted campuses.\n\n`name`, `aka` and `name_long` cannot contain\
+        \ emoji or other pictographic symbols\n(such as \u2605). A write that includes\
+        \ them is rejected with a validation error on\nthat field.\n\nThe address\
+        \ fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are not stored\
+        \ on the\ncampus. They are read from its first facility and are empty while\
+        \ the campus has\nnone, so they can change without the campus itself being\
+        \ modified.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `fac` facilities\n\n\n## Update existing objects\n\n### Permissions\n\n\
+        In order to update an object the requesting user requires `update` permissions\
+        \ to the object itself or one of the parent relationships in the object hierarchy\n"
       parameters:
       - name: id
         in: path
@@ -64652,12 +64378,14 @@ paths:
         \ enough to be treated as one interconnection\nlocation. A facility can only\
         \ join a campus if it has geocoordinates and sits within\nthe campus distance\
         \ limit of the facilities already in it.\n\n`name` is unique across PeeringDB,\
-        \ including against soft-deleted campuses.\n\nThe address fields \u2014 `city`,\
-        \ `country`, `state`, `zipcode` \u2014 are not stored on the\ncampus. They\
-        \ are read from its first facility and are empty while the campus has\nnone,\
-        \ so they can change without the campus itself being modified.\n\n### Parent\
-        \ relationship:\n\n- `org` organization\n\n### Relationship(s):\n\n- `fac`\
-        \ facilities\n"
+        \ including against soft-deleted campuses.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nThe address fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are\
+        \ not stored on the\ncampus. They are read from its first facility and are\
+        \ empty while the campus has\nnone, so they can change without the campus\
+        \ itself being modified.\n\n### Parent relationship:\n\n- `org` organization\n\
+        \n### Relationship(s):\n\n- `fac` facilities\n"
       parameters:
       - name: id
         in: path
@@ -65239,12 +64967,14 @@ paths:
         \ to be treated as one interconnection\nlocation. A facility can only join\
         \ a campus if it has geocoordinates and sits within\nthe campus distance limit\
         \ of the facilities already in it.\n\n`name` is unique across PeeringDB, including\
-        \ against soft-deleted campuses.\n\nThe address fields \u2014 `city`, `country`,\
-        \ `state`, `zipcode` \u2014 are not stored on the\ncampus. They are read from\
-        \ its first facility and are empty while the campus has\nnone, so they can\
-        \ change without the campus itself being modified.\n\n### Parent relationship:\n\
-        \n- `org` organization\n\n### Relationship(s):\n\n- `fac` facilities\n\n\n\
-        ## Deleting objects\n"
+        \ against soft-deleted campuses.\n\n`name`, `aka` and `name_long` cannot contain\
+        \ emoji or other pictographic symbols\n(such as \u2605). A write that includes\
+        \ them is rejected with a validation error on\nthat field.\n\nThe address\
+        \ fields \u2014 `city`, `country`, `state`, `zipcode` \u2014 are not stored\
+        \ on the\ncampus. They are read from its first facility and are empty while\
+        \ the campus has\nnone, so they can change without the campus itself being\
+        \ modified.\n\n### Parent relationship:\n\n- `org` organization\n\n### Relationship(s):\n\
+        \n- `fac` facilities\n\n\n## Deleting objects\n"
       parameters:
       - name: id
         in: path
@@ -65263,19 +64993,21 @@ paths:
       description: "Retrieves a list of `net` type objects\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -65386,7 +65118,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -65450,19 +65185,21 @@ paths:
       description: "Retrieves a list of `net` type objects\n\n## Network\n\nIdentified\
         \ by the `net` tag.\n\nA network is identified by its `asn`, which is unique\
         \ across PeeringDB and cannot be\nchanged after creation. `name` is likewise\
-        \ unique, including against soft-deleted\nnetworks.\n\nBecause records are\
-        \ reused rather than recreated, an ASN that is released and later\nre-registered\
-        \ by a different operator keeps its existing `net` record: `org` changes\n\
-        and `updated` moves, but `id` and `created` do not. Do not read `created`\
-        \ as the start\nof the current operator's registration.\n\n`info_type` is\
-        \ a legacy single value superseded by `info_types`. It carries one of the\n\
-        network's types, but not a defined one \u2014 the two are ordered differently,\
-        \ so do not\nread it as `info_types[0]`. Use `info_types` for the full set.\n\
-        \nOn write, `info_type` replaces `info_types` entirely: whatever it carries\
-        \ becomes the\nnetwork's only type, and any `info_types` sent in the same\
-        \ request is discarded. Send\n`info_types` and omit `info_type` when writing\
-        \ \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops every\
-        \ type but one, and the response reports no error.\n\n### Parent relationship:\n\
+        \ unique, including against soft-deleted\nnetworks.\n\n`name`, `aka` and `name_long`\
+        \ cannot contain emoji or other pictographic symbols\n(such as \u2605). A\
+        \ write that includes them is rejected with a validation error on\nthat field.\n\
+        \nBecause records are reused rather than recreated, an ASN that is released\
+        \ and later\nre-registered by a different operator keeps its existing `net`\
+        \ record: `org` changes\nand `updated` moves, but `id` and `created` do not.\
+        \ Do not read `created` as the start\nof the current operator's registration.\n\
+        \n`info_type` is a legacy single value superseded by `info_types`. It carries\
+        \ one of the\nnetwork's types, but not a defined one \u2014 the two are ordered\
+        \ differently, so do not\nread it as `info_types[0]`. Use `info_types` for\
+        \ the full set.\n\nOn write, `info_type` replaces `info_types` entirely: whatever\
+        \ it carries becomes the\nnetwork's only type, and any `info_types` sent in\
+        \ the same request is discarded. Send\n`info_types` and omit `info_type` when\
+        \ writing \u2014 a read-modify-write `PUT` that echoes\nboth fields back drops\
+        \ every type but one, and the response reports no error.\n\n### Parent relationship:\n\
         \n- `org` organization\n\n### Relationship(s):\n\n- `netixlan` network to\
         \ exchange connections (through `ixlan`)\n- `netfac` network / facility presence\n\
         - `poc` points of contact\n\n### Metadata:\n\nCarries a `meta` document of\
@@ -65573,7 +65310,10 @@ paths:
         \n### Since\n\n\nYou can use the since argument with a unix timestamp (seconds)\
         \ to retrieve all\nobjects updated since then. Note that this result will\
         \ contain objects that were\ndeleted in that timeframe as well - you can spot\
-        \ them by checking for status \"deleted\"\n\n**example**\n\n    ?since=1443414678\n\
+        \ them by checking for status \"deleted\"\n\n`updated` is set when a change\
+        \ is saved, which can be a moment before the change becomes\nvisible. When\
+        \ polling with `since`, start a few seconds before your previous fetch and\n\
+        skip rows whose `updated` you already have.\n\n**example**\n\n    ?since=1443414678\n\
         \n### Nested data\n\nAny field ending in the suffix **_set** (with the exception\
         \ of 'irr_as_set') is a list of objects in a relationship with the parent\n\
         object, you can expand those lists with the 'depth' parameter as explained\
@@ -65814,20 +65554,22 @@ paths:
       description: "Creates a new `ix` type object.\n\n## Internet Exchange\n\nIdentified\
         \ by the `ix` tag.\n\nAn exchange is the administrative record for an IXP.\
         \ `name` is unique across\nPeeringDB, including against soft-deleted exchanges.\n\
-        \nThe participant-facing configuration \u2014 prefixes, MTU, route server\
-        \ ASN and the IX-F\nmember list URL \u2014 lives on the exchange's `ixlan`,\
-        \ not here. Each exchange has\nexactly one `ixlan`, whose `id` matches the\
-        \ exchange's own.\n\nCreating an exchange requires a `prefix`, which is used\
-        \ to create that LAN's first\nprefix. An `ixf_ixp_member_list_url` may also\
-        \ be supplied on create to support\nautomatic approval. Both are write-only\
-        \ and ignored on update.\n\n### Parent relationship:\n\n- `org` organization\n\
-        \n### Relationship(s):\n\n- `ixlan` internet exchange network information\n\
-        - `ixfac` exchange / facility presence\n\n\n## Creating objects\n\n### Status\
-        \ `pending`\n\nSome object types will be flagged as `pending` until they have\
-        \ been reviewed and approved by peeringdb staff.\n\nCurrently this is the\
-        \ case for:\n\n\n- `org` organizations (only administrative staff users are\
-        \ currently allowed to create organizations)\n- `fac` facilities\n- `net`\
-        \ networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
+        \n`name`, `aka` and `name_long` cannot contain emoji or other pictographic\
+        \ symbols\n(such as \u2605). A write that includes them is rejected with a\
+        \ validation error on\nthat field.\n\nThe participant-facing configuration\
+        \ \u2014 prefixes, MTU, route server ASN and the IX-F\nmember list URL \u2014\
+        \ lives on the exchange's `ixlan`, not here. Each exchange has\nexactly one\
+        \ `ixlan`, whose `id` matches the exchange's own.\n\nCreating an exchange\
+        \ requires a `prefix`, which is used to create that LAN's first\nprefix. An\
+        \ `ixf_ixp_member_list_url` may also be supplied on create to support\nautomatic\
+        \ approval. Both are write-only and ignored on update.\n\n### Parent relationship:\n\
+        \n- `org` organization\n\n### Relationship(s):\n\n- `ixlan` internet exchange\
+        \ network information\n- `ixfac` exchange / facility presence\n\n\n## Creating\
+        \ objects\n\n### Status `pending`\n\nSome object types will be flagged as\
+        \ `pending` until they have been reviewed and approved by peeringdb staff.\n\
+        \nCurrently this is the case for:\n\n\n- `org` organizations (only administrative\
+        \ staff users are currently allowed to create organizations)\n- `fac` facilities\n\
+        - `net` networks\n- `ix` exchanges\n- `ixpfx` prefixes (if part of a new exchange)\n\
         - `ixlan` exchange networks (if part of a new exchange)\n\nA `pending` object\
         \ can only be retrieved by callers with update permission on it. Other callers,\n\
         including the creator when the object belongs to another organization (for\

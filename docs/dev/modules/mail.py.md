@@ -1,4 +1,4 @@
-Generated from mail.py on 2026-11-05 20:07:16.953937
+Generated from mail.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.mail
 
@@ -79,6 +79,18 @@ Arguments:
     - recipients <list>: list of contact email addresses
     - days_until_deletion <int>: KEEP_RIR_STATUS, the number of days the
       network is kept after being flagged before it is removed
+
+---
+## mail_org_admins_emoji_removed
+`def mail_org_admins_emoji_removed(org, changes)`
+
+Tell an organization's admins that emoji were removed from the name fields
+of its objects by the pdb_strip_name_emoji backfill (#2018).
+
+Arguments:
+    - org <Organization>: the organization whose objects were changed
+    - changes <list>: one dict per changed field, with `entity_type`,
+      `ref_tag`, `id`, `field`, `current` and `proposed`
 
 ---
 ## mail_username_retrieve

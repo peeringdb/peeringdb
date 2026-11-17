@@ -1,4 +1,4 @@
-Generated from views.py on 2026-11-05 20:07:16.953937
+Generated from views.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.views
 
@@ -223,6 +223,13 @@ Returns the client address the login throttle counts against, IPv6
 addresses by their /64 as a single client usually controls all of it.
 
 ---
+## login_wizard_passkey_authenticated
+`def login_wizard_passkey_authenticated(request)`
+
+Returns true if the login wizard in this session verified a passkey as
+the first factor.
+
+---
 ## login_wizard_user
 `def login_wizard_user(request)`
 
@@ -326,6 +333,12 @@ the session, never from the request, so the options cannot be used to
 look up another user's credential ids.
 
 ---
+## split_origin_list
+`def split_origin_list(value)`
+
+Split a list of origins entered as comma and/or whitespace separated text
+
+---
 ## update_map_visualization
 `def update_map_visualization(request)`
 
@@ -343,12 +356,6 @@ current password, like registering a key.
 `def validator_result_cache(request, cache_id)`
 
 Return CSV data from cache.
-
----
-## view_about
-`def view_about(request)`
-
-Render page containing about.
 
 ---
 ## view_advanced_search
@@ -703,6 +710,17 @@ These attributes / properties will be available on instances of the class
 
 ### Methods
 
+#### asks_otp_despite_disabled_totp
+`def asks_otp_despite_disabled_totp(self)`
+
+On the password path, an organization that disables TOTP makes the
+library skip the token and backup steps. An account with no WebAuthn
+key would then get its MFA setup hold or passkey enrollment session
+on the password alone. Its default django-otp device is asked for
+first; it still does not satisfy the policy, `done()` holds the
+session (#550, #552).
+
+---
 #### done
 `def done(self, form_list, **kwargs)`
 
@@ -766,15 +784,15 @@ expensive condition evaluations (e.g., database queries).
 #### get_mfa_incomplete_redirect
 `def get_mfa_incomplete_redirect(self)`
 
-Called when require_passkey_mfa is True but MFA was not completed
-(either because the user has no TOTP device, or because disable_totp
-prevented the step from being shown).
+Called by the library when an organization policy left the login
+without an accepted second factor: on the password path when an
+organization disables TOTP and no security key was asked for, on the
+passkey path when an organization requires MFA after a passkey.
 
-Return a URL string to redirect the user (e.g. to MFA setup), or None
-to let the login proceed anyway.
-
-Override in subclasses to enforce the requirement. The default returns
-None for backwards compatibility.
+The user is logged in and held on the 2FA profile until they have a
+factor `User.has_org_accepted_2fa` accepts. The hold is written in
+`done()`, after the login: logging in over another account's session
+flushes the session.
 
 ---
 #### get_org_auth_settings
@@ -801,6 +819,18 @@ session backend serializes session data with json.dumps().
 `def get_redirect_url(self)`
 
 Specify which redirect urls are valid.
+
+---
+#### has_security_key_step
+`def has_security_key_step(self)`
+
+On the password path every WebAuthn key of the account is asked for,
+passkeys included. The library asks only for 2FA keys there, which
+left accounts with passkeys only on a password-only login while
+`User.has_2fa` counts them (#549).
+
+The passkey path is unchanged, and so is the password path where an
+organization disables password login: `done()` rejects it anyway.
 
 ---
 #### password_attempt_limited

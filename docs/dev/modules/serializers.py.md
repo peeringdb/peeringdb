@@ -1,4 +1,4 @@
-Generated from serializers.py on 2026-11-05 20:07:16.953937
+Generated from serializers.py on 2026-11-17 18:01:18.661144
 
 # peeringdb_server.serializers
 
@@ -458,7 +458,7 @@ Initialize self.  See help(type(self)) for accurate signature.
 ## GeocodeSerializerMixin
 
 ```
-GeocodeSerializerMixin(builtins.object)
+GeocodeSerializerMixin(peeringdb_server.serializers.MetaResponseMixin)
 ```
 
 Override create() and update() method of serializer
@@ -484,13 +484,6 @@ already normalizes the search to geo-coordinates using melissa.
 
 ### Methods
 
-#### _add_meta_information
-`def _add_meta_information(self, metadata)`
-
-Adds a dictionary of metadata to the "meta" field of the API
-request, so that it ends up in the API response.
-
----
 #### _geosync_information_present
 `def _geosync_information_present(self, instance, validated_data)`
 
@@ -615,6 +608,26 @@ list or suggest is True.
 `def to_representation(self, data)`
 
 Object instance -> Dict of primitive datatypes.
+
+---
+
+## MetaResponseMixin
+
+```
+MetaResponseMixin(builtins.object)
+```
+
+Lets a serializer add non-blocking information (warnings, suggestions) to
+the "meta" block of the API response.
+
+
+### Methods
+
+#### _add_meta_information
+`def _add_meta_information(self, metadata)`
+
+Adds a dictionary of metadata to the "meta" field of the API
+request, so that it ends up in the API response.
 
 ---
 
@@ -903,7 +916,7 @@ of a unique constraint violation.
 ## NetworkSerializer
 
 ```
-NetworkSerializer(peeringdb_server.serializers.ModelSerializer)
+NetworkSerializer(peeringdb_server.serializers.MetaResponseMixin, peeringdb_server.serializers.ModelSerializer)
 ```
 
 Serializer for peeringdb_server.models.Network
@@ -943,6 +956,14 @@ list comes from an explicit `ixp_update_exclude` in this same payload if
 present, otherwise from the existing instance.
 
 ---
+#### _warn_shared_irr_as_set
+`def _warn_shared_irr_as_set(self, old_irr_as_set)`
+
+#2036: when a write changes irr_as_set, warn (but do not reject) if
+another active network already lists one of its set names. The warning
+goes in the response's "meta" block, so the API schema is unchanged.
+
+---
 #### check_ixp_update_contact
 `def check_ixp_update_contact(self, instance, allow_ixp_update)`
 
@@ -968,6 +989,14 @@ This will be called on the end of POST request to this serializer.
 `def get_rir_status(self, inst)`
 
 Normalized RIR status for network
+
+---
+#### save
+`def save(self, **kwargs)`
+
+Entities created via API that have status pending should
+attempt to store which user created the item in the
+verification queue instance.
 
 ---
 #### to_internal_value
