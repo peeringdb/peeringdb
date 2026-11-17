@@ -162,7 +162,7 @@ $(window).bind("load", function() {
 
             <!-- Dropdown Menu -->
             <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-              <li><a class="dropdown-item" href="/about">About</a></li>
+              <li><a class="dropdown-item" href="https://docs.peeringdb.com/#about-peeringdb" target="_blank">About</a></li>
               <li><a class="dropdown-item" href="/apidocs">API</a></li>
               <li><a class="dropdown-item" href="http://docs.peeringdb.com/" target="_blank">Documentation</a></li>
               {% if not request.user.is_authenticated %}
@@ -176,7 +176,7 @@ $(window).bind("load", function() {
           </li>
 
           <div id="extra-nav-expanded" class="navbar-expand">
-            <a class="nav-link" href="/about" style="text-decoration:none;">
+            <a target="_blank" class="nav-link" href="https://docs.peeringdb.com/#about-peeringdb" style="text-decoration:none;">
               About
             </a>
             <a class="nav-link" href="/apidocs" style="text-decoration:none;">
