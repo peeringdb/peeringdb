@@ -2243,10 +2243,11 @@ class IRRLookupView(APIView):
     """
     Smart-editor completion helper (#1973).
 
-    GET /data/irr_lookup?name=<set-name> returns which IRR registries actually
-    hold the name, as {"name": ..., "sources": [...], "ok": <bool>}. The editor
-    uses it to offer the registry prefixes for a typed set name. It is a
-    convenience only; the save-path check in the serializer is the enforcement.
+    GET /data/irr_lookup?name=<set-name>&source=<source> returns which IRR
+    registries actually hold the name and which active PeeringDB networks list
+    that complete token. The editor uses it to offer registry prefixes and warn
+    about shared AS-SETs. It is a convenience only; the save-path check in the
+    serializer is the enforcement.
 
     Website-only by design, so PeeringDB is not usable as a free IRR query proxy:
     session auth only, and a per-user rate below what a debounced completion widget
@@ -2264,21 +2265,47 @@ class IRRLookupView(APIView):
     """
 
     permission_classes = [permissions.IsAuthenticated]
+    schema = None
     # session only -- Basic auth would make this reachable with any account's
     # credentials, and nothing outside the editor needs it
     authentication_classes = [SessionAuthentication]
     throttle_classes = [IRRLookupThrottle]
     # plain JSON — this lookup helper is not a list resource, so bypass the API's
-    # default {"data": [...], "meta": {}} envelope for a flat {name, sources, ok}
+    # default {"data": [...], "meta": {}} envelope for a flat
+    # {name, sources, ok, networks, shared_message}
     renderer_classes = [JSONRenderer]
 
     def get(self, request):
         name = (request.query_params.get("name") or "").strip()
         if not name:
-            return Response({"name": "", "sources": [], "ok": False})
+            return Response(
+                {
+                    "name": "",
+                    "sources": [],
+                    "ok": False,
+                    "networks": [],
+                    "shared_message": "",
+                }
+            )
+
+        source = (request.query_params.get("source") or "").strip()
+        token = f"{source}::{name}" if source else name
         result = irr.sources_for(name)
+        networks = Network.irr_as_set_networks(token)
         return Response(
-            {"name": name, "sources": sorted(result.sources), "ok": result.ok}
+            {
+                "name": name,
+                "sources": sorted(result.sources),
+                "ok": result.ok,
+                "networks": [
+                    {"id": net.id, "asn": net.asn, "name": net.name} for net in networks
+                ],
+                # #2036: the editor shows this wording as-is, so it is defined
+                # once on the server (shared with the API save warning)
+                "shared_message": (
+                    Network.irr_as_set_shared_message(token) if networks else ""
+                ),
+            }
         )
 
 

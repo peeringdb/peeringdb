@@ -681,7 +681,6 @@
 $(document).ready(function() {
   PeeringDB.incomplete_data_notify();
   PeeringDB.ViewActions.init();
-  checkAsSet();
 
   var editForm = $('[data-edit-target="api:{{ref_tag}}:update"]')
   editForm.on('action-success:submit', function(e,data) {
@@ -703,6 +702,14 @@ $(document).ready(function() {
 
 
 });
+</script>
+{% endif %}
+
+{% if permissions.can_write or permissions.can_create_net %}
+<script>
+  // #2036: the IRR AS-SET editor also renders in the org page's add-network form,
+  // which needs network-create permission rather than org update (can_write).
+  $(document).ready(checkAsSet);
 </script>
 {% endif %}
 

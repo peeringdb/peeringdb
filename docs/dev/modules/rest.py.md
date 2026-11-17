@@ -356,10 +356,11 @@ IRRLookupView(rest_framework.views.APIView)
 
 Smart-editor completion helper (#1973).
 
-GET /data/irr_lookup?name=<set-name> returns which IRR registries actually
-hold the name, as {"name": ..., "sources": [...], "ok": <bool>}. The editor
-uses it to offer the registry prefixes for a typed set name. It is a
-convenience only; the save-path check in the serializer is the enforcement.
+GET /data/irr_lookup?name=<set-name>&source=<source> returns which IRR
+registries actually hold the name and which active PeeringDB networks list
+that complete token. The editor uses it to offer registry prefixes and warn
+about shared AS-SETs. It is a convenience only; the save-path check in the
+serializer is the enforcement.
 
 Website-only by design, so PeeringDB is not usable as a free IRR query proxy:
 session auth only, and a per-user rate below what a debounced completion widget

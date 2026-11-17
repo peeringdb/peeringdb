@@ -5804,7 +5804,12 @@ const checkAsSet = () =>{
   let lookupRequest;
   let lookupRequests = [];
   let lastLookupValue;
-  const original_as_set = irr_as_set_container.text()
+  // #2036: the network to leave out of the shared-set warning. Only a net page
+  // edits a network; on the org page data-edit-id is the org id and the
+  // add-network form there has no network of its own to exclude.
+  const currentNetworkId = $("#view").attr("data-ref-tag") === "net"
+    ? String($("#view").attr("data-edit-id") || "")
+    : "";
   if (irr_as_set_container.length) {
     const setNote = (cls, msg, modifier) => {
       irr_as_set_container.find("." + cls).remove();
@@ -5873,7 +5878,46 @@ const checkAsSet = () =>{
           .addClass(status.ok ? "irr-hint-note-verified" : "")
           .text(`${status.mark} ${status.raw} — ${status.message}`)
           .appendTo(note);
+        if (status.duplicate) {
+          const line = $("<div>")
+            .addClass("as-set-exists-note")
+            .text(`! ${status.raw} — ${status.duplicate.message}`);
+          appendNetworkLinks(line, status.duplicate.networks);
+          line.appendTo(note);
+        }
       });
+      note.appendTo(irr_as_set_container);
+    };
+    // #2036: other active networks listing the same set name, as {message, networks}
+    // or null. Warn-only; the edit is never blocked.
+    const sharedWith = (result) => {
+      const networks = (result.networks || []).filter(
+        (network) => String(network.id) !== currentNetworkId
+      );
+      if (!networks.length) return null;
+      // wording comes from the server (defined once in models.py)
+      return {message: result.shared_message, networks};
+    };
+    const appendNetworkLinks = (el, networks) => {
+      $("<span>").text(" " + gettext("Listed by:") + " ").appendTo(el);
+      networks.forEach((network, idx) => {
+        if (idx) $("<span>").text(", ").appendTo(el);
+        $("<a>")
+          .attr("href", `/net/${encodeURIComponent(network.id)}`)
+          .attr("target", "_blank")
+          .attr("rel", "noopener")
+          .text(`AS${network.asn} ${network.name}`)
+          .appendTo(el);
+      });
+    };
+    const setSharedNote = (shared) => {
+      irr_as_set_container.find(".as-set-exists-note").remove();
+      if (!shared) return;
+      const note = $("<small>")
+        .addClass("as-set-exists-note")
+        .attr("aria-live", "polite")
+        .text(shared.message);
+      appendNetworkLinks(note, shared.networks);
       note.appendTo(irr_as_set_container);
     };
     const tokenStatus = (token, request) => {
@@ -5881,12 +5925,14 @@ const checkAsSet = () =>{
       // as one request fails, while the others may still be in flight, so its argument
       // shape cannot be trusted to describe every token.
       const result = request.status === 200 ? request.responseJSON : null;
+      const duplicate = result ? sharedWith(result) : null;
       if (!result || !result.ok) {
         return {
           raw: token.raw,
           ok: false,
           mark: "?",
-          message: gettext("IRR lookup unavailable — checked when you save")
+          message: gettext("IRR lookup unavailable — checked when you save"),
+          duplicate
         };
       }
       const sources = (result.sources || []).map((source) => source.toUpperCase());
@@ -5895,7 +5941,8 @@ const checkAsSet = () =>{
           raw: token.raw,
           ok: false,
           mark: "✗",
-          message: gettext("not found in any IRR registry we checked")
+          message: gettext("not found in any IRR registry we checked"),
+          duplicate
         };
       }
       if (token.source && sources.includes(token.source)) {
@@ -5903,7 +5950,8 @@ const checkAsSet = () =>{
           raw: token.raw,
           ok: true,
           mark: "✓",
-          message: gettext("verified in") + " " + token.source
+          message: gettext("verified in") + " " + token.source,
+          duplicate
         };
       }
       if (token.source) {
@@ -5912,14 +5960,16 @@ const checkAsSet = () =>{
           ok: false,
           mark: "!",
           message: gettext("not in") + " " + token.source + " — " +
-            gettext("found in") + " " + sources.join(", ")
+            gettext("found in") + " " + sources.join(", "),
+          duplicate
         };
       }
       return {
         raw: token.raw,
         ok: false,
         mark: "!",
-        message: gettext("no IRR source prefix — found in") + " " + sources.join(", ")
+        message: gettext("no IRR source prefix — found in") + " " + sources.join(", "),
+        duplicate
       };
     };
     const checkTokens = (value, tokens, input) => {
@@ -5929,7 +5979,8 @@ const checkAsSet = () =>{
       // arguments cannot describe every token. Each verdict is read off its own jqXHR.
       const requests = tokens.map((token) =>
         $.ajax({
-          url: `/data/irr_lookup?name=${encodeURIComponent(token.name)}`
+          url: "/data/irr_lookup",
+          data: {name: token.name, source: token.source || ""}
         })
       );
       // Handlers are attached only after `requests` exists: a request that settled
@@ -5976,8 +6027,11 @@ const checkAsSet = () =>{
           return
         }
 
-        setNote("as-set-exists-note", null);
+        // #2036: the shared-set note is cleared only where the lookup will be redone
+        // (or no lookup applies). Clearing it ahead of the lastLookupValue guards
+        // would drop it for good on a refocus of an unchanged value.
         if (hasRouteSet(irr_as_set)) {
+          setNote("as-set-exists-note", null);
           setNote(
             "irr-hint-note",
             gettext("Route-set names (RS-*) are not accepted. Publish an AS-SET instead.")
@@ -5992,6 +6046,7 @@ const checkAsSet = () =>{
         if (tokens && tokens.length > 1) {
           if (lastLookupValue === irr_as_set) return;
           lastLookupValue = irr_as_set;
+          setNote("as-set-exists-note", null);
           checkTokens(irr_as_set, tokens, e.target);
           return;
         }
@@ -6008,33 +6063,22 @@ const checkAsSet = () =>{
             "irr-hint-note",
             gettext("Not a valid AS-SET name. Use RIPE::AS-EXAMPLE or RIPE::AS64496:AS-EXAMPLE.")
           );
+          setNote("as-set-exists-note", null);
           lastLookupValue = null;
           return;
         }
 
-        const as_set_changed = original_as_set.trim().toLowerCase() !== irr_as_set.toLowerCase();
-        if (!token.source && as_set_changed) {
-          const already_exists_message = gettext(`An AS-SET with this name already exists, avoid ambiguity by specifying the name of the IRR you use e.g. "IRR::AS-MYNAME"`)
-          $.ajax({
-            url: `/api/net?irr_as_set=${encodeURIComponent(irr_as_set)}`,
-            success: (data) => {
-              if (e.target.value.trim() !== irr_as_set) return;
-              setNote(
-                "as-set-exists-note",
-                data.data.length ? already_exists_message : null
-              );
-            }
-          });
-        }
-
         if (lastLookupValue === irr_as_set) return;
         lastLookupValue = irr_as_set;
+        setNote("as-set-exists-note", null);
         setNote("irr-hint-note", gettext("Checking IRR registries…"));
         lookupRequest = $.ajax({
-          url: `/data/irr_lookup?name=${encodeURIComponent(token.name)}`,
+          url: "/data/irr_lookup",
+          data: {name: token.name, source: token.source || ""},
           success: (result) => {
             lookupRequest = null;
             if (e.target.value.trim() !== irr_as_set) return;
+            setSharedNote(sharedWith(result));
             const sources = (result.sources || []).map(
               (source) => source.toUpperCase()
             );
