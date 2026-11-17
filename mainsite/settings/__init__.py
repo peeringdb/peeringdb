@@ -1265,6 +1265,8 @@ MIDDLEWARE = (
     "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # allauth.account refuses to start without it, and that app still serves
+    # email confirmation and the EmailAddress records
     "allauth.account.middleware.AccountMiddleware",
 )
 
@@ -1367,7 +1369,8 @@ AUTHENTICATION_BACKENDS += (
     # for passkey auth using security-key
     # this needs to be first so it can do some clean up
     "django_security_keys.backends.PasskeyAuthenticationBackend",
-    # for OAuth against external sources
+    # the password backend: login and registration authenticate through it,
+    # and logged-in sessions record it, so replacing it logs everyone out
     "allauth.account.auth_backends.AuthenticationBackend",
 )
 
@@ -2044,7 +2047,6 @@ if TUTORIAL_MODE:
     DISABLE_VERIFICATION_QUEUE_EMAILS = True
     DISABLE_VERIFICATION_QUEUE = True
     AUTO_APPROVE_AFFILIATION = True
-    AUTO_VERIFY_USERS = True
 else:
     EMAIL_SUBJECT_PREFIX = f"[{RELEASE_ENV}] "
 
