@@ -7,73 +7,73 @@
 {% block content %}
 
 <div class="sponsorspage">
-	<div class="sponsors-group diamond">
-		<h2 class="level">
-			{% trans "Diamond" %} <br>{% trans "Sponsors" %}
-		</h2>
-		<div class="sponsors">
+	<section class="sponsors-group diamond" aria-labelledby="sponsors-diamond">
+		<h2 class="level" id="sponsors-diamond">{% trans "Diamond" %} {% trans "Sponsors" %}</h2>
+		<ul class="sponsors" role="list">
 			{% for sponsorship in sponsorships.diamond|shuffle %}
 			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
 				  {% if row.logo %}
+				  <li class="sponsor">
 					  {% if row.url %}<a href="{{row.url}}">{% endif %}
 					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
 					  {% if row.url %}</a>{% endif %}
+				  </li>
 				  {% endif %}
 			  {% endfor %}
 			{% endfor %}
-		</div>
-	</div>
+		</ul>
+	</section>
 
-	<div class="sponsors-group platinum">
-		<h2 class="level">
-			{% trans "Platinum" %} <br>{% trans "Sponsors" %}
-		</h2>
-		<div class="sponsors">
+	<section class="sponsors-group platinum" aria-labelledby="sponsors-platinum">
+		<h2 class="level" id="sponsors-platinum">{% trans "Platinum" %} {% trans "Sponsors" %}</h2>
+		<ul class="sponsors" role="list">
 			{% for sponsorship in sponsorships.platinum|shuffle %}
 			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
 				  {% if row.logo %}
+				  <li class="sponsor">
 					  {% if row.url %}<a href="{{row.url}}">{% endif %}
 					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
 					  {% if row.url %}</a>{% endif %}
+				  </li>
 				  {% endif %}
 			  {% endfor %}
 			{% endfor %}
-		</div>
-	</div>
+		</ul>
+	</section>
 
-	<div class="sponsors-group gold">
-		<h2 class="level">
-			{% trans "Gold" %} <br>{% trans "Sponsors" %}
-		</h2>
-		<div class="sponsors">
+	<section class="sponsors-group gold" aria-labelledby="sponsors-gold">
+		<h2 class="level" id="sponsors-gold">{% trans "Gold" %} {% trans "Sponsors" %}</h2>
+		<ul class="sponsors" role="list">
 			{% for sponsorship in sponsorships.gold|shuffle %}
 			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
 				  {% if row.logo %}
+				  <li class="sponsor">
 					  {% if row.url %}<a href="{{row.url}}">{% endif %}
 					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
 					  {% if row.url %}</a>{% endif %}
+				  </li>
 				  {% endif %}
 			  {% endfor %}
 			{% endfor %}
-		</div>
-	</div>
+		</ul>
+	</section>
 
-	<div class="sponsors-group silver">
-		<h2 class="level">
-			{% trans "Silver" %} <br>{% trans "Sponsors" %}
-		</h2>
-		<div class="sponsors">
+	<section class="sponsors-group silver" aria-labelledby="sponsors-silver">
+		<h2 class="level" id="sponsors-silver">{% trans "Silver" %} {% trans "Sponsors" %}</h2>
+		<ul class="sponsors" role="list">
 			{% for sponsorship in sponsorships.silver|shuffle %}
 			  {% for row in sponsorship.sponsorshiporg_set.all|shuffle %}
 				  {% if row.logo %}
+				  <li class="sponsor">
 					  {% if row.url %}<a href="{{row.url}}">{% endif %}
 					  <img src="{{ row.logo.url }}" alt="{{ row.org.name }}" class="img-fluid" />
 					  {% if row.url %}</a>{% endif %}
+				  </li>
 				  {% endif %}
 			  {% endfor %}
 			{% endfor %}
-		</div>
-	</div>
+		</ul>
+	</section>
 </div>
 
 <div class="marg-top center">
