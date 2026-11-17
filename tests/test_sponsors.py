@@ -1,7 +1,7 @@
 import re
 
 from django.contrib.auth.models import Group
-from django.test import Client, RequestFactory, TestCase
+from django.test import Client, RequestFactory, TestCase, override_settings
 
 import peeringdb_server.models as models
 
@@ -137,3 +137,35 @@ class ViewTestCase(TestCase):
                 break
             i += 1
         self.assertLess(i, 99)
+
+    def assert_tier_panels(self, content):
+        # Each tier is its own section: the heading comes first, then the
+        # tier's logo list, so on narrow screens a heading cannot read as a
+        # caption for the tier above it (#2068). Tiers stay in order.
+        tiers = re.findall(
+            r'<section class="sponsors-group (\w+)" aria-labelledby="sponsors-\1">\s*'
+            r'<h2 class="level" id="sponsors-\1">[^<]+</h2>\s*'
+            r'<ul class="sponsors" role="list">',
+            content,
+        )
+        self.assertEqual(tiers, ["diamond", "platinum", "gold", "silver"])
+
+        # one list item per logo (orgs 1, 2, 3, 5 and 6), linked logos keep their link
+        self.assertEqual(content.count('<li class="sponsor">'), 5)
+        for org, url in (("1", "org-1.com"), ("5", "org-5.com"), ("6", "org-6.com")):
+            assert re.search(
+                r'<a href="%s">\s*<img src="[^"]+" alt="%s"'
+                % (re.escape(url), re.escape(self.organizations[org].name)),
+                content,
+            )
+
+    def test_view_tier_panels(self):
+        resp = Client().get("/sponsors", follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assert_tier_panels(resp.content.decode())
+
+    @override_settings(DEFAULT_UI_NEXT_ENABLED=True)
+    def test_view_tier_panels_ui_next(self):
+        resp = Client().get("/sponsors", follow=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assert_tier_panels(resp.content.decode())
