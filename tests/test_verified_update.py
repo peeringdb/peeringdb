@@ -550,6 +550,90 @@ class VerifiedUpdateTestCase(TestCase):
         poc.refresh_from_db()
         self.assertEqual(poc.phone, "not a phone")
 
+    def test_validate_verified_update_data_keeps_text_values(self):
+        """
+        Only integer fields are coerced; a phone number keeps its leading +
+        and a postal code its leading zero (#540)
+        """
+        fac = models.Facility.objects.first()
+        for ref_tag, obj_id, data in (
+            ("poc", self.poc.id, {"phone": "+16175550142"}),
+            ("fac", fac.id, {"tech_phone": "+442079460018", "zipcode": "01234"}),
+            ("net", self.net.id, {"irr_as_set": "12345"}),
+        ):
+            with self.subTest(ref_tag=ref_tag):
+                self.assertEqual(
+                    validate_verified_update_data(ref_tag, obj_id, data), (True, data)
+                )
+        self.assertEqual(
+            validate_verified_update_data(
+                "net",
+                self.net.id,
+                {"info_prefixes4": "21", "allow_ixp_update": "false"},
+            )[1],
+            {"info_prefixes4": 21, "allow_ixp_update": False},
+        )
+
+    def test_validate_verified_update_data_unchanged_boolean_digit(self):
+        """
+        An unchanged boolean sent as "1" or "0" is not proposed as a change
+        next to a real one
+        """
+        models.Network.objects.filter(pk=self.net.pk).update(
+            info_unicast=True, info_multicast=False, info_prefixes4=20
+        )
+        self.assertEqual(
+            validate_verified_update_data(
+                "net",
+                self.net.id,
+                {"info_unicast": "1", "info_multicast": "0", "info_prefixes4": "21"},
+            ),
+            (True, {"info_prefixes4": 21}),
+        )
+        self.assertEqual(
+            validate_verified_update_data(
+                "net", self.net.id, {"info_unicast": "0", "info_multicast": "1"}
+            ),
+            (True, {"info_unicast": "0", "info_multicast": "1"}),
+        )
+
+    def test_validate_verified_update_data_unconvertible_value(self):
+        """
+        A value the model field cannot convert is passed on as given, for the
+        serializer to refuse, instead of raising
+        """
+        fac = models.Facility.objects.first()
+        for ref_tag, obj_id, data, expected in (
+            ("net", self.net.id, {"info_types": "true"}, {"info_types": True}),
+            ("net", self.net.id, {"info_types": 5}, {"info_types": 5}),
+            (
+                "fac",
+                fac.id,
+                {"available_voltage_services": "true"},
+                {"available_voltage_services": True},
+            ),
+        ):
+            with self.subTest(ref_tag=ref_tag, data=data):
+                self.assertEqual(
+                    validate_verified_update_data(ref_tag, obj_id, data),
+                    (True, expected),
+                )
+
+        info_types = list(self.net.info_types)
+        response = self._accept(["net", str(self.net.id)], info_types="true")
+        self.assertContains(response, "info_types:")
+        self.net.refresh_from_db()
+        self.assertEqual(list(self.net.info_types), info_types)
+
+    def test_verified_update_keeps_phone_plus(self):
+        poc = models.NetworkContact.objects.create(
+            network=self.net, role="Abuse", phone="", status="ok"
+        )
+        response = self._accept(["poc", str(poc.id)], phone="+16175550142")
+        self.assertEqual(response.status_code, 302)
+        poc.refresh_from_db()
+        self.assertEqual(poc.phone, "+16175550142")
+
     def _grant(self, org):
         org.admin_usergroup.user_set.add(self.orgadmin)
         models.Organization.objects.filter(pk=org.pk).update(

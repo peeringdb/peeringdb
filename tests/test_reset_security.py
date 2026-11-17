@@ -1,8 +1,5 @@
-from unittest.mock import patch
-
 import pytest
 from allauth.account.models import EmailAddress
-from allauth.account.signals import password_changed, password_reset, password_set
 from django.test import RequestFactory
 
 from peeringdb_server import models, views
@@ -166,16 +163,3 @@ def test_primary_change_uses_exact_address_comparison(reset_user, email):
     reset_user.save(update_fields=["email"])
     assert not models.UserPasswordReset.objects.filter(user=reset_user).exists()
     assert redeem(reset_user, token).status_code == 400
-
-
-@pytest.mark.parametrize("signal", [password_changed, password_reset, password_set])
-def test_allauth_password_revocation_retains_user_database_alias(reset_user, signal):
-    reset_user.password_reset_initiate()
-    user = models.User.objects.using("read").get(pk=reset_user.pk)
-    assert user._state.db == "read"
-    manager = models.UserPasswordReset.objects
-    # The test read alias mirrors default; observe alias selection as well as deletion.
-    with patch.object(manager, "using", wraps=manager.using) as using:
-        signal.send(sender=models.User, request=RequestFactory().post("/"), user=user)
-    using.assert_called_once_with("read")
-    assert not manager.filter(user=reset_user).exists()

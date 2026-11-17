@@ -13,8 +13,9 @@ from urllib.parse import unquote, urlparse
 import phonenumbers
 from bleach import html5lib_shim, parse_shim
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator, validate_email
+from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django_countries.fields import Country
@@ -1287,6 +1288,13 @@ def validate_website_override(
     return website
 
 
+def _model_field(model: Any, field: str) -> models.Field | None:
+    try:
+        return model._meta.get_field(field)
+    except FieldDoesNotExist:
+        return None
+
+
 def validate_verified_update_data(
     # `data` values are polymorphic: they arrive as strings but are coerced to
     # bool/int below, so the mapping value stays `Any`.
@@ -1331,16 +1339,29 @@ def validate_verified_update_data(
         if not hasattr(obj, field):
             continue
 
+        model_field = _model_field(model, field)
         if value == "true":
             value = True
         elif value == "false":
             value = False
-        else:
+        elif isinstance(model_field, models.IntegerField):
+            # text fields keep the value as given: int() would turn a phone
+            # number's leading + or a postal code's leading zero into nothing
             try:
                 value = int(value)
             except (TypeError, ValueError):
                 pass
-        if value != getattr(obj, field):
+        # compared as the field would store it, so an unchanged "1" on a
+        # boolean is not proposed as a change
+        compared = value
+        if model_field is not None:
+            try:
+                compared = model_field.to_python(value)
+            except (ValidationError, TypeError, ValueError, AttributeError):
+                # e.g. MultipleChoiceField.to_python splits any non-list, so a
+                # bool or int raises; the serializer refuses the raw value
+                pass
+        if compared != getattr(obj, field):
             result.update({field: value})
     return True, result
 

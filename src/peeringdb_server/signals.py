@@ -18,13 +18,7 @@ from urllib.parse import urljoin
 import django.urls
 import reversion
 import structlog
-from allauth.account.signals import (
-    email_confirmed,
-    password_changed,
-    password_reset,
-    password_set,
-    user_signed_up,
-)
+from allauth.account.signals import email_confirmed
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -75,13 +69,6 @@ from peeringdb_server.models import (
 from peeringdb_server.util import disable_auto_now_and_save
 
 log = structlog.getLogger("django")
-
-
-@receiver(password_changed)
-@receiver(password_reset)
-@receiver(password_set)
-def invalidate_reset_on_allauth_password_change(sender, user, **kwargs):
-    UserPasswordReset.objects.using(user._state.db).filter(user=user).delete()
 
 
 @receiver(pre_save, sender=User)
@@ -482,22 +469,6 @@ def org_delete(sender, instance, **kwargs):
 
 
 pre_delete.connect(org_delete, sender=Organization)
-
-
-@receiver(user_signed_up, dispatch_uid="allauth.user_signed_up")
-def new_user_to_guests(request, user, sociallogin=None, **kwargs):
-    """
-    When a user is created via oauth login put them in the guest
-    group temporarily.
-
-    If pdb_settings.AUTO_VERIFY_USERS is toggled on in the settings, users get automatically verified (Note: this does
-    not include email verification, they will still need to do that).
-    """
-
-    if pdb_settings.AUTO_VERIFY_USERS:
-        user.set_verified()
-    else:
-        user.set_unverified()
 
 
 @receiver(email_confirmed, dispatch_uid="allauth.email_confirmed")

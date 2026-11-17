@@ -262,6 +262,43 @@ def test_hidden_feed_url_is_not_served(cache_data, url):
     assert row["ixf_ixp_member_list_url_visible"] == "Private"
 
 
+@pytest.mark.parametrize(
+    "fields", ("ixf_ixp_member_list_url", "id,ixf_ixp_member_list_url")
+)
+@pytest.mark.parametrize("visible", ("Public", "Users", "Private"))
+@pytest.mark.parametrize("authenticated", (False, True))
+def test_feed_url_fields_filter_matches_uncached(
+    cache_data, settings, fields, visible, authenticated
+):
+    """
+    A cached `fields=` request that names the feed URL answers like the
+    uncached one, with the URL shown only where its visibility allows (#539).
+    """
+    ixlan = cache_data["ix"].ixlan
+    ixlan.ixf_ixp_member_list_url_visible = visible
+    ixlan.save()
+
+    client = APIClient()
+    if authenticated:
+        # users hold the guest grants as well
+        cache_data["user"].groups.add(Group.objects.get(pk=settings.GUEST_GROUP_ID))
+        client.force_authenticate(user=cache_data["user"])
+    url = f"/api/ixlan?fields={fields}"
+
+    cached = cached_rows(client, url)
+    settings.API_CACHE_ENABLED = False
+    resp = client.get(url)
+    assert resp.status_code == 200, resp.content
+    assert "generated" not in resp.json()["meta"]
+    assert cached == resp.json()["data"]
+
+    shown = visible == "Public" or (visible == "Users" and authenticated)
+    urls = [row.get("ixf_ixp_member_list_url") for row in cached]
+    assert (FEED_URL in urls) is shown
+    if shown and fields == "ixf_ixp_member_list_url":
+        assert {"ixf_ixp_member_list_url": FEED_URL} in cached
+
+
 def test_unchanged_cache_is_served_as_generated(cache_data):
     rows = cached_rows(APIClient(), "/api/poc")
     assert sorted(row["id"] for row in rows) == poc_ids(

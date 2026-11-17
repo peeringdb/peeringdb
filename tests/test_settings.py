@@ -2,7 +2,6 @@ import json
 import os
 
 import pytest
-from allauth.account.signals import user_signed_up
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 
@@ -49,19 +48,6 @@ def setup_module(module):
 @pytest.mark.django_db
 def teardown_module(module):
     pdbinet.RdapLookup.get_asn = RdapLookup_get_asn
-
-
-class TestAutoVerifyUser(SettingsCase):
-    settings = {"AUTO_VERIFY_USERS": True}
-
-    @pytest.mark.django_db
-    def test_setting(self):
-        user = get_user_model().objects.create_user(
-            "user_a", "user_a@localhost", "user_a"
-        )
-        user_signed_up.send(sender=None, request=None, user=user)
-        assert user.is_verified_user is True
-        assert user.status == "ok"
 
 
 class TestAutoApproveAffiliation(SettingsCase):

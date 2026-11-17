@@ -323,6 +323,11 @@ class APICacheLoader:
         Remove any unwanted fields from the resultset
         according to the `fields` filter specified in the request.
         """
+        keep = {"_grainy"}
+        # the serve-time permission check reads the feed URL's visibility and
+        # drops it again when it was not requested, as on the uncached path
+        if "ixf_ixp_member_list_url" in self.fields:
+            keep.add("ixf_ixp_member_list_url_visible")
         for field in list(row.keys()):
-            if field not in self.fields and field != "_grainy":
+            if field not in self.fields and field not in keep:
                 del row[field]
