@@ -497,7 +497,7 @@ def test_notification_banner_admin_refuses_disallowed_markup(client, superuser):
     assert EnvironmentSetting.get_setting_value("NOTIFICATION_BANNER_CONTENT") == value
 
 
-@pytest.mark.parametrize("path", ["/", "/about"])
+@pytest.mark.parametrize("path", ["/", "/aup"])
 def test_notification_banner_render_strips_disallowed_markup(client, superuser, path):
     # a row saved before validation existed, or the env var fallback
     EnvironmentSetting.objects.create(
