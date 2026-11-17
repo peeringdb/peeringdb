@@ -570,6 +570,54 @@ def test_cleanup_notifies_unresolved_bare_asn(
     assert net.irr_as_set_notified is not None
 
 
+@pytest.mark.parametrize(
+    "object_reply,mailed",
+    [
+        # every mirrored source answers "no data": the as-set is gone
+        (None, True),
+        # #502: an IRRd error is unknown, so nobody is told their as-set is gone
+        ("%% ERROR: One or more selected sources are unavailable.\n", False),
+        ("F An internal error occurred.\n", False),
+    ],
+)
+@override_settings(MAIL_DEBUG=False)
+@pytest.mark.django_db
+def test_cleanup_irrd_error_reply_does_not_confirm_unresolved(
+    org, tmp_path, django_capture_on_commit_callbacks, object_reply, mailed
+):
+    net = make_network(org, 2442, "AS-GHOST")  # in no dump
+    add_contact(net)
+    write_irr_dump_set(tmp_path, SAMPLE_DUMP)
+
+    def _send(server, payload):
+        if payload == "!s-lc":
+            return "A10\nRIPE,RADB\nC\n"
+        if object_reply is not None:
+            return object_reply
+        return "C\nD\n" * payload.count("\n!m")
+
+    cache = LocMemCache("irr-502", {})
+    cache.clear()  # same-named instances share storage across parametrized runs
+    out = StringIO()
+    mail.outbox = []
+    with (
+        mock.patch("peeringdb_server.irr._send", side_effect=_send),
+        mock.patch("peeringdb_server.irr._cache", return_value=cache),
+        django_capture_on_commit_callbacks(execute=True),
+    ):
+        call_command(
+            "pdb_irr_as_set_cleanup",
+            "--commit",
+            "--dump-dir",
+            str(tmp_path),
+            stdout=out,
+        )
+
+    net.refresh_from_db()
+    assert (len(mail.outbox) == 1) is mailed
+    assert (net.irr_as_set_notified is not None) is mailed
+
+
 @pytest.mark.django_db
 def test_cleanup_commit_requires_dump_index(org):
     make_network(org, 2410, "AS-FOO")
@@ -1437,7 +1485,7 @@ def test_cleanup_idnic_error_reply_is_not_absent(org, tmp_path, reply, expected)
 
     def _send(server, payload):
         if payload == "!s-lc":
-            return "A16\nRIPE,APNIC,IDNIC\nC\n"
+            return "A17\nRIPE,APNIC,IDNIC\nC\n"
         assert payload.startswith("!!\n!sIDNIC\n!mas-set,AS-FOO")
         return reply
 

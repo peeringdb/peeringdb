@@ -326,7 +326,12 @@ def init_permissions_helper(obj: Any) -> Permissions:
         perms = return_org_api_key_perms(obj)
     else:
         perms = Permissions(obj)
-        if isinstance(obj, User):
+        # the cache is rendered as a superuser in a process of its own, and the
+        # re-auth check would unverify that user's email and mail them, a write
+        # that crashes the command on a read-only database (#529)
+        if isinstance(obj, User) and not getattr(
+            settings, "GENERATING_API_CACHE", False
+        ):
             adjust_permissions_for_periodic_reauth(obj, perms)
 
     obj._permissions_util = perms
