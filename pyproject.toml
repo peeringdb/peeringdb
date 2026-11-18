@@ -77,7 +77,7 @@ dependencies = [
     # sees them, and 4.0.1 breaks the device flow with django-oauth-toolkit
     # 3.4.1 (django-oauth/django-oauth-toolkit#1950). Lift the cap once a
     # django-oauth-toolkit release with the fix (PR 1951) is out.
-    "oauthlib>=3.3,<4.0.1",
+    "oauthlib>=3.3,<4.0.2",
     "django-phonenumber-field>=0.6",
     "django-ratelimit>=4.0.0",
     "django-read-only>=1.15.0",
